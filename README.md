@@ -1,139 +1,81 @@
-# 🧠 @kovartravis/neuron
+# neuron
 
-A local-only, zero-config semantic memory store for AI coding agents. It helps agents persist learnings (rules/conventions) and task history across sessions without external API calls or database configuration.
+**Local semantic memory store for AI coding agents, powered by local vector embeddings and SQLite.**
+
+**Platforms:** macOS, Linux, Windows
 
 [![npm version](https://img.shields.io/npm/v/@kovartravis/neuron.svg)](https://www.npmjs.com/package/@kovartravis/neuron)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
-
-## Why Neuron?
-
-Autonomous coding agents (like Gemini, Claude, or custom harnesses) often forget project-specific instructions, conventions, or tricks learned in previous runs.
-
-`neuron` solves this by giving agents a local memory sandbox:
-- **Local-Only**: Embeddings and storage run 100% on your machine.
-- **Zero-Config**: Uses SQLite and local ONNX embeddings (`Xenova/bge-small-en-v1.5`) via Transformers.js. No API keys required.
-- **Project-Scoped**: Automatically partitions memories per project by hashing the project's root path.
-- **Watermark Consolidation**: A stable cursor-based query engine lets harnesses periodically sweep history logs and consolidate them into rules.
+Neuron provides a persistent, structured memory for coding agents. It helps agents retain project-specific instructions, conventions, and task history across sessions without external API calls or database configurations.
 
 ---
 
-## Installation
+## ⚡ Quick Start
 
-Run it directly from anywhere using `npx`:
 ```bash
-npx @kovartravis/neuron status
-```
-
-Or install it globally:
-```bash
+# Install neuron CLI globally
 npm install -g @kovartravis/neuron
-```
 
----
-
-## Quick Start (Example: The `beads` Project)
-
-Imagine you are working in a repository called **`beads`** (a project for designing decorative bead strings). Here is how you use `neuron` to manage agent memory:
-
-### 1. Initialize the project
-At the root of the `beads` directory, run:
-```bash
+# Initialize in YOUR project (creates AGENTS.md)
+cd your-project
 neuron init
-```
-This automatically creates (or updates) an `AGENTS.md` file in the root directory. This file instructs any incoming coding agent to load and save memories at the start and end of their runs.
 
-### 2. Beginning of a Run (Context Loading)
-When an agent starts a task in `beads` (e.g., "Implement a validation check for bead diameters"), it queries the memory store for any rules or solutions from past sessions:
-
-```bash
-neuron learn query "bead diameter validation"
+# Check the status of your local database and cache
+neuron status
 ```
 
-**Output (JSON):**
-```json
-{
-  "results": [
-    {
-      "id": "c7f541e4-8dbe-4dbe-b3bf-f6c059e92446",
-      "content": "Always validate bead diameters are between 2mm and 20mm before appending to a string",
-      "score": 0.894,
-      "tags": ["beads", "validation"],
-      "createdAt": "2026-07-11T12:00:00.000Z"
-    }
-  ],
-  "project": "beads",
-  "query": "bead diameter validation"
-}
-```
+`neuron init` creates or updates `AGENTS.md` by default so agents can discover the neuron workflow.
 
-The agent reads this and applies the rule directly to its code implementation.
+If your agent is not covered by automatic discovery, add this minimal `AGENTS.md` section:
 
-### 3. Save a Durable Learning
-If the agent discovers a new project constraint (e.g., "Glass beads require double-threading"), it saves it:
+```markdown
+This project uses @kovartravis/neuron for persisting learnings and task history.
 
-```bash
-neuron learn add "Glass beads require double-threading to prevent wire wear" --tags beads,threading
-```
-
-### 4. End of a Run (Logging History)
-After completing a task, the agent logs its actions to the task history log:
-
-```bash
-neuron history add "Added diameter validation to BeadString.ts and wrote Vitest tests" --task-id task-42 --tags beads,validation
+- Before starting a task, run `neuron learn query "<query matching current task>"` to retrieve past project conventions.
+- After completing a task, log it with `neuron history add "<summary of what was built/fixed>" --tags <related-topics>`.
+- Save new conventions with `neuron learn add "<new rule/learning established>" --tags <topic>`.
 ```
 
 ---
 
-## Memory Consolidation
+## 🛠 Features
 
-Over multiple runs, raw history logs build up. To clean them up and distill them into permanent rules:
-
-1. **Pull unconsolidated history**:
-   ```bash
-   neuron history consolidate
-   ```
-   This returns only the history logs since the last time you consolidated, then advances the cursor.
-   
-2. **Distill**:
-   Your agent harness feeds these logs to an LLM, extracts recurring patterns, and writes them back as durable learnings via `neuron learn add`.
+* **SQLite-Powered:** Version-controlled SQLite database locally on disk. One isolated file per project, automatically keyed by hashing the project's root path.
+* **Transformers.js Local Model:** Uses `Xenova/bge-small-en-v1.5` (quantized Q8, ~34 MB) for zero-config, 100% offline embedding generation. Downloads and caches locally on first use.
+* **Dot-Product Similarity:** Performs fast dot-product similarity searches in pure JS (< 1 ms search latency for under 10,000 rows).
+* **Watermark Consolidation:** Stable, sequential, `rowid`-based history consolidation to safely query unread history and advance cursors.
+* **CLI-Ready Output:** Structured JSON outputs designed specifically for programmatic AI parsing.
 
 ---
 
-## Command Reference
+## 📖 Essential Commands
 
-### `neuron status`
-Prints metadata about the current project root, database status, and cached embedding models.
+### Learnings Namespace (Durable Rules)
+| Command | Action |
+| --- | --- |
+| `neuron learn add "insight"` | Store a new project learning/rule. |
+| `neuron learn query "query"` | Semantically search learnings. |
+| `neuron learn list` | List all learnings. |
+| `neuron learn delete <id>` | Delete a learning by ID. |
 
----
-
-### `neuron learn` (Durable Rules)
-| Command | Flags | Description |
-|---|---|---|
-| `neuron learn add "<content>"` | `--tags <tag,...>` | Store a new learning/rule |
-| `neuron learn query "<text>"` | `--limit <n>` (default 5) | Semantic search learnings |
-| `neuron learn list` | `--limit <n>` (default 20) | List all learnings |
-| `neuron learn delete <id>` | | Delete a learning by ID |
-
----
-
-### `neuron history` (Action Logs)
-| Command | Flags | Description |
-|---|---|---|
-| `neuron history add "<summary>"` | `--task-id <id>`, `--tags <tag,...>` | Log an agent action |
-| `neuron history query "<text>"` | `--limit <n>` (default 5) | Semantic search history |
-| `neuron history list` | `--limit <n>` (default 20) | List recent history logs |
-| `neuron history delete <id>` | | Delete a history log |
-| `neuron history consolidate` | | Get unread logs & advance cursor |
+### History Namespace (Action Logs)
+| Command | Action |
+| --- | --- |
+| `neuron history add "summary"` | Log an agent action with optional `--task-id <id>` and `--tags <tag,...>`. |
+| `neuron history query "query"` | Semantically search history. |
+| `neuron history list` | List recent history logs. |
+| `neuron history delete <id>` | Delete a history log. |
+| `neuron history consolidate` | Get unread logs & advance cursor. |
 
 ---
 
-## Technical Details
+## 🔗 Technical Architecture
 
-- **Database**: SQLite database stored at `~/.local/share/neuron/db/<project-hash>.sqlite` (resolves to OS-correct directory using `env-paths`). One isolated file per project.
-- **Embeddings**: `Xenova/bge-small-en-v1.5` (quantized Q8, ~34 MB). Cached locally in `~/.local/share/neuron/models/`. Downloads automatically on the first run.
-- **Performance**: Vectors are 384-dimensional unit-normalised floats. Cosine similarity queries are performed using optimized JS dot-products (< 1 ms search latency for under 10,000 rows).
+* **Database Location**: Database files are stored under `~/.local/share/neuron/db/` (resolves to OS-correct directory using `env-paths`).
+* **Model Cache**: Embedding models are stored under `~/.local/share/neuron/models/`. Once the ONNX binary is detected, it automatically enforces `env.allowRemoteModels = false` to run entirely offline.
+* **Idempotent Scaffolding**: `neuron init` checks if the `## Memory Store` block already exists, updating it in-place to avoid duplication.
+* **WAL Mode**: SQLite runs in Write-Ahead Logging (`journal_mode = WAL`) to handle concurrent database accesses and minimize contention.
 
 ---
 
