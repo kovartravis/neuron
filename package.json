@@ -1,0 +1,32 @@
+{
+  "name": "@kovartravis/neuron",
+  "version": "1.0.2",
+  "description": "Local-only agent memory store CLI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "neuron": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc",
+    "prepublishOnly": "npm run build && chmod +x dist/cli.js",
+    "start": "node ./dist/cli.js"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "better-sqlite3": "^11.0.0",
+    "env-paths": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}
