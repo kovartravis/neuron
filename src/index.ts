@@ -79,7 +79,7 @@ export class NeuronMemory {
     // Enable WAL mode
     this.db.pragma('journal_mode = WAL');
 
-    const currentVersion = this.db.pragma('user_version', { simple: true }) as number;
+    let currentVersion = this.db.pragma('user_version', { simple: true }) as number;
 
     if (currentVersion < 1) {
       this.db.transaction(() => {
@@ -123,10 +123,46 @@ export class NeuronMemory {
         // Update user_version
         this.db.pragma('user_version = 1');
       })();
+      currentVersion = 1;
+    }
+
+    if (currentVersion < 2) {
+      this.db.transaction(() => {
+        // Add scope and importance columns
+        this.db.exec(`
+          ALTER TABLE learnings ADD COLUMN scope TEXT NOT NULL DEFAULT '${this.projectName}';
+          ALTER TABLE learnings ADD COLUMN importance INTEGER NOT NULL DEFAULT 3 CHECK (importance BETWEEN 1 AND 5);
+          
+          ALTER TABLE history ADD COLUMN scope TEXT NOT NULL DEFAULT '${this.projectName}';
+          ALTER TABLE history ADD COLUMN importance INTEGER NOT NULL DEFAULT 3 CHECK (importance BETWEEN 1 AND 5);
+          
+          CREATE TABLE IF NOT EXISTS query_logs (
+            id          TEXT PRIMARY KEY NOT NULL,
+            project_id  TEXT NOT NULL,
+            query_text  TEXT NOT NULL,
+            embedding   BLOB NOT NULL,
+            scope       TEXT NOT NULL,
+            created_at  TEXT NOT NULL
+          );
+          CREATE INDEX IF NOT EXISTS idx_query_logs_project_created ON query_logs (project_id, created_at DESC);
+        `);
+
+        // Update metadata
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '2');
+
+        // Update user_version
+        this.db.pragma('user_version = 2');
+      })();
+      currentVersion = 2;
     }
   }
 
-  public async addLearning(content: string, tags: string[] = []): Promise<{ id: string; status: string; project: string }> {
+  public async addLearning(
+    content: string,
+    tags: string[] = [],
+    options: { importance?: number; scope?: string } = {}
+  ): Promise<{ id: string; status: string; project: string }> {
     const id = crypto.randomUUID();
     const projectId = this.projectId;
     const createdAt = new Date().toISOString();
@@ -134,12 +170,14 @@ export class NeuronMemory {
     const vec = await this.embedder.embed(content);
     const blob = Buffer.from(vec.buffer, vec.byteOffset, vec.byteLength);
     const tagsJson = JSON.stringify(tags);
+    const importance = options.importance ?? 3;
+    const scope = options.scope ?? this.projectName;
 
     const stmt = this.db.prepare(`
-      INSERT INTO learnings (id, project_id, content, tags, embedding, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO learnings (id, project_id, content, tags, embedding, scope, importance, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, projectId, content, tagsJson, blob, createdAt);
+    stmt.run(id, projectId, content, tagsJson, blob, scope, importance, createdAt);
 
     return {
       id,
@@ -148,37 +186,59 @@ export class NeuronMemory {
     };
   }
 
-  public async queryLearnings(query: string, options: { limit?: number } = {}): Promise<{
-    results: Array<{ id: string; content: string; score: number; tags: string[]; createdAt: string }>;
+  public async queryLearnings(
+    query: string,
+    options: { limit?: number; scopes?: string[] } = {}
+  ): Promise<{
+    results: Array<{ id: string; content: string; score: number; tags: string[]; scope?: string; importance?: number; createdAt: string }>;
     project: string;
     query: string;
   }> {
     const limit = options.limit ?? 5;
     const queryVec = await this.embedder.embed(query);
+    const scopes = options.scopes ?? ['global', this.projectName];
 
-    const stmt = this.db.prepare(`
-      SELECT id, content, tags, embedding, created_at
-      FROM learnings
-      WHERE project_id = ?
+    // Log the query
+    const logId = crypto.randomUUID();
+    const queryBlob = Buffer.from(queryVec.buffer, queryVec.byteOffset, queryVec.byteLength);
+    const createdAt = new Date().toISOString();
+    const logStmt = this.db.prepare(`
+      INSERT INTO query_logs (id, project_id, query_text, embedding, scope, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const rows = stmt.all(this.projectId) as Array<{
+    logStmt.run(logId, this.projectId, query, queryBlob, scopes.join(','), createdAt);
+
+    // Retrieve scoped learnings
+    const placeholders = scopes.map(() => '?').join(',');
+    const stmt = this.db.prepare(`
+      SELECT id, content, tags, embedding, scope, importance, created_at
+      FROM learnings
+      WHERE project_id = ? AND scope IN (${placeholders})
+    `);
+    const rows = stmt.all(this.projectId, ...scopes) as Array<{
       id: string;
       content: string;
       tags: string;
       embedding: Buffer;
+      scope: string;
+      importance: number;
       created_at: string;
     }>;
 
     const results = rows.map(row => {
       const blob = row.embedding;
       const embeddingVec = new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
-      const score = dotProduct(queryVec, embeddingVec);
+      const similarity = dotProduct(queryVec, embeddingVec);
+      const normImp = (row.importance - 1) / 4;
+      const score = 0.75 * similarity + 0.25 * normImp;
 
       return {
         id: row.id,
         content: row.content,
         score,
         tags: JSON.parse(row.tags) as string[],
+        scope: row.scope,
+        importance: row.importance,
         createdAt: row.created_at
       };
     });
@@ -230,7 +290,10 @@ export class NeuronMemory {
     };
   }
 
-  public async addHistory(content: string, options: { taskId?: string; tags?: string[] } = {}): Promise<{ id: string; status: string; project: string }> {
+  public async addHistory(
+    content: string,
+    options: { taskId?: string; tags?: string[]; importance?: number; scope?: string } = {}
+  ): Promise<{ id: string; status: string; project: string }> {
     const id = crypto.randomUUID();
     const projectId = this.projectId;
     const createdAt = new Date().toISOString();
@@ -239,12 +302,14 @@ export class NeuronMemory {
     const blob = Buffer.from(vec.buffer, vec.byteOffset, vec.byteLength);
     const tagsJson = JSON.stringify(options.tags ?? []);
     const taskId = options.taskId ?? null;
+    const importance = options.importance ?? 3;
+    const scope = options.scope ?? this.projectName;
 
     const stmt = this.db.prepare(`
-      INSERT INTO history (id, project_id, task_id, content, tags, embedding, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO history (id, project_id, task_id, content, tags, embedding, scope, importance, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, projectId, taskId, content, tagsJson, blob, createdAt);
+    stmt.run(id, projectId, taskId, content, tagsJson, blob, scope, importance, createdAt);
 
     return {
       id,
@@ -253,32 +318,52 @@ export class NeuronMemory {
     };
   }
 
-  public async queryHistory(query: string, options: { limit?: number } = {}): Promise<{
-    results: Array<{ id: string; content: string; score: number; tags: string[]; taskId: string | null; createdAt: string }>;
+  public async queryHistory(
+    query: string,
+    options: { limit?: number; scopes?: string[] } = {}
+  ): Promise<{
+    results: Array<{ id: string; content: string; score: number; tags: string[]; taskId: string | null; scope?: string; importance?: number; createdAt: string }>;
     project: string;
     query: string;
   }> {
     const limit = options.limit ?? 5;
     const queryVec = await this.embedder.embed(query);
+    const scopes = options.scopes ?? ['global', this.projectName];
 
-    const stmt = this.db.prepare(`
-      SELECT id, content, tags, task_id, embedding, created_at
-      FROM history
-      WHERE project_id = ?
+    // Log the query
+    const logId = crypto.randomUUID();
+    const queryBlob = Buffer.from(queryVec.buffer, queryVec.byteOffset, queryVec.byteLength);
+    const createdAt = new Date().toISOString();
+    const logStmt = this.db.prepare(`
+      INSERT INTO query_logs (id, project_id, query_text, embedding, scope, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const rows = stmt.all(this.projectId) as Array<{
+    logStmt.run(logId, this.projectId, query, queryBlob, scopes.join(','), createdAt);
+
+    // Retrieve scoped history
+    const placeholders = scopes.map(() => '?').join(',');
+    const stmt = this.db.prepare(`
+      SELECT id, content, tags, task_id, embedding, scope, importance, created_at
+      FROM history
+      WHERE project_id = ? AND scope IN (${placeholders})
+    `);
+    const rows = stmt.all(this.projectId, ...scopes) as Array<{
       id: string;
       content: string;
       tags: string;
       task_id: string | null;
       embedding: Buffer;
+      scope: string;
+      importance: number;
       created_at: string;
     }>;
 
     const results = rows.map(row => {
       const blob = row.embedding;
       const embeddingVec = new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
-      const score = dotProduct(queryVec, embeddingVec);
+      const similarity = dotProduct(queryVec, embeddingVec);
+      const normImp = (row.importance - 1) / 4;
+      const score = 0.75 * similarity + 0.25 * normImp;
 
       return {
         id: row.id,
@@ -286,6 +371,8 @@ export class NeuronMemory {
         score,
         tags: JSON.parse(row.tags) as string[],
         taskId: row.task_id,
+        scope: row.scope,
+        importance: row.importance,
         createdAt: row.created_at
       };
     });

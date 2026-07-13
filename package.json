@@ -1,6 +1,6 @@
 {
   "name": "@kovartravis/neuron",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Local-only agent memory store CLI",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "build": "tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
-    "start": "node ./dist/cli.js"
+    "start": "node ./dist/cli.js",
+    "prototype:hybrid": "tsx src/prototype-hybrid-search.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",

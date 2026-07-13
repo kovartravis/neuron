@@ -9,7 +9,8 @@ A complete technical specification (`.scratch/saas-features/spec.md`) detailing 
 
 ## Decisions so far
 
-*(No decisions resolved yet)*
+- [Database Schema & Adapter Specification](.scratch/saas-features/issues/01-db-schema-postgres.md) — Unified SQLite/Postgres schema supporting importance ranking (1-5), dynamic user/project/global scopes, query semantic logging, and DatabaseAdapter interface.
+- [Hybrid Search Scoring Formula](.scratch/saas-features/issues/02-hybrid-retrieval.md) — Linear Interpolation formula with 75% weight on semantic similarity and 25% weight on normalized 1-5 importance rating.
 
 ## Not yet specified
 
