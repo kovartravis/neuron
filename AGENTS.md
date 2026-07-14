@@ -14,21 +14,6 @@ Single-context repository layout. See `docs/agents/domain.md`.
 
 ## Memory Store
 
-This repository uses `@kovartravis/neuron` (globally linked as the `neuron` command) to persist learnings and task history. Agents MUST interact with it at the start and end of every run.
+This repository uses `@kovartravis/neuron` (globally linked as the `neuron` command) to persist learnings and task history.
 
-### 1. Beginning of Run (Context Loading)
-Before performing any task, the agent must query the memory store for relevant learnings, rules, or previous solutions:
-```bash
-neuron learn query "<query matching current task>"
-```
-Read the retrieved learnings and apply them as system rules/guidelines for the session.
-
-### 2. End of Run (Memory Recording)
-After completing a task, the agent must log the action to the history log:
-```bash
-neuron history add "<summary of what was built/fixed>" --tags <related-topics> [--task-id <id>]
-```
-If new learnings, rules, or conventions were established during the session, add them explicitly to the learnings store:
-```bash
-neuron learn add "<new rule/learning established>" --tags <topic>
-```
+Agents MUST invoke and strictly follow the [neuron-memory](file:///root/neuron/.agents/skills/neuron-memory/SKILL.md) skill at the beginning of every run (for context loading), at the end of every run (for memory recording), and during periodic maintenance (for clean & refresh).
