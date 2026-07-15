@@ -134,8 +134,86 @@ describe('Neuron CLI End-to-End', () => {
     expect(claudeContent).toContain('## Memory Store');
 
     // Clean up
-    fs.unlinkSync(agentsPath);
-    fs.unlinkSync(claudePath);
-    fs.rmdirSync(initTempDir);
+    fs.rmSync(initTempDir, { recursive: true });
+  });
+
+  it('neuron init: copies skill to detected harness dir (.agents/)', () => {
+    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const initTempDir = path.join(tempDbDir, 'harness-agents-test');
+    const agentsDir = path.join(initTempDir, '.agents');
+    fs.mkdirSync(agentsDir, { recursive: true });
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
+
+    const expectedSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    expect(fs.existsSync(expectedSkillPath)).toBe(true);
+    expect(result.skillsWritten).toContain(expectedSkillPath);
+
+    // Clean up
+    fs.rmSync(initTempDir, { recursive: true });
+  });
+
+  it('neuron init: copies skill to all detected harness dirs (.claude/ + .cursor/)', () => {
+    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const initTempDir = path.join(tempDbDir, 'harness-multi-test');
+    fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+    fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
+
+    const claudeSkill = path.join(initTempDir, '.claude', 'skills', 'neuron-memory', 'SKILL.md');
+    const cursorSkill = path.join(initTempDir, '.cursor', 'skills', 'neuron-memory', 'SKILL.md');
+    expect(fs.existsSync(claudeSkill)).toBe(true);
+    expect(fs.existsSync(cursorSkill)).toBe(true);
+    expect(result.skillsWritten).toContain(claudeSkill);
+    expect(result.skillsWritten).toContain(cursorSkill);
+
+    fs.rmSync(initTempDir, { recursive: true });
+  });
+
+  it('neuron init: falls back to .agents/skills/ when no harness dirs present', () => {
+    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const initTempDir = path.join(tempDbDir, 'harness-fallback-test');
+    const fakeHome = path.join(tempDbDir, 'fake-home');
+    fs.mkdirSync(initTempDir, { recursive: true });
+    fs.mkdirSync(fakeHome, { recursive: true });
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true', HOME: fakeHome };
+
+    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
+
+    const fallbackSkill = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    expect(fs.existsSync(fallbackSkill)).toBe(true);
+    expect(result.skillsWritten).toEqual([fallbackSkill]);
+
+    fs.rmSync(initTempDir, { recursive: true });
+    fs.rmSync(fakeHome, { recursive: true });
+  });
+
+  it('neuron init: is idempotent — running twice overwrites skill without error', () => {
+    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const initTempDir = path.join(tempDbDir, 'harness-idempotent-test');
+    fs.mkdirSync(path.join(initTempDir, '.agents'), { recursive: true });
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    // First run
+    execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir });
+    // Second run — must not throw
+    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
+
+    expect(result.status).toBe('initialized');
+    const skillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    expect(fs.existsSync(skillPath)).toBe(true);
+
+    fs.rmSync(initTempDir, { recursive: true });
   });
 });

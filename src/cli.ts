@@ -3,8 +3,40 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import envPaths from 'env-paths';
 import { NeuronMemory } from './index.js';
+
+const HARNESSES: Array<{ base: string; skills: string }> = [
+  { base: '.agents',  skills: '.agents/skills' },
+  { base: '.claude',  skills: '.claude/skills' },
+  { base: '.cursor',  skills: '.cursor/skills' },
+  { base: '.github',  skills: '.github/skills' },
+  { base: '.codex',   skills: '.codex/skills'  },
+];
+
+function detectHarnesses(projectDir: string): string[] {
+  const homeDir = os.homedir();
+  return HARNESSES
+    .filter(h =>
+      fs.existsSync(path.join(projectDir, h.base)) ||
+      fs.existsSync(path.join(homeDir, h.base))
+    )
+    .map(h => h.skills);
+}
+
+function copySkill(projectDir: string, skillsRelDir: string): string {
+  const skillSrc = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../.agents/skills/neuron-memory/SKILL.md'
+  );
+  const destDir = path.join(projectDir, skillsRelDir, 'neuron-memory');
+  fs.mkdirSync(destDir, { recursive: true });
+  const destPath = path.join(destDir, 'SKILL.md');
+  fs.copyFileSync(skillSrc, destPath);
+  return destPath;
+}
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
@@ -130,10 +162,18 @@ async function main() {
     const filePath = path.join(projectDir, targetFile);
     updateMarkdownFile(filePath, 'Memory Store', MEMORY_STORE_BLOCK);
 
+    // Detect harnesses and copy the bundled neuron-memory skill
+    let detectedSkillsDirs = detectHarnesses(projectDir);
+    if (detectedSkillsDirs.length === 0) {
+      detectedSkillsDirs = ['.agents/skills'];
+    }
+    const skillsWritten = detectedSkillsDirs.map(dir => copySkill(projectDir, dir));
+
     console.log(JSON.stringify({
       status: 'initialized',
       file: targetFile,
-      projectRoot: projectDir
+      projectRoot: projectDir,
+      skillsWritten
     }));
     return;
   }
