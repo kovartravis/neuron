@@ -3,7 +3,6 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import envPaths from 'env-paths';
 import { NeuronMemory } from './index.js';
@@ -17,12 +16,8 @@ const HARNESSES: Array<{ base: string; skills: string }> = [
 ];
 
 function detectHarnesses(projectDir: string): string[] {
-  const homeDir = os.homedir();
   return HARNESSES
-    .filter(h =>
-      fs.existsSync(path.join(projectDir, h.base)) ||
-      fs.existsSync(path.join(homeDir, h.base))
-    )
+    .filter(h => fs.existsSync(path.join(projectDir, h.base)))
     .map(h => h.skills);
 }
 

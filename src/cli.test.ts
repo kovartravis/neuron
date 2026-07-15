@@ -180,11 +180,9 @@ describe('Neuron CLI End-to-End', () => {
   it('neuron init: falls back to .agents/skills/ when no harness dirs present', () => {
     const cliPath = path.join(process.cwd(), 'src/cli.ts');
     const initTempDir = path.join(tempDbDir, 'harness-fallback-test');
-    const fakeHome = path.join(tempDbDir, 'fake-home');
     fs.mkdirSync(initTempDir, { recursive: true });
-    fs.mkdirSync(fakeHome, { recursive: true });
 
-    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true', HOME: fakeHome };
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
     const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
     const result = JSON.parse(stdout);
@@ -194,7 +192,6 @@ describe('Neuron CLI End-to-End', () => {
     expect(result.skillsWritten).toEqual([fallbackSkill]);
 
     fs.rmSync(initTempDir, { recursive: true });
-    fs.rmSync(fakeHome, { recursive: true });
   });
 
   it('neuron init: is idempotent — running twice overwrites skill without error', () => {
