@@ -19,7 +19,7 @@
     "dist",
     "README.md",
     "LICENSE",
-    ".agents/skills/"
+    ".agents/skills/neuron-memory/"
   ],
   "scripts": {
     "test": "vitest run",
