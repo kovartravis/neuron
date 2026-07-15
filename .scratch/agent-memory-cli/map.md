@@ -15,13 +15,16 @@ A complete, detailed technical specification (PRD) for a local-only, TypeScript-
 - [Storage Locations & Model Caching Flow](.scratch/agent-memory-cli/issues/02-storage-model-caching.md) — `env-paths { suffix: '' }` for OS-correct data dirs. Layout: `paths.data/models/` (→ `env.cacheDir`) + `paths.data/db/<sha256[:16] of project root>.sqlite`. `env.cacheDir` must be set explicitly (default is `./.cache`). Progress to stderr gated on TTY. No daemon in v1; isolate `initEmbedder()` for v2.
 - [DB Schema & Vector Engine](.scratch/agent-memory-cli/issues/03-db-schema-vector-engine.md) — `better-sqlite3`; tables: `meta`, `learnings`, `history`; tags as JSON array TEXT; embedding as raw 1536-byte BLOB; pure JS dot product for v1 vector search (BGE vecs are unit-normalised); `PRAGMA user_version` migrations; WAL mode always on.
 - [Memory Consolidation & Lifecycle](.scratch/agent-memory-cli/issues/05-memory-consolidation.md) — `neuron history consolidate` is explicit and cursor-based; `last_consolidated_at` watermark in `meta`; returns `{ entries, consolidatedAt, previousCursor, project }`; tool performs all reasoning; history kept forever (append-only); no dedup in v1.
+- [Init Harness Integration](.scratch/agent-memory-cli/issues/06-init-harness-integration.md) — `neuron init` copies the bundled `neuron-memory` skill into each detected harness's `skills/` dir (`.agents/`, `.claude/`, `.cursor/`, `.github/`, `.codex/`), probing project root and `~`. Falls back to `.agents/skills/` if none detected. Memory Store block updated to reference skill by name only. JSON output gains `skillsWritten` array.
+- [Bundle skill file and update Memory Store block](.scratch/agent-memory-cli/issues/07-bundle-skill-and-update-block.md) — Add `.agents/skills/` to `package.json` files; replace `MEMORY_STORE_BLOCK` with prose-only template; update init test. No blockers.
+- [Harness auto-detection and skill scaffolding](.scratch/agent-memory-cli/issues/08-harness-detection-and-skill-scaffolding.md) — Probe project root + `~` for harness dirs; copy bundled SKILL.md to each detected harness; fallback to `.agents/skills/`; add `skillsWritten` to JSON output; 4 new E2E tests. Blocked by 07.
 
 
 
 ## Not yet specified
 
 - **Implementation Plan**: Graduating the finalized spec into build tasks (out of scope for this mapping session).
-- **Harness Integration Guidelines**: How external agent harnesses should standardise environment variables or configuration for this CLI.
+*(none remaining)*
 
 ## Out of scope
 
