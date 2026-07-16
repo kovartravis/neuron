@@ -22,7 +22,7 @@
     ".agents/skills/neuron-memory/"
   ],
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "build": "tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",

@@ -156,6 +156,27 @@ export class NeuronMemory {
       })();
       currentVersion = 2;
     }
+
+    if (currentVersion < 3) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          ALTER TABLE learnings ADD COLUMN is_manual_scope INTEGER NOT NULL DEFAULT 0;
+
+          CREATE TABLE IF NOT EXISTS learning_query_matches (
+            learning_id  TEXT NOT NULL,
+            query_log_id TEXT NOT NULL,
+            matched_at   TEXT NOT NULL,
+            PRIMARY KEY (learning_id, query_log_id)
+          );
+        `);
+
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '3');
+
+        this.db.pragma('user_version = 3');
+      })();
+      currentVersion = 3;
+    }
   }
 
   public async addLearning(
@@ -172,12 +193,13 @@ export class NeuronMemory {
     const tagsJson = JSON.stringify(tags);
     const importance = options.importance ?? 3;
     const scope = options.scope ?? this.projectName;
+    const isManualScope = options.scope !== undefined ? 1 : 0;
 
     const stmt = this.db.prepare(`
-      INSERT INTO learnings (id, project_id, content, tags, embedding, scope, importance, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO learnings (id, project_id, content, tags, embedding, scope, importance, is_manual_scope, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, projectId, content, tagsJson, blob, scope, importance, createdAt);
+    stmt.run(id, projectId, content, tagsJson, blob, scope, importance, isManualScope, createdAt);
 
     return {
       id,
@@ -274,6 +296,45 @@ export class NeuronMemory {
       tags: JSON.parse(row.tags) as string[],
       createdAt: row.created_at
     }));
+  }
+
+  public async updateLearning(
+    id: string,
+    content: string,
+    options: { tags?: string[]; importance?: number; scope?: string } = {}
+  ): Promise<{ id: string; status: string; project: string }> {
+    const vec = await this.embedder.embed(content);
+    const embeddingBlob = Buffer.from(vec.buffer);
+
+    const sets = ['content = ?', 'embedding = ?'];
+    const params: any[] = [content, embeddingBlob];
+
+    if (options.tags !== undefined) {
+      sets.push('tags = ?');
+      params.push(JSON.stringify(options.tags));
+    }
+    if (options.importance !== undefined) {
+      sets.push('importance = ?');
+      params.push(options.importance);
+    }
+    if (options.scope !== undefined) {
+      sets.push('scope = ?', 'is_manual_scope = ?');
+      params.push(options.scope, 1);
+    }
+
+    params.push(id, this.projectId);
+    const stmt = this.db.prepare(`
+      UPDATE learnings
+      SET ${sets.join(', ')}
+      WHERE id = ? AND project_id = ?
+    `);
+    const info = stmt.run(...params);
+
+    return {
+      id,
+      status: info.changes > 0 ? 'updated' : 'not_found',
+      project: this.projectName
+    };
   }
 
   public deleteLearning(id: string): { id: string; status: string; project: string } {
@@ -475,12 +536,107 @@ export class NeuronMemory {
         createdAt: row.created_at
       }));
 
+      const promotions = this.checkAutoPromotions();
+
       return {
         entries,
         consolidatedAt,
         previousCursor,
+        promotions,
         project: this.projectName
       };
+    })();
+  }
+
+  public checkAutoPromotions(): {
+    promoted: Array<{ id: string; from: string; to: string }>;
+    demoted: Array<{ id: string; from: string; to: string }>;
+  } {
+    return this.db.transaction(() => {
+      const promoted: Array<{ id: string; from: string; to: string }> = [];
+      const demoted: Array<{ id: string; from: string; to: string }> = [];
+
+      const queryLogs = this.db.prepare(`
+        SELECT id, embedding, created_at FROM query_logs WHERE project_id = ?
+      `).all(this.projectId) as Array<{ id: string; embedding: Buffer; created_at: string }>;
+
+      const learnings = this.db.prepare(`
+        SELECT id, embedding, scope, is_manual_scope FROM learnings WHERE project_id = ?
+      `).all(this.projectId) as Array<{ id: string; embedding: Buffer; scope: string; is_manual_scope: number }>;
+
+      if (queryLogs.length === 0 || learnings.length === 0) {
+        return { promoted, demoted };
+      }
+
+      const insertMatch = this.db.prepare(`
+        INSERT OR IGNORE INTO learning_query_matches (learning_id, query_log_id, matched_at)
+        VALUES (?, ?, ?)
+      `);
+
+      for (const qLog of queryLogs) {
+        const qVec = new Float32Array(qLog.embedding.buffer, qLog.embedding.byteOffset, qLog.embedding.byteLength / 4);
+        for (const learn of learnings) {
+          const lVec = new Float32Array(learn.embedding.buffer, learn.embedding.byteOffset, learn.embedding.byteLength / 4);
+          const similarity = dotProduct(qVec, lVec);
+          if (similarity >= 0.80) {
+            insertMatch.run(learn.id, qLog.id, qLog.created_at);
+          }
+        }
+      }
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      const cutoffStr = cutoffDate.toISOString();
+
+      const countStmt = this.db.prepare(`
+        SELECT COUNT(DISTINCT query_log_id) as count
+        FROM learning_query_matches
+        WHERE learning_id = ? AND matched_at >= ?
+      `);
+
+      const updateScopeStmt = this.db.prepare(`
+        UPDATE learnings SET scope = ? WHERE id = ? AND project_id = ?
+      `);
+
+      for (const learn of learnings) {
+        if (learn.is_manual_scope === 1) {
+          continue; // Exempt from auto promotion/demotion
+        }
+
+        const countRow = countStmt.get(learn.id, cutoffStr) as { count: number };
+        const matchCount = countRow ? countRow.count : 0;
+        const currentScope = learn.scope;
+
+        let targetScope = currentScope;
+
+        if (currentScope !== 'global' && matchCount >= 15) {
+          targetScope = 'global';
+        } else if ((currentScope === this.projectName || currentScope === 'people') && matchCount >= 5) {
+          targetScope = 'project';
+        }
+
+        if (targetScope === currentScope) {
+          if (currentScope === 'global' && matchCount < 10) {
+            targetScope = matchCount < 3 ? this.projectName : 'project';
+          } else if (currentScope === 'project' && matchCount < 3) {
+            targetScope = this.projectName;
+          }
+        }
+
+        if (targetScope !== currentScope) {
+          updateScopeStmt.run(targetScope, learn.id, this.projectId);
+          if (
+            (currentScope !== 'global' && targetScope === 'global') ||
+            ((currentScope === this.projectName || currentScope === 'people') && targetScope === 'project')
+          ) {
+            promoted.push({ id: learn.id, from: currentScope, to: targetScope });
+          } else {
+            demoted.push({ id: learn.id, from: currentScope, to: targetScope });
+          }
+        }
+      }
+
+      return { promoted, demoted };
     })();
   }
 
@@ -512,6 +668,28 @@ export class NeuronMemory {
       modelName: 'Xenova/bge-small-en-v1.5',
       learnCount,
       historyCount
+    };
+  }
+
+  public pruneHistory(options: { days?: number; maxImportance?: number } = {}): { deletedCount: number } {
+    const days = options.days ?? 30;
+    const maxImportance = options.maxImportance ?? 2;
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const cutoffStr = cutoffDate.toISOString();
+
+    const stmt = this.db.prepare(`
+      DELETE FROM history
+      WHERE project_id = ?
+        AND created_at < ?
+        AND importance <= ?
+    `);
+
+    const info = stmt.run(this.projectId, cutoffStr, maxImportance);
+
+    return {
+      deletedCount: info.changes
     };
   }
 

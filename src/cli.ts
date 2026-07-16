@@ -49,13 +49,26 @@ function findProjectRoot(startDir: string): { root: string; name: string } {
 
 function parseFlags(args: string[]): {
   positionals: string[];
-  options: { tags?: string[]; taskId?: string; limit?: number; file?: string };
+  options: {
+    tags?: string[];
+    taskId?: string;
+    limit?: number;
+    file?: string;
+    importance?: number;
+    scope?: string;
+    scopes?: string[];
+    days?: number;
+  };
 } {
   const positionals: string[] = [];
   const tags: string[] = [];
   let taskId: string | undefined;
   let limit: number | undefined;
   let file: string | undefined;
+  let importance: number | undefined;
+  let scope: string | undefined;
+  let scopes: string[] | undefined;
+  let days: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -73,14 +86,54 @@ function parseFlags(args: string[]): {
       }
     } else if (arg === '--file' || arg === '-f') {
       file = args[++i];
+    } else if (arg === '--importance') {
+      const val = args[++i];
+      if (val) {
+        importance = parseInt(val, 10);
+      }
+    } else if (arg === '--scope') {
+      scope = args[++i];
+    } else if (arg === '--scopes') {
+      const val = args[++i];
+      if (val) {
+        scopes = val.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    } else if (arg === '--days') {
+      const val = args[++i];
+      if (val) {
+        days = parseInt(val, 10);
+      }
     } else {
       positionals.push(arg);
     }
   }
 
+  if (importance !== undefined) {
+    if (Number.isNaN(importance) || importance < 1 || importance > 5) {
+      console.error('Error: --importance must be an integer between 1 and 5');
+      process.exit(1);
+    }
+  }
+
+  if (days !== undefined) {
+    if (Number.isNaN(days) || days < 1) {
+      console.error('Error: --days must be a positive integer');
+      process.exit(1);
+    }
+  }
+
   return {
     positionals,
-    options: { tags: tags.length > 0 ? tags : undefined, taskId, limit, file }
+    options: {
+      tags: tags.length > 0 ? tags : undefined,
+      taskId,
+      limit,
+      file,
+      importance,
+      scope,
+      scopes,
+      days
+    }
   };
 }
 
@@ -130,13 +183,61 @@ function updateMarkdownFile(filePath: string, heading: string, blockContent: str
   }
 }
 
+const MASTER_HELP = `Usage: neuron <command> [subcommand] [arguments] [flags]
+
+Commands:
+  init                 Bootstrap the project for agentic memory store (creates/updates AGENTS.md or CLAUDE.md)
+  status               Display status details for active database, project, and embedding cache
+  learn <subcommand>   Manage learnings (rules, conventions, guidelines)
+  history <subcommand> Manage action history logs
+
+Options:
+  -h, --help           Show this help information
+
+Run 'neuron learn --help' or 'neuron history --help' for details on specific subcommands.`;
+
+const LEARN_HELP = `Usage: neuron learn <subcommand> [arguments] [flags]
+
+Subcommands:
+  add "<content>"                Add a new learning
+  query "<text>"                 Query learnings using semantic search
+  list                           List recent learnings
+  delete <id>                    Delete a learning by ID
+  update <id> "<content>"        Update a learning in-place (regenerates embedding)
+
+Options:
+  --tags <tag1,tag2,...>         Specify tags for the learning (add, update)
+  --importance <1-5>             Set importance rating (add, update)
+  --scope <scope>                Set scope for the learning (add, update)
+  --scopes <scope1,scope2,...>   Filter query results by active scopes (query)
+  --limit <number>               Limit the number of returned results (query, list)`;
+
+const HISTORY_HELP = `Usage: neuron history <subcommand> [arguments] [flags]
+
+Subcommands:
+  add "<content>"                Log a new action to history
+  query "<text>"                 Query history logs using semantic search
+  list                           List recent history logs
+  delete <id>                    Delete a history log by ID
+  consolidate                    Summarize consolidated history since last cursor
+  prune                          Clean up old, minor history logs
+
+Options:
+  --task-id <id>                 Associate a task ID with the log (add)
+  --tags <tag1,tag2,...>         Specify tags for the log (add)
+  --importance <1-5>             Set importance rating (add)
+  --scope <scope>                Set scope for the log (add)
+  --scopes <scope1,scope2,...>   Filter query results by active scopes (query)
+  --days <number>                Cutoff age in days for pruning (prune, default: 30)
+  --limit <number>               Limit the number of returned results (query, list)`;
+
 async function main() {
   const args = process.argv.slice(2);
   const mainCommand = args[0];
 
-  if (!mainCommand) {
-    console.error('Usage: neuron <command> [subcommand] [arguments]');
-    process.exit(1);
+  if (!mainCommand || mainCommand === '--help' || mainCommand === '-h') {
+    console.log(MASTER_HELP);
+    process.exit(0);
   }
 
   if (mainCommand === 'init') {
@@ -210,6 +311,14 @@ async function main() {
 
     if (mainCommand === 'learn') {
       const subCommand = args[1];
+      if (!subCommand) {
+        console.error(LEARN_HELP);
+        process.exit(1);
+      }
+      if (subCommand === '--help' || subCommand === '-h') {
+        console.log(LEARN_HELP);
+        process.exit(0);
+      }
       const rest = args.slice(2);
       const { positionals, options } = parseFlags(rest);
 
@@ -219,7 +328,10 @@ async function main() {
           console.error('Error: content is required for learn add');
           process.exit(1);
         }
-        const res = await memory.addLearning(content, options.tags);
+        const res = await memory.addLearning(content, options.tags, {
+          importance: options.importance,
+          scope: options.scope
+        });
         console.log(JSON.stringify(res));
       } else if (subCommand === 'query') {
         const queryText = positionals[0];
@@ -227,7 +339,10 @@ async function main() {
           console.error('Error: query text is required for learn query');
           process.exit(1);
         }
-        const res = await memory.queryLearnings(queryText, { limit: options.limit });
+        const res = await memory.queryLearnings(queryText, {
+          limit: options.limit,
+          scopes: options.scopes
+        });
         console.log(JSON.stringify(res));
       } else if (subCommand === 'list') {
         const list = memory.listLearnings({ limit: options.limit });
@@ -240,6 +355,19 @@ async function main() {
         }
         const res = memory.deleteLearning(id);
         console.log(JSON.stringify(res));
+      } else if (subCommand === 'update') {
+        const id = positionals[0];
+        const content = positionals[1];
+        if (!id || !content) {
+          console.error('Error: ID and content are required for learn update');
+          process.exit(1);
+        }
+        const res = await memory.updateLearning(id, content, {
+          tags: options.tags,
+          importance: options.importance,
+          scope: options.scope
+        });
+        console.log(JSON.stringify(res));
       } else {
         console.error(`Unknown learn subcommand: ${subCommand}`);
         process.exit(1);
@@ -249,6 +377,14 @@ async function main() {
 
     if (mainCommand === 'history') {
       const subCommand = args[1];
+      if (!subCommand) {
+        console.error(HISTORY_HELP);
+        process.exit(1);
+      }
+      if (subCommand === '--help' || subCommand === '-h') {
+        console.log(HISTORY_HELP);
+        process.exit(0);
+      }
       const rest = args.slice(2);
       const { positionals, options } = parseFlags(rest);
 
@@ -258,7 +394,12 @@ async function main() {
           console.error('Error: content is required for history add');
           process.exit(1);
         }
-        const res = await memory.addHistory(content, { tags: options.tags, taskId: options.taskId });
+        const res = await memory.addHistory(content, {
+          tags: options.tags,
+          taskId: options.taskId,
+          importance: options.importance,
+          scope: options.scope
+        });
         console.log(JSON.stringify(res));
       } else if (subCommand === 'query') {
         const queryText = positionals[0];
@@ -266,7 +407,10 @@ async function main() {
           console.error('Error: query text is required for history query');
           process.exit(1);
         }
-        const res = await memory.queryHistory(queryText, { limit: options.limit });
+        const res = await memory.queryHistory(queryText, {
+          limit: options.limit,
+          scopes: options.scopes
+        });
         console.log(JSON.stringify(res));
       } else if (subCommand === 'list') {
         const list = memory.listHistory({ limit: options.limit });
@@ -282,6 +426,16 @@ async function main() {
       } else if (subCommand === 'consolidate') {
         const res = memory.consolidateHistory();
         console.log(JSON.stringify(res));
+      } else if (subCommand === 'prune') {
+        const res = memory.pruneHistory({
+          days: options.days,
+          maxImportance: options.importance
+        });
+        console.log(JSON.stringify({
+          status: 'pruned',
+          deletedCount: res.deletedCount,
+          project: projectName
+        }));
       } else {
         console.error(`Unknown history subcommand: ${subCommand}`);
         process.exit(1);

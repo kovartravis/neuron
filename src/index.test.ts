@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { NeuronMemory } from './index.js';
 
 describe('NeuronMemory DB Migrations', () => {
-  it('should initialize an in-memory database and run migrations to version 2', () => {
+  it('should initialize an in-memory database and run migrations to version 3', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
@@ -11,34 +11,41 @@ describe('NeuronMemory DB Migrations', () => {
 
     const db = memory.getDb();
     
-    // Check that user_version is 2
+    // Check that user_version is 3
     const userVersion = db.pragma('user_version', { simple: true });
-    expect(userVersion).toBe(2);
-
-    // Check that the meta table has project_name and project_root
-    const projectName = db.prepare("SELECT value FROM meta WHERE key = 'project_name'").get() as { value: string };
-    const projectRoot = db.prepare("SELECT value FROM meta WHERE key = 'project_root'").get() as { value: string };
-
-    expect(projectName.value).toBe('test-project');
-    expect(projectRoot.value).toBe('/test/project');
+    expect(userVersion).toBe(3);
 
     // Check learnings columns
     const learningsCols = db.pragma("table_info(learnings)") as any[];
     const learningsNames = learningsCols.map(c => c.name);
-    expect(learningsNames).toContain('importance');
-    expect(learningsNames).toContain('scope');
+    expect(learningsNames).toContain('is_manual_scope');
 
-    // Check history columns
-    const historyCols = db.pragma("table_info(history)") as any[];
-    const historyNames = historyCols.map(c => c.name);
-    expect(historyNames).toContain('importance');
-    expect(historyNames).toContain('scope');
-
-    // Check query_logs table exists
-    const queryLogsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='query_logs'").get() as { name: string } | undefined;
-    expect(queryLogsTable).toBeDefined();
-    expect(queryLogsTable?.name).toBe('query_logs');
+    // Check learning_query_matches table exists
+    const matchTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get() as { name: string } | undefined;
+    expect(matchTable).toBeDefined();
+    expect(matchTable?.name).toBe('learning_query_matches');
   });
+
+  it('should set is_manual_scope flag when explicit scope is provided', async () => {
+    const mockEmbedder = { embed: async () => new Float32Array(384) };
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    const defaultLearn = await memory.addLearning('Default scope learning');
+    const manualLearn = await memory.addLearning('Manual scope learning', [], { scope: 'global' });
+
+    const db = memory.getDb();
+    const row1 = db.prepare('SELECT is_manual_scope FROM learnings WHERE id = ?').get(defaultLearn.id) as { is_manual_scope: number };
+    const row2 = db.prepare('SELECT is_manual_scope FROM learnings WHERE id = ?').get(manualLearn.id) as { is_manual_scope: number };
+
+    expect(row1.is_manual_scope).toBe(0);
+    expect(row2.is_manual_scope).toBe(1);
+  });
+
 
   it('should support adding and querying learnings with injected embedder', async () => {
     // 384-dimensional unit vectors
@@ -284,4 +291,165 @@ describe('NeuronMemory DB Migrations', () => {
     expect(logs[0].scope).toBe('global,test-project');
     expect(logs[1].scope).toBe('test-project,kovart');
   });
+
+  it('should support pruning history based on age and importance criteria', async () => {
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project'
+    });
+
+    // 1. Add test history entries
+    const h1 = await memory.addHistory('Old and low importance', { importance: 1 });
+    const h2 = await memory.addHistory('Old and medium importance', { importance: 2 });
+    const h3 = await memory.addHistory('Old and high importance', { importance: 3 });
+    const h4 = await memory.addHistory('New and low importance', { importance: 1 });
+
+    // 2. Manipulate dates in SQLite
+    const db = memory.getDb();
+    
+    // Set old entries to 40 days ago
+    const oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - 40);
+    const oldDateStr = oldDate.toISOString();
+
+    db.prepare('UPDATE history SET created_at = ? WHERE id IN (?, ?, ?)')
+      .run(oldDateStr, h1.id, h2.id, h3.id);
+
+    // 3. Run prune with default parameters (days=30, maxImportance=2)
+    const pruneRes1 = memory.pruneHistory();
+    expect(pruneRes1.deletedCount).toBe(2);
+
+    // Check remaining entries
+    const list1 = memory.listHistory({ limit: 10 });
+    expect(list1).toHaveLength(2);
+    const remainingIds1 = list1.map(h => h.id);
+    expect(remainingIds1).toContain(h3.id);
+    expect(remainingIds1).toContain(h4.id);
+
+    // 4. Run prune with custom parameters: days=10, maxImportance=4
+    const pruneRes2 = memory.pruneHistory({ days: 10, maxImportance: 4 });
+    expect(pruneRes2.deletedCount).toBe(1);
+
+    const list2 = memory.listHistory({ limit: 10 });
+    expect(list2).toHaveLength(1);
+    expect(list2[0].id).toBe(h4.id);
+  });
+
+  it('should support updating learnings in-place and regenerating embeddings', async () => {
+    const mockEmbedder = {
+      embed: async (text: string) => {
+        if (text === 'original text') return new Float32Array(384).fill(1);
+        if (text === 'updated text') return new Float32Array(384).fill(2);
+        return new Float32Array(384);
+      }
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    // 1. Add learning
+    const added = await memory.addLearning('original text', ['initial'], { importance: 3, scope: 'initial-scope' });
+    
+    // Check initial state
+    const db = memory.getDb();
+    const row1 = db.prepare('SELECT content, tags, importance, scope, embedding FROM learnings WHERE id = ?').get(added.id) as any;
+    expect(row1.content).toBe('original text');
+    expect(JSON.parse(row1.tags)).toEqual(['initial']);
+    expect(row1.importance).toBe(3);
+    expect(row1.scope).toBe('initial-scope');
+    const floatArr1 = new Float32Array(row1.embedding.buffer, row1.embedding.byteOffset, row1.embedding.byteLength / 4);
+    expect(floatArr1[0]).toBe(1);
+
+    // 2. Update with content and scope override, preserving tags and importance
+    const updateRes = await memory.updateLearning(added.id, 'updated text', { scope: 'new-scope' });
+    expect(updateRes.status).toBe('updated');
+    expect(updateRes.id).toBe(added.id);
+
+    // Check updated state
+    const row2 = db.prepare('SELECT content, tags, importance, scope, embedding FROM learnings WHERE id = ?').get(added.id) as any;
+    expect(row2.content).toBe('updated text');
+    expect(JSON.parse(row2.tags)).toEqual(['initial']); // preserved
+    expect(row2.importance).toBe(3); // preserved
+    expect(row2.scope).toBe('new-scope'); // updated
+    const floatArr2 = new Float32Array(row2.embedding.buffer, row2.embedding.byteOffset, row2.embedding.byteLength / 4);
+    expect(floatArr2[0]).toBe(2); // regenerated embedding
+
+    // 3. Update optional attributes (tags, importance)
+    await memory.updateLearning(added.id, 'updated text', { tags: ['new-tag'], importance: 5 });
+    const row3 = db.prepare('SELECT tags, importance FROM learnings WHERE id = ?').get(added.id) as any;
+    expect(JSON.parse(row3.tags)).toEqual(['new-tag']);
+    expect(row3.importance).toBe(5);
+
+    // 4. Update a non-existent ID
+    const nonExistentRes = await memory.updateLearning('non-existent-uuid', 'some text');
+    expect(nonExistentRes.status).toBe('not_found');
+  });
+
+  it('should promote, demote, and respect manual scope locks during checkAutoPromotions', async () => {
+    const identicalVec = new Float32Array(384).fill(1); // normalized identical vectors produce dot product 384
+    // Unit vector for perfect similarity match
+    const unitVec = new Float32Array(384);
+    unitVec[0] = 1.0;
+
+    const mockEmbedder = {
+      embed: async () => unitVec
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    // 1. Add learnings
+    const learnDefault = await memory.addLearning('Default scope learning'); // scope = test-project, is_manual_scope = 0
+    const learnManual = await memory.addLearning('Manual scope learning', [], { scope: 'test-project' }); // is_manual_scope = 1
+
+    // 2. Add query logs (5 identical queries to trigger promotion from test-project -> project)
+    for (let i = 0; i < 5; i++) {
+      await memory.queryLearnings(`query text ${i}`);
+    }
+
+    // 3. Run checkAutoPromotions
+    const res1 = memory.checkAutoPromotions();
+    expect(res1.promoted).toHaveLength(1);
+    expect(res1.promoted[0].id).toBe(learnDefault.id);
+    expect(res1.promoted[0].from).toBe('test-project');
+    expect(res1.promoted[0].to).toBe('project');
+
+    // Manual learning should NOT be promoted despite having matching queries
+    const db = memory.getDb();
+    const manualRow = db.prepare('SELECT scope FROM learnings WHERE id = ?').get(learnManual.id) as { scope: string };
+    expect(manualRow.scope).toBe('test-project');
+
+    // 4. Add 10 more queries (total 15 matches) to trigger promotion to global
+    for (let i = 5; i < 15; i++) {
+      await memory.queryLearnings(`query text ${i}`);
+    }
+
+    const res2 = memory.checkAutoPromotions();
+    expect(res2.promoted).toHaveLength(1);
+    expect(res2.promoted[0].id).toBe(learnDefault.id);
+    expect(res2.promoted[0].from).toBe('project');
+    expect(res2.promoted[0].to).toBe('global');
+
+    // 5. Test demotion: set query_logs matched_at to 40 days ago so active 30-day match count becomes 0
+    const oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - 40);
+    db.prepare('UPDATE query_logs SET created_at = ?').run(oldDate.toISOString());
+    db.prepare('UPDATE learning_query_matches SET matched_at = ?').run(oldDate.toISOString());
+
+    const res3 = memory.checkAutoPromotions();
+    expect(res3.demoted).toHaveLength(1);
+    expect(res3.demoted[0].id).toBe(learnDefault.id);
+    expect(res3.demoted[0].from).toBe('global');
+    expect(res3.demoted[0].to).toBe('test-project');
+  });
 });
+
