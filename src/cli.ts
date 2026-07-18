@@ -277,30 +277,7 @@ async function main() {
   // Resolve project details
   const { root: projectRoot, name: projectName } = findProjectRoot(process.cwd());
 
-  // Determine database path
-  let dbPath = process.env.NEURON_DB_PATH;
-  if (!dbPath) {
-    const appPaths = envPaths('neuron', { suffix: '' });
-    const dbDir = path.join(appPaths.data, 'db');
-    fs.mkdirSync(dbDir, { recursive: true });
-    const projectHash = crypto
-      .createHash('sha256')
-      .update(projectRoot)
-      .digest('hex')
-      .slice(0, 16);
-    dbPath = path.join(dbDir, `${projectHash}.sqlite`);
-  }
-
-  const embedder = process.env.NEURON_MOCK_EMBEDDER === 'true'
-    ? { embed: async () => new Float32Array(384) }
-    : undefined;
-
-  const memory = new NeuronMemory({
-    dbPath,
-    projectRoot,
-    projectName,
-    embedder
-  });
+  const memory = NeuronMemory.open(process.cwd());
 
   try {
     if (mainCommand === 'status') {
@@ -328,33 +305,27 @@ async function main() {
           console.error('Error: content is required for learn add');
           process.exit(1);
         }
-        const res = await memory.addLearning(content, options.tags, {
-          importance: options.importance,
-          scope: options.scope
-        });
-        console.log(JSON.stringify(res));
+        const res = await memory.transact([{ op: 'upsert', kind: 'learning', content, tags: options.tags, importance: options.importance, scope: options.scope }]);
+        console.log(JSON.stringify(res[0]));
       } else if (subCommand === 'query') {
         const queryText = positionals[0];
         if (!queryText) {
           console.error('Error: query text is required for learn query');
           process.exit(1);
         }
-        const res = await memory.queryLearnings(queryText, {
-          limit: options.limit,
-          scopes: options.scopes
-        });
-        console.log(JSON.stringify(res));
+        const results = await memory.query({ text: queryText, kind: 'learning', limit: options.limit, scopes: options.scopes });
+        console.log(JSON.stringify({ results, project: projectName, query: queryText }));
       } else if (subCommand === 'list') {
-        const list = memory.listLearnings({ limit: options.limit });
-        console.log(JSON.stringify(list));
+        const results = await memory.query({ kind: 'learning', limit: options.limit });
+        console.log(JSON.stringify(results));
       } else if (subCommand === 'delete') {
         const id = positionals[0];
         if (!id) {
           console.error('Error: ID is required for learn delete');
           process.exit(1);
         }
-        const res = memory.deleteLearning(id);
-        console.log(JSON.stringify(res));
+        const res = await memory.transact([{ op: 'delete', kind: 'learning', id }]);
+        console.log(JSON.stringify(res[0]));
       } else if (subCommand === 'update') {
         const id = positionals[0];
         const content = positionals[1];
@@ -362,12 +333,8 @@ async function main() {
           console.error('Error: ID and content are required for learn update');
           process.exit(1);
         }
-        const res = await memory.updateLearning(id, content, {
-          tags: options.tags,
-          importance: options.importance,
-          scope: options.scope
-        });
-        console.log(JSON.stringify(res));
+        const res = await memory.transact([{ op: 'update', kind: 'learning', id, content, tags: options.tags, importance: options.importance, scope: options.scope }]);
+        console.log(JSON.stringify(res[0]));
       } else {
         console.error(`Unknown learn subcommand: ${subCommand}`);
         process.exit(1);
@@ -394,46 +361,41 @@ async function main() {
           console.error('Error: content is required for history add');
           process.exit(1);
         }
-        const res = await memory.addHistory(content, {
-          tags: options.tags,
-          taskId: options.taskId,
-          importance: options.importance,
-          scope: options.scope
-        });
-        console.log(JSON.stringify(res));
+        const res = await memory.transact([{ op: 'upsert', kind: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance, scope: options.scope }]);
+        console.log(JSON.stringify(res[0]));
       } else if (subCommand === 'query') {
         const queryText = positionals[0];
         if (!queryText) {
           console.error('Error: query text is required for history query');
           process.exit(1);
         }
-        const res = await memory.queryHistory(queryText, {
-          limit: options.limit,
-          scopes: options.scopes
-        });
-        console.log(JSON.stringify(res));
+        const results = await memory.query({ text: queryText, kind: 'history', limit: options.limit, scopes: options.scopes });
+        console.log(JSON.stringify({ results, project: projectName, query: queryText }));
       } else if (subCommand === 'list') {
-        const list = memory.listHistory({ limit: options.limit });
-        console.log(JSON.stringify(list));
+        const results = await memory.query({ kind: 'history', limit: options.limit });
+        console.log(JSON.stringify(results));
       } else if (subCommand === 'delete') {
         const id = positionals[0];
         if (!id) {
           console.error('Error: ID is required for history delete');
           process.exit(1);
         }
-        const res = memory.deleteHistory(id);
-        console.log(JSON.stringify(res));
+        const res = await memory.transact([{ op: 'delete', kind: 'history', id }]);
+        console.log(JSON.stringify(res[0]));
       } else if (subCommand === 'consolidate') {
-        const res = memory.consolidateHistory();
-        console.log(JSON.stringify(res));
+        const report = memory.maintain({ consolidate: true, autoPromote: true });
+        console.log(JSON.stringify({
+          entries: report.consolidated?.entries || [],
+          consolidatedAt: report.consolidated?.consolidatedAt,
+          previousCursor: report.consolidated?.previousCursor,
+          promotions: report.promotions,
+          project: projectName
+        }));
       } else if (subCommand === 'prune') {
-        const res = memory.pruneHistory({
-          days: options.days,
-          maxImportance: options.importance
-        });
+        const report = memory.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.importance ?? 2 });
         console.log(JSON.stringify({
           status: 'pruned',
-          deletedCount: res.deletedCount,
+          deletedCount: report.prunedCount ?? 0,
           project: projectName
         }));
       } else {
