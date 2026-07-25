@@ -1,6 +1,6 @@
 # 06 — `neuron init` Harness Integration
 
-**Status:** `ready-for-agent`
+**Status:** resolved
 
 ## Problem Statement
 

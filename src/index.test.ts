@@ -300,10 +300,11 @@ describe('NeuronMemory DB Migrations', () => {
     });
 
     // 1. Add test history entries
-    const h1 = await memory.addHistory('Old and low importance', { importance: 1 });
-    const h2 = await memory.addHistory('Old and medium importance', { importance: 2 });
-    const h3 = await memory.addHistory('Old and high importance', { importance: 3 });
-    const h4 = await memory.addHistory('New and low importance', { importance: 1 });
+    const h1 = await memory.addHistory('Old importance 1', { importance: 1 });
+    const h2 = await memory.addHistory('Old importance 2', { importance: 2 });
+    const h3 = await memory.addHistory('Old importance 3 (default)', { importance: 3 });
+    const h4 = await memory.addHistory('Old importance 4 (high importance)', { importance: 4 });
+    const h5 = await memory.addHistory('New importance 1', { importance: 1 });
 
     // 2. Manipulate dates in SQLite
     const db = memory.getDb();
@@ -313,19 +314,19 @@ describe('NeuronMemory DB Migrations', () => {
     oldDate.setDate(oldDate.getDate() - 40);
     const oldDateStr = oldDate.toISOString();
 
-    db.prepare('UPDATE history SET created_at = ? WHERE id IN (?, ?, ?)')
-      .run(oldDateStr, h1.id, h2.id, h3.id);
+    db.prepare('UPDATE history SET created_at = ? WHERE id IN (?, ?, ?, ?)')
+      .run(oldDateStr, h1.id, h2.id, h3.id, h4.id);
 
-    // 3. Run prune with default parameters (days=30, maxImportance=2)
+    // 3. Run prune with default parameters (days=30, maxImportance=3)
     const pruneRes1 = memory.pruneHistory();
-    expect(pruneRes1.deletedCount).toBe(2);
+    expect(pruneRes1.deletedCount).toBe(3); // h1, h2, h3 pruned; h4 (imp 4) & h5 (new) retained
 
     // Check remaining entries
     const list1 = memory.listHistory({ limit: 10 });
     expect(list1).toHaveLength(2);
     const remainingIds1 = list1.map(h => h.id);
-    expect(remainingIds1).toContain(h3.id);
     expect(remainingIds1).toContain(h4.id);
+    expect(remainingIds1).toContain(h5.id);
 
     // 4. Run prune with custom parameters: days=10, maxImportance=4
     const pruneRes2 = memory.pruneHistory({ days: 10, maxImportance: 4 });
@@ -333,7 +334,7 @@ describe('NeuronMemory DB Migrations', () => {
 
     const list2 = memory.listHistory({ limit: 10 });
     expect(list2).toHaveLength(1);
-    expect(list2[0].id).toBe(h4.id);
+    expect(list2[0].id).toBe(h5.id);
   });
 
   it('should support updating learnings in-place and regenerating embeddings', async () => {
@@ -451,5 +452,66 @@ describe('NeuronMemory DB Migrations', () => {
     expect(res3.demoted[0].from).toBe('global');
     expect(res3.demoted[0].to).toBe('test-project');
   });
+
+  it('should exempt learnings with importance >= 4 from automated scope demotion', async () => {
+    const unitVec = new Float32Array(384);
+    unitVec[0] = 1.0;
+    const mockEmbedder = { embed: async () => unitVec };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    // 1. Add a learning with importance 4 (is_manual_scope = 0)
+    const learnHighImp = await memory.addLearning('High importance rule', [], { importance: 4 });
+
+    // 2. Promote to global by logging 15 query matches
+    for (let i = 0; i < 15; i++) {
+      await memory.queryLearnings(`query text ${i}`);
+    }
+    const resPromoted = memory.checkAutoPromotions();
+    expect(resPromoted.promoted).toHaveLength(1);
+    expect(resPromoted.promoted[0].to).toBe('global');
+
+    // 3. Age out query logs (40 days ago) so active 30-day match count drops to 0
+    const oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - 40);
+    const db = memory.getDb();
+    db.prepare('UPDATE query_logs SET created_at = ?').run(oldDate.toISOString());
+    db.prepare('UPDATE learning_query_matches SET matched_at = ?').run(oldDate.toISOString());
+
+    // 4. Run checkAutoPromotions - high importance learning (importance = 4) MUST NOT be demoted
+    const resDemoted = memory.checkAutoPromotions();
+    expect(resDemoted.demoted).toHaveLength(0);
+
+    const row = db.prepare('SELECT scope FROM learnings WHERE id = ?').get(learnHighImp.id) as { scope: string };
+    expect(row.scope).toBe('global');
+  });
+
+  it('should enforce CHECK (importance BETWEEN 1 AND 5) constraints in SQLite schema', () => {
+    const memory = NeuronMemory.inMemory();
+    const db = memory.getDb();
+    const now = new Date().toISOString();
+
+    // 1. Inserting importance 0 into learnings must fail
+    expect(() => {
+      db.prepare(`
+        INSERT INTO learnings (id, project_id, content, tags, embedding, scope, importance, is_manual_scope, created_at)
+        VALUES ('test-1', 'proj-1', 'content', '[]', ?, 'global', 0, 0, ?)
+      `).run(Buffer.alloc(1536), now);
+    }).toThrow(/CHECK constraint failed/);
+
+    // 2. Inserting importance 6 into history must fail
+    expect(() => {
+      db.prepare(`
+        INSERT INTO history (id, project_id, content, tags, embedding, importance, scope, created_at)
+        VALUES ('test-2', 'proj-1', 'content', '[]', ?, 6, 'global', ?)
+      `).run(Buffer.alloc(1536), now);
+    }).toThrow(/CHECK constraint failed/);
+  });
 });
+
 

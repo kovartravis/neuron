@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import envPaths from 'env-paths';
 import { NeuronMemory } from './index.js';
 
@@ -141,7 +142,7 @@ const MEMORY_STORE_BLOCK = `## Memory Store
 
 This repository uses \`@kovartravis/neuron\` (globally linked as the \`neuron\` command) to persist learnings and task history.
 
-Agents MUST invoke and strictly follow the \`neuron-memory\` skill at the beginning of every run (for context loading), at the end of every run (for memory recording), and during periodic maintenance (for clean & refresh).
+Agents MUST invoke and strictly follow the \`neuron-memory\` skill at the beginning of every run (for context loading), before executing critical shell commands via \`neuron exec\` (for pre-command lookup), after resolving failures (for closed-loop learning capture), at the end of every run (for memory recording), and during periodic maintenance (for clean & refresh).
 `;
 
 function updateMarkdownFile(filePath: string, heading: string, blockContent: string): void {
@@ -187,6 +188,7 @@ const MASTER_HELP = `Usage: neuron <command> [subcommand] [arguments] [flags]
 
 Commands:
   init                 Bootstrap the project for agentic memory store (creates/updates AGENTS.md or CLAUDE.md)
+  exec -- <command>    Run a command with pre-command memory lookup
   status               Display status details for active database, project, and embedding cache
   learn <subcommand>   Manage learnings (rules, conventions, guidelines)
   history <subcommand> Manage action history logs
@@ -272,6 +274,40 @@ async function main() {
       skillsWritten
     }));
     return;
+  }
+
+  if (mainCommand === 'exec') {
+    const dashDashIndex = args.indexOf('--');
+    const commandArgs = dashDashIndex !== -1 ? args.slice(dashDashIndex + 1) : args.slice(1);
+
+    if (commandArgs.length === 0) {
+      console.error('Usage: neuron exec -- <command>');
+      process.exit(1);
+    }
+
+    const rawCommandStr = commandArgs.join(' ');
+    const cleanCommandStr = rawCommandStr
+      .replace(/^(npx|npm run|bun run|pnpm run|yarn run|sudo)\s+/, '')
+      .trim();
+
+    const memory = NeuronMemory.open(process.cwd());
+    const matched = await memory.query({ text: cleanCommandStr, kind: 'learning', limit: 5 });
+    const threshold = process.env.NEURON_MOCK_EMBEDDER === 'true' ? 0.15 : 0.35;
+    const relevant = matched.filter(m => (m.score ?? 0) >= threshold);
+
+    if (relevant.length > 0) {
+      process.stderr.write(`[neuron] Matched ${relevant.length} relevant learning(s) for command: "${rawCommandStr}"\n`);
+      for (const m of relevant) {
+        process.stderr.write(`  - ${m.content}\n`);
+      }
+      process.stderr.write('\n');
+    }
+
+    const child = spawnSync(commandArgs[0], commandArgs.slice(1), {
+      stdio: 'inherit'
+    });
+
+    process.exit(child.status ?? (child.error ? 1 : 0));
   }
 
   // Resolve project details
@@ -392,7 +428,7 @@ async function main() {
           project: projectName
         }));
       } else if (subCommand === 'prune') {
-        const report = memory.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.importance ?? 2 });
+        const report = memory.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.importance ?? 3 });
         console.log(JSON.stringify({
           status: 'pruned',
           deletedCount: report.prunedCount ?? 0,

@@ -19,7 +19,29 @@ At the very start of a session, before running any other commands or modifying f
 3. Read the retrieved learnings. If they apply to your task, treat them as active system rules/guidelines for the rest of your session.
 4. If the query returns no results, try a broader term (e.g., `git`, `database`, `wayfinder`, or `tdd`).
 
-## 2. End of Run (Memory Recording)
+## 2. Pre-Command Memory Lookup & Execution
+
+Before executing critical build, test, database, or tool commands:
+
+1. Wrap the command execution with `neuron exec`:
+   ```bash
+   neuron exec -- <command>
+   ```
+   *Example:* `neuron exec -- npm test` or `neuron exec -- npx vitest run`
+2. `neuron exec` will query `learnings` semantically for rules matching the target command and print matching entries to `stderr` before running the command.
+3. If `neuron exec` is unavailable, run `neuron learn query "<command keywords>"` manually prior to execution.
+
+## 3. Closed-Loop Failure Feedback (Failure-Triggered Learning Capture)
+
+Whenever a command execution, test run, or tool invocation fails:
+
+1. Investigate the failure and identify the verified root cause and fix.
+2. Immediately after resolving the issue (and before moving to the next task), record the learning to prevent future agents from repeating the mistake:
+   ```bash
+   neuron learn add "Fix for <error/issue>: <exact root cause and resolution>" --tags failure-fix,<topic> --importance 3
+   ```
+
+## 4. End of Run (Memory Recording)
 
 Before finishing your turn and ending the session:
 
@@ -34,7 +56,7 @@ Before finishing your turn and ending the session:
    neuron learn add "<new rule/learning established>" --tags <topic>
    ```
 
-## 3. Periodic Maintenance (Clean & Refresh)
+## 5. Periodic Maintenance (Clean & Refresh)
 
 When the user requests memory maintenance (e.g., "clean memory", "prune obsolete learnings", or "refresh memory store"):
 
@@ -50,3 +72,4 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
      ```
 2. **Prune Old History**:
    - Run compaction or clean commands to delete low-importance history logs (importance 1–2) older than 30 days, while keeping high-importance logs.
+

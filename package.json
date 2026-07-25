@@ -26,8 +26,7 @@
     "test:watch": "vitest",
     "build": "tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
-    "start": "node ./dist/cli.js",
-    "prototype:hybrid": "tsx src/prototype-hybrid-search.ts"
+    "start": "node ./dist/cli.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",

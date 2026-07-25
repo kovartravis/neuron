@@ -24,3 +24,12 @@ The mechanism executed during consolidation that dynamically adjusts a learning'
 
 A flag (`is_manual_scope`) set when a user explicitly assigns a scope to a learning. It locks the learning's scope and exempts it from automated promotion or demotion.
 
+### pre-command lookup (`neuron exec`)
+
+The mechanism that queries the memory store for relevant learnings before running a shell command. It outputs matching rules to `stderr` above a relevance threshold and executes the target command with inherited `stdio`.
+
+### failure-triggered learning capture
+
+The closed-loop process where an agent automatically records a new learning (`neuron learn add ...`) immediately after investigating and resolving a command or build failure.
+
+

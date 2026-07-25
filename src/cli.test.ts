@@ -1,21 +1,22 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { execSync } from 'node:child_process';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { execSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
-import Database from 'better-sqlite3';
+import { openDatabase } from './index.js';
 
 describe('Neuron CLI End-to-End', () => {
   const tempDbDir = path.join(process.cwd(), 'src/__tests__/temp');
-  const tempDbPath = path.join(tempDbDir, 'test-cli.sqlite');
+  let tempDbPath: string;
 
   beforeAll(() => {
     fs.mkdirSync(tempDbDir, { recursive: true });
   });
 
+  beforeEach(() => {
+    tempDbPath = path.join(tempDbDir, `test-cli-${Date.now()}-${Math.random().toString(36).slice(2)}.sqlite`);
+  });
+
   afterAll(() => {
-    if (fs.existsSync(tempDbPath)) {
-      fs.unlinkSync(tempDbPath);
-    }
     if (fs.existsSync(tempDbDir)) {
       fs.rmSync(tempDbDir, { recursive: true, force: true });
     }
@@ -138,15 +139,15 @@ describe('Neuron CLI End-to-End', () => {
     fs.rmSync(initTempDir, { recursive: true });
   });
 
-  it('neuron init: copies skill to detected harness dir (.agents/)', () => {
-    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+  it('neuron init: copies skill to existing .agents/ directory when present', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-agents-test');
     const agentsDir = path.join(initTempDir, '.agents');
     fs.mkdirSync(agentsDir, { recursive: true });
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
     const result = JSON.parse(stdout);
 
     const expectedSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
@@ -158,14 +159,14 @@ describe('Neuron CLI End-to-End', () => {
   });
 
   it('neuron init: copies skill to all detected harness dirs (.claude/ + .cursor/)', () => {
-    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-multi-test');
     fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
     fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
     const result = JSON.parse(stdout);
 
     const claudeSkill = path.join(initTempDir, '.claude', 'skills', 'neuron-memory', 'SKILL.md');
@@ -179,13 +180,13 @@ describe('Neuron CLI End-to-End', () => {
   });
 
   it('neuron init: falls back to .agents/skills/ when no harness dirs present', () => {
-    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-fallback-test');
     fs.mkdirSync(initTempDir, { recursive: true });
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
     const result = JSON.parse(stdout);
 
     const fallbackSkill = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
@@ -196,16 +197,16 @@ describe('Neuron CLI End-to-End', () => {
   });
 
   it('neuron init: is idempotent — running twice overwrites skill without error', () => {
-    const cliPath = path.join(process.cwd(), 'src/cli.ts');
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-idempotent-test');
     fs.mkdirSync(path.join(initTempDir, '.agents'), { recursive: true });
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
     // First run
-    execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir });
+    execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
     // Second run — must not throw
-    const stdout = execSync(`npx tsx ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
     const result = JSON.parse(stdout);
 
     expect(result.status).toBe('initialized');
@@ -236,7 +237,7 @@ describe('Neuron CLI End-to-End', () => {
     expect(addHistRes.status).toBe('created');
 
     // 3. Directly inspect the database to verify the values were written
-    const db = new Database(tempDbPath);
+    const db = openDatabase(tempDbPath);
     
     const l1 = db.prepare('SELECT scope, importance FROM learnings WHERE id = ?').get(addLearnRes.id) as { scope: string; importance: number };
     expect(l1.scope).toBe('custom-scope');
@@ -308,17 +309,13 @@ describe('Neuron CLI End-to-End', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    // 1. Clear history table to ensure isolation
-    const dbClean = new Database(tempDbPath);
-    dbClean.prepare('DELETE FROM history').run();
-    dbClean.close();
-
-    // 2. Add some history entries
+    // 1. Add some history entries
     execSync(`node ${cliPath} history add "Old entry" --importance 1`, { env });
+    execSync(`node ${cliPath} history add "Old default entry" --importance 3`, { env });
     execSync(`node ${cliPath} history add "Old important entry" --importance 4`, { env });
 
     // 2. Manipulate dates directly in SQLite
-    const db = new Database(tempDbPath);
+    const db = openDatabase(tempDbPath);
     const oldDate = new Date();
     oldDate.setDate(oldDate.getDate() - 40);
     const oldDateStr = oldDate.toISOString();
@@ -328,15 +325,15 @@ describe('Neuron CLI End-to-End', () => {
     // 3. Add a new history entry (should not be pruned because it is new)
     execSync(`node ${cliPath} history add "New entry" --importance 1`, { env });
 
-    // 4. Run history prune with --days 30 (defaults to max importance 2)
+    // 4. Run history prune with --days 30 (defaults to max importance 3)
     const pruneStdout = execSync(`node ${cliPath} history prune --days 30`, { env }).toString();
     const pruneRes = JSON.parse(pruneStdout);
     expect(pruneRes.status).toBe('pruned');
-    expect(pruneRes.deletedCount).toBe(1);
+    expect(pruneRes.deletedCount).toBe(2); // "Old entry" (imp 1) & "Old default entry" (imp 3) pruned
     expect(pruneRes.project).toBeDefined();
 
     // 5. Verify database state
-    const dbVerify = new Database(tempDbPath);
+    const dbVerify = openDatabase(tempDbPath);
     const remaining = dbVerify.prepare('SELECT content FROM history ORDER BY created_at ASC').all() as any[];
     expect(remaining).toHaveLength(2);
     expect(remaining[0].content).toBe('Old important entry');
@@ -377,7 +374,7 @@ describe('Neuron CLI End-to-End', () => {
     expect(updateRes.id).toBe(added.id);
 
     // 3. Verify database state
-    const db = new Database(tempDbPath);
+    const db = openDatabase(tempDbPath);
     const row = db.prepare('SELECT content, tags, importance, scope FROM learnings WHERE id = ?').get(added.id) as any;
     expect(row.content).toBe('Updated learning content');
     expect(JSON.parse(row.tags)).toEqual(['updated']);
@@ -460,4 +457,71 @@ describe('Neuron CLI End-to-End', () => {
       execSync(`node ${cliPath} history`, { env, stdio: 'pipe' });
     }).toThrow(/Usage: neuron history/);
   });
+
+  it('should support neuron exec -- <command>, output matched learnings to stderr, and pass through exit code', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    // 1. Seed a learning into the database
+    execSync(`node ${cliPath} learn add "Vitest test runner requires --runInBand" --tags vitest,test --importance 4`, { env });
+
+    // 2. Execute a command via neuron exec -- echo "test build"
+    const result = execSync(`node ${cliPath} exec -- echo "test build"`, { env, stdio: 'pipe' });
+    const stdout = result.toString();
+
+    expect(stdout.trim()).toBe('test build');
+
+    // 3. Test non-zero exit code pass-through
+    let caughtError: any;
+    try {
+      execSync(`node ${cliPath} exec -- node -e process.exitCode=42`, { env, stdio: 'pipe' });
+    } catch (err: any) {
+      caughtError = err;
+    }
+    expect(caughtError).toBeDefined();
+    expect(caughtError.status).toBe(42);
+  });
+
+  it('should separate stderr learning outputs from stdout command data and filter low relevance scores', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    // 1. Add a learning with low importance/score (importance 1 -> score 0.0 < 0.15)
+    execSync(`node ${cliPath} learn add "Minor documentation note" --tags docs --importance 1`, { env });
+
+    // 2. Exec command - low score learning should be filtered out (stderr does not contain [neuron])
+    const resLowScore = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'build project'], { env });
+    expect(resLowScore.stdout.toString().trim()).toBe('build project');
+    expect(resLowScore.stderr.toString()).not.toContain('[neuron]');
+
+    // 3. Add a learning with high importance (importance 5 -> score 0.25 >= 0.15)
+    execSync(`node ${cliPath} learn add "Vitest requires isolation when using SQLite" --tags vitest,db --importance 5`, { env });
+
+    // 4. Exec command - high score learning surfaces to stderr
+    const resHighScore = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'vitest test run'], { env });
+    expect(resHighScore.stdout.toString().trim()).toBe('vitest test run');
+    expect(resHighScore.stderr.toString()).toContain('[neuron]');
+    expect(resHighScore.stderr.toString()).toContain('Vitest requires isolation when using SQLite');
+  });
+
+  it('should support end-to-end failure fix learning recording workflow', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    // 1. Agent runs a command that fails
+    try {
+      execSync(`node ${cliPath} exec -- node -e process.exitCode=1`, { env, stdio: 'pipe' });
+    } catch (err) {}
+
+    // 2. Agent resolves failure and records failure-fix learning with importance 4
+    const addRes = execSync(`node ${cliPath} learn add "Fix for build error: pass --no-cache to avoid stale artifacts" --tags failure-fix,build --importance 4`, { env }).toString();
+    const parsed = JSON.parse(addRes);
+    expect(parsed.status).toBe('created');
+
+    // 3. Subsequent exec of build command surfaces the fix learning to stderr
+    const execRes = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'build artifacts'], { env });
+    expect(execRes.stderr.toString()).toContain('Fix for build error');
+  });
 });
+
+

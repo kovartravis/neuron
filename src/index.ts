@@ -2,95 +2,22 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import envPaths from 'env-paths';
-import Database from 'better-sqlite3';
+import { openDatabase } from './db.js';
+import {
+  Embedder,
+  TransformersEmbedder,
+  MemoryKind,
+  MemoryQuery,
+  Memory,
+  MemoryMutation,
+  MutationResult,
+  MaintenancePolicy,
+  MaintenanceReport,
+  NeuronMemoryOptions
+} from './components/index.js';
 
-export interface Embedder {
-  embed(text: string): Promise<Float32Array>;
-}
-
-export class TransformersEmbedder implements Embedder {
-  private pipelinePromise: any = null;
-
-  async embed(text: string): Promise<Float32Array> {
-    if (!this.pipelinePromise) {
-      this.pipelinePromise = (async () => {
-        const { pipeline, env } = await import('@huggingface/transformers');
-        const appPaths = envPaths('neuron', { suffix: '' });
-        const modelCacheDir = path.join(appPaths.data, 'models');
-        env.cacheDir = modelCacheDir;
-        env.useFSCache = true;
-        const onnxPath = path.join(modelCacheDir, 'Xenova/bge-small-en-v1.5', 'onnx', 'model_quantized.onnx');
-        if (fs.existsSync(onnxPath)) {
-          env.allowRemoteModels = false;
-        }
-        return pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5', { dtype: 'q8' });
-      })();
-    }
-    const extractor = await this.pipelinePromise;
-    const output = await extractor(text, { pooling: 'cls', normalize: true });
-    return new Float32Array(output.data);
-  }
-}
-
-export type MemoryKind = 'learning' | 'history';
-
-export interface MemoryQuery {
-  text?: string;
-  kind?: MemoryKind;
-  scopes?: string[];
-  limit?: number;
-}
-
-export interface Memory {
-  id: string;
-  kind: MemoryKind;
-  content: string;
-  tags: string[];
-  scope?: string;
-  importance?: number;
-  taskId?: string | null;
-  createdAt: string;
-  score?: number;
-}
-
-export type MemoryMutation = 
-  | { op: 'upsert'; kind: MemoryKind; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string }
-  | { op: 'update'; kind: MemoryKind; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string }
-  | { op: 'delete'; kind: MemoryKind; id: string };
-
-export interface MutationResult {
-  id: string;
-  status: string; // 'created' | 'updated' | 'deleted' | 'not_found'
-  project: string;
-}
-
-export interface MaintenancePolicy {
-  pruneHistoryBeforeDays?: number;
-  maxPruneImportance?: number;
-  autoPromote?: boolean;
-  consolidate?: boolean;
-}
-
-export interface MaintenanceReport {
-  consolidated?: {
-    entries: Memory[];
-    consolidatedAt: string;
-    previousCursor: string | null;
-  };
-  promotions?: {
-    promoted: Array<{ id: string; from: string; to: string }>;
-    demoted: Array<{ id: string; from: string; to: string }>;
-  };
-  prunedCount?: number;
-  project: string;
-}
-
-export interface NeuronMemoryOptions {
-  dbPath: string;
-  projectRoot: string;
-  projectName: string;
-  embedder?: Embedder;
-}
+export { openDatabase };
+export * from './components/index.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
@@ -107,7 +34,7 @@ function findProjectRoot(startDir: string): { root: string; name: string } {
 }
 
 export class NeuronMemory {
-  private db: Database.Database;
+  private db: any;
   private projectRoot: string;
   private projectName: string;
   private projectId: string;
@@ -122,7 +49,7 @@ export class NeuronMemory {
       .digest('hex')
       .slice(0, 16);
     
-    this.db = new Database(options.dbPath);
+    this.db = openDatabase(options.dbPath);
     this.embedder = options.embedder ?? new TransformersEmbedder();
     this.initialize();
   }
@@ -164,11 +91,14 @@ export class NeuronMemory {
     });
   }
 
-  public getDb(): Database.Database { return this.db; }
+  public getDb(): any { return this.db; }
   public getProjectId(): string { return this.projectId; }
 
   private initialize(): void {
-    this.db.pragma('journal_mode = WAL');
+    try {
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('busy_timeout = 5000');
+    } catch (err) {}
     let currentVersion = this.db.pragma('user_version', { simple: true }) as number;
 
     if (currentVersion < 1) {
@@ -451,7 +381,7 @@ export class NeuronMemory {
         `).all(this.projectId) as any[];
 
         const learnings = this.db.prepare(`
-          SELECT id, embedding, scope, is_manual_scope FROM learnings WHERE project_id = ?
+          SELECT id, embedding, scope, is_manual_scope, importance FROM learnings WHERE project_id = ?
         `).all(this.projectId) as any[];
 
         if (queryLogs.length > 0 && learnings.length > 0) {
@@ -500,7 +430,7 @@ export class NeuronMemory {
               targetScope = 'project';
             }
 
-            if (targetScope === currentScope) {
+            if (targetScope === currentScope && (learn.importance ?? 3) < 4) {
               if (currentScope === 'global' && matchCount < 10) {
                 targetScope = matchCount < 3 ? this.projectName : 'project';
               } else if (currentScope === 'project' && matchCount < 3) {
@@ -526,7 +456,7 @@ export class NeuronMemory {
 
       if (policy.pruneHistoryBeforeDays !== undefined) {
         const days = policy.pruneHistoryBeforeDays;
-        const maxImportance = policy.maxPruneImportance ?? 2;
+        const maxImportance = policy.maxPruneImportance ?? 3;
 
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -634,7 +564,7 @@ export class NeuronMemory {
     return report.promotions || { promoted: [], demoted: [] };
   }
   public pruneHistory(options: { days?: number; maxImportance?: number } = {}): any {
-    const report = this.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.maxImportance ?? 2 });
+    const report = this.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.maxImportance ?? 3 });
     return { deletedCount: report.prunedCount ?? 0 };
   }
 }

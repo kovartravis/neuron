@@ -18,6 +18,15 @@ A complete, detailed technical specification (PRD) for a local-only, TypeScript-
 - [Init Harness Integration](.scratch/agent-memory-cli/issues/06-init-harness-integration.md) — `neuron init` copies the bundled `neuron-memory` skill into each detected harness's `skills/` dir (`.agents/`, `.claude/`, `.cursor/`, `.github/`, `.codex/`), probing project root and `~`. Falls back to `.agents/skills/` if none detected. Memory Store block updated to reference skill by name only. JSON output gains `skillsWritten` array.
 - [Bundle skill file and update Memory Store block](.scratch/agent-memory-cli/issues/07-bundle-skill-and-update-block.md) — Add `.agents/skills/` to `package.json` files; replace `MEMORY_STORE_BLOCK` with prose-only template; update init test. No blockers.
 - [Harness auto-detection and skill scaffolding](.scratch/agent-memory-cli/issues/08-harness-detection-and-skill-scaffolding.md) — Probe project root + `~` for harness dirs; copy bundled SKILL.md to each detected harness; fallback to `.agents/skills/`; add `skillsWritten` to JSON output; 4 new E2E tests. Blocked by 07.
+- [Pre-Command Memory Lookup (`neuron exec`)](.scratch/agent-memory-cli/issues/09-pre-command-memory-lookup.md) — Subcommand parsing `-- <cmd>`, cleaning prefixes, vector query matching (`score >= 0.35`), formatting matches to `stderr`, and executing target command with inherited stdio.
+- [Skill Closed-Loop Feedback Integration](.scratch/agent-memory-cli/issues/11-skill-closed-loop-feedback.md) — Codified rules in SKILL.md and AGENTS.md for pre-command lookups and mandatory failure-fix learning capture upon resolving errors.
+- [End-to-End Test Suite for `exec`](.scratch/agent-memory-cli/issues/12-exec-e2e-tests.md) — CLI integration test suite for `neuron exec` stream separation, score filtering, and closed-loop failure fixes.
+- [High-Importance (4–5) Scope Lock](.scratch/agent-memory-cli/issues/10-importance-prototype-and-auto-promotion.md) — Exemption from automated scope demotion for learnings with `importance >= 4` or `is_manual_scope === 1`.
+- [Default History Pruning Threshold Update](.scratch/agent-memory-cli/issues/13-default-history-pruning-threshold.md) — Routine maintenance `maxPruneImportance = 3` pruning default/minor history older than 30 days while preserving `importance 4–5`.
+- [Importance & Maintenance Test Suite](.scratch/agent-memory-cli/issues/14-importance-maintenance-test-suite.md) — Comprehensive integration tests for demotion locks, pruning defaults, CLI validation, and schema bounds.
+- [Clean Up Prototype Hybrid Search Script](.scratch/agent-memory-cli/issues/15-cleanup-prototype-hybrid-search.md) — Removal of throwaway `src/prototype-hybrid-search.ts` file and package script.
+
+
 
 
 
