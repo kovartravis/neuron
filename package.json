@@ -24,7 +24,7 @@
   "scripts": {
     "test": "npm run build && vitest run",
     "test:watch": "vitest",
-    "build": "tsc",
+    "build": "node ./node_modules/typescript/bin/tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
     "start": "node ./dist/cli.js"
   },
