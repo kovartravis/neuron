@@ -303,6 +303,8 @@ async function main() {
       process.stderr.write('\n');
     }
 
+    memory.close();
+
     const child = spawnSync(commandArgs[0], commandArgs.slice(1), {
       stdio: 'inherit'
     });

@@ -13,11 +13,11 @@ A complete technical specification (`.scratch/saas-features/spec.md`) detailing 
 - [Hybrid Search Scoring Formula](.scratch/saas-features/issues/02-hybrid-retrieval.md) — Linear Interpolation formula with 75% weight on semantic similarity and 25% weight on normalized 1-5 importance rating.
 - [History Decay & Compaction Specification](.scratch/saas-features/issues/03-history-decay-compaction.md) — 30-day default expiration for low-importance history (importance <= 2), indefinite preservation of high importance entries, and cursor-based consolidation via last_consolidated_rowid watermark.
 - [Scoped Auto-Promotion & Demotion Specification](.scratch/saas-features/issues/04-scoped-auto-promotion.md) — Rolling 30-day query frequency tracking (cosine similarity >= 0.80) triggering promotion/demotion between people, project, and global scopes, with manual scope locking protection.
+- [Multi-tenant isolation](.scratch/saas-features/issues/05-multi-tenant-isolation.md) — Deferred (wontfix): SaaS features are not being approached at this time.
 
 
 
 ## Not yet specified
 
-- **Multi-tenant isolation**: Access control rules and connection routing for multiple teams on a single database.
 - **SaaS API / Auth integration**: How the CLI authenticates against a SaaS backend to retrieve Postgres credentials securely.
 - **Web Dashboard**: Scopes and analytics view for team learnings.
