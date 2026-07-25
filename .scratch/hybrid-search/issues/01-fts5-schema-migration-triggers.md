@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] SQLite user_version 4 migration executes cleanly when opening a database.
 - [ ] Virtual tables `learnings_fts` and `history_fts` are created using FTS5 external content mapping to `learnings` and `history`.
