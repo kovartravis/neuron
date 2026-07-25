@@ -164,6 +164,54 @@ export class NeuronMemory {
       })();
       currentVersion = 3;
     }
+
+    if (currentVersion < 4) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          CREATE VIRTUAL TABLE IF NOT EXISTS learnings_fts USING fts5(
+            content, tags,
+            content='learnings',
+            content_rowid='rowid'
+          );
+          CREATE VIRTUAL TABLE IF NOT EXISTS history_fts USING fts5(
+            content, tags,
+            content='history',
+            content_rowid='rowid'
+          );
+
+          CREATE TRIGGER IF NOT EXISTS learnings_ai AFTER INSERT ON learnings BEGIN
+            INSERT INTO learnings_fts(rowid, content, tags) VALUES (new.rowid, new.content, new.tags);
+          END;
+          CREATE TRIGGER IF NOT EXISTS learnings_ad AFTER DELETE ON learnings BEGIN
+            INSERT INTO learnings_fts(learnings_fts, rowid, content, tags) VALUES ('delete', old.rowid, old.content, old.tags);
+          END;
+          CREATE TRIGGER IF NOT EXISTS learnings_au AFTER UPDATE ON learnings BEGIN
+            INSERT INTO learnings_fts(learnings_fts, rowid, content, tags) VALUES ('delete', old.rowid, old.content, old.tags);
+            INSERT INTO learnings_fts(rowid, content, tags) VALUES (new.rowid, new.content, new.tags);
+          END;
+
+          CREATE TRIGGER IF NOT EXISTS history_ai AFTER INSERT ON history BEGIN
+            INSERT INTO history_fts(rowid, content, tags) VALUES (new.rowid, new.content, new.tags);
+          END;
+          CREATE TRIGGER IF NOT EXISTS history_ad AFTER DELETE ON history BEGIN
+            INSERT INTO history_fts(history_fts, rowid, content, tags) VALUES ('delete', old.rowid, old.content, old.tags);
+          END;
+          CREATE TRIGGER IF NOT EXISTS history_au AFTER UPDATE ON history BEGIN
+            INSERT INTO history_fts(history_fts, rowid, content, tags) VALUES ('delete', old.rowid, old.content, old.tags);
+            INSERT INTO history_fts(rowid, content, tags) VALUES (new.rowid, new.content, new.tags);
+          END;
+        `);
+        // Backfill existing records into FTS indexes
+        this.db.exec(`
+          INSERT INTO learnings_fts(rowid, content, tags) SELECT rowid, content, tags FROM learnings;
+          INSERT INTO history_fts(rowid, content, tags) SELECT rowid, content, tags FROM history;
+        `);
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '4');
+        this.db.pragma('user_version = 4');
+      })();
+      currentVersion = 4;
+    }
   }
 
   // --- NEW HYBRID INTERFACE ---

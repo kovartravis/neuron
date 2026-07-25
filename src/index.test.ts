@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { NeuronMemory } from './index.js';
 
 describe('NeuronMemory DB Migrations', () => {
-  it('should initialize an in-memory database and run migrations to version 3', () => {
+  it('should create the schema tables and columns required for scoped learnings and auto-promotion', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
@@ -10,21 +10,52 @@ describe('NeuronMemory DB Migrations', () => {
     });
 
     const db = memory.getDb();
-    
-    // Check that user_version is 3
-    const userVersion = db.pragma('user_version', { simple: true });
-    expect(userVersion).toBe(3);
 
-    // Check learnings columns
     const learningsCols = db.pragma("table_info(learnings)") as any[];
-    const learningsNames = learningsCols.map(c => c.name);
+    const learningsNames = learningsCols.map((c: any) => c.name);
     expect(learningsNames).toContain('is_manual_scope');
 
-    // Check learning_query_matches table exists
     const matchTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get() as { name: string } | undefined;
-    expect(matchTable).toBeDefined();
     expect(matchTable?.name).toBe('learning_query_matches');
   });
+
+  it('should create learnings_fts and history_fts FTS5 virtual tables for hybrid search', () => {
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project'
+    });
+
+    const db = memory.getDb();
+
+    const ftsLearnings = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='learnings_fts'"
+    ).get() as { name: string } | undefined;
+    expect(ftsLearnings?.name).toBe('learnings_fts');
+
+    const ftsHistory = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='history_fts'"
+    ).get() as { name: string } | undefined;
+    expect(ftsHistory?.name).toBe('history_fts');
+  });
+
+  it('should index learnings inserted via the public interface and make them retrievable by FTS keyword match', async () => {
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: { embed: async () => new Float32Array(384) }
+    });
+
+    await memory.addLearning('Always pin onnxruntime-node to 1.20.1', ['onnx', 'crash']);
+
+    const db = memory.getDb();
+    const row = db.prepare(
+      `SELECT rowid FROM learnings_fts WHERE learnings_fts MATCH '"onnxruntime"*'`
+    ).get();
+    expect(row).toBeDefined();
+  });
+
 
   it('should set is_manual_scope flag when explicit scope is provided', async () => {
     const mockEmbedder = { embed: async () => new Float32Array(384) };

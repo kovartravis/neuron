@@ -32,4 +32,17 @@ The mechanism that queries the memory store for relevant learnings before runnin
 
 The closed-loop process where an agent automatically records a new learning (`neuron learn add ...`) immediately after investigating and resolving a command or build failure.
 
+### hybrid search
+
+The retrieval strategy combining semantic vector search and keyword-based SQLite FTS5 search to locate relevant entries.
+
+### Reciprocal Rank Fusion (RRF)
+
+The rank aggregation algorithm that merges ordered results from semantic and keyword searches based on their respective positions.
+
+### FTS (Full-Text Search) index
+
+The SQLite FTS5 virtual table (`learnings_fts` or `history_fts`) linked as an external content table to index the `content` and `tags` columns.
+
+
 
