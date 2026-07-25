@@ -62,13 +62,13 @@ Your agents will now read the instructions in `AGENTS.md` and use the following 
 
 ```mermaid
 graph TD
-    A[Start Session] --> B[neuron learn query "task topic"]
-    B --> C[neuron exec -- npm test / build]
+    A[Start Session] --> B["neuron learn query 'task topic'"]
+    B --> C["neuron exec -- npm test / build"]
     C --> D{Did something fail & get fixed?}
-    D -- Yes --> E[neuron learn add "Fix for error..."]
+    D -- Yes --> E["neuron learn add 'Fix for error...'"]
     D -- No --> F[Write Code]
     E --> F
-    F --> G[neuron history add "Implemented feature X"]
+    F --> G["neuron history add 'Implemented feature X'"]
     G --> H[End Session]
 ```
 
