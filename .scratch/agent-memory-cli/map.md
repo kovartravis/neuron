@@ -25,6 +25,7 @@ A complete, detailed technical specification (PRD) for a local-only, TypeScript-
 - [Default History Pruning Threshold Update](.scratch/agent-memory-cli/issues/13-default-history-pruning-threshold.md) — Routine maintenance `maxPruneImportance = 3` pruning default/minor history older than 30 days while preserving `importance 4–5`.
 - [Importance & Maintenance Test Suite](.scratch/agent-memory-cli/issues/14-importance-maintenance-test-suite.md) — Comprehensive integration tests for demotion locks, pruning defaults, CLI validation, and schema bounds.
 - [Clean Up Prototype Hybrid Search Script](.scratch/agent-memory-cli/issues/15-cleanup-prototype-hybrid-search.md) — Removal of throwaway `src/prototype-hybrid-search.ts` file and package script.
+- [Fix Exec Mutex Lock Crash](.scratch/agent-memory-cli/issues/16-fix-exec-mutex-lock-crash.md) — Resolve macOS-specific mutex lock crash during ONNX Runtime process teardown by pinning onnxruntime-node to version 1.20.1.
 
 
 
