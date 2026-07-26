@@ -39,7 +39,7 @@ export class NeuronMemory {
   private projectRoot: string;
   private projectName: string;
   private projectId: string;
-  private embedder: Required<Embedder>;
+  private embedder: Embedder;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -51,13 +51,7 @@ export class NeuronMemory {
       .slice(0, 16);
     
     this.db = openDatabase(options.dbPath);
-    const rawEmbedder = options.embedder ?? new TransformersEmbedder();
-    this.embedder = {
-      embed: (txt) => rawEmbedder.embed(txt),
-      embedQuery: (txt) => rawEmbedder.embedQuery
-        ? rawEmbedder.embedQuery(txt)
-        : rawEmbedder.embed(`Represent this sentence for searching relevant passages: ${txt}`)
-    };
+    this.embedder = options.embedder ?? new TransformersEmbedder();
     this.initialize();
   }
 
@@ -78,7 +72,7 @@ export class NeuronMemory {
     }
 
     const embedder = process.env.NEURON_MOCK_EMBEDDER === 'true'
-      ? { embed: async () => new Float32Array(384) }
+      ? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
       : undefined;
 
     return new NeuronMemory({
@@ -94,7 +88,7 @@ export class NeuronMemory {
       dbPath: ':memory:',
       projectRoot: '/in-memory/' + projectName,
       projectName,
-      embedder: embedder ?? { embed: async () => new Float32Array(384) }
+      embedder: embedder ?? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
     });
   }
 

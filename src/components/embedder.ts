@@ -4,7 +4,7 @@ import envPaths from 'env-paths';
 
 export interface Embedder {
   embed(text: string): Promise<Float32Array>;
-  embedQuery?(text: string): Promise<Float32Array>;
+  embedQuery(text: string): Promise<Float32Array>;
 }
 
 export class TransformersEmbedder implements Embedder {

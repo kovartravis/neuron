@@ -44,7 +44,7 @@ describe('NeuronMemory DB Migrations', () => {
       dbPath: ':memory:',
       projectRoot: '/test/project',
       projectName: 'test-project',
-      embedder: { embed: async () => new Float32Array(384) }
+      embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
     });
 
     await memory.addLearning('Always pin onnxruntime-node to 1.20.1', ['onnx', 'crash']);
@@ -58,7 +58,7 @@ describe('NeuronMemory DB Migrations', () => {
 
 
   it('should set is_manual_scope flag when explicit scope is provided', async () => {
-    const mockEmbedder = { embed: async () => new Float32Array(384) };
+    const mockEmbedder = { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) };
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
@@ -96,6 +96,12 @@ describe('NeuronMemory DB Migrations', () => {
         if (text.includes('run tests')) return testVec;
         if (text.includes('checkout')) return checkoutVec;
         return new Float32Array(384);
+      },
+      embedQuery: async (text: string) => {
+        if (text.includes('query')) return queryVec;
+        if (text.includes('run tests')) return testVec;
+        if (text.includes('checkout')) return checkoutVec;
+        return new Float32Array(384);
       }
     };
 
@@ -127,7 +133,8 @@ describe('NeuronMemory DB Migrations', () => {
 
   it('should support listing and deleting learnings', async () => {
     const mockEmbedder = {
-      embed: async () => new Float32Array(384)
+      embed: async () => new Float32Array(384),
+      embedQuery: async () => new Float32Array(384)
     };
 
     const memory = new NeuronMemory({
@@ -156,7 +163,8 @@ describe('NeuronMemory DB Migrations', () => {
 
   it('should support history operations and cursor-based consolidation', async () => {
     const mockEmbedder = {
-      embed: async () => new Float32Array(384)
+      embed: async () => new Float32Array(384),
+      embedQuery: async () => new Float32Array(384)
     };
 
     const memory = new NeuronMemory({
@@ -216,7 +224,8 @@ describe('NeuronMemory DB Migrations', () => {
 
   it('should store importance and scope for learnings and history, defaulting when omitted', async () => {
     const mockEmbedder = {
-      embed: async () => new Float32Array(384)
+      embed: async () => new Float32Array(384),
+      embedQuery: async () => new Float32Array(384)
     };
 
     const memory = new NeuronMemory({
@@ -269,6 +278,13 @@ describe('NeuronMemory DB Migrations', () => {
 
     const mockEmbedder = {
       embed: async (text: string) => {
+        if (text.includes('query')) return queryVec;
+        if (text.includes('itemA')) return vecA;
+        if (text.includes('itemB')) return vecB;
+        if (text.includes('itemC')) return vecC;
+        return new Float32Array(384);
+      },
+      embedQuery: async (text: string) => {
         if (text.includes('query')) return queryVec;
         if (text.includes('itemA')) return vecA;
         if (text.includes('itemB')) return vecB;
@@ -370,6 +386,11 @@ describe('NeuronMemory DB Migrations', () => {
         if (text === 'original text') return new Float32Array(384).fill(1);
         if (text === 'updated text') return new Float32Array(384).fill(2);
         return new Float32Array(384);
+      },
+      embedQuery: async (text: string) => {
+        if (text.includes('original text')) return new Float32Array(384).fill(1);
+        if (text.includes('updated text')) return new Float32Array(384).fill(2);
+        return new Float32Array(384);
       }
     };
 
@@ -425,7 +446,8 @@ describe('NeuronMemory DB Migrations', () => {
     unitVec[0] = 1.0;
 
     const mockEmbedder = {
-      embed: async () => unitVec
+      embed: async () => unitVec,
+      embedQuery: async () => unitVec
     };
 
     const memory = new NeuronMemory({
@@ -483,7 +505,7 @@ describe('NeuronMemory DB Migrations', () => {
   it('should exempt learnings with importance >= 4 from automated scope demotion', async () => {
     const unitVec = new Float32Array(384);
     unitVec[0] = 1.0;
-    const mockEmbedder = { embed: async () => unitVec };
+    const mockEmbedder = { embed: async () => unitVec, embedQuery: async () => unitVec };
 
     const memory = new NeuronMemory({
       dbPath: ':memory:',
@@ -551,7 +573,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const sharedVec = new Float32Array(384);
     sharedVec[0] = 1.0;
 
-    const mockEmbedder = { embed: async () => sharedVec };
+    const mockEmbedder = { embed: async () => sharedVec, embedQuery: async () => sharedVec };
 
     const memory = new NeuronMemory({
       dbPath: ':memory:',
@@ -589,6 +611,11 @@ describe('NeuronMemory hybrid search (RRF)', () => {
         if (text.includes('QUERYSYMBOL')) return queryVec;
         if (text.includes('install homebrew')) return vecClose;
         return vecFar;
+      },
+      embedQuery: async (text: string) => {
+        if (text.includes('QUERYSYMBOL')) return queryVec;
+        if (text.includes('install homebrew')) return vecClose;
+        return vecFar;
       }
     };
 
@@ -615,7 +642,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const sharedVec = new Float32Array(384);
     sharedVec[2] = 1.0;
 
-    const mockEmbedder = { embed: async () => sharedVec };
+    const mockEmbedder = { embed: async () => sharedVec, embedQuery: async () => sharedVec };
 
     const memory = new NeuronMemory({
       dbPath: ':memory:',
@@ -639,7 +666,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const sharedVec = new Float32Array(384);
     sharedVec[3] = 1.0;
 
-    const mockEmbedder = { embed: async () => sharedVec };
+    const mockEmbedder = { embed: async () => sharedVec, embedQuery: async () => sharedVec };
 
     const memory = new NeuronMemory({
       dbPath: ':memory:',
@@ -671,7 +698,10 @@ describe('NeuronMemory hybrid search (RRF)', () => {
 
     const mockEmbedder = {
       embed: async (text: string) => {
-        // Query and the keyword-match record share the same vector
+        if (text.includes('webpack') || text === 'webpack bundler') return keywordVec;
+        return otherVec;
+      },
+      embedQuery: async (text: string) => {
         if (text.includes('webpack') || text === 'webpack bundler') return keywordVec;
         return otherVec;
       }
