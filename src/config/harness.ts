@@ -1,19 +1,16 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import harnessesData from './harnesses.json' with { type: 'json' };
 
 export interface AgentHarness {
+  name: string;
   base: string;
+  mdFile: string;
   skills: string;
 }
 
-export const HARNESSES: AgentHarness[] = [
-  { base: '.agents',  skills: '.agents/skills' },
-  { base: '.claude',  skills: '.claude/skills' },
-  { base: '.cursor',  skills: '.cursor/skills' },
-  { base: '.github',  skills: '.github/skills' },
-  { base: '.codex',   skills: '.codex/skills'  },
-];
+export const HARNESSES: AgentHarness[] = harnessesData as AgentHarness[];
 
 export function detectHarnesses(projectDir: string): string[] {
   return HARNESSES

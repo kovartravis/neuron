@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
-import { parseFlags, updateMarkdownFile, detectHarnesses, copySkill, MEMORY_STORE_BLOCK } from './utils.js';
+import { parseFlags, updateMarkdownFile } from './utils.js';
+import { HARNESSES, detectHarnesses, copySkill, MEMORY_STORE_BLOCK } from '../config/index.js';
 
 export function handleInitCommand(args: string[]): void {
   const { options } = parseFlags(args.slice(1));
@@ -8,11 +9,13 @@ export function handleInitCommand(args: string[]): void {
 
   let targetFile = options.file;
   if (!targetFile) {
-    if (fs.existsSync(path.join(projectDir, 'CLAUDE.md'))) {
-      targetFile = 'CLAUDE.md';
-    } else if (fs.existsSync(path.join(projectDir, 'AGENTS.md'))) {
-      targetFile = 'AGENTS.md';
-    } else {
+    for (const h of HARNESSES) {
+      if (fs.existsSync(path.join(projectDir, h.mdFile))) {
+        targetFile = h.mdFile;
+        break;
+      }
+    }
+    if (!targetFile) {
       targetFile = 'AGENTS.md';
     }
   }

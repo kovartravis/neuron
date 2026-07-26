@@ -1,0 +1,32 @@
+[
+  {
+    "name": "agents",
+    "base": ".agents",
+    "mdFile": "AGENTS.md",
+    "skills": ".agents/skills"
+  },
+  {
+    "name": "claude",
+    "base": ".claude",
+    "mdFile": "CLAUDE.md",
+    "skills": ".claude/skills"
+  },
+  {
+    "name": "cursor",
+    "base": ".cursor",
+    "mdFile": "CURSOR.md",
+    "skills": ".cursor/skills"
+  },
+  {
+    "name": "github",
+    "base": ".github",
+    "mdFile": "AGENTS.md",
+    "skills": ".github/skills"
+  },
+  {
+    "name": "codex",
+    "base": ".codex",
+    "mdFile": "AGENTS.md",
+    "skills": ".codex/skills"
+  }
+]
