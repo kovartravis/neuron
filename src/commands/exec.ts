@@ -11,12 +11,9 @@ export async function handleExecCommand(args: string[]): Promise<void> {
   }
 
   const rawCommandStr = commandArgs.join(' ');
-  const cleanCommandStr = rawCommandStr
-    .replace(/^(npx|npm run|bun run|pnpm run|yarn run|sudo)\s+/, '')
-    .trim();
 
   const memory = NeuronMemory.open(process.cwd());
-  const matched = await memory.query({ text: cleanCommandStr, kind: 'learning', limit: 5 });
+  const matched = await memory.query({ text: rawCommandStr, kind: 'learning', limit: 5 });
   const threshold = process.env.NEURON_MOCK_EMBEDDER === 'true' ? 0.15 : 0.35;
   const relevant = matched.filter(m => (m.score ?? 0) >= threshold);
 
