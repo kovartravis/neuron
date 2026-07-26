@@ -1,4 +1,4 @@
-import { Embedder } from './embedder.js';
+import { Embedder } from '../components/embedder.js';
 
 export interface NeuronMemoryOptions {
   dbPath: string;

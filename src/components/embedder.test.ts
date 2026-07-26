@@ -29,4 +29,11 @@ describe('TransformersEmbedder (src/components/embedder.ts)', () => {
       expect(vec1[i]).toBe(vec2[i]);
     }
   });
+
+  it('should throw an error when pipeline loading fails', async () => {
+    const embedder = new TransformersEmbedder();
+    // Simulate pipeline failure by temporarily setting invalid pipeline promise
+    (embedder as any).pipelinePromise = Promise.reject(new Error('Pipeline initialization failed'));
+    await expect(embedder.embed('test')).rejects.toThrow('Pipeline initialization failed');
+  });
 });

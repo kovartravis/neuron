@@ -6,7 +6,9 @@ import { openDatabase } from './db.js';
 import {
   Embedder,
   TransformersEmbedder,
-  cleanFtsQuery,
+  cleanFtsQuery
+} from './components/index.js';
+import {
   MemoryKind,
   MemoryQuery,
   Memory,
@@ -15,9 +17,10 @@ import {
   MaintenancePolicy,
   MaintenanceReport,
   NeuronMemoryOptions
-} from './components/index.js';
+} from './models/index.js';
 
 export { openDatabase };
+export * from './models/index.js';
 export * from './components/index.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
