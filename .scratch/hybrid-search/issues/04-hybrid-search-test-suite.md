@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — Hybrid Retrieval Engine & RRF Rank Fusion
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] Unit and integration tests verify exact keyword matches (e.g. `onnxruntime-node`) surface at top rank.
 - [ ] Integration tests verify semantic concept queries (e.g. `mac setup`) retrieve relevant records.
