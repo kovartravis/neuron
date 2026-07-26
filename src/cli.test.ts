@@ -123,9 +123,8 @@ describe('Neuron CLI End-to-End', () => {
     expect(fs.existsSync(agentsPath)).toBe(true);
     
     const agentsContent = fs.readFileSync(agentsPath, 'utf8');
-    expect(agentsContent).toContain('## Memory Store');
-    expect(agentsContent).toContain('neuron-memory');
-    expect(agentsContent).not.toContain('neuron learn query');
+    expect(agentsContent).toContain('## Memory Store Protocol');
+    expect(agentsContent).toContain('neuron learn query');
 
     // 2. Run init with --file CLAUDE.md
     execSync(`node ${cliPath} init --file CLAUDE.md`, { env, cwd: initTempDir });
