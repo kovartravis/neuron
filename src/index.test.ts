@@ -571,3 +571,126 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     expect(results[0].content).toBe('pin onnxruntime to 1.20.1 to avoid crash');
   });
 });
+
+  it('should surface semantically relevant records even when no query keywords appear in the content', async () => {
+    // Both learnings use distinct embeddings; no query word appears in either content.
+    // Only the semantic (vector) rank can differentiate them.
+    const vecClose = new Float32Array(384);
+    vecClose[0] = 0.95; // high dot-product with query
+
+    const vecFar = new Float32Array(384);
+    vecFar[1] = 0.1;  // low dot-product with query
+
+    const queryVec = new Float32Array(384);
+    queryVec[0] = 1.0;
+
+    const mockEmbedder = {
+      embed: async (text: string) => {
+        if (text === 'QUERYSYMBOL') return queryVec;
+        if (text.includes('install homebrew')) return vecClose;
+        return vecFar;
+      }
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('install homebrew before setting up dev tools', ['mac'], { importance: 3 });
+    await memory.addLearning('configure webpack for production bundling', ['webpack'], { importance: 3 });
+
+    const results = await memory.query({ text: 'QUERYSYMBOL', kind: 'learning' });
+
+    expect(results[0].content).toBe('install homebrew before setting up dev tools');
+  });
+
+  it('should rank the higher-importance record first when FTS and semantic ranks are equivalent', async () => {
+    // Both learnings contain the keyword and share an identical embedding.
+    // Semantic rank and FTS rank are determined by insertion order (rowid).
+    // The low-importance record is inserted first (lower rowid), which would
+    // win on rank alone. Only the 25% importance term can promote the second record.
+    const sharedVec = new Float32Array(384);
+    sharedVec[2] = 1.0;
+
+    const mockEmbedder = { embed: async () => sharedVec };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    // Inserted first → lower rowid → ranks #1 in both semantic and FTS lists
+    await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 1 });
+    // Inserted second → higher rowid → ranks #2 in both lists, but importance=5 adds 0.25 points
+    await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 5 });
+
+    const results = await memory.query({ text: 'sqlite', kind: 'learning' });
+
+    expect(results[0].importance).toBe(5);
+    expect(results[1].importance).toBe(1);
+  });
+
+  it('should not surface keyword-matching records that are outside the queried scope', async () => {
+    const sharedVec = new Float32Array(384);
+    sharedVec[3] = 1.0;
+
+    const mockEmbedder = { embed: async () => sharedVec };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    // In-scope: global scope, no keyword match
+    await memory.addLearning('general coding guidelines', ['general'], { importance: 3 });
+
+    // Out-of-scope: 'other-team' scope, exact keyword match — should be invisible to default query
+    await memory.addLearning('always use vitest for testing', ['vitest'], { importance: 5, scope: 'other-team' });
+
+    // Default scopes are ['global', 'test-project'] — 'other-team' is excluded
+    const results = await memory.query({ text: 'vitest testing', kind: 'learning' });
+
+    const contents = results.map(r => r.content);
+    expect(contents).not.toContain('always use vitest for testing');
+    expect(contents).toContain('general coding guidelines');
+  });
+
+  it('should merge learnings and history results into a single ranked list when no kind filter is applied', async () => {
+    const keywordVec = new Float32Array(384);
+    keywordVec[4] = 1.0;
+
+    const otherVec = new Float32Array(384);
+    otherVec[5] = 1.0;
+
+    const mockEmbedder = {
+      embed: async (text: string) => {
+        // Query and the keyword-match record share the same vector
+        if (text.includes('webpack') || text === 'webpack bundler') return keywordVec;
+        return otherVec;
+      }
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('configure webpack for production bundling', ['webpack'], { importance: 3 });
+    await memory.addHistory('ran webpack build successfully', { tags: ['webpack'], importance: 3 });
+
+    // No kind filter → both learnings and history are searched
+    const results = await memory.query({ text: 'webpack bundler' });
+
+    const kinds = results.map(r => r.kind);
+    expect(kinds).toContain('learning');
+    expect(kinds).toContain('history');
+  });

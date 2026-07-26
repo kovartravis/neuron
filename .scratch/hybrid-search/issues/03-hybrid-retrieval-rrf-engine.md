@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — FTS5 Schema Migration & Triggers, 02 — FTS Query Sanitizer & Parser Utility
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] `NeuronMemory.query()` executes FTS `MATCH` search using `cleanFtsQuery` to obtain keyword rank ordering.
 - [ ] `NeuronMemory.query()` executes semantic vector search to obtain vector rank ordering.
