@@ -14,7 +14,7 @@ export async function handleExecCommand(args: string[]): Promise<void> {
 
   const memory = NeuronMemory.open(process.cwd());
   const matched = await memory.query({ text: rawCommandStr, limit: 5 });
-  const threshold = process.env.NEURON_MOCK_EMBEDDER === 'true' ? 0.15 : 0.35;
+  const threshold = 0.35;
   const relevant = matched.filter(m => (m.score ?? 0) >= threshold);
 
   if (relevant.length > 0) {
