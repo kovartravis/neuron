@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] `cleanFtsQuery(queryText)` returns an escaped, OR-joined string with wildcard prefixes.
 - [ ] Punctuation and invalid FTS operators are sanitized to prevent SQLite MATCH syntax errors.

@@ -118,12 +118,10 @@ describe('NeuronMemory DB Migrations', () => {
 
     const first = queryResult.results[0];
     expect(first.content).toBe('Always run tests before committing');
-    expect(first.score).toBeCloseTo(0.8);
     expect(first.tags).toEqual(['testing']);
 
     const second = queryResult.results[1];
     expect(second.content).toBe('Use credit cards for checkouts');
-    expect(second.score).toBeCloseTo(0.2);
     expect(second.tags).toEqual(['checkout']);
   });
 
@@ -303,9 +301,7 @@ describe('NeuronMemory DB Migrations', () => {
     const resDefault = await memory.queryLearnings('query test', { limit: 5 });
     expect(resDefault.results).toHaveLength(2);
     expect(resDefault.results[0].content).toBe('itemA content');
-    expect(resDefault.results[0].score).toBeCloseTo(0.925);
     expect(resDefault.results[1].content).toBe('itemC content');
-    expect(resDefault.results[1].score).toBeCloseTo(0.7125);
 
     // 2. Query with custom scopes (include 'kovart', so A, B, and C are all visible)
     const resCustom = await memory.queryLearnings('query test', { limit: 5, scopes: ['test-project', 'kovart'] });
@@ -546,3 +542,32 @@ describe('NeuronMemory DB Migrations', () => {
 });
 
 
+describe('NeuronMemory hybrid search (RRF)', () => {
+  it('should rank a keyword-exact-match learning first when vector similarity is tied', async () => {
+    // Both learnings get the exact same embedding → semantic scores are equal.
+    // Only the FTS keyword match can differentiate them.
+    // Without RRF, the two records tie on semantic score and order is arbitrary.
+    // With RRF, the keyword-matching record ranks first.
+    const sharedVec = new Float32Array(384);
+    sharedVec[0] = 1.0;
+
+    const mockEmbedder = { embed: async () => sharedVec };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    // B inserted first (lower rowid) so insertion-order alone would rank it first.
+    // Only an FTS keyword boost can override this to put A on top.
+    await memory.addLearning('always run tests before committing', ['testing'], { importance: 3 });
+    // A: contains the search keyword "onnxruntime" — inserted second, higher rowid
+    await memory.addLearning('pin onnxruntime to 1.20.1 to avoid crash', ['onnx'], { importance: 3 });
+
+    const results = await memory.query({ text: 'onnxruntime crash', kind: 'learning' });
+
+    expect(results[0].content).toBe('pin onnxruntime to 1.20.1 to avoid crash');
+  });
+});

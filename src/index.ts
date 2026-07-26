@@ -6,6 +6,7 @@ import { openDatabase } from './db.js';
 import {
   Embedder,
   TransformersEmbedder,
+  cleanFtsQuery,
   MemoryKind,
   MemoryQuery,
   Memory,
@@ -214,7 +215,7 @@ export class NeuronMemory {
     }
   }
 
-  // --- NEW HYBRID INTERFACE ---
+  // --- HYBRID SEARCH INTERFACE (RRF) ---
 
   public async query(q: MemoryQuery): Promise<Memory[]> {
     const limit = q.limit ?? 5;
@@ -226,30 +227,69 @@ export class NeuronMemory {
 
     if (q.text) {
       const queryVec = await this.embedder.embed(q.text);
-      
+
       const logId = crypto.randomUUID();
       const queryBlob = Buffer.from(queryVec.buffer, queryVec.byteOffset, queryVec.byteLength);
       const createdAt = new Date().toISOString();
-      const logStmt = this.db.prepare(`
+      this.db.prepare(`
         INSERT INTO query_logs (id, project_id, query_text, embedding, scope, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
-      `);
-      logStmt.run(logId, this.projectId, q.text, queryBlob, scopes.join(','), createdAt);
+      `).run(logId, this.projectId, q.text, queryBlob, scopes.join(','), createdAt);
+
+      const RRF_K = 60;
+      const RRF_MAX = 2 / (RRF_K + 1); // theoretical max when a doc ranks #1 in both lists
 
       for (const table of tables) {
-        const stmt = this.db.prepare(`
+        const ftsTable = table === 'learnings' ? 'learnings_fts' : 'history_fts';
+
+        // --- Semantic rank list ---
+        const rows = (this.db.prepare(`
           SELECT id, content, tags, embedding, scope, importance, created_at ${table === 'history' ? ', task_id' : ''}
           FROM ${table}
           WHERE project_id = ? AND scope IN (${placeholders})
-        `);
-        const rows = stmt.all(this.projectId, ...scopes) as any[];
+        `).all(this.projectId, ...scopes) as any[]);
 
-        for (const row of rows) {
+        // Compute semantic similarities and sort descending → rank position
+        const withSim = rows.map(row => {
           const blob = row.embedding;
           const embeddingVec = new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
-          const similarity = dotProduct(queryVec, embeddingVec);
+          return { row, similarity: dotProduct(queryVec, embeddingVec) };
+        });
+        withSim.sort((a, b) => b.similarity - a.similarity);
+        // Only assign a semantic rank to records with positive similarity;
+        // zero-similarity records contribute nothing to the semantic list.
+        const semanticRank = new Map<string, number>();
+        let semanticPos = 1;
+        for (const { row, similarity } of withSim) {
+          if (similarity > 0) semanticRank.set(row.id, semanticPos++);
+        }
+
+        // --- FTS rank list (if query has usable tokens) ---
+        const ftsQuery = cleanFtsQuery(q.text);
+        const ftsRank = new Map<string, number>();
+        if (ftsQuery) {
+          try {
+            const ftsRows = (this.db.prepare(`
+              SELECT t.id FROM ${ftsTable} f
+              JOIN ${table} t ON t.rowid = f.rowid
+              WHERE f.${ftsTable} MATCH ? AND t.project_id = ? AND t.scope IN (${placeholders})
+              ORDER BY rank
+            `).all(ftsQuery, this.projectId, ...scopes) as any[]);
+            ftsRows.forEach((r, i) => ftsRank.set(r.id, i + 1));
+          } catch {
+            // Malformed FTS query — degrade gracefully to semantic-only
+          }
+        }
+
+        // --- RRF fusion + Importance ---
+        for (const { row } of withSim) {
+          const sr = semanticRank.get(row.id) ?? Infinity;
+          const fr = ftsRank.get(row.id) ?? Infinity;
+          const rrfScore = (sr === Infinity ? 0 : 1 / (RRF_K + sr))
+                         + (fr === Infinity ? 0 : 1 / (RRF_K + fr));
+          const normRrf = rrfScore / RRF_MAX;
           const normImp = (row.importance - 1) / 4;
-          const score = 0.75 * similarity + 0.25 * normImp;
+          const score = 0.75 * normRrf + 0.25 * normImp;
 
           results.push({
             id: row.id,
@@ -264,7 +304,7 @@ export class NeuronMemory {
           });
         }
       }
-      
+
       results.sort((a, b) => (b.score!) - (a.score!));
       return results.slice(0, limit);
     } else {
