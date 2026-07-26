@@ -26,6 +26,9 @@ A complete, detailed technical specification (PRD) for a local-only, TypeScript-
 - [Importance & Maintenance Test Suite](.scratch/agent-memory-cli/issues/14-importance-maintenance-test-suite.md) — Comprehensive integration tests for demotion locks, pruning defaults, CLI validation, and schema bounds.
 - [Clean Up Prototype Hybrid Search Script](.scratch/agent-memory-cli/issues/15-cleanup-prototype-hybrid-search.md) — Removal of throwaway `src/prototype-hybrid-search.ts` file and package script.
 - [Fix Exec Mutex Lock Crash](.scratch/agent-memory-cli/issues/16-fix-exec-mutex-lock-crash.md) — Resolve macOS-specific mutex lock crash during ONNX Runtime process teardown by pinning onnxruntime-node to version 1.20.1.
+- [Web UI Dashboard & Local Server](.scratch/agent-memory-cli/issues/17-web-ui-dashboard-server.md) — Add `neuron ui` command launching local HTTP server and modern dark-mode dashboard for data viewing and CRUD operations.
+- [Memory Import/Export & Git Sync](.scratch/agent-memory-cli/issues/18-data-import-export-git-sync.md) — Export/import JSON/Markdown memory packages and push/pull updates to remote Git repositories from UI/CLI.
+- [Web UI Analytics & Scope Promotion Dashboard](.scratch/agent-memory-cli/issues/19-ui-analytics-metrics.md) — Interactive analytics dashboard visualizing memory statistics, scope promotion/demotion history, and tag access frequency metrics.
 
 
 
