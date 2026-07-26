@@ -29,6 +29,11 @@ A complete, detailed technical specification (PRD) for a local-only, TypeScript-
 - [Web UI Dashboard & Local Server](.scratch/agent-memory-cli/issues/17-web-ui-dashboard-server.md) — Add `neuron ui` command launching local HTTP server and modern dark-mode dashboard for data viewing and CRUD operations.
 - [Memory Import/Export & Git Sync](.scratch/agent-memory-cli/issues/18-data-import-export-git-sync.md) — Export/import JSON/Markdown memory packages and push/pull updates to remote Git repositories from UI/CLI.
 - [Web UI Analytics & Scope Promotion Dashboard](.scratch/agent-memory-cli/issues/19-ui-analytics-metrics.md) — Interactive analytics dashboard visualizing memory statistics, scope promotion/demotion history, and tag access frequency metrics.
+- [Automated Git Post-Commit Hook Integration](.scratch/agent-memory-cli/issues/20-git-post-commit-hook.md) — `neuron init --git-hooks` installing a `.git/hooks/post-commit` script to log commit messages automatically to `neuron history`.
+- [Memory Deduplication & Rule Consolidation](.scratch/agent-memory-cli/issues/21-memory-deduplication-clustering.md) — Detect and merge near-duplicate learnings (cosine similarity >= 0.90) into single consolidated guidelines.
+- [Multi-Provider Embedder Support](.scratch/agent-memory-cli/issues/22-multi-embedder-support.md) — Pluggable external embedding providers (OpenAI, Ollama, Cohere) via `--embedder-provider`.
+- [CLI Shell Autocompletion](.scratch/agent-memory-cli/issues/23-cli-shell-autocompletion.md) — `neuron completion <zsh|bash|fish>` generating shell completion scripts for subcommands, flags, and scopes.
+- [Interactive Rule Conflict Detection](.scratch/agent-memory-cli/issues/24-conflict-detection-resolution.md) — Detect semantic collisions and contradictions between newly added learnings and existing high-importance rules.
 
 
 
