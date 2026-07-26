@@ -22,6 +22,7 @@ import {
 export { openDatabase };
 export * from './models/index.js';
 export * from './components/index.js';
+export * from './config/index.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
