@@ -586,7 +586,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
 
     const mockEmbedder = {
       embed: async (text: string) => {
-        if (text === 'QUERYSYMBOL') return queryVec;
+        if (text.includes('QUERYSYMBOL')) return queryVec;
         if (text.includes('install homebrew')) return vecClose;
         return vecFar;
       }
@@ -694,3 +694,50 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     expect(kinds).toContain('learning');
     expect(kinds).toContain('history');
   });
+
+describe('NeuronMemory BGE query instruction prefix', () => {
+  it('should call embedQuery (not embed) when computing the search vector so the BGE instruction prefix is applied', async () => {
+    // vecA: aligns with "alpha" passage. embed('alpha...') = vecA.
+    // vecB: aligns with "beta" passage.  embed('beta...')  = vecB.
+    //
+    // The mock's embed() for ANY non-passage text (i.e. the query text 'search query')
+    // returns vecA — so if query() calls embed(), alpha ranks first.
+    //
+    // embedQuery() always returns vecB — so if query() calls embedQuery(), beta ranks first.
+    //
+    // Only one of these can be true at once: this test is a decisive discriminator.
+    const vecA = new Float32Array(384);
+    vecA[0] = 1.0;
+
+    const vecB = new Float32Array(384);
+    vecB[1] = 1.0;
+
+    const mockEmbedder = {
+      // Passage embedding: distinguishes the two learnings by content keyword
+      embed: async (text: string) => {
+        if (text.includes('alpha')) return vecA;
+        if (text.includes('beta')) return vecB;
+        // query() incorrectly calling embed() for the search vector gets vecA
+        return vecA;
+      },
+      // Query embedding: always returns vecB — the decisive signal
+      embedQuery: async (_text: string) => vecB
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('alpha learning', [], { importance: 3 });
+    await memory.addLearning('beta learning', [], { importance: 3 });
+
+    const results = await memory.query({ text: 'search query', kind: 'learning' });
+
+    // Correct: embedQuery → vecB → beta ranks first
+    // Wrong:   embed      → vecA → alpha ranks first
+    expect(results[0].content).toBe('beta learning');
+  });
+});

@@ -226,7 +226,9 @@ export class NeuronMemory {
     const tables = q.kind ? [q.kind === 'learning' ? 'learnings' : 'history'] : ['learnings', 'history'];
 
     if (q.text) {
-      const queryVec = await this.embedder.embed(q.text);
+      const queryVec = this.embedder.embedQuery
+        ? await this.embedder.embedQuery(q.text)
+        : await this.embedder.embed(`Represent this sentence for searching relevant passages: ${q.text}`);
 
       const logId = crypto.randomUUID();
       const queryBlob = Buffer.from(queryVec.buffer, queryVec.byteOffset, queryVec.byteLength);
