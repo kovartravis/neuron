@@ -39,7 +39,7 @@ export class NeuronMemory {
   private projectRoot: string;
   private projectName: string;
   private projectId: string;
-  private embedder: Embedder;
+  private embedder: Required<Embedder>;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -51,7 +51,13 @@ export class NeuronMemory {
       .slice(0, 16);
     
     this.db = openDatabase(options.dbPath);
-    this.embedder = options.embedder ?? new TransformersEmbedder();
+    const rawEmbedder = options.embedder ?? new TransformersEmbedder();
+    this.embedder = {
+      embed: (txt) => rawEmbedder.embed(txt),
+      embedQuery: (txt) => rawEmbedder.embedQuery
+        ? rawEmbedder.embedQuery(txt)
+        : rawEmbedder.embed(`Represent this sentence for searching relevant passages: ${txt}`)
+    };
     this.initialize();
   }
 
@@ -226,9 +232,7 @@ export class NeuronMemory {
     const tables = q.kind ? [q.kind === 'learning' ? 'learnings' : 'history'] : ['learnings', 'history'];
 
     if (q.text) {
-      const queryVec = this.embedder.embedQuery
-        ? await this.embedder.embedQuery(q.text)
-        : await this.embedder.embed(`Represent this sentence for searching relevant passages: ${q.text}`);
+      const queryVec = await this.embedder.embedQuery(q.text);
 
       const logId = crypto.randomUUID();
       const queryBlob = Buffer.from(queryVec.buffer, queryVec.byteOffset, queryVec.byteLength);
