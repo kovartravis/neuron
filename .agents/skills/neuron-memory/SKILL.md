@@ -60,11 +60,14 @@ When asked to set up memory for a project or configure memory settings:
          limit: 8
    ```
 
-3. **Configure `AGENTS.md` / Instruction Files**:
-   Write or update the memory store protocol in `AGENTS.md` (or `CLAUDE.md`, `CURSOR.md`) matching the categories declared in `neuron.yaml`.
+3. **Configure & Align `AGENTS.md` / Instruction Files (Mandatory)**:
+   Always write or update `AGENTS.md` (or `CLAUDE.md`, `CURSOR.md`) immediately after creating or updating `neuron.yaml`. Ensure `AGENTS.md` explicitly documents:
+   - All declared categories from `neuron.yaml` (e.g., `learning`, `history`, `decisions`).
+   - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
+   - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
 
 4. **Synchronize On Edits**:
-   Whenever `neuron.yaml` is modified in future sessions, update `AGENTS.md` to keep commands and categories in sync.
+   Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
 
 ## 1. Beginning of Run (Context Loading)
 

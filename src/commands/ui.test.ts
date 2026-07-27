@@ -78,6 +78,30 @@ describe('neuron ui: HTTP server', () => {
     expect(body.results[0].tags).toEqual(['search']);
     expect(body.results[0].taskId).toBe('ticket-03');
   });
+
+  // --- S2d: GET /api/categories and GET /api/memories ---
+
+  it('GET /api/categories and GET /api/memories return dynamic category details and query results', async () => {
+    const memory = NeuronMemory.inMemory('ui-categories-test');
+    await memory.transact([{ op: 'upsert', category: 'decisions', content: 'Use WAL mode', tags: ['adr'] }]);
+    server = await startUiServer({ memory, port: 0 });
+
+    const statusRes = await fetch(`http://localhost:${server.port}/api/categories`);
+    expect(statusRes.status).toBe(200);
+    const statusBody = await statusRes.json() as any;
+    expect(Array.isArray(statusBody.categories)).toBe(true);
+    const decisionsCat = statusBody.categories.find((c: any) => c.name === 'decisions');
+    expect(decisionsCat).toBeDefined();
+    expect(decisionsCat.count).toBe(1);
+
+    const memRes = await fetch(`http://localhost:${server.port}/api/memories?category=decisions`);
+    expect(memRes.status).toBe(200);
+    const memBody = await memRes.json() as any;
+    expect(Array.isArray(memBody.results)).toBe(true);
+    expect(memBody.results).toHaveLength(1);
+    expect(memBody.results[0].category).toBe('decisions');
+    expect(memBody.results[0].content).toBe('Use WAL mode');
+  });
 });
 
 describe('neuron ui: handleUiCommand', () => {

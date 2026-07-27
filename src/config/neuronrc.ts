@@ -70,6 +70,9 @@ export function findConfigFile(startDir: string): string | null {
     }
     const parent = path.dirname(dir);
     if (parent === dir) return null;
+    if (fs.existsSync(path.join(dir, 'package.json')) || fs.existsSync(path.join(dir, '.git'))) {
+      return null;
+    }
     dir = parent;
   }
 }

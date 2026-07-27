@@ -4,8 +4,8 @@ export function generateDashboardHtml(): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neuron</title>
-  <meta name="description" content="Neuron local agent memory — browse learnings and history." />
+  <title>Neuron Memory Dashboard</title>
+  <meta name="description" content="Neuron local agent memory dashboard — browse learnings, history, and custom categories." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -43,13 +43,14 @@ export function generateDashboardHtml(): string {
     }
 
     /* ---- Layout ---- */
-    .layout { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+    .layout { display: flex; flex-direction: column; min-height: 100vh; }
 
     /* ---- Topbar ---- */
     .topbar {
       display: flex; align-items: center; gap: 20px;
       border-bottom: 1px solid var(--border);
-      padding: 0 24px; height: 48px;
+      padding: 0 24px; height: 48px; flex-shrink: 0;
+      background: var(--surface);
     }
     .wordmark {
       font-size: 13px; font-weight: 600; color: var(--text-1);
@@ -71,42 +72,24 @@ export function generateDashboardHtml(): string {
     }
     .status-dot.warn { background: var(--accent); }
 
-    /* ---- Body ---- */
-    .body { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
-    @media (max-width: 860px) { .body { grid-template-columns: 1fr; } }
-
-    /* ---- Panel ---- */
-    .panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); }
-    .panel:last-child { border-right: none; }
-
-    .panel-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 14px;
+    /* ---- Control Header (Search + Category Tabs) ---- */
+    .controls-bar {
+      padding: 16px 24px 0;
       border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: var(--bg); z-index: 10;
-    }
-    .panel-title {
-      font-size: 12px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.6px;
-      color: var(--text-2);
-    }
-    .count-badge {
-      font-size: 11px; color: var(--text-3);
-      font-variant-numeric: tabular-nums;
+      background: var(--bg);
+      display: flex; flex-direction: column; gap: 14px;
     }
 
-    /* ---- Search ---- */
     .search-bar {
-      display: flex; align-items: center; gap: 0;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      transition: border-color 0.15s;
     }
-    .search-bar-inner {
-      display: flex; align-items: center; gap: 0;
-      flex: 1;
-    }
+    .search-bar:focus-within { border-color: var(--accent-border); }
+
     .search-icon {
-      padding: 0 12px; color: var(--text-3); flex-shrink: 0;
+      padding: 0 14px; color: var(--text-3); flex-shrink: 0;
       display: flex; align-items: center;
     }
     .search-input {
@@ -116,50 +99,80 @@ export function generateDashboardHtml(): string {
     }
     .search-input::placeholder { color: var(--text-3); }
     .search-btn {
-      background: none; border: none; border-left: 1px solid var(--border);
-      color: var(--text-2); cursor: pointer; font-family: inherit;
+      background: var(--surface-2); border: none; border-left: 1px solid var(--border);
+      color: var(--text-1); cursor: pointer; font-family: inherit;
       font-size: 12px; font-weight: 500;
-      padding: 0 14px; height: 100%; min-height: 38px;
-      transition: color 0.1s, background 0.1s;
+      padding: 0 18px; height: 100%; min-height: 38px;
+      transition: background 0.1s, color 0.1s;
       white-space: nowrap;
     }
-    .search-btn:hover { background: var(--surface-2); color: var(--text-1); }
-    .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .search-btn:hover { background: var(--border-2); }
 
-    /* ---- Search results notice ---- */
+    /* ---- Category Tabs ---- */
+    .category-tabs {
+      display: flex; align-items: center; gap: 8px;
+      overflow-x: auto; padding-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .category-tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 14px;
+      color: var(--text-2); font-family: inherit; font-size: 12px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      white-space: nowrap; transition: all 0.15s ease;
+    }
+    .tab-btn:hover { background: var(--surface-2); color: var(--text-1); border-color: var(--border-2); }
+    .tab-btn.active {
+      background: var(--accent-dim); color: var(--accent);
+      border-color: var(--accent-border);
+    }
+    .tab-count {
+      font-size: 11px; padding: 1px 6px; border-radius: 10px;
+      background: var(--surface-2); color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
+    .tab-btn.active .tab-count {
+      background: rgba(232,169,77,0.2); color: var(--accent);
+    }
+
+    /* ---- Main Content ---- */
+    .content-area { flex: 1; padding: 20px 24px; max-width: 1200px; width: 100%; margin: 0 auto; }
+
     .search-notice {
-      padding: 8px 16px; font-size: 11px; color: var(--text-3);
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      margin-bottom: 14px; padding: 8px 14px; font-size: 12px; color: var(--text-2);
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: space-between;
     }
     .search-clear {
       background: none; border: none; cursor: pointer;
-      color: var(--text-3); font-size: 11px; padding: 0;
+      color: var(--accent); font-size: 12px; font-weight: 500; padding: 0;
     }
-    .search-clear:hover { color: var(--text-1); }
+    .search-clear:hover { text-decoration: underline; }
 
-    /* ---- Entry list ---- */
-    .entry-list { flex: 1; overflow-y: auto; }
+    .entry-list { display: flex; flex-direction: column; gap: 10px; }
 
     .entry {
-      padding: 13px 20px;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.1s;
-      cursor: default;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      transition: border-color 0.12s, background 0.12s;
     }
-    .entry:last-child { border-bottom: none; }
-    .entry:hover { background: var(--surface); }
+    .entry:hover { border-color: var(--border-2); background: #1c1c1a; }
 
     .entry-content {
-      color: var(--text-1); font-size: 13px; line-height: 1.55;
-      margin-bottom: 8px;
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-      overflow: hidden;
+      color: var(--text-1); font-size: 13px; line-height: 1.6;
+      margin-bottom: 12px; white-space: pre-wrap; word-break: break-word;
     }
 
     .entry-meta {
-      display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    .cat-badge {
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent-border);
+      border-radius: var(--radius-sm); padding: 1px 7px;
     }
 
     .tag {
@@ -182,26 +195,19 @@ export function generateDashboardHtml(): string {
       color: var(--blue); background: var(--blue-dim); border-color: rgba(74,142,245,0.25);
     }
 
-    .imp-bar {
-      display: flex; align-items: center; gap: 3px;
-    }
-    .imp-seg {
-      width: 12px; height: 3px; border-radius: 2px;
-      background: var(--border-2);
-    }
+    .imp-bar { display: flex; align-items: center; gap: 3px; }
+    .imp-seg { width: 10px; height: 3px; border-radius: 2px; background: var(--border-2); }
     .imp-seg.on { background: var(--text-3); }
     .imp-5 .imp-seg.on { background: var(--red); }
     .imp-4 .imp-seg.on { background: var(--accent); }
     .imp-3 .imp-seg.on { background: var(--blue); }
 
     .task-id {
-      font-size: 11px; font-family: 'JetBrains Mono', monospace;
-      color: var(--text-3);
+      font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-3);
     }
 
     .ts {
-      font-size: 11px; color: var(--text-3);
-      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace;
       margin-left: auto;
     }
 
@@ -210,31 +216,25 @@ export function generateDashboardHtml(): string {
       color: var(--blue); font-weight: 500;
     }
 
-    /* ---- Empty / loading ---- */
     .state-msg {
-      padding: 48px 20px; text-align: center;
-      color: var(--text-3); font-size: 13px;
+      padding: 60px 20px; text-align: center; color: var(--text-3); font-size: 13px;
+      background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius);
     }
-    .state-msg p { margin-top: 4px; font-size: 12px; }
 
-    /* ---- View all row ---- */
-    .view-all-row {
-      padding: 10px 20px; border-top: 1px solid var(--border);
-      position: sticky; bottom: 0; background: var(--bg);
+    .footer-actions {
+      margin-top: 20px; display: flex; justify-content: center;
     }
     .view-all-btn {
-      background: none; border: 1px solid var(--border);
-      border-radius: var(--radius-sm); color: var(--text-2);
-      cursor: pointer; font-family: inherit; font-size: 12px;
-      padding: 5px 12px; width: 100%;
-      transition: background 0.1s, border-color 0.1s, color 0.1s;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text-2);
+      cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500;
+      padding: 10px 24px; transition: all 0.15s;
     }
     .view-all-btn:hover { background: var(--surface-2); border-color: var(--border-2); color: var(--text-1); }
 
     /* ---- Modal ---- */
     .modal-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
       display: flex; align-items: flex-start; justify-content: center;
       z-index: 100; padding: 48px 16px; overflow-y: auto;
       opacity: 0; pointer-events: none; transition: opacity 0.15s;
@@ -242,30 +242,23 @@ export function generateDashboardHtml(): string {
     .modal-backdrop.open { opacity: 1; pointer-events: all; }
     .modal {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; width: 100%; max-width: 680px;
+      border-radius: 10px; width: 100%; max-width: 800px;
       transform: translateY(-8px); transition: transform 0.15s;
-      display: flex; flex-direction: column; max-height: 80vh;
+      display: flex; flex-direction: column; max-height: 85vh;
     }
     .modal-backdrop.open .modal { transform: translateY(0); }
     .modal-head {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px; border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
-    .modal-head-title { font-size: 13px; font-weight: 600; color: var(--text-1); }
+    .modal-head-title { font-size: 14px; font-weight: 600; color: var(--text-1); }
     .modal-close {
       background: none; border: none; cursor: pointer;
-      color: var(--text-3); font-size: 16px; line-height: 1;
-      padding: 2px 4px; transition: color 0.1s;
+      color: var(--text-3); font-size: 18px; line-height: 1;
+      padding: 2px 6px; transition: color 0.1s;
     }
     .modal-close:hover { color: var(--text-1); }
-    .modal-body { overflow-y: auto; flex: 1; }
-    .modal-body .entry { border-bottom: 1px solid var(--border); }
-
-    /* ---- Scrollbar ---- */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+    .modal-body { overflow-y: auto; flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
   </style>
 </head>
 <body>
@@ -276,105 +269,66 @@ export function generateDashboardHtml(): string {
     <div class="topbar-meta">
       <span class="meta-item"><span class="status-dot" id="db-dot"></span> <strong id="project-name">—</strong></span>
       <span class="sep">·</span>
-      <span class="meta-item"><strong id="learn-count">—</strong> learnings</span>
-      <span class="sep">·</span>
-      <span class="meta-item"><strong id="history-count">—</strong> history</span>
+      <span class="meta-item"><strong id="total-count">—</strong> total memories</span>
       <span class="meta-item" id="model-warn" style="display:none"><span class="status-dot warn"></span> model not cached</span>
     </div>
   </header>
 
-  <div class="body">
-
-    <!-- Learnings panel -->
-    <div class="panel" id="panel-learnings">
-      <div class="panel-header">
-        <span class="panel-title">Learnings</span>
-        <span class="count-badge" id="learnings-count-badge"></span>
-      </div>
-      <div class="search-bar" id="sb-learnings">
-        <div class="search-bar-inner">
-          <span class="search-icon">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </span>
-          <input class="search-input" id="q-learnings" type="text" placeholder="Search learnings…" autocomplete="off" />
-        </div>
-        <button class="search-btn" id="btn-search-learnings">Search</button>
-      </div>
-      <div id="learnings-notice" style="display:none" class="search-notice">
-        <span id="learnings-notice-text"></span>
-        <button class="search-clear" id="btn-clear-learnings">Clear</button>
-      </div>
-      <div class="entry-list" id="learnings-list">
-        <div class="state-msg">Loading…</div>
-      </div>
-      <div class="view-all-row">
-        <button class="view-all-btn" id="btn-all-learnings">View all learnings</button>
-      </div>
+  <div class="controls-bar">
+    <div class="search-bar">
+      <span class="search-icon">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </span>
+      <input class="search-input" id="global-search" type="text" placeholder="Search memories..." autocomplete="off" />
+      <button class="search-btn" id="btn-search">Search</button>
     </div>
 
-    <!-- History panel -->
-    <div class="panel" id="panel-history">
-      <div class="panel-header">
-        <span class="panel-title">History</span>
-        <span class="count-badge" id="history-count-badge"></span>
-      </div>
-      <div class="search-bar" id="sb-history">
-        <div class="search-bar-inner">
-          <span class="search-icon">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </span>
-          <input class="search-input" id="q-history" type="text" placeholder="Search history…" autocomplete="off" />
-        </div>
-        <button class="search-btn" id="btn-search-history">Search</button>
-      </div>
-      <div id="history-notice" style="display:none" class="search-notice">
-        <span id="history-notice-text"></span>
-        <button class="search-clear" id="btn-clear-history">Clear</button>
-      </div>
-      <div class="entry-list" id="history-list">
-        <div class="state-msg">Loading…</div>
-      </div>
-      <div class="view-all-row">
-        <button class="view-all-btn" id="btn-all-history">View all history</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- Modal: all learnings -->
-<div class="modal-backdrop" id="modal-learnings" role="dialog" aria-modal="true">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-head-title">All Learnings</span>
-      <button class="modal-close" id="close-learnings">✕</button>
-    </div>
-    <div class="modal-body" id="modal-learnings-body">
-      <div class="state-msg">Loading…</div>
+    <div class="category-tabs" id="category-tabs">
+      <button class="tab-btn active" data-cat="all">All <span class="tab-count" id="count-all">0</span></button>
     </div>
   </div>
+
+  <main class="content-area">
+    <div id="search-notice" style="display:none" class="search-notice">
+      <span id="search-notice-text"></span>
+      <button class="search-clear" id="btn-clear-search">Clear search</button>
+    </div>
+
+    <div class="entry-list" id="main-entry-list">
+      <div class="state-msg">Loading memories...</div>
+    </div>
+
+    <div class="footer-actions">
+      <button class="view-all-btn" id="btn-view-all">View all in active category</button>
+    </div>
+  </main>
+
 </div>
 
-<!-- Modal: all history -->
-<div class="modal-backdrop" id="modal-history" role="dialog" aria-modal="true">
+<!-- Generic Reusable Modal -->
+<div class="modal-backdrop" id="generic-modal" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="modal-head">
-      <span class="modal-head-title">All History</span>
-      <button class="modal-close" id="close-history">✕</button>
+      <span class="modal-head-title" id="modal-title">All Memories</span>
+      <button class="modal-close" id="modal-close">✕</button>
     </div>
-    <div class="modal-body" id="modal-history-body">
-      <div class="state-msg">Loading…</div>
+    <div class="modal-body" id="modal-body">
+      <div class="state-msg">Loading...</div>
     </div>
   </div>
 </div>
 
 <script>
 (function () {
+  let activeCategory = 'all';
+  let categoriesData = [];
+
   function esc(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   function relTime(iso) {
+    if (!iso) return '';
     const diff = Date.now() - new Date(iso).getTime();
     const s = Math.floor(diff / 1000);
     if (s < 60)  return s + 's';
@@ -406,23 +360,14 @@ export function generateDashboardHtml(): string {
     return (arr || []).map(t => '<span class="tag">' + esc(t) + '</span>').join('');
   }
 
-  function renderLearning(item, showScore) {
+  function renderEntry(item, showScore) {
+    const catBadge = '<span class="cat-badge">' + esc(item.category || item.kind || 'memory') + '</span>';
     return '<div class="entry">' +
       '<div class="entry-content">' + esc(item.content) + '</div>' +
       '<div class="entry-meta">' +
+        catBadge +
         impBar(item.importance) +
         scopeTag(item.scope) +
-        tags(item.tags) +
-        (showScore && item.score != null ? '<span class="score-tag">' + Math.round(item.score * 100) + '%</span>' : '') +
-        (item.createdAt ? '<span class="ts">' + relTime(item.createdAt) + '</span>' : '') +
-      '</div>' +
-    '</div>';
-  }
-
-  function renderHistory(item, showScore) {
-    return '<div class="entry">' +
-      '<div class="entry-content">' + esc(item.content) + '</div>' +
-      '<div class="entry-meta">' +
         (item.taskId ? '<span class="task-id">' + esc(item.taskId) + '</span>' : '') +
         tags(item.tags) +
         (showScore && item.score != null ? '<span class="score-tag">' + Math.round(item.score * 100) + '%</span>' : '') +
@@ -435,7 +380,6 @@ export function generateDashboardHtml(): string {
     return '<div class="state-msg">' + esc(msg) + '</div>';
   }
 
-  // ---- API ----
   async function api(path) {
     const r = await fetch(path);
     if (!r.ok) throw new Error(r.statusText);
@@ -445,120 +389,135 @@ export function generateDashboardHtml(): string {
   async function loadStatus() {
     const d = await api('/api/status');
     document.getElementById('project-name').textContent = d.project || '—';
-    document.getElementById('learn-count').textContent  = d.learnCount ?? '—';
-    document.getElementById('history-count').textContent = d.historyCount ?? '—';
+    document.getElementById('total-count').textContent  = d.totalCount ?? '—';
     if (d.model !== 'ready') {
       document.getElementById('model-warn').style.display = '';
     }
-  }
 
-  async function loadPanel(kind, q, limit) {
-    const qs = q ? '?q=' + encodeURIComponent(q) + '&limit=' + limit : '?limit=' + limit;
-    const d = await api('/api/' + kind + qs);
-    return d.results || [];
-  }
-
-  // ---- Render panel ----
-  async function renderPanel(kind, q) {
-    const listEl  = document.getElementById(kind + '-list');
-    const badgeEl = document.getElementById(kind + '-count-badge');
-    const noticeEl = document.getElementById(kind + '-notice');
-    const noticeTextEl = document.getElementById(kind + '-notice-text');
-
-    listEl.innerHTML = '<div class="state-msg">Loading…</div>';
-
-    const isSearch = !!(q && q.trim());
-    const limit = isSearch ? 20 : 12;
-
-    try {
-      const items = await loadPanel(kind, isSearch ? q : null, limit);
-      badgeEl.textContent = items.length ? items.length + (isSearch ? ' results' : '') : '';
-
-      if (noticeEl) {
-        if (isSearch) {
-          noticeTextEl.textContent = items.length + ' result' + (items.length !== 1 ? 's' : '') + ' for "' + q + '"';
-          noticeEl.style.display = '';
-        } else {
-          noticeEl.style.display = 'none';
-        }
-      }
-
-      if (!items.length) {
-        listEl.innerHTML = empty(isSearch ? 'No results.' : 'Nothing here yet.');
-        return;
-      }
-      listEl.innerHTML = items.map(i =>
-        kind === 'learnings' ? renderLearning(i, isSearch) : renderHistory(i, isSearch)
-      ).join('');
-    } catch(e) {
-      listEl.innerHTML = empty('Failed to load: ' + e.message);
+    if (Array.isArray(d.categories)) {
+      categoriesData = d.categories;
+      renderTabs();
     }
   }
 
-  // ---- Search wiring ----
-  function wireSearch(kind) {
-    const input = document.getElementById('q-' + kind);
-    const btn   = document.getElementById('btn-search-' + kind);
-    const clearBtn = document.getElementById('btn-clear-' + kind);
+  function renderTabs() {
+    const container = document.getElementById('category-tabs');
+    let totalSum = 0;
+    for (const c of categoriesData) totalSum += (c.count || 0);
 
-    async function run() {
-      btn.disabled = true;
-      await renderPanel(kind, input.value);
-      btn.disabled = false;
+    let html = '<button class="tab-btn ' + (activeCategory === 'all' ? 'active' : '') + '" data-cat="all">All <span class="tab-count">' + totalSum + '</span></button>';
+
+    for (const cat of categoriesData) {
+      const isAct = activeCategory === cat.name;
+      html += '<button class="tab-btn ' + (isAct ? 'active' : '') + '" data-cat="' + esc(cat.name) + '">' +
+        esc(cat.name) + ' <span class="tab-count">' + (cat.count || 0) + '</span>' +
+      '</button>';
     }
-    btn.addEventListener('click', run);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
-    clearBtn.addEventListener('click', () => {
-      input.value = '';
-      renderPanel(kind, '');
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCategory = btn.getAttribute('data-cat') || 'all';
+        renderTabs();
+        loadMemories();
+      });
     });
   }
 
-  // ---- Modals ----
-  function openModal(id) {
-    document.getElementById('modal-' + id).classList.add('open');
+  async function loadMemories() {
+    const listEl = document.getElementById('main-entry-list');
+    const searchInput = document.getElementById('global-search');
+    const noticeEl = document.getElementById('search-notice');
+    const noticeTextEl = document.getElementById('search-notice-text');
+    const q = searchInput.value.trim();
+
+    listEl.innerHTML = '<div class="state-msg">Loading memories...</div>';
+
+    let path = '/api/memories?limit=25';
+    if (activeCategory !== 'all') {
+      path += '&category=' + encodeURIComponent(activeCategory);
+    }
+    if (q) {
+      path += '&q=' + encodeURIComponent(q);
+    }
+
+    if (q) {
+      noticeTextEl.textContent = 'Showing search results for "' + q + '"' + (activeCategory !== 'all' ? ' in category "' + activeCategory + '"' : '');
+      noticeEl.style.display = '';
+    } else {
+      noticeEl.style.display = 'none';
+    }
+
+    try {
+      const data = await api(path);
+      const items = data.results || [];
+      if (!items.length) {
+        listEl.innerHTML = empty(q ? 'No matching memories found.' : 'No memories in this category yet.');
+        return;
+      }
+      listEl.innerHTML = items.map(i => renderEntry(i, !!q)).join('');
+    } catch(e) {
+      listEl.innerHTML = empty('Failed to load memories: ' + e.message);
+    }
+  }
+
+  // ---- Search Events ----
+  const searchInput = document.getElementById('global-search');
+  const searchBtn = document.getElementById('btn-search');
+  const clearBtn = document.getElementById('btn-clear-search');
+
+  searchBtn.addEventListener('click', loadMemories);
+  searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadMemories(); });
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    loadMemories();
+  });
+
+  // ---- Modal ----
+  const modal = document.getElementById('generic-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalBody = document.getElementById('modal-body');
+  const modalClose = document.getElementById('modal-close');
+  const btnViewAll = document.getElementById('btn-view-all');
+
+  function openModal() {
+    modal.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
-  function closeModal(id) {
-    document.getElementById('modal-' + id).classList.remove('open');
+  function closeModal() {
+    modal.classList.remove('open');
     document.body.style.overflow = '';
   }
 
-  async function openAll(kind) {
-    openModal(kind);
-    const bodyEl = document.getElementById('modal-' + kind + '-body');
-    bodyEl.innerHTML = '<div class="state-msg">Loading…</div>';
+  async function openAllModal() {
+    modalTitle.textContent = 'All Memories' + (activeCategory !== 'all' ? ' (' + activeCategory + ')' : '');
+    modalBody.innerHTML = '<div class="state-msg">Loading all entries...</div>';
+    openModal();
+
+    let path = '/api/memories?limit=500';
+    if (activeCategory !== 'all') {
+      path += '&category=' + encodeURIComponent(activeCategory);
+    }
+
     try {
-      const items = await loadPanel(kind, null, 500);
-      bodyEl.innerHTML = items.length
-        ? items.map(i => kind === 'learnings' ? renderLearning(i, false) : renderHistory(i, false)).join('')
-        : empty('Nothing here yet.');
-    } catch(e) {
-      bodyEl.innerHTML = empty('Failed: ' + e.message);
+      const data = await api(path);
+      const items = data.results || [];
+      modalBody.innerHTML = items.length
+        ? items.map(i => renderEntry(i, false)).join('')
+        : empty('No entries found.');
+    } catch (e) {
+      modalBody.innerHTML = empty('Failed to load: ' + e.message);
     }
   }
 
-  document.getElementById('btn-all-learnings').addEventListener('click', () => openAll('learnings'));
-  document.getElementById('btn-all-history').addEventListener('click',   () => openAll('history'));
-  document.getElementById('close-learnings').addEventListener('click', () => closeModal('learnings'));
-  document.getElementById('close-history').addEventListener('click',   () => closeModal('history'));
+  btnViewAll.addEventListener('click', openAllModal);
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-  document.querySelectorAll('.modal-backdrop').forEach(el => {
-    el.addEventListener('click', e => { if (e.target === el) closeModal(el.id.replace('modal-', '')); });
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeModal('learnings');
-      closeModal('history');
-    }
-  });
-
-  // ---- Boot ----
-  wireSearch('learnings');
-  wireSearch('history');
-  loadStatus().catch(console.error);
-  renderPanel('learnings', '').catch(console.error);
-  renderPanel('history',   '').catch(console.error);
+  // ---- Init ----
+  loadStatus().then(loadMemories).catch(console.error);
 })();
 </script>
 </body>

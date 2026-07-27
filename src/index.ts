@@ -335,6 +335,8 @@ export class NeuronMemory {
     let categoryFilter: string[] | null = null;
     if (q.categories && q.categories.length > 0) {
       categoryFilter = q.categories;
+    } else if (q.category) {
+      categoryFilter = [q.category];
     } else if (q.kind) {
       // Backward compat: kind → category
       categoryFilter = [q.kind === 'learning' ? 'learning' : 'history'];

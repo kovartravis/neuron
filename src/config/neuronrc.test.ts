@@ -19,6 +19,7 @@ describe('neuron.yaml Config Loader', () => {
   it('should return default config when no neuron.yaml file exists', () => {
     const emptyDir = path.join(tempDir, 'empty-proj');
     fs.mkdirSync(emptyDir, { recursive: true });
+    fs.writeFileSync(path.join(emptyDir, 'package.json'), '{}');
 
     const config = loadConfig(emptyDir);
     expect(config.version).toBe('1.0');

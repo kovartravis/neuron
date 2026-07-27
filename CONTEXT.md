@@ -44,5 +44,14 @@ The rank aggregation algorithm that merges ordered results from semantic and key
 
 The SQLite FTS5 virtual table (`learnings_fts` or `history_fts`) linked as an external content table to index the `content` and `tags` columns.
 
+### dynamic category UI
+
+The user interface layout that dynamically adapts its navigation tabs, category counters, and search context based on whatever categories are registered in `neuron.yaml` and stored in SQLite memories.
+
+### generic memory endpoint
+
+The REST API endpoint (`/api/memories`) accepting a `category` parameter to list or query memories across any arbitrary category.
+
+
 
 

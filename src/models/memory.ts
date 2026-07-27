@@ -3,9 +3,11 @@ export type MemoryKind = 'learning' | 'history';
 
 export interface MemoryQuery {
   text?: string;
+  /** Filter by a single category. */
+  category?: string;
   /** Filter by one or more categories. */
   categories?: string[];
-  /** @deprecated Use `categories` instead. Kept for backward compatibility. */
+  /** @deprecated Use `categories` or `category` instead. Kept for backward compatibility. */
   kind?: MemoryKind;
   scopes?: string[];
   limit?: number;
