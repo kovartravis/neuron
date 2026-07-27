@@ -11,47 +11,47 @@
 
 ## 💡 Why Neuron? (The Agent Amnesia Problem)
 
-AI coding agents (like Claude, Cursor, Antigravity, and Codex) are incredibly powerful, but they suffer from **severe short-term amnesia**. Every time you start a new agent session, the context window resets. 
+AI coding agents (such as Claude, Cursor, Antigravity, and Codex) are powerful pair programmers, but they suffer from **severe short-term amnesia**. Every time a new session starts, the context window resets to zero.
 
-Without memory:
-* **Agents repeat mistakes:** They will spend 20 minutes trying to debug a native macOS mutex lock crash before finally discovering they need a specific dependency override—only to **forget it entirely** in the next session and waste your API tokens doing the same research again.
-* **Context gets bloated:** Trying to jam every project convention, database quirk, and architecture decision into a `CLAUDE.md` or `AGENTS.md` file quickly eats up their context window, resulting in slower responses and lost instructions.
-* **Handoffs are broken:** There is no easy way for one agent to know what the previous agent built, changed, or left unfinished.
+Without persistent memory:
+* **Agents repeat mistakes:** They spend 20 minutes debugging a native macOS mutex crash or dependency conflict—only to **forget the solution entirely** in the next session and waste API tokens repeating the same investigation.
+* **Context windows get bloated:** Cramming every codebase rule, database quirk, and architecture decision into a `CLAUDE.md` or `AGENTS.md` file consumes valuable context window space, slowing down responses and causing forgotten instructions.
+* **Agent handoffs are broken:** There is no standard mechanism for one agent to discover what a previous agent built, refactored, or left unfinished.
 
-**Neuron solves this.** By providing an ultra-fast, local semantic database that sits in your project, neuron gives your agents a persistent brain. It lets them retrieve past context, run safe command-line dry-runs, and log actions between runs across user-defined categories.
+**Neuron solves this.** By providing a local, category-driven vector database inside your repository, neuron gives your agents a persistent brain. Agents can retrieve past context, execute pre-command safety lookups, and log learnings across user-defined categories.
 
 ---
 
 ## 🚀 Killer Features
 
-### 1. Pre-Command Rule Lookup (`neuron exec -- <command>`)
-Instead of hoping your agent remembers project rules, use `neuron exec -- <command>`. Before executing the target shell command, neuron runs a local semantic search over your configured memory categories. If it finds rules relevant to the command (e.g., *"Always mock Stripe endpoints in vitest"* when running `npm test`), it prints them directly to `stderr` so they enter the agent's context window *right before* the command runs.
+### 1. Configurable $N$ Dynamic Memory Categories (`neuron.yaml`)
+Forget rigid, hardcoded memory schemas. Define any number of custom memory categories (`learning`, `history`, `decisions`, `snippets`, `architecture`, etc.) directly in `neuron.yaml`. Each category supports custom default tags and descriptions.
 
-### 2. Configurable Memory Categories & Pull Rules (`neuron.yaml`)
-Define $N$ dynamic memory categories (`learnings`, `history`, `decisions`, `snippets`, etc.) in a `neuron.yaml` file at the root of your project. Configure `pullRules` to control which categories are queried during `neuron exec` for specific command patterns.
+### 2. Context-Aware Pre-Command Lookup (`neuron exec -- <command>`)
+Instead of hoping your agent remembers project rules before running tests or builds, wrap shell calls with `neuron exec -- <command>`. `neuron exec` evaluates `pullRules.onExec` regex patterns in `neuron.yaml` (e.g. matching `npm test` or `git commit`), queries relevant categories, and streams matching rules to `stderr` *right before* the command executes.
 
-### 3. Auto-Harness Scaffolding & Detection (`neuron init`)
-Running `neuron init` bootstraps your codebase for agentic memory store workflows. It automatically detects directories for popular agent harnesses (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and copies the standard `neuron-memory` skill instruction file (`SKILL.md`) directly into their directories, teaching agents how to use neuron automatically.
+### 3. Skill-Driven Agent Harness Integration (`neuron init`)
+Running `neuron init` automatically detects popular agent harness environments (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and copies the standard `neuron-memory` skill file (`SKILL.md`). The skill guides agents to generate `neuron.yaml` and configure instruction files (`AGENTS.md`, `CLAUDE.md`, etc.) tailored to your project.
 
-### 4. Fully Offline & Privacy-First
-Neuron uses HuggingFace `Transformers.js` to run the `bge-small-en-v1.5` embedding model locally on your machine via ONNX runtime. The quantized model (~34 MB) is downloaded and cached once, meaning zero external API keys are required, and your code and history never leave your machine.
+### 4. Rich Multi-Sentence Memory Capture
+Neuron promotes comprehensive, multi-sentence memory entries (minimum 3–4 sentences) covering **Context & Symptoms**, **Root Cause**, **Verified Solution**, and **Code/Command Examples**. This prevents vague 1-sentence summaries and ensures high-utility context retrieval for future agents.
 
-### 5. Lightning Fast Semantic Retrieval
-Neuron uses a local SQLite database running in Write-Ahead Logging (`WAL`) mode with a unified `memories` table and FTS5 keyword indexing. BGE embeddings are unit-normalized, which reduces cosine similarity calculations to simple dot products. Neuron executes searches in pure JavaScript in **under 1 ms** for under 10,000 rows.
+### 5. Unified Vector & FTS5 Hybrid Search Engine
+Neuron uses a local SQLite database running in Write-Ahead Logging (`WAL`) mode with a unified `memories` table, local BGE vector embeddings (`Xenova/bge-small-en-v1.5`), and FTS5 full-text indexing. Reciprocal Rank Fusion (RRF) merges semantic and keyword search results in **under 1 ms** for under 10,000 rows.
 
-### 6. Watermark Consolidation
-Using `neuron history consolidate`, agents can query unread action logs and advance their cursor sequentially, ensuring they can pick up exactly where the last agent left off.
+### 6. 100% Offline & Privacy-First
+All embeddings run locally using HuggingFace `Transformers.js` via ONNX runtime. The quantized model (~34 MB) is cached once locally—zero API keys required, zero telemetry, and your code and prompt history never leave your machine.
 
 ---
 
 ## ⚙️ Project Configuration (`neuron.yaml`)
 
-Create a `neuron.yaml` file at the root of your project to define custom memory categories and `neuron exec` pull rules:
+Configure your project's memory categories and `neuron exec` pull rules in `neuron.yaml` at your project root:
 
 ```yaml
 version: "1.0"
 
-# Define N dynamic memory categories (all stored in vector DB)
+# Define N dynamic memory categories (all vector-embedded in SQLite)
 categories:
   learning:
     description: Agent conventions, rules, and failure fixes
@@ -97,28 +97,49 @@ pullRules:
 
 ## ⚡ Quick Start
 
-### 1. Install neuron globally
+### Step 1: Install neuron globally
 ```bash
 npm install -g @kovartravis/neuron
 ```
 
-### 2. Bootstrap your project
-Navigate to your repository and run:
+### Step 2: Bootstrap your project
+In your project directory, run:
 ```bash
 neuron init
 ```
-This will automatically detect agent harnesses and copy the `neuron-memory` skill files.
+This detects existing harness directories (`.agents`, `.claude`, `.cursor`, etc.) and installs the bundled `neuron-memory` skill.
 
-### 3. Let the agents run
-Your agents will read `neuron.yaml` and the `neuron-memory` skill, updating `AGENTS.md` to execute the memory loop:
+### Step 3: Create `neuron.yaml`
+Create `neuron.yaml` at your project root (or let your agent create it automatically via the `neuron-memory` skill).
+
+### Step 4: Configure your agent instruction file (`AGENTS.md`)
+Add the 4-step memory store protocol to `AGENTS.md` (or `CLAUDE.md` / `CURSOR.md`):
+
+```markdown
+## Memory Store Protocol (@kovartravis/neuron)
+
+1. FIRST ACTION: Query active categories before starting work:
+   neuron memory query "<task topic>" --categories learning,decisions
+
+2. PRE-COMMAND LOOKUP: Wrap critical build/test/git commands:
+   neuron exec -- npm test
+
+3. FAILURE-FIX RECORDING: Record 3-4 sentence detailed resolutions on failure:
+   neuron memory add --category learning "Fix for <error>: <context>. <root cause>. <fix>." --tags failure-fix
+
+4. SESSION CONCLUSION: Log action history upon completion:
+   neuron memory add --category history "<summary of work completed>" --task-id <ticket-id>
+```
+
+### Step 5: Execute the Agent Memory Loop
 
 ```mermaid
 graph TD
     A[Start Session] --> B["neuron memory query 'task topic' --categories learning,decisions"]
     B --> C["neuron exec -- npm test / build"]
-    C --> D{Did something fail & get fixed?}
-    D -- Yes --> E["neuron memory add --category learning 'Fix for error...'"]
-    D -- No --> F[Write Code]
+    C --> D{Did a command fail & get fixed?}
+    D -- Yes --> E["neuron memory add --category learning 'Fix for <error>: <context>. <root cause>. <fix>.'"]
+    D -- No --> F[Implement Feature / Refactor]
     E --> F
     F --> G["neuron memory add --category history 'Implemented feature X'"]
     G --> H[End Session]
@@ -129,14 +150,14 @@ graph TD
 ## 📖 Command Reference
 
 ### Master Commands
-* **`neuron init`**: Detects agent harnesses and copies the `neuron-memory` skill files.
-* **`neuron exec -- <command>`**: Runs a shell command with automatic pre-command semantic lookup based on `neuron.yaml` pull rules.
-* **`neuron status`**: Displays active database paths, project metadata, configured categories, and embedding cache health.
+* **`neuron init`**: Detects agent harnesses (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs skill files.
+* **`neuron exec -- <command>`**: Runs a shell command with pre-command semantic lookup based on `neuron.yaml` pull rules.
+* **`neuron status`**: Displays database status, project root, active categories count, and local embedding model health.
 
-### `neuron memory` (Generic Memory Command across $N$ Categories)
-Manage memories in any configured category.
+### `neuron memory` (Primary Multi-Category CLI Suite)
+Manage entries across any category defined in `neuron.yaml`:
 ```bash
-# Add a memory to a custom category
+# Add an entry to a custom category
 neuron memory add "Use SQLite WAL mode for concurrency" --category decisions --tags "adr,db" --importance 4
 
 # Query memories across categories
@@ -145,43 +166,43 @@ neuron memory query "SQLite WAL" --categories decisions,learning
 # List recent memories in a category
 neuron memory list --category decisions --limit 10
 
-# Update an existing memory
-neuron memory update <id> "Updated text here" --category decisions --importance 4
+# Update an entry in-place
+neuron memory update <id> "Updated text content" --category decisions --importance 5
 
-# Delete a memory
+# Delete an entry by ID
 neuron memory delete <id> --category decisions
 ```
 
-### `neuron learn` (Durable Rules & Conventions — Alias for `--category learning`)
+### `neuron learn` (Shorthand Alias for `--category learning`)
 ```bash
 # Store a new learning/rule
-neuron learn add "Always pin onnxruntime-node to 1.20.1" --tags "onnx,macos,crash" --importance 5
+neuron learn add "Fix for CLI exec resource leak: always call memory.close() in exec subcommand before spawning child processes to avoid holding open SQLite handles." --tags "failure-fix,cli" --importance 4
 
 # Semantically search learnings
-neuron learn query "onnx runtime crash on mac"
+neuron learn query "cli resource leak"
 
 # List recent learnings
 neuron learn list --limit 10
 
-# Update an existing learning
-neuron learn update <id> "Updated text here" --importance 4
+# Update a learning
+neuron learn update <id> "Updated learning text" --importance 4
 
 # Delete a learning
 neuron learn delete <id>
 ```
 
-### `neuron history` (Action Logs — Alias for `--category history`)
+### `neuron history` (Shorthand Alias for `--category history`)
 ```bash
 # Log a completed action associated with a ticket
-neuron history add "Migrated vector engine to unified memories table" --tags "db,vector" --task-id "01-db-schema"
+neuron history add "Implemented neuron.yaml config loader and unified memories table v5" --tags "db,config" --task-id "01-config"
 
-# Semantically search past action logs
-neuron history query "vector schema changes"
+# Semantically search action history
+neuron history query "config loader"
 
 # List recent history logs
 neuron history list --limit 20
 
-# Consolidate history (read unread logs since last run and advance cursor)
+# Consolidate history (read unread logs since last run and advance watermark cursor)
 neuron history consolidate
 
 # Prune old, minor history logs (deletes importance <= 3 logs older than 30 days)
@@ -192,10 +213,10 @@ neuron history prune --days 30
 
 ## 🔗 Technical Specifications
 
-* **Local Database**: Database files are stored under your OS-specific data directory (e.g., `~/.local/share/neuron/db/`) mapped to a unique hash of the project's root path.
-* **WAL Mode**: SQLite runs in Write-Ahead Logging mode to support safe concurrent access.
-* **Local Embeddings**: Powered by `@huggingface/transformers` running the `Xenova/bge-small-en-v1.5` model. Automatically locks out remote network access once cached.
-* **AI-Parser Ready**: All CLI outputs are structured JSON designed specifically for agent parsing.
+* **Database Engine**: Single unified `memories` SQLite table with indexed `category` column, running in Write-Ahead Logging (`WAL`) mode.
+* **Hybrid Search**: Combines semantic vector search (`Xenova/bge-small-en-v1.5` 384-dimensional Float32Array embeddings) and keyword-exact search (`memories_fts` FTS5 virtual table) aggregated using Reciprocal Rank Fusion (RRF).
+* **Local Embeddings**: `@huggingface/transformers` running ONNX runtime locally. Once downloaded (~34 MB), remote network requests are disabled.
+* **Structured Output**: All CLI outputs are formatted as clean JSON Line arrays for effortless agent parsing.
 
 ---
 
