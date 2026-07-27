@@ -1,21 +1,27 @@
 ---
 name: neuron-memory
-description: Manage agent session context by configuring neuron.yaml, loading learnings, recording history, and pruning obsolete entries from the memory store.
+description: Manage agent session context by interviewing the user, configuring neuron.yaml, loading learnings, recording history, and pruning obsolete entries from the memory store.
 ---
 
 # Neuron Memory Store Management
 
 This skill guides how agents configure and interact with `@kovartravis/neuron` to maintain persistent, category-driven memory across sessions.
 
-## 0. Project Setup & Configuration (neuron.yaml & AGENTS.md)
+## 0. Initial Project Setup & Interview Protocol
 
-When setting up memory for a new project, or when the user asks to configure categories:
+When asked to set up memory for a project or configure memory settings:
 
-1. **Write `neuron.yaml`** at the project root with custom categories and pull rules:
+1. **Interview the User (Setup Options)**:
+   Briefly ask the user how they would like memory configured for their project:
+   - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
+   - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
+   - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
+
+2. **Generate `neuron.yaml`**:
+   Write `neuron.yaml` at the project root based on the user's answers (or standard defaults if they prefer default setup):
    ```yaml
    version: "1.0"
 
-   # Define N dynamic memory categories (all vector-embedded in SQLite)
    categories:
      learning:
        description: Agent conventions, rules, and failure fixes
@@ -26,20 +32,20 @@ When setting up memory for a new project, or when the user asks to configure cat
      history:
        description: Action history log and completed task summary
 
-     # Add any custom categories the project needs, e.g.:
-     # decisions:
-     #   description: Architectural Decision Records (ADRs)
-     #   tags:
-     #     - adr
-     #     - architecture
+     # Custom categories requested by user:
+     decisions:
+       description: Architectural Decision Records (ADRs) & design choices
+       tags:
+         - adr
+         - architecture
 
-   # Rules for when to pull from specific categories
    pullRules:
      default:
        categories:
          - learning
+         - decisions
        limit: 5
-       minScore: 0.4
+       minScore: 0.35
 
      onExec:
        - commandPattern: ".*"
@@ -54,19 +60,18 @@ When setting up memory for a new project, or when the user asks to configure cat
          limit: 8
    ```
 
-2. **Update the agent instruction file** (`AGENTS.md`, `CLAUDE.md`, etc.) to include the memory store protocol matching the categories defined in `neuron.yaml`. Ensure agents know:
-   - Which categories to query at session start
-   - Which categories to record to (learnings vs history vs custom)
-   - How `neuron exec` evaluates pull rules from the config
+3. **Configure `AGENTS.md` / Instruction Files**:
+   Write or update the memory store protocol in `AGENTS.md` (or `CLAUDE.md`, `CURSOR.md`) matching the categories declared in `neuron.yaml`.
 
-3. **When `neuron.yaml` is modified** (e.g. adding/removing categories, changing pull rules), update `AGENTS.md` to match the new configuration so agents use the correct commands.
+4. **Synchronize On Edits**:
+   Whenever `neuron.yaml` is modified in future sessions, update `AGENTS.md` to keep commands and categories in sync.
 
 ## 1. Beginning of Run (Context Loading)
 
 At the very start of a session, before running any other commands or modifying files, load relevant past context:
 
 1. Formulate a query matching your assigned task or current goal.
-2. Run the query against default categories:
+2. Run the query against active default categories:
    ```bash
    neuron learn query "<search query matching task>"
    ```
@@ -123,12 +128,12 @@ Before finishing your turn and ending the session:
 When the user requests memory maintenance (e.g., "clean memory", "prune obsolete learnings", or "refresh memory store"):
 
 1. **Review Learnings**:
-   - List the active learnings:
+   - List active learnings:
      ```bash
      neuron learn list --limit 100
      ```
    - Cross-reference each learning with the current state of the codebase, `AGENTS.md`, and any `docs/adr/*.md` files.
-   - If a learning is outdated, contradictory, or redundant, remove it:
+   - Remove outdated or redundant learnings:
      ```bash
      neuron learn delete <id>
      ```

@@ -24,14 +24,14 @@ Without persistent memory:
 
 ## 🚀 Killer Features
 
-### 1. Configurable $N$ Dynamic Memory Categories (`neuron.yaml`)
+### 1. Agent-First Setup & Skill Scaffolding (`neuron init`)
+Running `neuron init` detects popular agent harness environments (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs the `neuron-memory` skill. Your AI agent uses this skill to interview you, write `neuron.yaml`, and configure `AGENTS.md` automatically.
+
+### 2. Configurable $N$ Dynamic Memory Categories (`neuron.yaml`)
 Forget rigid, hardcoded memory schemas. Define any number of custom memory categories (`learning`, `history`, `decisions`, `snippets`, `architecture`, etc.) directly in `neuron.yaml`. Each category supports custom default tags and descriptions.
 
-### 2. Context-Aware Pre-Command Lookup (`neuron exec -- <command>`)
+### 3. Context-Aware Pre-Command Lookup (`neuron exec -- <command>`)
 Instead of hoping your agent remembers project rules before running tests or builds, wrap shell calls with `neuron exec -- <command>`. `neuron exec` evaluates `pullRules.onExec` regex patterns in `neuron.yaml` (e.g. matching `npm test` or `git commit`), queries relevant categories, and streams matching rules to `stderr` *right before* the command executes.
-
-### 3. Skill-Driven Agent Harness Integration (`neuron init`)
-Running `neuron init` automatically detects popular agent harness environments (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and copies the standard `neuron-memory` skill file (`SKILL.md`). The skill guides agents to generate `neuron.yaml` and configure instruction files (`AGENTS.md`, `CLAUDE.md`, etc.) tailored to your project.
 
 ### 4. Rich Multi-Sentence Memory Capture
 Neuron promotes comprehensive, multi-sentence memory entries (minimum 3–4 sentences) covering **Context & Symptoms**, **Root Cause**, **Verified Solution**, and **Code/Command Examples**. This prevents vague 1-sentence summaries and ensures high-utility context retrieval for future agents.
@@ -44,9 +44,55 @@ All embeddings run locally using HuggingFace `Transformers.js` via ONNX runtime.
 
 ---
 
+## ⚡ Quick Start (Agent-First)
+
+Neuron is built **agent-first**. You don't need to manually author configuration files or construct memory loop rules—your AI coding agent handles project setup for you.
+
+### Step 1: Install neuron
+```bash
+npm install -g @kovartravis/neuron
+```
+
+### Step 2: Bootstrap skills in your project
+Navigate to your repository and run `neuron init` once:
+```bash
+neuron init
+```
+This detects your agent harness environment (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs the `neuron-memory` skill.
+
+### Step 3: Tell your AI agent to set up memory!
+Open your AI coding assistant (Claude, Cursor, Antigravity, Codex, etc.) and say:
+
+> *"Set up neuron memory for this project."*
+
+That's it! Your agent will use the `neuron-memory` skill to:
+1. Briefly interview you about your setup preferences (defaulting to standard `learning` and `history` categories, or adding custom categories like `decisions` and `snippets`).
+2. Write `neuron.yaml` at your project root.
+3. Configure `AGENTS.md` (or `CLAUDE.md` / `CURSOR.md`) with the memory store protocol matching your project's categories.
+
+---
+
+### The Agent Execution Loop
+
+Once configured, your agent executes this loop on every session:
+
+```mermaid
+graph TD
+    A[Start Session] --> B["neuron memory query 'task topic' --categories learning,decisions"]
+    B --> C["neuron exec -- npm test / build"]
+    C --> D{Did a command fail & get fixed?}
+    D -- Yes --> E["neuron memory add --category learning 'Fix for <error>: <context>. <root cause>. <fix>.'"]
+    D -- No --> F[Implement Feature / Refactor]
+    E --> F
+    F --> G["neuron memory add --category history 'Implemented feature X'"]
+    G --> H[End Session]
+```
+
+---
+
 ## ⚙️ Project Configuration (`neuron.yaml`)
 
-Configure your project's memory categories and `neuron exec` pull rules in `neuron.yaml` at your project root:
+Your agent generates `neuron.yaml` at your project root to configure categories and `neuron exec` pull rules:
 
 ```yaml
 version: "1.0"
@@ -95,67 +141,15 @@ pullRules:
 
 ---
 
-## ⚡ Quick Start
-
-### Step 1: Install neuron globally
-```bash
-npm install -g @kovartravis/neuron
-```
-
-### Step 2: Bootstrap your project
-In your project directory, run:
-```bash
-neuron init
-```
-This detects existing harness directories (`.agents`, `.claude`, `.cursor`, etc.) and installs the bundled `neuron-memory` skill.
-
-### Step 3: Create `neuron.yaml`
-Create `neuron.yaml` at your project root (or let your agent create it automatically via the `neuron-memory` skill).
-
-### Step 4: Configure your agent instruction file (`AGENTS.md`)
-Add the 4-step memory store protocol to `AGENTS.md` (or `CLAUDE.md` / `CURSOR.md`):
-
-```markdown
-## Memory Store Protocol (@kovartravis/neuron)
-
-1. FIRST ACTION: Query active categories before starting work:
-   neuron memory query "<task topic>" --categories learning,decisions
-
-2. PRE-COMMAND LOOKUP: Wrap critical build/test/git commands:
-   neuron exec -- npm test
-
-3. FAILURE-FIX RECORDING: Record 3-4 sentence detailed resolutions on failure:
-   neuron memory add --category learning "Fix for <error>: <context>. <root cause>. <fix>." --tags failure-fix
-
-4. SESSION CONCLUSION: Log action history upon completion:
-   neuron memory add --category history "<summary of work completed>" --task-id <ticket-id>
-```
-
-### Step 5: Execute the Agent Memory Loop
-
-```mermaid
-graph TD
-    A[Start Session] --> B["neuron memory query 'task topic' --categories learning,decisions"]
-    B --> C["neuron exec -- npm test / build"]
-    C --> D{Did a command fail & get fixed?}
-    D -- Yes --> E["neuron memory add --category learning 'Fix for <error>: <context>. <root cause>. <fix>.'"]
-    D -- No --> F[Implement Feature / Refactor]
-    E --> F
-    F --> G["neuron memory add --category history 'Implemented feature X'"]
-    G --> H[End Session]
-```
-
----
-
 ## 📖 Command Reference
 
 ### Master Commands
 * **`neuron init`**: Detects agent harnesses (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs skill files.
-* **`neuron exec -- <command>`**: Runs a shell command with pre-command semantic lookup based on `neuron.yaml` pull rules.
-* **`neuron status`**: Displays database status, project root, active categories count, and local embedding model health.
+* **`neuron exec -- <command>`**: Runs a shell command with automatic pre-command semantic lookup based on `neuron.yaml` pull rules.
+* **`neuron status`**: Displays active database paths, project root, active categories count, and local embedding model health.
 
 ### `neuron memory` (Primary Multi-Category CLI Suite)
-Manage entries across any category defined in `neuron.yaml`:
+Manage memories in any category defined in `neuron.yaml`:
 ```bash
 # Add an entry to a custom category
 neuron memory add "Use SQLite WAL mode for concurrency" --category decisions --tags "adr,db" --importance 4
