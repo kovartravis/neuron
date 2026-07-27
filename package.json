@@ -37,7 +37,8 @@
     "dist",
     "README.md",
     "LICENSE",
-    ".agents/skills/neuron-memory/"
+    ".agents/skills/neuron-memory/",
+    "docs/images/"
   ],
   "scripts": {
     "test": "npm run build && vitest run",

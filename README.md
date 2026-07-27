@@ -141,6 +141,24 @@ pullRules:
 
 ---
 
+## 🖥️ Local Dashboard UI (`neuron ui`)
+
+Neuron includes a dark-mode web dashboard for browsing and searching your memory store visually in real-time.
+
+Launch the dashboard locally:
+```bash
+neuron ui
+```
+
+![Neuron Dashboard UI](docs/images/dashboard.png)
+
+* **Dynamic Category Tabs**: Automatically detects all categories defined in `neuron.yaml` and SQLite (`learning`, `history`, `decisions`, `snippets`, etc.) with live category entry counters.
+* **Unified Global Search**: Perform instant hybrid vector and FTS search across all categories or filtered by the active category tab.
+* **Visual Metadata & Badges**: View importance ratings (1–5 scale), ticket/task links, scope tiers (`global` / `project`), tags, and relative timestamps at a glance.
+* **Full Memory Inspector**: Open dynamic modals to read and scroll complete memory feeds for any category.
+
+---
+
 ## 📖 Command Reference
 
 ### Master Commands
