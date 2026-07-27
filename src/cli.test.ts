@@ -60,11 +60,11 @@ describe('Neuron CLI Core & Flag Options', () => {
 
     const db = openDatabase(tempDbPath);
     
-    const l1 = db.prepare('SELECT scope, importance FROM learnings WHERE id = ?').get(addLearnRes.id) as { scope: string; importance: number };
+    const l1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(addLearnRes.id) as { scope: string; importance: number };
     expect(l1.scope).toBe('custom-scope');
     expect(l1.importance).toBe(5);
 
-    const h1 = db.prepare('SELECT scope, importance FROM history WHERE id = ?').get(addHistRes.id) as { scope: string; importance: number };
+    const h1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(addHistRes.id) as { scope: string; importance: number };
     expect(h1.scope).toBe('global');
     expect(h1.importance).toBe(4);
 

@@ -68,7 +68,7 @@ describe('CLI Command: learn', () => {
     expect(updateRes.id).toBe(added.id);
 
     const db = openDatabase(tempDbPath);
-    const row = db.prepare('SELECT content, tags, importance, scope FROM learnings WHERE id = ?').get(added.id) as any;
+    const row = db.prepare('SELECT content, tags, importance, scope FROM memories WHERE id = ?').get(added.id) as any;
     expect(row.content).toBe('Updated learning content');
     expect(JSON.parse(row.tags)).toEqual(['updated']);
     expect(row.importance).toBe(5);

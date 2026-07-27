@@ -1,7 +1,11 @@
+/** @deprecated Use plain `string` for category names instead. */
 export type MemoryKind = 'learning' | 'history';
 
 export interface MemoryQuery {
   text?: string;
+  /** Filter by one or more categories. */
+  categories?: string[];
+  /** @deprecated Use `categories` instead. Kept for backward compatibility. */
   kind?: MemoryKind;
   scopes?: string[];
   limit?: number;
@@ -9,7 +13,9 @@ export interface MemoryQuery {
 
 export interface Memory {
   id: string;
-  kind: MemoryKind;
+  category: string;
+  /** @deprecated Use `category` instead. */
+  kind: string;
   content: string;
   tags: string[];
   scope?: string;
@@ -20,9 +26,12 @@ export interface Memory {
 }
 
 export type MemoryMutation = 
-  | { op: 'upsert'; kind: MemoryKind; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string }
-  | { op: 'update'; kind: MemoryKind; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string }
-  | { op: 'delete'; kind: MemoryKind; id: string };
+  | { op: 'upsert'; category: string; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string;
+      /** @deprecated Use `category` instead. */ kind?: string; }
+  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string;
+      /** @deprecated Use `category` instead. */ kind?: string; }
+  | { op: 'delete'; category: string; id: string;
+      /** @deprecated Use `category` instead. */ kind?: string; };
 
 export interface MutationResult {
   id: string;

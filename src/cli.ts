@@ -7,6 +7,7 @@ import {
   handleStatusCommand,
   handleLearnCommand,
   handleHistoryCommand,
+  handleMemoryCommand,
   handleUiCommand,
   MASTER_HELP
 } from './commands/index.js';
@@ -42,6 +43,10 @@ async function main() {
   try {
     if (mainCommand === 'status') {
       return handleStatusCommand(memory);
+    }
+
+    if (mainCommand === 'memory') {
+      return await handleMemoryCommand(args, memory, projectName);
     }
 
     if (mainCommand === 'learn') {

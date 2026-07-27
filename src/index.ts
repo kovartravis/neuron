@@ -38,6 +38,14 @@ function findProjectRoot(startDir: string): { root: string; name: string } {
   }
 }
 
+/**
+ * Resolve a `category` from a mutation/query, supporting the deprecated `kind` field.
+ * Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
+ */
+function resolveCategory(m: { category?: string; kind?: string }): string {
+  return m.category ?? m.kind ?? 'learning';
+}
+
 export class NeuronMemory {
   private db: any;
   private projectRoot: string;
@@ -217,6 +225,102 @@ export class NeuronMemory {
       })();
       currentVersion = 4;
     }
+
+    // --- Migration v5: Unified memories table ---
+    if (currentVersion < 5) {
+      this.db.transaction(() => {
+        // Create unified memories table
+        this.db.exec(`
+          CREATE TABLE IF NOT EXISTS memories (
+            id TEXT PRIMARY KEY NOT NULL,
+            project_id TEXT NOT NULL,
+            category TEXT NOT NULL,
+            content TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            embedding BLOB NOT NULL,
+            scope TEXT NOT NULL DEFAULT 'project',
+            importance INTEGER NOT NULL DEFAULT 3 CHECK (importance BETWEEN 1 AND 5),
+            is_manual_scope INTEGER NOT NULL DEFAULT 0,
+            task_id TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          CREATE INDEX IF NOT EXISTS idx_memories_project ON memories (project_id);
+          CREATE INDEX IF NOT EXISTS idx_memories_category ON memories (project_id, category);
+          CREATE INDEX IF NOT EXISTS idx_memories_created ON memories (project_id, created_at DESC);
+          CREATE INDEX IF NOT EXISTS idx_memories_task ON memories (task_id) WHERE task_id IS NOT NULL;
+        `);
+
+        // Migrate learnings → memories
+        const learnings = this.db.prepare(`
+          SELECT id, project_id, content, tags, embedding, scope, importance, is_manual_scope, created_at
+          FROM learnings
+        `).all() as any[];
+        const insertMemory = this.db.prepare(`
+          INSERT OR IGNORE INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const row of learnings) {
+          insertMemory.run(row.id, row.project_id, 'learning', row.content, row.tags, row.embedding, row.scope, row.importance, row.is_manual_scope, null, row.created_at, row.created_at);
+        }
+
+        // Migrate history → memories
+        const historyRows = this.db.prepare(`
+          SELECT id, project_id, content, tags, embedding, scope, importance, task_id, created_at
+          FROM history
+        `).all() as any[];
+        for (const row of historyRows) {
+          insertMemory.run(row.id, row.project_id, 'history', row.content, row.tags, row.embedding, row.scope, row.importance, 0, row.task_id, row.created_at, row.created_at);
+        }
+
+        // Create unified FTS table
+        this.db.exec(`
+          CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
+            content, tags,
+            content='memories',
+            content_rowid='rowid'
+          );
+
+          CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories BEGIN
+            INSERT INTO memories_fts(rowid, content, tags) VALUES (new.rowid, new.content, new.tags);
+          END;
+          CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories BEGIN
+            INSERT INTO memories_fts(memories_fts, rowid, content, tags) VALUES ('delete', old.rowid, old.content, old.tags);
+          END;
+          CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
+            INSERT INTO memories_fts(memories_fts, rowid, content, tags) VALUES ('delete', old.rowid, old.content, old.tags);
+            INSERT INTO memories_fts(rowid, content, tags) VALUES (new.rowid, new.content, new.tags);
+          END;
+        `);
+
+        // Backfill FTS from migrated data
+        this.db.exec(`INSERT INTO memories_fts(rowid, content, tags) SELECT rowid, content, tags FROM memories;`);
+
+        // Drop old tables and their triggers/FTS
+        this.db.exec(`
+          DROP TRIGGER IF EXISTS learnings_ai;
+          DROP TRIGGER IF EXISTS learnings_ad;
+          DROP TRIGGER IF EXISTS learnings_au;
+          DROP TRIGGER IF EXISTS history_ai;
+          DROP TRIGGER IF EXISTS history_ad;
+          DROP TRIGGER IF EXISTS history_au;
+        `);
+        // Drop FTS virtual tables (must use DROP TABLE for virtual tables)
+        try { this.db.exec(`DROP TABLE IF EXISTS learnings_fts;`); } catch {}
+        try { this.db.exec(`DROP TABLE IF EXISTS history_fts;`); } catch {}
+        // Drop the old content tables
+        this.db.exec(`DROP TABLE IF EXISTS learnings;`);
+        this.db.exec(`DROP TABLE IF EXISTS history;`);
+
+        // Migrate learning_query_matches to use memories table reference
+        // The learning_query_matches table still works since it references by id
+
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '5');
+        this.db.pragma('user_version = 5');
+      })();
+      currentVersion = 5;
+    }
   }
 
   // --- HYBRID SEARCH INTERFACE (RRF) ---
@@ -227,7 +331,20 @@ export class NeuronMemory {
     const placeholders = scopes.map(() => '?').join(',');
     const results: Memory[] = [];
 
-    const tables = q.kind ? [q.kind === 'learning' ? 'learnings' : 'history'] : ['learnings', 'history'];
+    // Resolve categories to query
+    let categoryFilter: string[] | null = null;
+    if (q.categories && q.categories.length > 0) {
+      categoryFilter = q.categories;
+    } else if (q.kind) {
+      // Backward compat: kind → category
+      categoryFilter = [q.kind === 'learning' ? 'learning' : 'history'];
+    }
+    // If no filter, query all categories
+
+    const categoryClause = categoryFilter
+      ? `AND category IN (${categoryFilter.map(() => '?').join(',')})`
+      : '';
+    const categoryParams = categoryFilter ?? [];
 
     if (q.text) {
       const queryVec = await this.embedder.embedQuery(q.text);
@@ -243,95 +360,91 @@ export class NeuronMemory {
       const RRF_K = 60;
       const RRF_MAX = 2 / (RRF_K + 1); // theoretical max when a doc ranks #1 in both lists
 
-      for (const table of tables) {
-        const ftsTable = table === 'learnings' ? 'learnings_fts' : 'history_fts';
+      // --- Semantic rank list ---
+      const rows = (this.db.prepare(`
+        SELECT id, category, content, tags, embedding, scope, importance, task_id, created_at
+        FROM memories
+        WHERE project_id = ? AND scope IN (${placeholders}) ${categoryClause}
+      `).all(this.projectId, ...scopes, ...categoryParams) as any[]);
 
-        // --- Semantic rank list ---
-        const rows = (this.db.prepare(`
-          SELECT id, content, tags, embedding, scope, importance, created_at ${table === 'history' ? ', task_id' : ''}
-          FROM ${table}
-          WHERE project_id = ? AND scope IN (${placeholders})
-        `).all(this.projectId, ...scopes) as any[]);
+      // Compute semantic similarities and sort descending → rank position
+      const withSim = rows.map(row => {
+        const blob = row.embedding;
+        const embeddingVec = new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
+        return { row, similarity: dotProduct(queryVec, embeddingVec) };
+      });
+      withSim.sort((a, b) => b.similarity - a.similarity);
+      // Only assign a semantic rank to records with positive similarity
+      const semanticRank = new Map<string, number>();
+      let semanticPos = 1;
+      for (const { row, similarity } of withSim) {
+        if (similarity > 0) semanticRank.set(row.id, semanticPos++);
+      }
 
-        // Compute semantic similarities and sort descending → rank position
-        const withSim = rows.map(row => {
-          const blob = row.embedding;
-          const embeddingVec = new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
-          return { row, similarity: dotProduct(queryVec, embeddingVec) };
+      // --- FTS rank list (if query has usable tokens) ---
+      const ftsQuery = cleanFtsQuery(q.text);
+      const ftsRank = new Map<string, number>();
+      if (ftsQuery) {
+        try {
+          const ftsRows = (this.db.prepare(`
+            SELECT m.id FROM memories_fts f
+            JOIN memories m ON m.rowid = f.rowid
+            WHERE f.memories_fts MATCH ? AND m.project_id = ? AND m.scope IN (${placeholders}) ${categoryClause}
+            ORDER BY rank
+          `).all(ftsQuery, this.projectId, ...scopes, ...categoryParams) as any[]);
+          ftsRows.forEach((r, i) => ftsRank.set(r.id, i + 1));
+        } catch {
+          // Malformed FTS query — degrade gracefully to semantic-only
+        }
+      }
+
+      // --- RRF fusion + Importance ---
+      for (const { row } of withSim) {
+        const sr = semanticRank.get(row.id) ?? Infinity;
+        const fr = ftsRank.get(row.id) ?? Infinity;
+        const rrfScore = (sr === Infinity ? 0 : 1 / (RRF_K + sr))
+                       + (fr === Infinity ? 0 : 1 / (RRF_K + fr));
+        const normRrf = rrfScore / RRF_MAX;
+        const normImp = (row.importance - 1) / 4;
+        const score = 0.75 * normRrf + 0.25 * normImp;
+
+        results.push({
+          id: row.id,
+          category: row.category,
+          kind: row.category, // backward compat
+          content: row.content,
+          score,
+          tags: JSON.parse(row.tags),
+          scope: row.scope,
+          importance: row.importance,
+          taskId: row.task_id ?? null,
+          createdAt: row.created_at
         });
-        withSim.sort((a, b) => b.similarity - a.similarity);
-        // Only assign a semantic rank to records with positive similarity;
-        // zero-similarity records contribute nothing to the semantic list.
-        const semanticRank = new Map<string, number>();
-        let semanticPos = 1;
-        for (const { row, similarity } of withSim) {
-          if (similarity > 0) semanticRank.set(row.id, semanticPos++);
-        }
-
-        // --- FTS rank list (if query has usable tokens) ---
-        const ftsQuery = cleanFtsQuery(q.text);
-        const ftsRank = new Map<string, number>();
-        if (ftsQuery) {
-          try {
-            const ftsRows = (this.db.prepare(`
-              SELECT t.id FROM ${ftsTable} f
-              JOIN ${table} t ON t.rowid = f.rowid
-              WHERE f.${ftsTable} MATCH ? AND t.project_id = ? AND t.scope IN (${placeholders})
-              ORDER BY rank
-            `).all(ftsQuery, this.projectId, ...scopes) as any[]);
-            ftsRows.forEach((r, i) => ftsRank.set(r.id, i + 1));
-          } catch {
-            // Malformed FTS query — degrade gracefully to semantic-only
-          }
-        }
-
-        // --- RRF fusion + Importance ---
-        for (const { row } of withSim) {
-          const sr = semanticRank.get(row.id) ?? Infinity;
-          const fr = ftsRank.get(row.id) ?? Infinity;
-          const rrfScore = (sr === Infinity ? 0 : 1 / (RRF_K + sr))
-                         + (fr === Infinity ? 0 : 1 / (RRF_K + fr));
-          const normRrf = rrfScore / RRF_MAX;
-          const normImp = (row.importance - 1) / 4;
-          const score = 0.75 * normRrf + 0.25 * normImp;
-
-          results.push({
-            id: row.id,
-            kind: table === 'learnings' ? 'learning' : 'history',
-            content: row.content,
-            score,
-            tags: JSON.parse(row.tags),
-            scope: row.scope,
-            importance: row.importance,
-            taskId: row.task_id ?? null,
-            createdAt: row.created_at
-          });
-        }
       }
 
       results.sort((a, b) => (b.score!) - (a.score!));
       return results.slice(0, limit);
     } else {
-      for (const table of tables) {
-        const stmt = this.db.prepare(`
-          SELECT id, content, tags, scope, importance, created_at ${table === 'history' ? ', task_id' : ''}
-          FROM ${table}
-          WHERE project_id = ?
-          ORDER BY rowid ${table === 'history' ? 'DESC' : 'ASC'}
-        `);
-        const rows = stmt.all(this.projectId) as any[];
-        for (const row of rows) {
-          results.push({
-            id: row.id,
-            kind: table === 'learnings' ? 'learning' : 'history',
-            content: row.content,
-            tags: JSON.parse(row.tags),
-            scope: row.scope,
-            importance: row.importance,
-            taskId: row.task_id ?? null,
-            createdAt: row.created_at
-          });
-        }
+      // No text query — list mode
+      const stmt = this.db.prepare(`
+        SELECT id, category, content, tags, scope, importance, task_id, created_at
+        FROM memories
+        WHERE project_id = ? ${categoryClause}
+        ORDER BY rowid ASC
+      `);
+      const rows = stmt.all(this.projectId, ...categoryParams) as any[];
+      for (const row of rows) {
+        results.push({
+          id: row.id,
+          category: row.category,
+          kind: row.category, // backward compat
+          content: row.content,
+          tags: JSON.parse(row.tags),
+          scope: row.scope,
+          importance: row.importance,
+          taskId: row.task_id ?? null,
+          createdAt: row.created_at
+        });
       }
       return results.slice(0, limit);
     }
@@ -353,12 +466,12 @@ export class NeuronMemory {
     this.db.transaction(() => {
       for (let i = 0; i < mutations.length; i++) {
         const m = mutations[i];
-        const table = m.kind === 'learning' ? 'learnings' : 'history';
+        const category = resolveCategory(m);
         
         if (m.op === 'upsert' || m.op === 'update') {
           const id = m.id || crypto.randomUUID();
           
-          const exists = this.db.prepare(`SELECT 1 FROM ${table} WHERE id = ? AND project_id = ?`).get(id, this.projectId);
+          const exists = this.db.prepare(`SELECT 1 FROM memories WHERE id = ? AND project_id = ?`).get(id, this.projectId);
           
           if (exists) {
             const sets: string[] = [];
@@ -374,13 +487,14 @@ export class NeuronMemory {
             if (m.importance !== undefined) { sets.push('importance = ?'); params.push(m.importance); }
             if (m.scope !== undefined) { 
               sets.push('scope = ?'); params.push(m.scope); 
-              if (m.kind === 'learning') { sets.push('is_manual_scope = 1'); }
+              sets.push('is_manual_scope = 1');
             }
-            if (m.kind === 'history' && m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
+            if (m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
+            sets.push('updated_at = ?'); params.push(new Date().toISOString());
             
             if (sets.length > 0) {
               params.push(id, this.projectId);
-              this.db.prepare(`UPDATE ${table} SET ${sets.join(', ')} WHERE id = ? AND project_id = ?`).run(...params);
+              this.db.prepare(`UPDATE memories SET ${sets.join(', ')} WHERE id = ? AND project_id = ?`).run(...params);
             }
             
             results.push({ id, status: 'updated', project: this.projectName });
@@ -391,27 +505,20 @@ export class NeuronMemory {
             const tagsJson = JSON.stringify(m.tags ?? []);
             const importance = m.importance ?? 3;
             const scope = m.scope ?? this.projectName;
-            const createdAt = new Date().toISOString();
-            
-            if (m.kind === 'learning') {
-              const isManualScope = m.scope !== undefined ? 1 : 0;
-              this.db.prepare(`
-                INSERT INTO learnings (id, project_id, content, tags, embedding, scope, importance, is_manual_scope, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `).run(id, this.projectId, m.content, tagsJson, blob, scope, importance, isManualScope, createdAt);
-            } else {
-              const taskId = m.taskId ?? null;
-              this.db.prepare(`
-                INSERT INTO history (id, project_id, task_id, content, tags, embedding, scope, importance, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `).run(id, this.projectId, taskId, m.content, tagsJson, blob, scope, importance, createdAt);
-            }
+            const isManualScope = m.scope !== undefined ? 1 : 0;
+            const now = new Date().toISOString();
+            const taskId = m.taskId ?? null;
+
+            this.db.prepare(`
+              INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(id, this.projectId, category, m.content, tagsJson, blob, scope, importance, isManualScope, taskId, now, now);
             results.push({ id, status: 'created', project: this.projectName });
           } else {
             results.push({ id, status: 'not_found', project: this.projectName });
           }
         } else if (m.op === 'delete') {
-          const info = this.db.prepare(`DELETE FROM ${table} WHERE id = ? AND project_id = ?`).run(m.id, this.projectId);
+          const info = this.db.prepare(`DELETE FROM memories WHERE id = ? AND project_id = ?`).run(m.id, this.projectId);
           results.push({ id: m.id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName });
         }
       }
@@ -434,9 +541,9 @@ export class NeuronMemory {
         const lastRowid = watermarkRowidRow ? parseInt(watermarkRowidRow.value, 10) : 0;
 
         const stmt = this.db.prepare(`
-          SELECT rowid, id, content, tags, task_id, created_at
-          FROM history
-          WHERE project_id = ? AND rowid > ?
+          SELECT rowid, id, category, content, tags, task_id, created_at
+          FROM memories
+          WHERE project_id = ? AND category = 'history' AND rowid > ?
           ORDER BY rowid ASC
         `);
         const rows = stmt.all(this.projectId, lastRowid) as any[];
@@ -454,6 +561,7 @@ export class NeuronMemory {
 
         const entries: Memory[] = rows.map(row => ({
           id: row.id,
+          category: 'history',
           kind: 'history',
           content: row.content,
           tags: JSON.parse(row.tags),
@@ -472,11 +580,11 @@ export class NeuronMemory {
           SELECT id, embedding, created_at FROM query_logs WHERE project_id = ?
         `).all(this.projectId) as any[];
 
-        const learnings = this.db.prepare(`
-          SELECT id, embedding, scope, is_manual_scope, importance FROM learnings WHERE project_id = ?
+        const memories = this.db.prepare(`
+          SELECT id, embedding, scope, is_manual_scope, importance FROM memories WHERE project_id = ? AND category = 'learning'
         `).all(this.projectId) as any[];
 
-        if (queryLogs.length > 0 && learnings.length > 0) {
+        if (queryLogs.length > 0 && memories.length > 0) {
           const insertMatch = this.db.prepare(`
             INSERT OR IGNORE INTO learning_query_matches (learning_id, query_log_id, matched_at)
             VALUES (?, ?, ?)
@@ -484,11 +592,11 @@ export class NeuronMemory {
 
           for (const qLog of queryLogs) {
             const qVec = new Float32Array(qLog.embedding.buffer, qLog.embedding.byteOffset, qLog.embedding.byteLength / 4);
-            for (const learn of learnings) {
-              const lVec = new Float32Array(learn.embedding.buffer, learn.embedding.byteOffset, learn.embedding.byteLength / 4);
+            for (const mem of memories) {
+              const lVec = new Float32Array(mem.embedding.buffer, mem.embedding.byteOffset, mem.embedding.byteLength / 4);
               const similarity = dotProduct(qVec, lVec);
               if (similarity >= 0.80) {
-                insertMatch.run(learn.id, qLog.id, qLog.created_at);
+                insertMatch.run(mem.id, qLog.id, qLog.created_at);
               }
             }
           }
@@ -504,15 +612,15 @@ export class NeuronMemory {
           `);
 
           const updateScopeStmt = this.db.prepare(`
-            UPDATE learnings SET scope = ? WHERE id = ? AND project_id = ?
+            UPDATE memories SET scope = ? WHERE id = ? AND project_id = ?
           `);
 
-          for (const learn of learnings) {
-            if (learn.is_manual_scope === 1) continue;
+          for (const mem of memories) {
+            if (mem.is_manual_scope === 1) continue;
 
-            const countRow = countStmt.get(learn.id, cutoffStr) as { count: number };
+            const countRow = countStmt.get(mem.id, cutoffStr) as { count: number };
             const matchCount = countRow ? countRow.count : 0;
-            const currentScope = learn.scope;
+            const currentScope = mem.scope;
 
             let targetScope = currentScope;
 
@@ -522,7 +630,7 @@ export class NeuronMemory {
               targetScope = 'project';
             }
 
-            if (targetScope === currentScope && (learn.importance ?? 3) < 4) {
+            if (targetScope === currentScope && (mem.importance ?? 3) < 4) {
               if (currentScope === 'global' && matchCount < 10) {
                 targetScope = matchCount < 3 ? this.projectName : 'project';
               } else if (currentScope === 'project' && matchCount < 3) {
@@ -531,14 +639,14 @@ export class NeuronMemory {
             }
 
             if (targetScope !== currentScope) {
-              updateScopeStmt.run(targetScope, learn.id, this.projectId);
+              updateScopeStmt.run(targetScope, mem.id, this.projectId);
               if (
                 (currentScope !== 'global' && targetScope === 'global') ||
                 ((currentScope === this.projectName || currentScope === 'people') && targetScope === 'project')
               ) {
-                promoted.push({ id: learn.id, from: currentScope, to: targetScope });
+                promoted.push({ id: mem.id, from: currentScope, to: targetScope });
               } else {
-                demoted.push({ id: learn.id, from: currentScope, to: targetScope });
+                demoted.push({ id: mem.id, from: currentScope, to: targetScope });
               }
             }
           }
@@ -555,8 +663,9 @@ export class NeuronMemory {
         const cutoffStr = cutoffDate.toISOString();
 
         const stmt = this.db.prepare(`
-          DELETE FROM history
+          DELETE FROM memories
           WHERE project_id = ?
+            AND category = 'history'
             AND created_at < ?
             AND importance <= ?
         `);
@@ -570,11 +679,18 @@ export class NeuronMemory {
   }
 
   public getStatus(): any {
-    const learnRow = this.db.prepare('SELECT COUNT(*) as count FROM learnings WHERE project_id = ?').get(this.projectId) as { count: number };
+    const totalRow = this.db.prepare('SELECT COUNT(*) as count FROM memories WHERE project_id = ?').get(this.projectId) as { count: number };
+    const totalCount = totalRow ? totalRow.count : 0;
+
+    const learnRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'learning'").get(this.projectId) as { count: number };
     const learnCount = learnRow ? learnRow.count : 0;
 
-    const historyRow = this.db.prepare('SELECT COUNT(*) as count FROM history WHERE project_id = ?').get(this.projectId) as { count: number };
+    const historyRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'history'").get(this.projectId) as { count: number };
     const historyCount = historyRow ? historyRow.count : 0;
+
+    // Count distinct categories
+    const categoryRows = this.db.prepare('SELECT DISTINCT category FROM memories WHERE project_id = ?').all(this.projectId) as any[];
+    const categories = categoryRows.map(r => r.category);
 
     const appPaths = envPaths('neuron', { suffix: '' });
     const modelCacheDir = path.join(appPaths.data, 'models');
@@ -587,8 +703,10 @@ export class NeuronMemory {
       db: 'ready',
       model: modelReady,
       modelName: 'Xenova/bge-small-en-v1.5',
+      totalCount,
       learnCount,
-      historyCount
+      historyCount,
+      categories
     };
   }
 
@@ -599,46 +717,46 @@ export class NeuronMemory {
   // --- DEPRECATED METHODS (WRAPPERS) TO KEEP TESTS/CLI HAPPY TEMPORARILY ---
 
   public async addLearning(content: string, tags: string[] = [], options: { importance?: number; scope?: string } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'upsert', kind: 'learning', content, tags, importance: options.importance, scope: options.scope }]);
+    const res = await this.transact([{ op: 'upsert', category: 'learning', content, tags, importance: options.importance, scope: options.scope }]);
     return res[0];
   }
   public async queryLearnings(query: string, options: { limit?: number; scopes?: string[] } = {}): Promise<any> {
-    const results = await this.query({ text: query, kind: 'learning', limit: options.limit, scopes: options.scopes });
+    const results = await this.query({ text: query, categories: ['learning'], limit: options.limit, scopes: options.scopes });
     return { results, project: this.projectName, query };
   }
   public listLearnings(options: { limit?: number } = {}): any[] {
     const limit = options.limit ?? 20;
-    const stmt = this.db.prepare(`SELECT id, content, tags, created_at FROM learnings WHERE project_id = ? ORDER BY rowid ASC LIMIT ?`);
+    const stmt = this.db.prepare(`SELECT id, content, tags, created_at FROM memories WHERE project_id = ? AND category = 'learning' ORDER BY rowid ASC LIMIT ?`);
     return (stmt.all(this.projectId, limit) as any[]).map(row => ({
       id: row.id, content: row.content, tags: JSON.parse(row.tags), createdAt: row.created_at
     }));
   }
   public async updateLearning(id: string, content: string, options: { tags?: string[]; importance?: number; scope?: string } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'update', kind: 'learning', id, content, tags: options.tags, importance: options.importance, scope: options.scope }]);
+    const res = await this.transact([{ op: 'update', category: 'learning', id, content, tags: options.tags, importance: options.importance, scope: options.scope }]);
     return res[0];
   }
   public deleteLearning(id: string): any {
-    const info = this.db.prepare(`DELETE FROM learnings WHERE id = ? AND project_id = ?`).run(id, this.projectId);
+    const info = this.db.prepare(`DELETE FROM memories WHERE id = ? AND project_id = ?`).run(id, this.projectId);
     return { id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName };
   }
 
   public async addHistory(content: string, options: { taskId?: string; tags?: string[]; importance?: number; scope?: string } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'upsert', kind: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance, scope: options.scope }]);
+    const res = await this.transact([{ op: 'upsert', category: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance, scope: options.scope }]);
     return res[0];
   }
   public async queryHistory(query: string, options: { limit?: number; scopes?: string[] } = {}): Promise<any> {
-    const results = await this.query({ text: query, kind: 'history', limit: options.limit, scopes: options.scopes });
+    const results = await this.query({ text: query, categories: ['history'], limit: options.limit, scopes: options.scopes });
     return { results, project: this.projectName, query };
   }
   public listHistory(options: { limit?: number } = {}): any[] {
     const limit = options.limit ?? 20;
-    const stmt = this.db.prepare(`SELECT id, content, tags, task_id, created_at FROM history WHERE project_id = ? ORDER BY rowid DESC LIMIT ?`);
+    const stmt = this.db.prepare(`SELECT id, content, tags, task_id, created_at FROM memories WHERE project_id = ? AND category = 'history' ORDER BY rowid DESC LIMIT ?`);
     return (stmt.all(this.projectId, limit) as any[]).map(row => ({
       id: row.id, content: row.content, tags: JSON.parse(row.tags), taskId: row.task_id, createdAt: row.created_at
     }));
   }
   public deleteHistory(id: string): any {
-    const info = this.db.prepare(`DELETE FROM history WHERE id = ? AND project_id = ?`).run(id, this.projectId);
+    const info = this.db.prepare(`DELETE FROM memories WHERE id = ? AND project_id = ?`).run(id, this.projectId);
     return { id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName };
   }
   public consolidateHistory(): any {

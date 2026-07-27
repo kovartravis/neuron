@@ -54,7 +54,7 @@ describe('CLI Command: history', () => {
     const db = openDatabase(tempDbPath);
     const oldDate = new Date();
     oldDate.setDate(oldDate.getDate() - 40);
-    db.prepare('UPDATE history SET created_at = ?').run(oldDate.toISOString());
+    db.prepare("UPDATE memories SET created_at = ? WHERE category = 'history'").run(oldDate.toISOString());
     db.close();
 
     execSync(`node ${cliPath} history add "New entry" --importance 1`, { env });
@@ -65,7 +65,7 @@ describe('CLI Command: history', () => {
     expect(pruneRes.deletedCount).toBe(2);
 
     const dbVerify = openDatabase(tempDbPath);
-    const remaining = dbVerify.prepare('SELECT content FROM history ORDER BY created_at ASC').all() as any[];
+    const remaining = dbVerify.prepare("SELECT content FROM memories WHERE category = 'history' ORDER BY created_at ASC").all() as any[];
     expect(remaining).toHaveLength(2);
     dbVerify.close();
   });

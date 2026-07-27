@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { NeuronMemory } from '../index.js';
+import { loadConfig, resolveExecCategories } from '../config/index.js';
 
 export async function handleExecCommand(args: string[]): Promise<void> {
   const dashDashIndex = args.indexOf('--');
@@ -12,10 +13,12 @@ export async function handleExecCommand(args: string[]): Promise<void> {
 
   const rawCommandStr = commandArgs.join(' ');
 
+  const config = loadConfig(process.cwd());
+  const { categories, limit, minScore } = resolveExecCategories(config, rawCommandStr);
+
   const memory = NeuronMemory.open(process.cwd());
-  const matched = await memory.query({ text: rawCommandStr, limit: 5 });
-  const threshold = 0.35;
-  const relevant = matched.filter(m => (m.score ?? 0) >= threshold);
+  const matched = await memory.query({ text: rawCommandStr, categories, limit });
+  const relevant = matched.filter(m => (m.score ?? 0) >= minScore);
 
   if (relevant.length > 0) {
     process.stderr.write(`[neuron] Matched ${relevant.length} relevant learning(s) for command: "${rawCommandStr}"\n`);

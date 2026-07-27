@@ -21,28 +21,19 @@ describe('CLI Command: init', () => {
     }
   });
 
-  it('should support the init command to bootstrap AGENTS.md or CLAUDE.md', () => {
+  it('should support the init command to copy skills to detected harness dirs', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'init-test-project');
     fs.mkdirSync(initTempDir, { recursive: true });
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
-    
-    const agentsPath = path.join(initTempDir, 'AGENTS.md');
-    expect(fs.existsSync(agentsPath)).toBe(true);
-    
-    const agentsContent = fs.readFileSync(agentsPath, 'utf8');
-    expect(agentsContent).toContain('## Memory Store Protocol');
-    expect(agentsContent).toContain('neuron learn query');
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
 
-    execSync(`node ${cliPath} init --file CLAUDE.md`, { env, cwd: initTempDir });
-    const claudePath = path.join(initTempDir, 'CLAUDE.md');
-    expect(fs.existsSync(claudePath)).toBe(true);
-
-    const claudeContent = fs.readFileSync(claudePath, 'utf8');
-    expect(claudeContent).toContain('## Memory Store');
+    expect(result.status).toBe('initialized');
+    const expectedSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    expect(fs.existsSync(expectedSkillPath)).toBe(true);
 
     fs.rmSync(initTempDir, { recursive: true });
   });

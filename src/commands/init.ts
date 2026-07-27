@@ -1,27 +1,11 @@
 import path from 'node:path';
 import fs from 'node:fs';
-import { parseFlags, updateMarkdownFile } from './utils.js';
-import { HARNESSES, detectHarnesses, copySkill, MEMORY_STORE_BLOCK } from '../config/index.js';
+import { parseFlags } from './utils.js';
+import { HARNESSES, detectHarnesses, copySkill } from '../config/index.js';
 
 export function handleInitCommand(args: string[]): void {
   const { options } = parseFlags(args.slice(1));
   const projectDir = process.cwd();
-
-  let targetFile = options.file;
-  if (!targetFile) {
-    for (const h of HARNESSES) {
-      if (fs.existsSync(path.join(projectDir, h.mdFile))) {
-        targetFile = h.mdFile;
-        break;
-      }
-    }
-    if (!targetFile) {
-      targetFile = 'AGENTS.md';
-    }
-  }
-
-  const filePath = path.join(projectDir, targetFile);
-  updateMarkdownFile(filePath, 'Memory Store', MEMORY_STORE_BLOCK);
 
   // Detect harnesses and copy the bundled neuron-memory skill
   let detectedSkillsDirs = detectHarnesses(projectDir);
@@ -32,7 +16,6 @@ export function handleInitCommand(args: string[]): void {
 
   console.log(JSON.stringify({
     status: 'initialized',
-    file: targetFile,
     projectRoot: projectDir,
     skillsWritten
   }));

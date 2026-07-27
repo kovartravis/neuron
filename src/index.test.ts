@@ -11,15 +11,16 @@ describe('NeuronMemory DB Migrations', () => {
 
     const db = memory.getDb();
 
-    const learningsCols = db.pragma("table_info(learnings)") as any[];
-    const learningsNames = learningsCols.map((c: any) => c.name);
-    expect(learningsNames).toContain('is_manual_scope');
+    const memoriesCols = db.pragma("table_info(memories)") as any[];
+    const memoriesNames = memoriesCols.map((c: any) => c.name);
+    expect(memoriesNames).toContain('is_manual_scope');
+    expect(memoriesNames).toContain('category');
 
     const matchTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get() as { name: string } | undefined;
     expect(matchTable?.name).toBe('learning_query_matches');
   });
 
-  it('should create learnings_fts and history_fts FTS5 virtual tables for hybrid search', () => {
+  it('should create memories_fts FTS5 virtual table for hybrid search', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
@@ -28,15 +29,10 @@ describe('NeuronMemory DB Migrations', () => {
 
     const db = memory.getDb();
 
-    const ftsLearnings = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='learnings_fts'"
+    const ftsMemories = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='memories_fts'"
     ).get() as { name: string } | undefined;
-    expect(ftsLearnings?.name).toBe('learnings_fts');
-
-    const ftsHistory = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='history_fts'"
-    ).get() as { name: string } | undefined;
-    expect(ftsHistory?.name).toBe('history_fts');
+    expect(ftsMemories?.name).toBe('memories_fts');
   });
 
   it('should index learnings inserted via the public interface and make them retrievable by FTS keyword match', async () => {
@@ -51,7 +47,7 @@ describe('NeuronMemory DB Migrations', () => {
 
     const db = memory.getDb();
     const row = db.prepare(
-      `SELECT rowid FROM learnings_fts WHERE learnings_fts MATCH '"onnxruntime"*'`
+      `SELECT rowid FROM memories_fts WHERE memories_fts MATCH '"onnxruntime"*'`
     ).get();
     expect(row).toBeDefined();
   });
@@ -70,8 +66,8 @@ describe('NeuronMemory DB Migrations', () => {
     const manualLearn = await memory.addLearning('Manual scope learning', [], { scope: 'global' });
 
     const db = memory.getDb();
-    const row1 = db.prepare('SELECT is_manual_scope FROM learnings WHERE id = ?').get(defaultLearn.id) as { is_manual_scope: number };
-    const row2 = db.prepare('SELECT is_manual_scope FROM learnings WHERE id = ?').get(manualLearn.id) as { is_manual_scope: number };
+    const row1 = db.prepare('SELECT is_manual_scope FROM memories WHERE id = ?').get(defaultLearn.id) as { is_manual_scope: number };
+    const row2 = db.prepare('SELECT is_manual_scope FROM memories WHERE id = ?').get(manualLearn.id) as { is_manual_scope: number };
 
     expect(row1.is_manual_scope).toBe(0);
     expect(row2.is_manual_scope).toBe(1);
@@ -241,11 +237,11 @@ describe('NeuronMemory DB Migrations', () => {
 
     // Verify values in DB
     const db = memory.getDb();
-    const l1 = db.prepare('SELECT scope, importance FROM learnings WHERE id = ?').get(learning1.id) as { scope: string; importance: number };
+    const l1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(learning1.id) as { scope: string; importance: number };
     expect(l1.scope).toBe('kovart');
     expect(l1.importance).toBe(5);
 
-    const h1 = db.prepare('SELECT scope, importance FROM history WHERE id = ?').get(history1.id) as { scope: string; importance: number };
+    const h1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(history1.id) as { scope: string; importance: number };
     expect(h1.scope).toBe('global');
     expect(h1.importance).toBe(2);
 
@@ -253,11 +249,11 @@ describe('NeuronMemory DB Migrations', () => {
     const learning2 = await memory.addLearning('Default learning', ['tag']);
     const history2 = await memory.addHistory('Default history');
 
-    const l2 = db.prepare('SELECT scope, importance FROM learnings WHERE id = ?').get(learning2.id) as { scope: string; importance: number };
+    const l2 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(learning2.id) as { scope: string; importance: number };
     expect(l2.scope).toBe('test-project');
     expect(l2.importance).toBe(3);
 
-    const h2 = db.prepare('SELECT scope, importance FROM history WHERE id = ?').get(history2.id) as { scope: string; importance: number };
+    const h2 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(history2.id) as { scope: string; importance: number };
     expect(h2.scope).toBe('test-project');
     expect(h2.importance).toBe(3);
   });
@@ -357,7 +353,7 @@ describe('NeuronMemory DB Migrations', () => {
     oldDate.setDate(oldDate.getDate() - 40);
     const oldDateStr = oldDate.toISOString();
 
-    db.prepare('UPDATE history SET created_at = ? WHERE id IN (?, ?, ?, ?)')
+    db.prepare("UPDATE memories SET created_at = ? WHERE id IN (?, ?, ?, ?) AND category = 'history'")
       .run(oldDateStr, h1.id, h2.id, h3.id, h4.id);
 
     // 3. Run prune with default parameters (days=30, maxImportance=3)
@@ -406,7 +402,7 @@ describe('NeuronMemory DB Migrations', () => {
     
     // Check initial state
     const db = memory.getDb();
-    const row1 = db.prepare('SELECT content, tags, importance, scope, embedding FROM learnings WHERE id = ?').get(added.id) as any;
+    const row1 = db.prepare('SELECT content, tags, importance, scope, embedding FROM memories WHERE id = ?').get(added.id) as any;
     expect(row1.content).toBe('original text');
     expect(JSON.parse(row1.tags)).toEqual(['initial']);
     expect(row1.importance).toBe(3);
@@ -420,7 +416,7 @@ describe('NeuronMemory DB Migrations', () => {
     expect(updateRes.id).toBe(added.id);
 
     // Check updated state
-    const row2 = db.prepare('SELECT content, tags, importance, scope, embedding FROM learnings WHERE id = ?').get(added.id) as any;
+    const row2 = db.prepare('SELECT content, tags, importance, scope, embedding FROM memories WHERE id = ?').get(added.id) as any;
     expect(row2.content).toBe('updated text');
     expect(JSON.parse(row2.tags)).toEqual(['initial']); // preserved
     expect(row2.importance).toBe(3); // preserved
@@ -430,7 +426,7 @@ describe('NeuronMemory DB Migrations', () => {
 
     // 3. Update optional attributes (tags, importance)
     await memory.updateLearning(added.id, 'updated text', { tags: ['new-tag'], importance: 5 });
-    const row3 = db.prepare('SELECT tags, importance FROM learnings WHERE id = ?').get(added.id) as any;
+    const row3 = db.prepare('SELECT tags, importance FROM memories WHERE id = ?').get(added.id) as any;
     expect(JSON.parse(row3.tags)).toEqual(['new-tag']);
     expect(row3.importance).toBe(5);
 
@@ -475,7 +471,7 @@ describe('NeuronMemory DB Migrations', () => {
 
     // Manual learning should NOT be promoted despite having matching queries
     const db = memory.getDb();
-    const manualRow = db.prepare('SELECT scope FROM learnings WHERE id = ?').get(learnManual.id) as { scope: string };
+    const manualRow = db.prepare('SELECT scope FROM memories WHERE id = ?').get(learnManual.id) as { scope: string };
     expect(manualRow.scope).toBe('test-project');
 
     // 4. Add 10 more queries (total 15 matches) to trigger promotion to global
@@ -536,7 +532,7 @@ describe('NeuronMemory DB Migrations', () => {
     const resDemoted = memory.checkAutoPromotions();
     expect(resDemoted.demoted).toHaveLength(0);
 
-    const row = db.prepare('SELECT scope FROM learnings WHERE id = ?').get(learnHighImp.id) as { scope: string };
+    const row = db.prepare('SELECT scope FROM memories WHERE id = ?').get(learnHighImp.id) as { scope: string };
     expect(row.scope).toBe('global');
   });
 
@@ -545,20 +541,20 @@ describe('NeuronMemory DB Migrations', () => {
     const db = memory.getDb();
     const now = new Date().toISOString();
 
-    // 1. Inserting importance 0 into learnings must fail
+    // 1. Inserting importance 0 into memories must fail
     expect(() => {
       db.prepare(`
-        INSERT INTO learnings (id, project_id, content, tags, embedding, scope, importance, is_manual_scope, created_at)
-        VALUES ('test-1', 'proj-1', 'content', '[]', ?, 'global', 0, 0, ?)
-      `).run(Buffer.alloc(1536), now);
+        INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
+        VALUES ('test-1', 'proj-1', 'learning', 'content', '[]', ?, 'global', 0, 0, NULL, ?, ?)
+      `).run(Buffer.alloc(1536), now, now);
     }).toThrow(/CHECK constraint failed/);
 
-    // 2. Inserting importance 6 into history must fail
+    // 2. Inserting importance 6 into memories must fail
     expect(() => {
       db.prepare(`
-        INSERT INTO history (id, project_id, content, tags, embedding, importance, scope, created_at)
-        VALUES ('test-2', 'proj-1', 'content', '[]', ?, 6, 'global', ?)
-      `).run(Buffer.alloc(1536), now);
+        INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
+        VALUES ('test-2', 'proj-1', 'history', 'content', '[]', ?, 'global', 6, 0, NULL, ?, ?)
+      `).run(Buffer.alloc(1536), now, now);
     }).toThrow(/CHECK constraint failed/);
   });
 });

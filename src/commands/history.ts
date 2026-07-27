@@ -24,7 +24,7 @@ export async function handleHistoryCommand(
       console.error('Error: content is required for history add');
       process.exit(1);
     }
-    const res = await memory.transact([{ op: 'upsert', kind: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance, scope: options.scope }]);
+    const res = await memory.transact([{ op: 'upsert', category: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance, scope: options.scope }]);
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'query') {
     const queryText = positionals[0];
@@ -32,10 +32,10 @@ export async function handleHistoryCommand(
       console.error('Error: query text is required for history query');
       process.exit(1);
     }
-    const results = await memory.query({ text: queryText, kind: 'history', limit: options.limit, scopes: options.scopes });
+    const results = await memory.query({ text: queryText, categories: ['history'], limit: options.limit, scopes: options.scopes });
     console.log(JSON.stringify({ results, project: projectName, query: queryText }));
   } else if (subCommand === 'list') {
-    const results = await memory.query({ kind: 'history', limit: options.limit });
+    const results = await memory.query({ categories: ['history'], limit: options.limit });
     console.log(JSON.stringify(results));
   } else if (subCommand === 'delete') {
     const id = positionals[0];
@@ -43,7 +43,7 @@ export async function handleHistoryCommand(
       console.error('Error: ID is required for history delete');
       process.exit(1);
     }
-    const res = await memory.transact([{ op: 'delete', kind: 'history', id }]);
+    const res = await memory.transact([{ op: 'delete', category: 'history', id }]);
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'consolidate') {
     const report = memory.maintain({ consolidate: true, autoPromote: true });

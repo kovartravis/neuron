@@ -6,7 +6,6 @@ export {
   HARNESSES,
   detectHarnesses,
   copySkill,
-  MEMORY_STORE_BLOCK,
   AgentHarness
 } from '../config/index.js';
 
@@ -35,6 +34,8 @@ export function parseFlags(args: string[]): {
     scope?: string;
     scopes?: string[];
     days?: number;
+    category?: string;
+    categories?: string[];
   };
 } {
   const positionals: string[] = [];
@@ -46,6 +47,8 @@ export function parseFlags(args: string[]): {
   let scope: string | undefined;
   let scopes: string[] | undefined;
   let days: number | undefined;
+  let category: string | undefined;
+  let categories: string[] | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -80,6 +83,13 @@ export function parseFlags(args: string[]): {
       if (val) {
         days = parseInt(val, 10);
       }
+    } else if (arg === '--category') {
+      category = args[++i];
+    } else if (arg === '--categories') {
+      const val = args[++i];
+      if (val) {
+        categories = val.split(',').map(s => s.trim()).filter(Boolean);
+      }
     } else {
       positionals.push(arg);
     }
@@ -109,7 +119,9 @@ export function parseFlags(args: string[]): {
       importance,
       scope,
       scopes,
-      days
+      days,
+      category,
+      categories,
     }
   };
 }
@@ -158,16 +170,35 @@ export function updateMarkdownFile(filePath: string, heading: string, blockConte
 export const MASTER_HELP = `Usage: neuron <command> [subcommand] [arguments] [flags]
 
 Commands:
-  init                 Bootstrap the project for agentic memory store (creates/updates AGENTS.md or CLAUDE.md)
+  init                 Bootstrap the project for agentic memory store (copies skills to detected harnesses)
   exec -- <command>    Run a command with pre-command memory lookup
   status               Display status details for active database, project, and embedding cache
-  learn <subcommand>   Manage learnings (rules, conventions, guidelines)
-  history <subcommand> Manage action history logs
+  memory <subcommand>  Manage memories across any category
+  learn <subcommand>   Manage learnings (alias for memory --category learning)
+  history <subcommand> Manage action history (alias for memory --category history)
 
 Options:
   -h, --help           Show this help information
 
-Run 'neuron learn --help' or 'neuron history --help' for details on specific subcommands.`;
+Run 'neuron memory --help', 'neuron learn --help', or 'neuron history --help' for details.`;
+export const MEMORY_HELP = `Usage: neuron memory <subcommand> [arguments] [flags]
+
+Subcommands:
+  add "<content>"                Add a new memory entry
+  query "<text>"                 Query memories using semantic search
+  list                           List recent memory entries
+  delete <id>                    Delete a memory entry by ID
+  update <id> "<content>"        Update a memory entry in-place
+
+Options:
+  --category <name>              Specify the category (required for add, delete, update)
+  --categories <a,b,...>         Filter by multiple categories (query, list)
+  --tags <tag1,tag2,...>         Specify tags
+  --importance <1-5>             Set importance rating
+  --scope <scope>                Set scope
+  --task-id <id>                 Associate a task ID
+  --scopes <scope1,scope2,...>   Filter by active scopes (query)
+  --limit <number>               Limit returned results`;
 
 export const LEARN_HELP = `Usage: neuron learn <subcommand> [arguments] [flags]
 
