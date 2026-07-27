@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — CLI Commands & Schema, 02 — Storage Model & Caching
 
-**Status:** todo
+**Status:** resolved
 
 - [ ] Add `handleUiCommand` (`src/commands/ui.ts`) with configurable `--port` flag (defaulting to 3333).
 - [ ] Implement lightweight Node.js HTTP server (`src/ui/server.ts`) serving REST API endpoints and static assets.

@@ -7,6 +7,7 @@ import {
   handleStatusCommand,
   handleLearnCommand,
   handleHistoryCommand,
+  handleUiCommand,
   MASTER_HELP
 } from './commands/index.js';
 import { NeuronMemory } from './index.js';
@@ -26,6 +27,11 @@ async function main() {
 
   if (mainCommand === 'exec') {
     return await handleExecCommand(args);
+  }
+
+  if (mainCommand === 'ui') {
+    const memory = NeuronMemory.open(process.cwd());
+    return await handleUiCommand(args, memory);
   }
 
   // Resolve project details
