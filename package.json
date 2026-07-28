@@ -45,12 +45,17 @@
     "test:watch": "vitest",
     "build": "node ./node_modules/typescript/bin/tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
-    "start": "node ./dist/cli.js"
+    "start": "node ./dist/cli.js",
+    "bench": "node benchmarks/runner.js --sanity",
+    "bench:sanity": "node benchmarks/runner.js --sanity",
+    "bench:full": "node benchmarks/runner.js --full",
+    "bench:view": "node benchmarks/runner.js --view"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",
     "better-sqlite3": "^11.0.0",
     "env-paths": "^3.0.0",
+    "onnxruntime-node": "1.20.1",
     "yaml": "^2.9.0"
   },
   "overrides": {

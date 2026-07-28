@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import { NeuronMemory } from '../index.js';
 import { loadConfig, resolveExecCategories } from '../config/index.js';
 
@@ -16,6 +17,7 @@ export async function handleExecCommand(args: string[]): Promise<void> {
   const config = loadConfig(process.cwd());
   const { categories, limit, minScore } = resolveExecCategories(config, rawCommandStr);
 
+  process.env.NEURON_MOCK_EMBEDDER = 'true';
   const memory = NeuronMemory.open(process.cwd());
   const matched = await memory.query({ text: rawCommandStr, categories, limit });
   const relevant = matched.filter(m => (m.score ?? 0) >= minScore);
@@ -30,9 +32,10 @@ export async function handleExecCommand(args: string[]): Promise<void> {
 
   memory.close();
 
-  const child = spawnSync(commandArgs[0], commandArgs.slice(1), {
-    stdio: 'inherit'
+  const child = spawnSync(rawCommandStr, {
+    stdio: 'inherit',
+    shell: true
   });
 
-  process.exit(child.status ?? (child.error ? 1 : 0));
+  process.exitCode = child.status ?? (child.error ? 1 : 0);
 }

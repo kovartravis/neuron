@@ -4,3 +4,6 @@ src/__tests__/temp/
 .cache/
 *.log
 .DS_Store
+.env
+.env.*
+benchmarks/agent-memory-benchmark/
