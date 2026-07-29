@@ -15,11 +15,12 @@ A complete technical specification and issue roadmap for integrating `.md` file 
 - [Dual-Storage Routing Engine](.scratch/md-file-management/issues/03-dual-storage-router.md) — Core routing layer directing `neuron learn` and `neuron history` writes/queries across Vector DB and `.md` files based on `.neuronrc` rules.
 - [Markdown Vector Sync Engine](.scratch/md-file-management/issues/04-markdown-vector-sync-engine.md) — Bidirectional synchronization and re-indexing between `.md` file changes and SQLite vector embeddings.
 - [CLI Config & Sync Subcommands & Test Suite](.scratch/md-file-management/issues/05-cli-config-and-sync-commands.md) — `neuron config` and `neuron sync` commands along with end-to-end integration tests.
+- [Native Markdown Storage Delegation in NeuronMemory](.scratch/md-file-management/issues/06-native-markdown-storage-delegation.md) — Automatic router delegation for native markdown query and transact calls across all CLI commands.
+- [In-Memory Markdown Vector Embeddings & Timestamp Invalidation](.scratch/md-file-management/issues/07-in-memory-markdown-embedding-search-and-cache.md) — In-memory semantic search against markdown files with mtimeMs cache invalidation.
+- [Bypassing SQLite File Creation in md-only Mode & E2E Verification](.scratch/md-file-management/issues/08-lazy-sqlite-creation-and-e2e-verification.md) — Zero SQLite disk footprint in md-only mode and full E2E test suite validation.
 
 ## Frontier
 
-- [`.neuronrc` Configuration Schema & Parser](.scratch/md-file-management/issues/01-neuronrc-config-schema-parser.md)
-- [Markdown File Storage Adapter](.scratch/md-file-management/issues/02-md-file-storage-adapter.md)
-- [Dual-Storage Routing Engine](.scratch/md-file-management/issues/03-dual-storage-router.md)
-- [Markdown Vector Sync Engine](.scratch/md-file-management/issues/04-markdown-vector-sync-engine.md)
-- [CLI Config & Sync Subcommands & Test Suite](.scratch/md-file-management/issues/05-cli-config-and-sync-commands.md)
+- [Native Markdown Storage Delegation in NeuronMemory](.scratch/md-file-management/issues/06-native-markdown-storage-delegation.md)
+- [In-Memory Markdown Vector Embeddings & Timestamp Invalidation](.scratch/md-file-management/issues/07-in-memory-markdown-embedding-search-and-cache.md)
+- [Bypassing SQLite File Creation in md-only Mode & E2E Verification](.scratch/md-file-management/issues/08-lazy-sqlite-creation-and-e2e-verification.md)

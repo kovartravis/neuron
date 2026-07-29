@@ -216,4 +216,54 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     ]);
     expect(deleteRes[0].status).toBe('not_found');
   });
+
+  describe('Ticket 07: In-Memory Markdown Vector Search & mtimeMs Invalidation', () => {
+    it('should rank md-only query results by vector embedding similarity and invalidate cache on mtimeMs change', async () => {
+      const vecHigh = new Float32Array(384);
+      vecHigh[0] = 1.0;
+      const vecLow = new Float32Array(384);
+      vecLow[1] = 1.0;
+      const vecQuery = new Float32Array(384);
+      vecQuery[0] = 0.9;
+      vecQuery[1] = 0.1;
+
+      const mockEmbedder = {
+        embed: async (text: string) => (text.includes('High') ? vecHigh : vecLow),
+        embedQuery: async (_text: string) => vecQuery,
+      };
+
+      const customDb = new NeuronMemory({
+        dbPath: ':memory:',
+        projectRoot: testDir,
+        projectName: 't07-project',
+        embedder: mockEmbedder,
+      });
+
+      const router = new DualStorageRouter(customDb, mdAdapter, makeConfig('md-only'));
+
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 't07-low', content: 'Low similarity entry', tags: ['t1'] },
+        { op: 'upsert', category: 'learning', id: 't07-high', content: 'High similarity entry', tags: ['t2'] },
+      ]);
+
+      const results1 = await router.query({ text: 'High query search', category: 'learning' });
+      expect(results1).toHaveLength(2);
+      expect(results1[0].id).toBe('t07-high');
+      expect(results1[0].score).toBeGreaterThan(results1[1].score!);
+
+      // Modify .neuron/learning.md on disk externally and bump mtime
+      const learningMd = path.join(storagePath, 'learning.md');
+      const updatedMdContent = fs.readFileSync(learningMd, 'utf8').replace('Low similarity entry', 'High relevance updated entry');
+      fs.writeFileSync(learningMd, updatedMdContent, 'utf8');
+
+      const futureTime = new Date(Date.now() + 5000);
+      fs.utimesSync(learningMd, futureTime, futureTime);
+
+      const results2 = await router.query({ text: 'High query search', category: 'learning' });
+      const updatedEntry = results2.find(m => m.id === 't07-low');
+      expect(updatedEntry?.content).toContain('High relevance updated entry');
+
+      customDb.close();
+    });
+  });
 });

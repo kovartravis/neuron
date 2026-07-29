@@ -1,6 +1,29 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import envPaths from 'env-paths';
+
+const require = createRequire(import.meta.url);
+
+function applyCrossPlatformShims() {
+  if (process.platform === 'android') {
+    try {
+      const ort = require('onnxruntime-web');
+      if (ort && ort.env && ort.env.wasm) {
+        ort.env.wasm.numThreads = 1;
+        const distDir = path.dirname(require.resolve('onnxruntime-web'));
+        ort.env.wasm.wasmPaths = distDir + '/';
+      }
+      const resolvedOrt = require.resolve('onnxruntime-node');
+      (require.cache as any)[resolvedOrt] = { id: resolvedOrt, filename: resolvedOrt, loaded: true, exports: ort };
+    } catch (e) {}
+
+    try {
+      const resolvedSharp = require.resolve('sharp');
+      (require.cache as any)[resolvedSharp] = { id: resolvedSharp, filename: resolvedSharp, loaded: true, exports: {} };
+    } catch (e) {}
+  }
+}
 
 export interface Embedder {
   embed(text: string): Promise<Float32Array>;
@@ -13,6 +36,7 @@ export class TransformersEmbedder implements Embedder {
   async embed(text: string): Promise<Float32Array> {
     if (!this.pipelinePromise) {
       this.pipelinePromise = (async () => {
+        applyCrossPlatformShims();
         const { pipeline, env } = await import('@huggingface/transformers');
         const appPaths = envPaths('neuron', { suffix: '' });
         const modelCacheDir = path.join(appPaths.data, 'models');

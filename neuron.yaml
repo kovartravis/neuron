@@ -1,5 +1,9 @@
 version: "1.0"
 
+storage:
+  mode: vector-only
+  path: .neuron
+
 categories:
   learning:
     description: Agent conventions, rules, and failure fixes

@@ -18,6 +18,7 @@ export type StorageConfig = z.infer<typeof StorageConfigSchema>;
 export const CategoryConfigSchema = z.object({
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  storage: z.enum(['vector', 'md', 'dual']).optional(),
 });
 
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;

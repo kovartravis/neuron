@@ -24,6 +24,10 @@ export * from './models/index.js';
 export * from './components/index.js';
 export * from './config/index.js';
 
+import { DualStorageRouter } from './storage/dualStorageRouter.js';
+import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
+import { loadNeuronYaml } from './config/neuronYaml.js';
+
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
   while (true) {
@@ -52,6 +56,7 @@ export class NeuronMemory {
   private projectName: string;
   private projectId: string;
   private embedder: Embedder;
+  private router: DualStorageRouter;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -62,9 +67,28 @@ export class NeuronMemory {
       .digest('hex')
       .slice(0, 16);
     
-    this.db = openDatabase(options.dbPath);
     this.embedder = options.embedder ?? new TransformersEmbedder();
-    this.initialize();
+
+    const config = loadNeuronYaml(options.projectRoot);
+    const configPath = config.storage?.path || '.neuron';
+    const storagePath = path.isAbsolute(configPath)
+      ? configPath
+      : path.resolve(options.projectRoot, configPath);
+    const mdAdapter = new MdStorageAdapter({ storagePath });
+
+    if (config.storage?.mode === 'md-only') {
+      this.db = null;
+    } else {
+      this.db = openDatabase(options.dbPath);
+      this.initialize();
+    }
+
+    const vectorDbDelegate = {
+      transact: (mutations: MemoryMutation[]) => this.transactVector(mutations),
+      query: (q: MemoryQuery) => this.queryVector(q),
+    } as any;
+
+    this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config);
   }
 
   static open(dir: string = process.cwd()): NeuronMemory {
@@ -106,6 +130,7 @@ export class NeuronMemory {
 
   public getDb(): any { return this.db; }
   public getProjectId(): string { return this.projectId; }
+  public getEmbedder(): Embedder { return this.embedder; }
 
   private initialize(): void {
     try {
@@ -323,9 +348,11 @@ export class NeuronMemory {
     }
   }
 
-  // --- HYBRID SEARCH INTERFACE (RRF) ---
-
   public async query(q: MemoryQuery): Promise<Memory[]> {
+    return this.router.query(q);
+  }
+
+  public async queryVector(q: MemoryQuery): Promise<Memory[]> {
     const limit = q.limit ?? 5;
     const scopes = q.scopes ?? ['global', this.projectName];
     const placeholders = scopes.map(() => '?').join(',');
@@ -453,6 +480,10 @@ export class NeuronMemory {
   }
 
   public async transact(mutations: MemoryMutation[]): Promise<MutationResult[]> {
+    return this.router.transact(mutations);
+  }
+
+  public async transactVector(mutations: MemoryMutation[]): Promise<MutationResult[]> {
     const results: MutationResult[] = [];
     
     const vectors = new Map<string, Float32Array>();
@@ -683,18 +714,24 @@ export class NeuronMemory {
   }
 
   public getStatus(): any {
-    const totalRow = this.db.prepare('SELECT COUNT(*) as count FROM memories WHERE project_id = ?').get(this.projectId) as { count: number };
-    const totalCount = totalRow ? totalRow.count : 0;
+    let totalCount = 0;
+    let learnCount = 0;
+    let historyCount = 0;
+    let categories: string[] = [];
 
-    const learnRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'learning'").get(this.projectId) as { count: number };
-    const learnCount = learnRow ? learnRow.count : 0;
+    if (this.db) {
+      const totalRow = this.db.prepare('SELECT COUNT(*) as count FROM memories WHERE project_id = ?').get(this.projectId) as { count: number };
+      totalCount = totalRow ? totalRow.count : 0;
 
-    const historyRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'history'").get(this.projectId) as { count: number };
-    const historyCount = historyRow ? historyRow.count : 0;
+      const learnRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'learning'").get(this.projectId) as { count: number };
+      learnCount = learnRow ? learnRow.count : 0;
 
-    // Count distinct categories
-    const categoryRows = this.db.prepare('SELECT DISTINCT category FROM memories WHERE project_id = ?').all(this.projectId) as any[];
-    const categories = categoryRows.map(r => r.category);
+      const historyRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'history'").get(this.projectId) as { count: number };
+      historyCount = historyRow ? historyRow.count : 0;
+
+      const categoryRows = this.db.prepare('SELECT DISTINCT category FROM memories WHERE project_id = ?').all(this.projectId) as any[];
+      categories = categoryRows.map(r => r.category);
+    }
 
     const appPaths = envPaths('neuron', { suffix: '' });
     const modelCacheDir = path.join(appPaths.data, 'models');
@@ -704,7 +741,7 @@ export class NeuronMemory {
     return {
       project: this.projectName,
       projectRoot: this.projectRoot,
-      db: 'ready',
+      db: this.db ? 'ready' : 'md-only',
       model: modelReady,
       modelName: 'Xenova/bge-small-en-v1.5',
       totalCount,
@@ -715,7 +752,9 @@ export class NeuronMemory {
   }
 
   public close(): void {
-    this.db.close();
+    if (this.db) {
+      this.db.close();
+    }
   }
 
   // --- DEPRECATED METHODS (WRAPPERS) TO KEEP TESTS/CLI HAPPY TEMPORARILY ---

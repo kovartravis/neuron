@@ -41,10 +41,11 @@
     "docs/images/"
   ],
   "scripts": {
-    "test": "npm run build && vitest run",
-    "test:watch": "vitest",
+    "test": "npm run build && node ./node_modules/vitest/vitest.mjs run",
+    "test:watch": "node ./node_modules/vitest/vitest.mjs",
     "build": "node ./node_modules/typescript/bin/tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
+    "postinstall": "node -e \"if (process.platform === 'android') { try { require('child_process').execSync('termux-fix-shebang dist/cli.js 2>/dev/null || true'); } catch(e){} }\"",
     "start": "node ./dist/cli.js",
     "bench": "node benchmarks/runner.js --sanity",
     "bench:sanity": "node benchmarks/runner.js --sanity",
@@ -53,11 +54,14 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",
-    "better-sqlite3": "^11.0.0",
     "env-paths": "^3.0.0",
-    "onnxruntime-node": "1.20.1",
+    "onnxruntime-web": "^1.21.0",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0",
+    "onnxruntime-node": "1.20.1"
   },
   "overrides": {
     "onnxruntime-node": "1.20.1"
@@ -67,6 +71,6 @@
     "@types/node": "^20.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.1.9"
   }
 }

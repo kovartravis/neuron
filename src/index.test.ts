@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import { NeuronMemory } from './index.js';
 
 describe('NeuronMemory DB Migrations', () => {
@@ -765,5 +768,90 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     // Correct: embedQuery → vecB → beta ranks first
     // Wrong:   embed      → vecA → alpha ranks first
     expect(results[0].content).toBe('beta learning');
+  });
+
+  describe('NeuronMemory Native Markdown Delegation (Ticket 06)', () => {
+    it('should delegate transact and query natively to Markdown storage when storage.mode is md-only', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t06-test-'));
+      const configPath = path.join(tempDir, 'neuron.yaml');
+      fs.writeFileSync(
+        configPath,
+        `version: "1.0"\nstorage:\n  mode: md-only\n  path: .neuron\n`,
+        'utf8'
+      );
+
+      const memory = new NeuronMemory({
+        dbPath: path.join(tempDir, 'test.sqlite'),
+        projectRoot: tempDir,
+        projectName: 't06-project',
+        embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      });
+
+      // Transact in md-only mode
+      await memory.transact([
+        {
+          op: 'upsert',
+          category: 'learning',
+          id: 't06-native-1',
+          content: 'Native markdown storage delegation learning',
+          tags: ['native', 'md'],
+        },
+      ]);
+
+      // Verify file was written to disk in .neuron/learning.md
+      const mdFile = path.join(tempDir, '.neuron', 'learning.md');
+      expect(fs.existsSync(mdFile)).toBe(true);
+      const contentOnDisk = fs.readFileSync(mdFile, 'utf8');
+      expect(contentOnDisk).toContain('Native markdown storage delegation learning');
+
+      // Query in md-only mode
+      const queryResults = await memory.query({ text: 'Native markdown', categories: ['learning'] });
+      expect(queryResults).toHaveLength(1);
+      expect(queryResults[0].id).toBe('t06-native-1');
+      expect(queryResults[0].content).toContain('Native markdown storage delegation learning');
+
+      memory.close();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+  });
+
+  describe('Ticket 08: Bypassing SQLite File Creation in md-only Mode', () => {
+    it('should not create any .sqlite database files on disk when storage.mode is md-only', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t08-test-'));
+      const configPath = path.join(tempDir, 'neuron.yaml');
+      fs.writeFileSync(
+        configPath,
+        `version: "1.0"\nstorage:\n  mode: md-only\n  path: .neuron\n`,
+        'utf8'
+      );
+
+      const targetSqlitePath = path.join(tempDir, 'should-not-exist.sqlite');
+
+      const memory = new NeuronMemory({
+        dbPath: targetSqlitePath,
+        projectRoot: tempDir,
+        projectName: 't08-project',
+        embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      });
+
+      await memory.transact([
+        {
+          op: 'upsert',
+          category: 'learning',
+          id: 't08-1',
+          content: 'No sqlite file created test',
+          tags: ['t08'],
+        },
+      ]);
+
+      const res = await memory.query({ text: 'sqlite file', categories: ['learning'] });
+      expect(res).toHaveLength(1);
+
+      // Verify NO .sqlite file was created at targetSqlitePath
+      expect(fs.existsSync(targetSqlitePath)).toBe(false);
+
+      memory.close();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
   });
 });

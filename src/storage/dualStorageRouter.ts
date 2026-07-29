@@ -1,12 +1,22 @@
+import fs from 'node:fs';
 import { NeuronMemory } from '../index.js';
 import { MdStorageAdapter } from './mdStorageAdapter.js';
 import { NeuronConfig } from '../config/neuronYaml.js';
 import { Memory, MemoryMutation, MemoryQuery, MutationResult } from '../models/memory.js';
 
+function dotProduct(a: Float32Array, b: Float32Array): number {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) {
+    s += a[i] * b[i];
+  }
+  return s;
+}
+
 export class DualStorageRouter {
   private vectorDb: NeuronMemory;
   private mdAdapter: MdStorageAdapter;
   private config: NeuronConfig;
+  private mdEmbedCache = new Map<string, { mtimeMs: number; embeddings: Map<string, Float32Array> }>();
 
   constructor(vectorDb: NeuronMemory, mdAdapter: MdStorageAdapter, config: NeuronConfig) {
     this.vectorDb = vectorDb;
@@ -30,7 +40,45 @@ export class DualStorageRouter {
       return this.transactMarkdownOnly(mutations);
     }
 
-    if (mode === 'dual' || mode === 'split') {
+    if (mode === 'split') {
+      const results: MutationResult[] = [];
+      for (const m of mutations) {
+        const cat = m.category ?? m.kind ?? 'learning';
+        const catStorage = this.config?.categories?.[cat]?.storage || 'dual';
+
+        if (catStorage === 'md') {
+          const res = await this.transactMarkdownOnly([m]);
+          results.push(...res);
+        } else if (catStorage === 'vector') {
+          const res = await this.vectorDb.transact([m]);
+          results.push(...res);
+        } else {
+          // 'dual' or default fallback: transact both vector and markdown
+          let vecRes: MutationResult[] = [];
+          try { vecRes = await this.vectorDb.transact([m]); } catch {}
+          const vecResult = vecRes[0] || { id: m.id || 'unknown', status: 'not_found', project: 'neuron' };
+          const entryId = m.id || vecResult.id;
+
+          if (m.op === 'upsert') {
+            await this.mdAdapter.writeEntry(cat, { id: entryId, content: m.content || '', tags: m.tags || [], importance: m.importance, scope: m.scope, taskId: m.taskId });
+            results.push({ id: entryId, status: vecResult.status || 'created', project: vecResult.project || 'neuron' });
+          } else if (m.op === 'update') {
+            try {
+              await this.mdAdapter.updateEntry(cat, { id: m.id, content: m.content, tags: m.tags, importance: m.importance, scope: m.scope, taskId: m.taskId });
+              results.push({ id: m.id, status: 'updated', project: vecResult.project || 'neuron' });
+            } catch {
+              results.push({ id: m.id, status: 'not_found', project: vecResult.project || 'neuron' });
+            }
+          } else if (m.op === 'delete') {
+            const deleted = await this.mdAdapter.deleteEntry(cat, m.id);
+            results.push({ id: m.id, status: deleted ? 'deleted' : 'not_found', project: vecResult.project || 'neuron' });
+          }
+        }
+      }
+      return results;
+    }
+
+    if (mode === 'dual') {
       // Execute vector DB transaction
       let vectorResults: MutationResult[] = [];
       try {
@@ -90,24 +138,114 @@ export class DualStorageRouter {
   public async query(query: MemoryQuery): Promise<Memory[]> {
     const mode = this.getStorageMode();
     if (mode === 'md-only') {
-      const categories = query.categories || (query.category ? [query.category] : ['learning', 'history', 'decisions']);
-      const allMemories = await this.mdAdapter.readAll(categories);
+      return this.queryMarkdownOnly(query);
+    }
 
-      let filtered = allMemories;
-      if (query.text) {
-        const textLower = query.text.toLowerCase();
-        filtered = filtered.filter(m => m.content.toLowerCase().includes(textLower) || m.tags.some(t => t.toLowerCase().includes(textLower)));
+    if (mode === 'split') {
+      const categories = query.categories || (query.category ? [query.category] : Object.keys(this.config?.categories || { learning: {}, history: {} }));
+      const mdCats: string[] = [];
+      const vecCats: string[] = [];
+
+      for (const cat of categories) {
+        const catStorage = this.config?.categories?.[cat]?.storage || 'vector';
+        if (catStorage === 'md') {
+          mdCats.push(cat);
+        } else {
+          vecCats.push(cat);
+        }
       }
-      if (query.scopes && query.scopes.length > 0) {
-        filtered = filtered.filter(m => !m.scope || query.scopes!.includes(m.scope));
+
+      let combinedResults: Memory[] = [];
+
+      if (mdCats.length > 0) {
+        const mdRes = await this.queryMarkdownOnly({ ...query, categories: mdCats });
+        combinedResults.push(...mdRes);
+      }
+
+      if (vecCats.length > 0) {
+        const vecRes = await this.vectorDb.query({ ...query, categories: vecCats });
+        combinedResults.push(...vecRes);
+      }
+
+      if (query.text) {
+        combinedResults.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
       }
       if (query.limit) {
-        filtered = filtered.slice(0, query.limit);
+        combinedResults = combinedResults.slice(0, query.limit);
       }
-      return filtered;
+      return combinedResults;
     }
 
     return this.vectorDb.query(query);
+  }
+
+  private async queryMarkdownOnly(query: MemoryQuery): Promise<Memory[]> {
+    const categories = query.categories || (query.category ? [query.category] : ['learning', 'history', 'decisions']);
+    const embedder = (this.vectorDb as any)?.getEmbedder?.() || (this.vectorDb as any)?.embedder;
+
+    const allMemories: Memory[] = [];
+
+    for (const cat of categories) {
+      const filePath = this.mdAdapter.getFilePath(cat);
+      if (!fs.existsSync(filePath)) continue;
+
+      const stat = fs.statSync(filePath);
+      let catCache = this.mdEmbedCache.get(cat);
+
+      if (!catCache || catCache.mtimeMs !== stat.mtimeMs) {
+        const memories = await this.mdAdapter.readCategory(cat);
+        const embeddingsMap = new Map<string, Float32Array>();
+
+        if (embedder) {
+          for (const mem of memories) {
+            try {
+              const vec = await embedder.embed(mem.content);
+              embeddingsMap.set(mem.id, vec);
+            } catch {}
+          }
+        }
+
+        catCache = { mtimeMs: stat.mtimeMs, embeddings: embeddingsMap };
+        this.mdEmbedCache.set(cat, catCache);
+      }
+
+      const catMemories = await this.mdAdapter.readCategory(cat);
+      allMemories.push(...catMemories);
+    }
+
+    let filtered = allMemories;
+
+    if (query.text && embedder) {
+      try {
+        const queryVec = await embedder.embedQuery(query.text);
+        const textLower = query.text.toLowerCase();
+        for (const m of filtered) {
+          const catCache = this.mdEmbedCache.get(m.category);
+          const mVec = catCache?.embeddings.get(m.id);
+          if (mVec) {
+            m.score = dotProduct(queryVec, mVec);
+          } else {
+            m.score = 0;
+          }
+        }
+        filtered = filtered.filter(m => (m.score ?? 0) > 0 || m.content.toLowerCase().includes(textLower) || m.tags.some(t => t.toLowerCase().includes(textLower)));
+        filtered.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      } catch {
+        const textLower = query.text.toLowerCase();
+        filtered = filtered.filter(m => m.content.toLowerCase().includes(textLower) || m.tags.some(t => t.toLowerCase().includes(textLower)));
+      }
+    } else if (query.text) {
+      const textLower = query.text.toLowerCase();
+      filtered = filtered.filter(m => m.content.toLowerCase().includes(textLower) || m.tags.some(t => t.toLowerCase().includes(textLower)));
+    }
+
+    if (query.scopes && query.scopes.length > 0) {
+      filtered = filtered.filter(m => !m.scope || query.scopes!.includes(m.scope));
+    }
+    if (query.limit) {
+      filtered = filtered.slice(0, query.limit);
+    }
+    return filtered;
   }
 
   private getStorageMode(): string {
