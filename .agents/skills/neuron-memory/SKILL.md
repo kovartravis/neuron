@@ -15,12 +15,17 @@ When asked to set up memory for a project or configure memory settings:
    Briefly ask the user how they would like memory configured for their project:
    - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
    - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
+   - **Storage Mode**: Ask whether entries should be stored in the vector database only (`vector-only`), as Markdown files only (`md-only`), or both simultaneously (`dual` or `split`). Default is `vector-only`.
    - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
 
 2. **Generate `neuron.yaml`**:
    Write `neuron.yaml` at the project root based on the user's answers (or standard defaults if they prefer default setup):
    ```yaml
    version: "1.0"
+
+   storage:
+     mode: dual          # vector-only | md-only | dual | split
+     path: .neuron       # directory where .md category files are stored
 
    categories:
      learning:
@@ -65,6 +70,7 @@ When asked to set up memory for a project or configure memory settings:
    - All declared categories from `neuron.yaml` (e.g., `learning`, `history`, `decisions`).
    - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
    - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
+   - If `storage.mode` is `dual` or `md-only`, document the `.neuron/` directory and `neuron sync` command.
 
 4. **Synchronize On Edits**:
    Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
@@ -126,7 +132,34 @@ Before finishing your turn and ending the session:
    neuron learn add "<new rule/learning established with full context, rationale, and exact implementation details>" --tags <topic>
    ```
 
-## 5. Periodic Maintenance (Clean & Refresh)
+## 5. Markdown File Storage & Sync (`storage.mode: dual | md-only`)
+
+When `storage.mode` is set to `dual`, `md-only`, or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`):
+
+- **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`.
+- **Entry Format**: Each entry is a YAML frontmatter block followed by body text:
+  ```markdown
+  ---
+  id: 01j8x92a3b4c
+  category: learning
+  createdAt: 2026-07-29T04:00:00.000Z
+  importance: 4
+  tags:
+    - failure-fix
+    - gemini
+  ---
+  Always run the linter before pushing to CI...
+  ```
+- **Git-Trackable**: Commit `.neuron/*.md` files to Git to share memory across team members.
+- **Sync Command**: After manually editing `.neuron/*.md` files or pulling a colleague's changes, run:
+  ```bash
+  neuron sync                  # bidirectional sync: Markdown <-> vector DB
+  neuron sync --dry-run        # preview changes without writing
+  neuron sync --force          # force re-embed all entries ignoring content hashes
+  ```
+- **Auto-Scaffold**: On first `neuron init` or `neuron sync`, the `.neuron/` directory and default category files are created automatically if missing.
+
+## 6. Periodic Maintenance (Clean & Refresh)
 
 When the user requests memory maintenance (e.g., "clean memory", "prune obsolete learnings", or "refresh memory store"):
 
@@ -142,3 +175,8 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
      ```
 2. **Prune Old History**:
    - Run compaction or clean commands to delete low-importance history logs (importance 1–2) older than 30 days, while keeping high-importance logs.
+3. **Sync After Prune** (if using `dual` or `md-only` mode):
+   - After pruning entries from the vector DB, run `neuron sync` to keep Markdown files consistent:
+     ```bash
+     neuron sync
+     ```
