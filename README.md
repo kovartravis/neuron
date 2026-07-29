@@ -1,6 +1,6 @@
 # neuron 🧠
 
-**Persistent, local semantic memory store for AI coding agents. 100% offline, powered by SQLite and local vector embeddings.**
+**Persistent, local semantic memory store for AI coding agents. 100% offline, powered by native Markdown files and local vector embeddings.**
 
 **Platforms:** macOS, Linux, Windows
 
@@ -9,133 +9,95 @@
 
 ---
 
-## 💡 Why Neuron? (The Agent Amnesia Problem)
+## 💡 Why Neuron? (Solving Agent Amnesia)
 
-AI coding agents (such as Claude, Cursor, Antigravity, and Codex) are powerful pair programmers, but they suffer from **severe short-term amnesia**. Every time a new session starts, the context window resets to zero.
+AI coding assistants (Claude, Cursor, Antigravity, Codex) suffer from **short-term amnesia**—every session resets their context window to zero. They repeat debugging mistakes, waste tokens re-investigating known issues, and lack handoff context between sessions.
 
-Without persistent memory:
-* **Agents repeat mistakes:** They spend 20 minutes debugging a native macOS mutex crash or dependency conflict—only to **forget the solution entirely** in the next session and waste API tokens repeating the same investigation.
-* **Context windows get bloated:** Cramming every codebase rule, database quirk, and architecture decision into a `CLAUDE.md` or `AGENTS.md` file consumes valuable context window space, slowing down responses and causing forgotten instructions.
-* **Agent handoffs are broken:** There is no standard mechanism for one agent to discover what a previous agent built, refactored, or left unfinished.
-
-**Neuron solves this.** By providing a local, category-driven vector database inside your repository, neuron gives your agents a persistent brain. Agents can retrieve past context, execute pre-command safety lookups, and log learnings across user-defined categories.
+**Neuron solves this.** It provides a persistent, local memory brain inside your repository. Agents retrieve past learnings, run pre-command safety checks, and log structured context across custom categories.
 
 ---
 
-## 🚀 Killer Features
+## 🚀 Key Features
 
-### 1. Agent-First Setup & Skill Scaffolding (`neuron init`)
-Running `neuron init` detects popular agent harness environments (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs the `neuron-memory` skill. Your AI agent uses this skill to interview you, write `neuron.yaml`, and configure `AGENTS.md` automatically.
-
-### 2. Configurable $N$ Dynamic Memory Categories (`neuron.yaml`)
-Forget rigid, hardcoded memory schemas. Define any number of custom memory categories (`learning`, `history`, `decisions`, `snippets`, `architecture`, etc.) directly in `neuron.yaml`. Each category supports custom default tags and descriptions.
-
-### 3. Context-Aware Pre-Command Lookup (`neuron exec -- <command>`)
-Instead of hoping your agent remembers project rules before running tests or builds, wrap shell calls with `neuron exec -- <command>`. `neuron exec` evaluates `pullRules.onExec` regex patterns in `neuron.yaml` (e.g. matching `npm test` or `git commit`), queries relevant categories, and streams matching rules to `stderr` *right before* the command executes.
-
-### 4. Rich Multi-Sentence Memory Capture
-Neuron promotes comprehensive, multi-sentence memory entries (minimum 3–4 sentences) covering **Context & Symptoms**, **Root Cause**, **Verified Solution**, and **Code/Command Examples**. This prevents vague 1-sentence summaries and ensures high-utility context retrieval for future agents.
-
-### 5. Unified Vector & FTS5 Hybrid Search Engine
-Neuron uses a local SQLite database running in Write-Ahead Logging (`WAL`) mode with a unified `memories` table, local BGE vector embeddings (`Xenova/bge-small-en-v1.5`), and FTS5 full-text indexing. Reciprocal Rank Fusion (RRF) merges semantic and keyword search results in **under 1 ms** for under 10,000 rows.
-
-### 6. 100% Offline & Privacy-First
-All embeddings run locally using HuggingFace `Transformers.js` via ONNX runtime. The quantized model (~34 MB) is cached once locally—zero API keys required, zero telemetry, and your code and prompt history never leave your machine.
+* **Flexible Storage Engines (`neuron.yaml`)**:
+  * **`md-only`**: Pure native `.neuron/*.md` file storage with in-memory semantic vector search (`TransformersEmbedder` dot-product similarity) and zero `.sqlite` disk overhead.
+  * **`vector-only`**: Fast local SQLite vector DB with FTS5 keyword indexing.
+  * **`dual`**: Write to both SQLite vector DB and `.neuron/*.md` files.
+  * **`split`**: Per-category routing (e.g. `learning` in `.md`, `history` in SQLite vector DB).
+* **Agent-First Setup (`neuron init`)**: Auto-detects agent environments (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs the `neuron-memory` skill.
+* **Context-Aware Pre-Command Safety (`neuron exec -- <cmd>`)**: Wraps shell commands to pull relevant safety rules and warnings right before execution.
+* **Bi-Directional Sync (`neuron sync`)**: Easily sync memories between `.neuron/*.md` files and the SQLite vector database.
+* **100% Offline & Private**: Uses local ONNX vector embeddings (`Xenova/bge-small-en-v1.5`) via HuggingFace `Transformers.js`—zero API keys or external calls.
 
 ---
 
-## ⚡ Quick Start (Agent-First)
+## ⚡ Quick Start
 
-Neuron is built **agent-first**. You don't need to manually author configuration files or construct memory loop rules—your AI coding agent handles project setup for you.
-
-### Step 1: Install neuron
+### 1. Install & Initialize
 ```bash
 npm install -g @kovartravis/neuron
-```
-
-### Step 2: Bootstrap skills in your project
-Navigate to your repository and run `neuron init` once:
-```bash
 neuron init
 ```
-This detects your agent harness environment (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs the `neuron-memory` skill.
 
-### Step 3: Tell your AI agent to set up memory!
-Open your AI coding assistant (Claude, Cursor, Antigravity, Codex, etc.) and say:
-
+### 2. Prompt your AI Agent
+Open your AI coding assistant and say:
 > *"Set up neuron memory for this project."*
 
-That's it! Your agent will use the `neuron-memory` skill to:
-1. Briefly interview you about your setup preferences (defaulting to standard `learning` and `history` categories, or adding custom categories like `decisions` and `snippets`).
-2. Write `neuron.yaml` at your project root.
-3. Configure `AGENTS.md` (or `CLAUDE.md` / `CURSOR.md`) with the memory store protocol matching your project's categories.
+Your agent will run the setup interview, create `neuron.yaml`, and configure `AGENTS.md` automatically.
 
 ---
 
-### The Agent Execution Loop
-
-Once configured, your agent executes this loop on every session:
+## 🔄 Agent Execution Loop
 
 ```mermaid
 graph TD
-    A[Start Session] --> B["neuron memory query 'task topic' --categories learning,decisions"]
-    B --> C["neuron exec -- npm test / build"]
-    C --> D{Did a command fail & get fixed?}
-    D -- Yes --> E["neuron memory add --category learning 'Fix for <error>: <context>. <root cause>. <fix>.'"]
-    D -- No --> F[Implement Feature / Refactor]
+    A[Start Session] --> B["neuron memory query 'task topic'"]
+    B --> C["neuron exec -- npm test"]
+    C --> D{Did command fail & get fixed?}
+    D -- Yes --> E["neuron memory add --category learning 'Fix context & resolution'"]
+    D -- No --> F[Implement Code]
     E --> F
-    F --> G["neuron memory add --category history 'Implemented feature X'"]
+    F --> G["neuron memory add --category history 'Task completed'"]
     G --> H[End Session]
 ```
 
 ---
 
-## ⚙️ Project Configuration (`neuron.yaml`)
-
-Your agent generates `neuron.yaml` at your project root to configure categories and `neuron exec` pull rules:
+## ⚙️ Configuration (`neuron.yaml`)
 
 ```yaml
 version: "1.0"
 
-# Define N dynamic memory categories (all vector-embedded in SQLite)
+storage:
+  mode: md-only # Options: md-only, vector-only, dual, split
+  path: .neuron
+
 categories:
   learning:
     description: Agent conventions, rules, and failure fixes
-    tags:
-      - rule
-      - convention
+    tags: [rule, convention, failure-fix]
+    storage: md # Optional in split mode
 
   history:
     description: Action history log and completed task summary
+    tags: [task, history]
 
   decisions:
-    description: Architectural Decision Records (ADRs) & design specs
-    tags:
-      - adr
-      - architecture
+    description: Architectural Decision Records (ADRs) & design choices
+    tags: [adr, architecture]
 
-  snippets:
-    description: Reusable code snippets & command references
-
-# Rules defining when to pull from specific categories
 pullRules:
   default:
-    categories:
-      - learning
-      - decisions
+    categories: [learning, decisions]
     limit: 5
     minScore: 0.35
 
   onExec:
     - commandPattern: ".*"
-      categories:
-        - learning
+      categories: [learning]
       limit: 5
-
-    - commandPattern: "^(git|gh|npm) "
-      categories:
-        - learning
-        - history
+    - commandPattern: "^(git|npm|gh) "
+      categories: [learning, history]
       limit: 8
 ```
 
@@ -143,95 +105,27 @@ pullRules:
 
 ## 🖥️ Local Dashboard UI (`neuron ui`)
 
-Neuron includes a dark-mode web dashboard for browsing and searching your memory store visually in real-time.
-
-Launch the dashboard locally:
+Launch the real-time dark-mode web dashboard:
 ```bash
 neuron ui
 ```
-
-![Neuron Dashboard UI](docs/images/dashboard.png)
-
-* **Dynamic Category Tabs**: Automatically detects all categories defined in `neuron.yaml` and SQLite (`learning`, `history`, `decisions`, `snippets`, etc.) with live category entry counters.
-* **Unified Global Search**: Perform instant hybrid vector and FTS search across all categories or filtered by the active category tab.
-* **Visual Metadata & Badges**: View importance ratings (1–5 scale), ticket/task links, scope tiers (`global` / `project`), tags, and relative timestamps at a glance.
-* **Full Memory Inspector**: Open dynamic modals to read and scroll complete memory feeds for any category.
+Browse categories, execute instant semantic queries, filter by scope/tags, and visually inspect memory entries.
 
 ---
 
 ## 📖 Command Reference
 
-### Master Commands
-* **`neuron init`**: Detects agent harnesses (`.agents`, `.claude`, `.cursor`, `.github`, `.codex`) and installs skill files.
-* **`neuron exec -- <command>`**: Runs a shell command with automatic pre-command semantic lookup based on `neuron.yaml` pull rules.
-* **`neuron status`**: Displays active database paths, project root, active categories count, and local embedding model health.
-
-### `neuron memory` (Primary Multi-Category CLI Suite)
-Manage memories in any category defined in `neuron.yaml`:
-```bash
-# Add an entry to a custom category
-neuron memory add "Use SQLite WAL mode for concurrency" --category decisions --tags "adr,db" --importance 4
-
-# Query memories across categories
-neuron memory query "SQLite WAL" --categories decisions,learning
-
-# List recent memories in a category
-neuron memory list --category decisions --limit 10
-
-# Update an entry in-place
-neuron memory update <id> "Updated text content" --category decisions --importance 5
-
-# Delete an entry by ID
-neuron memory delete <id> --category decisions
-```
-
-### `neuron learn` (Shorthand Alias for `--category learning`)
-```bash
-# Store a new learning/rule
-neuron learn add "Fix for CLI exec resource leak: always call memory.close() in exec subcommand before spawning child processes to avoid holding open SQLite handles." --tags "failure-fix,cli" --importance 4
-
-# Semantically search learnings
-neuron learn query "cli resource leak"
-
-# List recent learnings
-neuron learn list --limit 10
-
-# Update a learning
-neuron learn update <id> "Updated learning text" --importance 4
-
-# Delete a learning
-neuron learn delete <id>
-```
-
-### `neuron history` (Shorthand Alias for `--category history`)
-```bash
-# Log a completed action associated with a ticket
-neuron history add "Implemented neuron.yaml config loader and unified memories table v5" --tags "db,config" --task-id "01-config"
-
-# Semantically search action history
-neuron history query "config loader"
-
-# List recent history logs
-neuron history list --limit 20
-
-# Consolidate history (read unread logs since last run and advance watermark cursor)
-neuron history consolidate
-
-# Prune old, minor history logs (deletes importance <= 3 logs older than 30 days)
-neuron history prune --days 30
-```
+* **`neuron init`**: Installs skill files in agent harnesses.
+* **`neuron exec -- <command>`**: Runs a command with pre-execution safety lookup.
+* **`neuron memory add/query/list/update/delete`**: Multi-category operations (`--category <name>`).
+* **`neuron learn add/query/list`**: Shorthand alias for `learning` category.
+* **`neuron history add/query/list/prune`**: Shorthand alias for `history` category.
+* **`neuron sync`**: Synchronizes memories between Markdown files and SQLite DB.
+* **`neuron status`**: Displays database, Markdown storage, and embedding model status.
+* **`neuron ui`**: Launches local web dashboard UI.
 
 ---
 
-## 🔗 Technical Specifications
-
-* **Database Engine**: Single unified `memories` SQLite table with indexed `category` column, running in Write-Ahead Logging (`WAL`) mode.
-* **Hybrid Search**: Combines semantic vector search (`Xenova/bge-small-en-v1.5` 384-dimensional Float32Array embeddings) and keyword-exact search (`memories_fts` FTS5 virtual table) aggregated using Reciprocal Rank Fusion (RRF).
-* **Local Embeddings**: `@huggingface/transformers` running ONNX runtime locally. Once downloaded (~34 MB), remote network requests are disabled.
-* **Structured Output**: All CLI outputs are formatted as clean JSON Line arrays for effortless agent parsing.
-
----
-
-## License
+## 📄 License
 
 MIT © [Travis Kovar](https://github.com/kovartravis)
