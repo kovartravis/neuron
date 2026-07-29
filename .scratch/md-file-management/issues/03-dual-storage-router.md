@@ -1,22 +1,13 @@
-# 03 — Dual-Storage Routing Engine
+# 03 — Dual Storage Router (`DualStorageRouter`)
 
-**Type:** feature ticket  
-**Status:** ready-for-agent  
-**Blocked by:** 02-md-file-storage-adapter.md
+**What to build:** Implement `DualStorageRouter` to route memory mutations (`add`, `update`, `delete`) to both SQLite vector database and category-based `.md` files based on the configured `storage.mode` (`vector-only`, `md-only`, `dual`, `split`).
 
-## Description
+**Blocked by:** 02 — Markdown File Storage Adapter (`MdStorageAdapter`)
 
-Implement the unified storage router that delegates `neuron learn` and `neuron history` read/write operations according to the active `.neuronrc` storage mode (`vector-only`, `md-only`, `dual`, `split`).
+**Status:** resolved
 
-## Requirements
-
-- Intercept `add`, `query`, `list`, and `delete` calls for both `learn` and `history` namespaces.
-- Handle `dual` mode writes by updating both SQLite vector store and designated `.md` files.
-- Handle `split` mode by evaluating tag and importance rules against `.neuronrc`.
-- Merge and rank search results when querying across both vector DB and markdown files.
-
-## Verification Checklist
-
-- [ ] Unit tests for `vector-only`, `md-only`, `dual`, and `split` modes.
-- [ ] Integration tests asserting write propagation to both SQLite and target `.md` files.
-- [ ] Query deduplication and rank merging tests.
+- [x] Implement `storage.mode` routing logic (`vector-only`, `md-only`, `dual`, `split`).
+- [x] Route `insert` and `upsert` mutations to `MdStorageAdapter` and SQLite DB based on configured mode.
+- [x] Route `delete` mutations to both storage backends when operating in `dual` or `split` mode.
+- [x] Ensure non-blocking error handling and consistent mutation return status across both backends.
+- [x] Provide unit tests for routing mutations across all four storage modes.

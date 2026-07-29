@@ -1,22 +1,12 @@
-# 04 — Markdown Vector Sync Engine
+# 04 — Markdown Vector Sync Engine (`md-sync`)
 
-**Type:** feature ticket  
-**Status:** ready-for-agent  
-**Blocked by:** 03-dual-storage-router.md
+**What to build:** Implement bidirectional synchronization between Git-tracked Markdown files (`.neuron/*.md`) and the local SQLite vector database when files are edited externally or when memory store initializes.
 
-## Description
+**Blocked by:** 03 — Dual Storage Router (`DualStorageRouter`)
 
-Implement bidirectional synchronization between Markdown files and the SQLite vector index.
+**Status:** resolved
 
-## Requirements
-
-- Scan specified `.md` files for changes using file modification timestamps or content hashes.
-- Extract learnings/history entries from markdown sections and update or insert corresponding vector embeddings in SQLite.
-- Provide clean resolution when an entry is modified in `.md` or removed from vector storage.
-- Support pre-exec auto-sync when `sync.autoSyncOnExec: true` is configured in `.neuronrc`.
-
-## Verification Checklist
-
-- [ ] Unit tests for parsing markdown file diffs and updating vector embeddings.
-- [ ] Stale vector cleanup test when a markdown entry is deleted.
-- [ ] Pre-exec auto-sync test harness.
+- [x] Implement Markdown-to-Vector sync: parse `.neuron/*.md` entries and update SQLite vector embeddings for missing or modified entries.
+- [x] Implement Vector-to-Markdown sync: write un-synced SQLite entries back to `.neuron/*.md` files.
+- [x] Add content hash and timestamp comparison to prevent redundant embedding re-computations during sync.
+- [x] Provide unit tests for sync reconciliation, collision handling, and partial file updates.

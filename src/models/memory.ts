@@ -28,9 +28,9 @@ export interface Memory {
 }
 
 export type MemoryMutation = 
-  | { op: 'upsert'; category: string; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string;
+  | { op: 'upsert'; category: string; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string;
       /** @deprecated Use `category` instead. */ kind?: string; }
-  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string;
+  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string;
       /** @deprecated Use `category` instead. */ kind?: string; }
   | { op: 'delete'; category: string; id: string;
       /** @deprecated Use `category` instead. */ kind?: string; };

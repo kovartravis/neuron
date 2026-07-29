@@ -52,6 +52,15 @@ The user interface layout that dynamically adapts its navigation tabs, category 
 
 The REST API endpoint (`/api/memories`) accepting a `category` parameter to list or query memories across any arbitrary category.
 
+### Category-Based Markdown File
+
+The markdown file layout where memories under a category are formatted and stored together inside a dedicated category file (e.g. `.neuron/learning.md`, `.neuron/history.md`).
+
+### Markdown Storage Adapter (`MdStorageAdapter`)
+
+The module component responsible for reading, writing, parsing YAML frontmatter metadata, and formatting memory entries directly within category-based Markdown files.
+
+
 
 
 

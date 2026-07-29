@@ -492,6 +492,7 @@ export class NeuronMemory {
               sets.push('is_manual_scope = 1');
             }
             if (m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
+            if (m.createdAt !== undefined) { sets.push('created_at = ?'); params.push(m.createdAt); }
             sets.push('updated_at = ?'); params.push(new Date().toISOString());
             
             if (sets.length > 0) {
@@ -509,12 +510,13 @@ export class NeuronMemory {
             const scope = m.scope ?? this.projectName;
             const isManualScope = m.scope !== undefined ? 1 : 0;
             const now = new Date().toISOString();
+            const createdAt = m.createdAt ?? now;
             const taskId = m.taskId ?? null;
 
             this.db.prepare(`
               INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(id, this.projectId, category, m.content, tagsJson, blob, scope, importance, isManualScope, taskId, now, now);
+            `).run(id, this.projectId, category, m.content, tagsJson, blob, scope, importance, isManualScope, taskId, createdAt, now);
             results.push({ id, status: 'created', project: this.projectName });
           } else {
             results.push({ id, status: 'not_found', project: this.projectName });

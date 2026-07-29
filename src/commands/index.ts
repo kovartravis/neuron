@@ -6,3 +6,4 @@ export * from './learn.js';
 export * from './history.js';
 export * from './memory.js';
 export * from './ui.js';
+export * from './sync.js';

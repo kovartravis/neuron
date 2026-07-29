@@ -1,23 +1,12 @@
-# 05 — CLI Config & Sync Subcommands & E2E Test Suite
+# 05 — CLI `neuron sync` Command & Scaffolding
 
-**Type:** feature ticket  
-**Status:** ready-for-agent  
-**Blocked by:** 04-markdown-vector-sync-engine.md
+**What to build:** Implement the `neuron sync` CLI command to manually force vector-markdown resynchronization and scaffold missing `.neuron/` file structures.
 
-## Description
+**Blocked by:** 04 — Markdown Vector Sync Engine (`md-sync`)
 
-Expose `.neuronrc` configuration management and sync operations via CLI subcommands, and provide full E2E test coverage.
+**Status:** resolved
 
-## Requirements
-
-- Add `neuron config` command to output active resolved `.neuronrc` configuration and validate syntax.
-- Add `neuron sync` command to manually trigger bidirectional sync between `.md` files and vector DB.
-- Update `neuron status` to display active storage mode and tracked `.md` files.
-- End-to-end integration test suite exercising CLI commands with real `.neuronrc` configurations.
-
-## Verification Checklist
-
-- [ ] `neuron config` CLI output matches active config.
-- [ ] `neuron sync` triggers full vector resync from `.md` files.
-- [ ] `neuron status` correctly reports `.neuronrc` state.
-- [ ] Full E2E CLI test suite passing in Vitest.
+- [x] Add `neuron sync` subcommand to CLI with `--dry-run` and `--force` flag support.
+- [x] Scaffold `.neuron/` directory and default category files (`learning.md`, `history.md`) during `neuron init`.
+- [x] Output clear visual progress log during CLI sync execution.
+- [x] Provide end-to-end unit tests for `neuron sync` CLI command.

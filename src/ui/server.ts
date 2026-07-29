@@ -1,6 +1,6 @@
 import http from 'node:http';
 import type { NeuronMemory } from '../index.js';
-import { loadConfig } from '../config/neuronrc.js';
+import { loadConfig } from '../config/neuronYaml.js';
 import { generateDashboardHtml } from './html.js';
 
 export interface UiServerOptions {

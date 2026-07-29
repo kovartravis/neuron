@@ -1,22 +1,14 @@
-# 02 — Markdown File Storage Adapter
+# 02 — Markdown File Storage Adapter (`MdStorageAdapter`)
 
-**Type:** feature ticket  
-**Status:** ready-for-agent  
-**Blocked by:** 01-neuronrc-config-schema-parser.md
+**What to build:** Implement `MdStorageAdapter` to handle reading, writing, parsing, and formatting memory entries directly within category-based Markdown files (`.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`).
 
-## Description
+**Blocked by:** 01 — `neuron.yaml` Configuration Schema & Parser
 
-Implement `MdStorageAdapter` to handle reading, writing, and formatting learning and history entries in Markdown (`.md`) files.
+**Status:** resolved
 
-## Requirements
-
-- Support append and section-targeted insertions (e.g. inserting under `## Learnings` or specific headings).
-- Format entries cleanly using standard markdown bullet points or fenced frontmatter metadata (`id`, `tags`, `importance`, `timestamp`).
-- Support reading markdown entries into structured TypeScript objects (`LearningEntry`, `HistoryEntry`).
-- Ensure safe atomic file writes and file creation when target `.md` files do not yet exist.
-
-## Verification Checklist
-
-- [ ] Unit tests for reading and writing to missing and existing `.md` files.
-- [ ] Section targeting tests (inserting under specific headings).
-- [ ] Frontmatter and markdown metadata parsing tests.
+- [x] Support category-based file naming inside `storage.path` (e.g. `.neuron/<category>.md`).
+- [x] Implement Markdown entry formatting using section headings (`## <title>`) and YAML frontmatter metadata (`id`, `createdAt`, `importance`, `tags`, `scope`, `taskId`).
+- [x] Implement Markdown parser to extract structured `Memory` objects from `.md` category files.
+- [x] Implement atomic swap writes (`.tmp` file + `fs.renameSync`) to ensure zero corruption on interrupted writes.
+- [x] Implement auto-scaffolding of missing `storage.path` directories.
+- [x] Provide unit tests for reading, writing, appending, updating, and deleting entries in `.md` category files.

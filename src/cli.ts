@@ -9,6 +9,7 @@ import {
   handleHistoryCommand,
   handleMemoryCommand,
   handleUiCommand,
+  handleSyncCommand,
   MASTER_HELP
 } from './commands/index.js';
 import { NeuronMemory } from './index.js';
@@ -55,6 +56,10 @@ async function main() {
 
     if (mainCommand === 'history') {
       return await handleHistoryCommand(args, memory, projectName);
+    }
+
+    if (mainCommand === 'sync') {
+      return await handleSyncCommand(args.slice(1), memory);
     }
 
     console.error(`Unknown main command: ${mainCommand}`);
