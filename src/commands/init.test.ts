@@ -32,6 +32,8 @@ describe('CLI Command: init', () => {
     const result = JSON.parse(stdout);
 
     expect(result.status).toBe('initialized');
+    expect(result.githubUrl).toBe('https://github.com/kovartravis/neuron');
+    expect(result.callout).toContain('https://github.com/kovartravis/neuron');
     const expectedSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
     expect(fs.existsSync(expectedSkillPath)).toBe(true);
 

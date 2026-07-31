@@ -123,6 +123,8 @@ Browse categories, execute instant semantic queries, filter by scope/tags, and v
 * **`neuron sync`**: Synchronizes memories between Markdown files and SQLite DB.
 * **`neuron status`**: Displays database, Markdown storage, and embedding model status.
 * **`neuron ui`**: Launches local web dashboard UI.
+* **`neuron feedback [message]`**: Generates pre-filled GitHub issue creation links (`--type bug|feature|general`, `--title`).
+
 
 ---
 

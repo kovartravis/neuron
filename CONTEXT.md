@@ -60,6 +60,28 @@ The markdown file layout where memories under a category are formatted and store
 
 The module component responsible for reading, writing, parsing YAML frontmatter metadata, and formatting memory entries directly within category-based Markdown files.
 
+### Architecture Scan (`neuron scan`)
+
+The process of scanning a codebase directory topology, manifests (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`), and source files to extract structural contracts and module boundaries into the memory store.
+
+### TreeSitterScanner (`web-tree-sitter`)
+
+The multi-language static AST parsing module powered by WebAssembly (`web-tree-sitter`) that extracts exported classes, functions, interfaces, and structs across TypeScript/JS, Python, Go, Rust, Java, and C++.
+
+### Structural Memory Card
+
+The generated markdown/JSON memory block representing an analyzed codebase module, tech stack manifest, or API export signature ingested into the memory store.
+
+### SmolLM2-135M Local Summarizer (`src/components/summarizer.ts`)
+
+The lightweight, offline ONNX Instruct LLM pipeline (`HuggingFaceTB/SmolLM2-135M-Instruct`) running in Node.js via `@huggingface/transformers` to generate 1-sentence architectural purpose summaries for scanned files.
+
+### Summary Content Cache (`.neuron/cache/scan.json`)
+
+The local cache storing file content hashes and generated 1-sentence architectural summaries to eliminate redundant LLM inference calls on unchanged files during re-scans.
+
+
+
 
 
 

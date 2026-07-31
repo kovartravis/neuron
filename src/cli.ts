@@ -10,6 +10,8 @@ import {
   handleMemoryCommand,
   handleUiCommand,
   handleSyncCommand,
+  handleFeedbackCommand,
+  handleScanCommand,
   MASTER_HELP
 } from './commands/index.js';
 import { NeuronMemory } from './index.js';
@@ -26,6 +28,16 @@ async function main() {
   if (mainCommand === 'init') {
     return handleInitCommand(args);
   }
+
+  if (mainCommand === 'feedback') {
+    return handleFeedbackCommand(args);
+  }
+
+  if (mainCommand === 'scan') {
+    return await handleScanCommand(args);
+  }
+
+
 
   if (mainCommand === 'exec') {
     return await handleExecCommand(args);

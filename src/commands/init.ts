@@ -1,7 +1,9 @@
 import path from 'node:path';
 import fs from 'node:fs';
-import { parseFlags } from './utils.js';
+import { parseFlags, drawBox } from './utils.js';
 import { HARNESSES, detectHarnesses, copySkill } from '../config/index.js';
+
+export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
 
 export function handleInitCommand(args: string[]): void {
   const { options } = parseFlags(args.slice(1));
@@ -14,9 +16,16 @@ export function handleInitCommand(args: string[]): void {
   }
   const skillsWritten = detectedSkillsDirs.map(dir => copySkill(projectDir, dir));
 
+  const callout = `⭐ Enjoying Neuron? Visit ${GITHUB_STAR_URL} and give it a star!`;
+  console.error(drawBox([callout]));
+
+
   console.log(JSON.stringify({
     status: 'initialized',
     projectRoot: projectDir,
-    skillsWritten
+    skillsWritten,
+    githubUrl: GITHUB_STAR_URL,
+    callout
   }));
 }
+

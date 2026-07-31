@@ -7,3 +7,7 @@ export * from './history.js';
 export * from './memory.js';
 export * from './ui.js';
 export * from './sync.js';
+export * from './feedback.js';
+export * from './scan.js';
+
+

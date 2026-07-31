@@ -23,6 +23,42 @@ export function findProjectRoot(startDir: string): { root: string; name: string 
   }
 }
 
+export function drawBox(lines: string[]): string {
+  const getVisualWidth = (str: string) => {
+    let width = 0;
+    for (const char of str) {
+      const code = char.codePointAt(0) || 0;
+      if (code === 0xfe0f) continue;
+      if (
+        (code >= 0x1f300 && code <= 0x1f9ff) ||
+        (code >= 0x2600 && code <= 0x2bff) ||
+        (code >= 0x2300 && code <= 0x23ff)
+      ) {
+        width += 2;
+      } else {
+        width += 1;
+      }
+    }
+    return width;
+  };
+
+  const maxWidth = Math.max(...lines.map(getVisualWidth));
+  const innerWidth = maxWidth + 4;
+
+  const top = '┌' + '─'.repeat(innerWidth) + '┐';
+  const bottom = '└' + '─'.repeat(innerWidth) + '┘';
+
+  const middle = lines.map(line => {
+    const visualW = getVisualWidth(line);
+    const paddingNeeded = maxWidth - visualW;
+    return `│  ${line}${' '.repeat(paddingNeeded)}  │`;
+  }).join('\n');
+
+  return `\n${top}\n${middle}\n${bottom}\n`;
+}
+
+
+
 export function parseFlags(args: string[]): {
   positionals: string[];
   options: {
@@ -36,6 +72,10 @@ export function parseFlags(args: string[]): {
     days?: number;
     category?: string;
     categories?: string[];
+    type?: string;
+    title?: string;
+    format?: string;
+    json?: boolean;
   };
 } {
   const positionals: string[] = [];
@@ -49,10 +89,19 @@ export function parseFlags(args: string[]): {
   let days: number | undefined;
   let category: string | undefined;
   let categories: string[] | undefined;
+  let type: string | undefined;
+  let title: string | undefined;
+  let format: string | undefined;
+  let json: boolean | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--tags') {
+    if (arg === '--format') {
+      format = args[++i];
+    } else if (arg === '--json') {
+      json = true;
+    } else if (arg === '--tags') {
+
       const val = args[++i];
       if (val) {
         tags.push(...val.split(',').map(t => t.trim()).filter(Boolean));
@@ -90,6 +139,10 @@ export function parseFlags(args: string[]): {
       if (val) {
         categories = val.split(',').map(s => s.trim()).filter(Boolean);
       }
+    } else if (arg === '--type') {
+      type = args[++i];
+    } else if (arg === '--title') {
+      title = args[++i];
     } else {
       positionals.push(arg);
     }
@@ -122,10 +175,13 @@ export function parseFlags(args: string[]): {
       days,
       category,
       categories,
+      type,
+      title,
+      format,
+      json
     }
   };
 }
-
 
 
 export function updateMarkdownFile(filePath: string, heading: string, blockContent: string): void {
@@ -176,6 +232,9 @@ Commands:
   memory <subcommand>  Manage memories across any category
   learn <subcommand>   Manage learnings (alias for memory --category learning)
   history <subcommand> Manage action history (alias for memory --category history)
+  feedback [message]   Generate GitHub issue URL with pre-filled feedback parameters
+  scan                 Scan project topology, manifests, and exported symbols
+
 
 Options:
   -h, --help           Show this help information
