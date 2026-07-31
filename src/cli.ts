@@ -26,7 +26,7 @@ async function main() {
   }
 
   if (mainCommand === 'init') {
-    return handleInitCommand(args);
+    return await handleInitCommand(args);
   }
 
   if (mainCommand === 'feedback') {

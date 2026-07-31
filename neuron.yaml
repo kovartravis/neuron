@@ -25,6 +25,12 @@ categories:
       - architecture
       - design
 
+scan:
+  enabled: true
+  category: decisions
+  depth: 3
+
+
 pullRules:
   default:
     categories:

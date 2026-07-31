@@ -2,7 +2,7 @@ Type: task
 Status: unclaimed
 Blocked by: 01, 02
 
-# 03 — Architectural Drift Detection & Diffing (`2.1.0-rc3`)
+# 03 — Architectural Drift Detection & Diffing (`2.1.0-rc4`)
 
 ## Goal
 
@@ -19,4 +19,4 @@ Detect structural changes, un-documented modules, or dependency shifts since the
 
 - [ ] `src/scanner/diff.ts`
 - [ ] `src/scanner/diff.test.ts`
-- [ ] `package.json` version bump to `2.1.0-rc3`
+- [ ] `package.json` version bump to `2.1.0-rc4`

@@ -6,7 +6,7 @@ export {
   HARNESSES,
   detectHarnesses,
   copySkill,
-  AgentHarness
+  type AgentHarness
 } from '../config/index.js';
 
 export function findProjectRoot(startDir: string): { root: string; name: string } {
@@ -65,6 +65,7 @@ export function parseFlags(args: string[]): {
     tags?: string[];
     taskId?: string;
     limit?: number;
+    depth?: number;
     file?: string;
     importance?: number;
     scope?: string;
@@ -76,6 +77,8 @@ export function parseFlags(args: string[]): {
     title?: string;
     format?: string;
     json?: boolean;
+    dryRun?: boolean;
+    force?: boolean;
     noProgress?: boolean;
   };
 } {
@@ -83,6 +86,7 @@ export function parseFlags(args: string[]): {
   const tags: string[] = [];
   let taskId: string | undefined;
   let limit: number | undefined;
+  let depth: number | undefined;
   let file: string | undefined;
   let importance: number | undefined;
   let scope: string | undefined;
@@ -94,6 +98,8 @@ export function parseFlags(args: string[]): {
   let title: string | undefined;
   let format: string | undefined;
   let json: boolean | undefined;
+  let dryRun: boolean | undefined;
+  let force: boolean | undefined;
   let noProgress: boolean | undefined;
 
   for (let i = 0; i < args.length; i++) {
@@ -143,6 +149,15 @@ export function parseFlags(args: string[]): {
       if (val) {
         categories = val.split(',').map(s => s.trim()).filter(Boolean);
       }
+    } else if (arg === '--depth') {
+      const val = args[++i];
+      if (val) {
+        depth = parseInt(val, 10);
+      }
+    } else if (arg === '--dry-run') {
+      dryRun = true;
+    } else if (arg === '--force') {
+      force = true;
     } else if (arg === '--type') {
       type = args[++i];
     } else if (arg === '--title') {
@@ -172,6 +187,7 @@ export function parseFlags(args: string[]): {
       tags: tags.length > 0 ? tags : undefined,
       taskId,
       limit,
+      depth,
       file,
       importance,
       scope,
@@ -183,6 +199,8 @@ export function parseFlags(args: string[]): {
       title,
       format,
       json,
+      dryRun,
+      force,
       noProgress
     }
   };
@@ -231,20 +249,33 @@ export function updateMarkdownFile(filePath: string, heading: string, blockConte
 export const MASTER_HELP = `Usage: neuron <command> [subcommand] [arguments] [flags]
 
 Commands:
-  init                 Bootstrap the project for agentic memory store (copies skills to detected harnesses)
+  init                 Bootstrap the project for agentic memory store (pre-downloads ONNX models with progress bar)
   exec -- <command>    Run a command with pre-command memory lookup
   status               Display status details for active database, project, and embedding cache
   memory <subcommand>  Manage memories across any category
   learn <subcommand>   Manage learnings (alias for memory --category learning)
   history <subcommand> Manage action history (alias for memory --category history)
   feedback [message]   Generate GitHub issue URL with pre-filled feedback parameters
-  scan                 Scan project topology, manifests, and exported symbols
-
+  scan                 Scan project topology, manifests, and ingest architectural blueprints into memory
 
 Options:
   -h, --help           Show this help information
 
-Run 'neuron memory --help', 'neuron learn --help', or 'neuron history --help' for details.`;
+Run 'neuron memory --help', 'neuron learn --help', 'neuron history --help', or 'neuron scan --help' for details.`;
+
+export const SCAN_HELP = `Usage: neuron scan [flags]
+
+Perform static AST analysis and ingest architectural blueprints into the memory store.
+
+Options:
+  --category <name>              Target memory category for blueprint ingestion (default: decisions)
+  --depth <n>                    Max directory traversal depth (default: 3)
+  --dry-run                      Output blueprint card without ingesting into memory store
+  --format <json|md>             Output format for dry-run scans (json or md)
+  --json                         Shortcut for --format json
+  --force                        Bypass content cache and force full re-scan
+  --no-progress                  Disable terminal progress bar`;
+
 export const MEMORY_HELP = `Usage: neuron memory <subcommand> [arguments] [flags]
 
 Subcommands:

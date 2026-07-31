@@ -28,6 +28,7 @@ function applyCrossPlatformShims() {
 
 export interface SummarizerOptions {
   forceFallback?: boolean;
+  onProgress?: (progress: { phase: string; percent?: number }) => void;
 }
 
 export class SmolLM2Summarizer {
@@ -46,7 +47,26 @@ export class SmolLM2Summarizer {
     this.loadCache();
   }
 
-  private async getGenerator() {
+  public sanitizeSummary(text: string): string {
+    if (!text) return '';
+    let clean = text;
+
+    if (clean.includes('<|im_start|>assistant')) {
+      clean = clean.split('<|im_start|>assistant').pop() || clean;
+    }
+
+    clean = clean
+      .replace(/<\|im_start\|>(?:system|user|assistant)?/gi, '')
+      .replace(/<\|im_end\|>/gi, '')
+      .replace(/^\s*(?:system|user|assistant)\b\s*/gi, '')
+      .replace(/Summarize the primary purpose of this code file in 1 concise sentence\.?/gi, '')
+      .replace(/File:\s*[^\n]+\s*Code:\s*/gi, '')
+      .trim();
+
+    return clean;
+  }
+
+  private async getGenerator(onProgress?: (progress: { phase: string; percent?: number }) => void) {
     if (this.generator) return this.generator;
     if (this.isInitializing) {
       while (this.isInitializing) {
@@ -62,8 +82,22 @@ export class SmolLM2Summarizer {
       env.cacheDir = path.join(appPaths.data, 'models');
       env.useFSCache = true;
 
+      onProgress?.({ phase: 'Loading ONNX summarizer model (Qwen1.5-0.5B)' });
+
       this.generator = await pipeline('text-generation', 'Xenova/Qwen1.5-0.5B-Chat', {
-        dtype: 'q4'
+        dtype: 'q4',
+        progress_callback: (info: any) => {
+          if (info.status === 'progress' && info.total) {
+            const pct = Math.round((info.loaded / info.total) * 100);
+            const fileLabel = info.file ? ` (${info.file})` : '';
+            onProgress?.({ phase: `Loading ONNX model${fileLabel} ${pct}%` });
+          } else if (info.status === 'downloading' || info.status === 'initiate') {
+            const fileLabel = info.file ? ` (${info.file})` : '';
+            onProgress?.({ phase: `Downloading ONNX model${fileLabel}` });
+          } else if (info.status === 'ready' || info.status === 'done') {
+            onProgress?.({ phase: `ONNX model loaded` });
+          }
+        }
       });
     } catch (e) {
       this.generator = null;
@@ -73,6 +107,10 @@ export class SmolLM2Summarizer {
     return this.generator;
   }
 
+  async preloadModel(onProgress?: (progress: { phase: string; percent?: number }) => void): Promise<void> {
+    if (process.env.NODE_ENV === 'test') return;
+    await this.getGenerator(onProgress);
+  }
 
   private loadCache() {
     if (fs.existsSync(this.cacheFilePath)) {
@@ -80,7 +118,12 @@ export class SmolLM2Summarizer {
         const raw = fs.readFileSync(this.cacheFilePath, 'utf8');
         const parsed = JSON.parse(raw);
         Object.entries(parsed).forEach(([k, v]) => {
-          if (typeof v === 'string') this.cache.set(k, v);
+          if (typeof v === 'string') {
+            const cleaned = this.sanitizeSummary(v);
+            if (cleaned && cleaned.length > 5 && !/^(?:system|user|assistant)\b/i.test(cleaned)) {
+              this.cache.set(k, cleaned);
+            }
+          }
         });
       } catch (e) {}
     }
@@ -109,18 +152,22 @@ export class SmolLM2Summarizer {
     const cacheKey = `${filePath}:${contentHash}`;
 
     if (!options.forceFallback && this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+      const cached = this.cache.get(cacheKey)!;
+      const sanitizedCached = this.sanitizeSummary(cached);
+      if (sanitizedCached && sanitizedCached.length > 5 && !/^(?:system|user|assistant)\b/i.test(sanitizedCached)) {
+        return sanitizedCached;
+      }
     }
 
     if (!options.forceFallback && process.env.NODE_ENV !== 'test') {
       try {
-        const generator = await this.getGenerator();
+        const generator = await this.getGenerator(options.onProgress);
         if (generator) {
           const prompt = `<|im_start|>system\nSummarize the primary purpose of this code file in 1 concise sentence.\n<|im_end|>\n<|im_start|>user\nFile: ${filePath}\nCode:\n${content.slice(0, 1000)}\n<|im_end|>\n<|im_start|>assistant\n`;
-          const output = await generator(prompt, { max_new_tokens: 60 });
+          const output = await generator(prompt, { max_new_tokens: 60, return_full_text: false });
           if (output && output[0] && output[0].generated_text) {
             const generatedText: string = output[0].generated_text;
-            const assistantAnswer = generatedText.split('<|im_start|>assistant\n').pop()?.trim();
+            const assistantAnswer = this.sanitizeSummary(generatedText);
             if (assistantAnswer && assistantAnswer.length > 10) {
               this.cache.set(cacheKey, assistantAnswer);
               this.saveCache();

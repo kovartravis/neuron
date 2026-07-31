@@ -35,6 +35,7 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     version: '1.0',
     storage: { mode, path: storagePath },
     categories: { learning: {}, history: {}, decisions: {} },
+    scan: { enabled: false, category: 'decisions', depth: 3 },
     pullRules: { default: { minScore: 0.3, categories: ['learning'] }, onExec: [] },
   });
 

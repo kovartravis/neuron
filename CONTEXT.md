@@ -72,9 +72,9 @@ The multi-language static AST parsing module powered by WebAssembly (`web-tree-s
 
 The generated markdown/JSON memory block representing an analyzed codebase module, tech stack manifest, or API export signature ingested into the memory store.
 
-### Qwen2.5-0.5B Deep Code Summarizer (`src/components/summarizer.ts`)
+### Qwen1.5-0.5B Deep Code Summarizer (`src/components/summarizer.ts`)
 
-The offline ONNX Instruct LLM pipeline (`Qwen/Qwen2.5-0.5B-Instruct`) running in Node.js via `@huggingface/transformers` to perform real, uncached semantic code summarization over AST-extracted method signatures, docstrings, and function implementations.
+The offline ONNX Instruct LLM pipeline (`Xenova/Qwen1.5-0.5B-Chat`) running in Node.js via `@huggingface/transformers` to perform real, uncached semantic code summarization over AST-extracted method signatures, docstrings, and function implementations.
 
 ### Cross-File Call Graph Extraction
 

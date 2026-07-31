@@ -2,7 +2,7 @@ Type: task
 Status: resolved
 Blocked by: none
 
-# 01 — Static Scanner Engine, Multi-Language AST Analyzer & SmolLM2 Summarizer (`2.1.0-rc1`)
+# 01 — Static Scanner Engine, Multi-Language AST Analyzer & SmolLM2 Summarizer (`2.1.0-rc2`)
 
 ## Goal
 
@@ -26,7 +26,7 @@ Build the multi-language static AST analyzer (`src/scanner/analyzer.ts`), `web-t
 - [x] `src/components/summarizer.test.ts`
 - [x] `src/commands/scan.ts`
 - [x] `src/scanner/analyzer.test.ts`
-- [x] `package.json` version bump to `2.1.0-rc1`
+- [x] `package.json` version bump to `2.1.0-rc2`
 
 
 

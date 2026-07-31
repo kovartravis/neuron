@@ -55,4 +55,21 @@ describe('ScanProgressBar', () => {
 
     expect(output).toBe('\r\x1b[K');
   });
+
+  it('uses custom prefix from options or update payload', () => {
+    let output = '';
+    const mockStream = new PassThrough();
+    (mockStream as any).isTTY = true;
+    mockStream.on('data', chunk => {
+      output += chunk.toString();
+    });
+
+    const progressBar = new ScanProgressBar({ stream: mockStream as any, enabled: true, prefix: 'Initializing' });
+    progressBar.update({ phase: 'Preloading ONNX', percent: 20 });
+    expect(output).toContain('Initializing: [████░░░░░░░░░░░░░░░░] 20% | Preloading ONNX');
+
+    output = '';
+    progressBar.update({ prefix: 'Scanning', phase: 'Analyzing files', percent: 50 });
+    expect(output).toContain('Scanning: [██████████░░░░░░░░░░] 50% | Analyzing files');
+  });
 });

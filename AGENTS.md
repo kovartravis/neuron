@@ -3,7 +3,7 @@
 > [!CRITICAL]
 > **MANDATORY MEMORY STORE PROTOCOL (`@kovartravis/neuron`)**
 > You MUST follow this 4-step memory loop on EVERY task. Failure to execute these steps is an unacceptable protocol violation.
-> Memory store categories configured in `neuron.yaml`: `learning` (rules & fixes), `history` (task logs), `decisions` (ADRs & design choices).
+> Memory store categories configured in `neuron.yaml`: `learning` (rules & fixes), `history` (task logs), `decisions` (ADRs & design choices). Architecture scan settings: `enabled: true`, category: `decisions`, depth: `3`.
 
 ## 1. FIRST ACTION (Mandatory Step 1)
 BEFORE viewing files, editing code, or taking any action, your VERY FIRST tool call MUST be to query the memory store for context:

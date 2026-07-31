@@ -15,7 +15,7 @@ When asked to set up memory for a project or configure memory settings:
    Briefly ask the user how they would like memory configured for their project:
    - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
    - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
-   - **Storage Mode**: Ask whether entries should be stored as Markdown files only (`md-only`), vector database only (`vector-only`), both simultaneously (`dual`), or per-category split (`split`). Default is `vector-only`.
+   - **Storage Mode**: Ask whether entries should be stored in the vector database only (`vector-only`), as Markdown files only (`md-only`), or both simultaneously (`dual` or `split`). Default is `vector-only`.
    - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
 
 2. **Generate `neuron.yaml`**:
@@ -132,12 +132,10 @@ Before finishing your turn and ending the session:
    neuron learn add "<new rule/learning established with full context, rationale, and exact implementation details>" --tags <topic>
    ```
 
-## 5. Markdown File Storage & Sync (`storage.mode: md-only | dual | split`)
+## 5. Markdown File Storage & Sync (`storage.mode: dual | md-only`)
 
-When `storage.mode` is set to `md-only`, `dual`, or `split`, memory entries are stored as category-based Markdown files inside `storage.path` (default: `.neuron/`):
+When `storage.mode` is set to `dual`, `md-only`, or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`):
 
-- **Native Markdown Mode (`md-only`)**: In `md-only` mode, `neuron` operates directly on `.neuron/*.md` files using in-memory semantic vector search with `mtimeMs` file timestamp cache invalidation—bypassing `.sqlite` database creation on disk entirely.
-- **Per-Category Split Mode (`split`)**: Allows setting `storage: md`, `storage: vector`, or `storage: dual` per category under `categories.<name>.storage` in `neuron.yaml`.
 - **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`.
 - **Entry Format**: Each entry is a YAML frontmatter block followed by body text:
   ```markdown

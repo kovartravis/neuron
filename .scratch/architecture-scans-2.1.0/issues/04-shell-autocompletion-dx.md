@@ -2,7 +2,7 @@ Type: task
 Status: unclaimed
 Blocked by: none
 
-# 04 — Shell Autocompletion & DX Enhancements (`2.1.0-rc4`)
+# 04 — Shell Autocompletion & DX Enhancements (`2.1.0-rc5`)
 
 ## Goal
 
@@ -21,4 +21,4 @@ Add shell tab-completion, automated Termux post-build fixes, and system metadata
 - [ ] `src/commands/completion.ts`
 - [ ] `src/commands/completion.test.ts`
 - [ ] Update `package.json` build scripts
-- [ ] `package.json` version bump to `2.1.0-rc4`
+- [ ] `package.json` version bump to `2.1.0-rc5`

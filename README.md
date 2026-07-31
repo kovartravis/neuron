@@ -86,6 +86,11 @@ categories:
     description: Architectural Decision Records (ADRs) & design choices
     tags: [adr, architecture]
 
+scan:
+  enabled: true       # Auto-scan during neuron init
+  category: decisions # Target memory category for architectural cards
+  depth: 3            # Max directory traversal depth
+
 pullRules:
   default:
     categories: [learning, decisions]
@@ -103,6 +108,23 @@ pullRules:
 
 ---
 
+## 🏛️ Codebase Architecture Scanning (`neuron scan`)
+
+Extract AST code topology, tech stack manifests (`package.json`, `Cargo.toml`, etc.), and exported symbol contracts directly into the memory store with `bge-small-en-v1.5` vector embeddings:
+
+```bash
+# Ingest codebase architectural blueprint into memory store
+neuron scan
+
+# Preview blueprint card without ingesting
+neuron scan --dry-run
+
+# Output structured JSON topology
+neuron scan --json --dry-run
+```
+
+---
+
 ## 🖥️ Local Dashboard UI (`neuron ui`)
 
 Launch the real-time dark-mode web dashboard:
@@ -115,8 +137,9 @@ Browse categories, execute instant semantic queries, filter by scope/tags, and v
 
 ## 📖 Command Reference
 
-* **`neuron init`**: Installs skill files in agent harnesses.
+* **`neuron init`**: Bootstraps project, pre-downloads local ONNX models with a terminal progress bar, and runs initial scan if configured.
 * **`neuron exec -- <command>`**: Runs a command with pre-execution safety lookup.
+* **`neuron scan`**: Scans codebase topology and ingests architectural blueprints into memory store.
 * **`neuron memory add/query/list/update/delete`**: Multi-category operations (`--category <name>`).
 * **`neuron learn add/query/list`**: Shorthand alias for `learning` category.
 * **`neuron history add/query/list/prune`**: Shorthand alias for `history` category.

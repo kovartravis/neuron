@@ -140,6 +140,11 @@ export async function scanProjectTopology(
 
   await walk(projectRoot, 1);
 
+  onProgress?.({ phase: 'Loading ONNX summarizer model', percent: 8 });
+  await summarizer.preloadModel(info => {
+    onProgress?.({ phase: info.phase, percent: 8 });
+  });
+
   const totalFiles = targetFiles.length;
   for (let i = 0; i < totalFiles; i++) {
     const { fullPath, fileRelPath } = targetFiles[i];

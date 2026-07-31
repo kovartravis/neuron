@@ -15,7 +15,9 @@ export async function handleMemoryCommand(
     console.log(MEMORY_HELP);
     process.exit(0);
   }
+
   const rest = args.slice(2);
+
   const { positionals, options } = parseFlags(rest);
 
   const category = options.category;

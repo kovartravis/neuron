@@ -6,22 +6,26 @@ export interface ScanProgress {
   currentItem?: string;
   totalItems?: number;
   currentStep?: number;
+  prefix?: string;
 }
 
 export interface ScanProgressBarOptions {
   enabled?: boolean;
   stream?: Writable & { isTTY?: boolean };
+  prefix?: string;
 }
 
 export class ScanProgressBar {
   private enabled: boolean;
   private stream: Writable & { isTTY?: boolean };
   private width: number;
+  private prefix: string;
 
   constructor(options: ScanProgressBarOptions = {}) {
     this.stream = options.stream || process.stderr;
     this.enabled = options.enabled ?? true;
     this.width = 20;
+    this.prefix = options.prefix ?? 'Scanning';
   }
 
   public update(progress: ScanProgress): void {
@@ -46,7 +50,8 @@ export class ScanProgressBar {
       detail += `: ${progress.currentItem}`;
     }
 
-    const line = `\r\x1b[KScanning: [${bar}] ${percentStr} | ${detail}`;
+    const prefix = progress.prefix ?? this.prefix;
+    const line = `\r\x1b[K${prefix}: [${bar}] ${percentStr} | ${detail}`;
     this.stream.write(line);
   }
 

@@ -10,7 +10,7 @@ The feature set and surrounding DX improvements are broken down into 5 progressi
 
 ### Tickets Breakdown
 
-1. **`01-static-scanner-engine.md` (Target: `2.1.0-rc1`)**
+1. **`01-static-scanner-engine.md` (Target: `2.1.0-rc2`)**
    - AST & topology parser (`src/scanner/analyzer.ts`).
    - Multi-language AST engine (`TreeSitterScanner` + `DynamicGrammarLoader` in `src/scanner/treesitter.ts`).
    - Default bundled grammars (TS/JS, Python, Go, Rust, Java, C++) + on-demand `.wasm` grammar resolution for 35+ extended languages.
@@ -18,17 +18,17 @@ The feature set and surrounding DX improvements are broken down into 5 progressi
    - Unit test suite (`src/scanner/analyzer.test.ts`).
 
 
-2. **`02-memory-store-ingestion.md` (Target: `2.1.0-rc2`)**
+2. **`02-memory-store-ingestion.md` (Target: `2.1.0-rc3`)**
    - Ingest structural cards into `.neuron/decisions.md` (or SQLite vector store).
    - Generates 384D BGE embeddings for instant query retrieval (`neuron memory query "architecture"`).
    - Integration test suite (`src/scanner/ingest.test.ts`).
 
-3. **`03-drift-detection-diffing.md` (Target: `2.1.0-rc3`)**
+3. **`03-drift-detection-diffing.md` (Target: `2.1.0-rc4`)**
    - Structural diff engine (`neuron scan --diff`).
    - Compares active AST topology against stored memory cards to detect un-documented modules or dependency shifts.
    - Drift warnings in `neuron status` and `neuron exec`.
 
-4. **`04-shell-autocompletion-dx.md` (Target: `2.1.0-rc4`)**
+4. **`04-shell-autocompletion-dx.md` (Target: `2.1.0-rc5`)**
    - Shell tab-completion generator (`neuron completion <bash|zsh|fish>`).
    - Automated post-build Termux shebang fix in `package.json`.
    - System metadata flag (`neuron feedback --sysinfo`).
