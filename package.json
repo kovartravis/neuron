@@ -44,7 +44,6 @@
     "test": "npm run build && node ./node_modules/vitest/vitest.mjs run",
     "test:watch": "node ./node_modules/vitest/vitest.mjs",
     "build": "node ./node_modules/typescript/bin/tsc",
-    "prepare": "npm run build && chmod +x dist/cli.js",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
     "postinstall": "node -e \"if (process.platform === 'android') { try { require('child_process').execSync('termux-fix-shebang dist/cli.js 2>/dev/null || true'); } catch(e){} }\"",
     "start": "node ./dist/cli.js",
