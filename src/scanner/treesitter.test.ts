@@ -34,4 +34,13 @@ describe('TreeSitterScanner & DynamicGrammarLoader', () => {
     expect(goSymbols.some(s => s.name === 'Storage' && s.kind === 'struct')).toBe(true);
     expect(goSymbols.some(s => s.name === 'Save' && s.kind === 'function')).toBe(true);
   });
+
+  it('parses full method signatures with parameters and return types', async () => {
+    const code = `export class MemoryStore {\n  async query(queryStr: string, limit?: number): Promise<Memory[]> {}\n}\n`;
+    const symbols = await scanner.parseFileContent('store.ts', code);
+
+    const querySymbol = symbols.find(s => s.name === 'query');
+    expect(querySymbol).toBeDefined();
+    expect(querySymbol?.signature).toContain('queryStr: string');
+  });
 });

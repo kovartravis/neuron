@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
+import type { ScanProgress } from '../ui/progress.js';
 
 export interface ScannedSymbol {
   file: string;
@@ -43,11 +44,15 @@ export interface ScanResult {
 
 export async function scanProjectTopology(
   projectRoot: string,
-  options: { depth?: number } = {}
+  options: { depth?: number; onProgress?: (progress: ScanProgress) => void } = {}
 ): Promise<ScanResult> {
   const maxDepth = options.depth ?? 3;
   const projectName = path.basename(projectRoot);
   const summarizer = new SmolLM2Summarizer();
+  const onProgress = options.onProgress;
+
+  onProgress?.({ phase: 'Discovering project topology & manifests', percent: 5 });
+
 
 
 
@@ -95,6 +100,7 @@ export async function scanProjectTopology(
   const symbols: ScannedSymbol[] = [];
   const modulesMap = new Map<string, ModuleSummary>();
   const dependencyGraph: Record<string, string[]> = {};
+  const targetFiles: { fullPath: string; fileRelPath: string }[] = [];
 
   async function walk(currentDir: string, currentDepth: number) {
     if (currentDepth > maxDepth) return;
@@ -126,45 +132,63 @@ export async function scanProjectTopology(
       } else if (entry.isFile()) {
         const fileRelPath = path.relative(projectRoot, fullPath);
         if (/\.(ts|js|py|go|rs|java)$/.test(entry.name)) {
-          const fileSymbols = parseSymbolsFromFile(fullPath, fileRelPath, symbols);
-          const fileContent = fs.readFileSync(fullPath, 'utf8');
-
-          // Extract imports
-          const fileImports: string[] = [];
-          const importMatches = fileContent.matchAll(/(?:import|require)\s*\(?['"]([^'"]+)['"]\)?/g);
-          for (const match of importMatches) {
-            if (match[1].startsWith('.')) {
-              const targetRel = path.normalize(path.join(path.dirname(fileRelPath), match[1]));
-              fileImports.push(targetRel);
-            } else {
-              fileImports.push(match[1]);
-            }
-          }
-          dependencyGraph[fileRelPath] = fileImports;
-
-          const summary = await summarizer.summarizeFile(fileRelPath, fileContent);
-          const dirKey = path.dirname(fileRelPath);
-
-          if (!modulesMap.has(dirKey)) {
-            modulesMap.set(dirKey, {
-              name: path.basename(dirKey) || 'root',
-              path: dirKey,
-              purpose: `Primary ${path.basename(dirKey) || 'root'} module containing core application capabilities.`,
-              components: []
-            });
-          }
-
-          modulesMap.get(dirKey)!.components.push({
-            file: fileRelPath,
-            purpose: summary,
-            exports: fileSymbols.map(s => s.name)
-          });
+          targetFiles.push({ fullPath, fileRelPath });
         }
       }
     }
   }
 
   await walk(projectRoot, 1);
+
+  const totalFiles = targetFiles.length;
+  for (let i = 0; i < totalFiles; i++) {
+    const { fullPath, fileRelPath } = targetFiles[i];
+    const step = i + 1;
+    const percent = 10 + Math.floor((step / Math.max(totalFiles, 1)) * 75);
+    onProgress?.({
+      phase: 'Analyzing files',
+      percent,
+      currentItem: fileRelPath,
+      totalItems: totalFiles,
+      currentStep: step
+    });
+
+    const fileSymbols = parseSymbolsFromFile(fullPath, fileRelPath, symbols);
+    const fileContent = fs.readFileSync(fullPath, 'utf8');
+
+    // Extract imports
+    const fileImports: string[] = [];
+    const importMatches = fileContent.matchAll(/(?:import|require)\s*\(?['"]([^'"]+)['"]\)?/g);
+    for (const match of importMatches) {
+      if (match[1].startsWith('.')) {
+        const targetRel = path.normalize(path.join(path.dirname(fileRelPath), match[1]));
+        fileImports.push(targetRel);
+      } else {
+        fileImports.push(match[1]);
+      }
+    }
+    dependencyGraph[fileRelPath] = fileImports;
+
+    const summary = await summarizer.summarizeFile(fileRelPath, fileContent);
+    const dirKey = path.dirname(fileRelPath);
+
+    if (!modulesMap.has(dirKey)) {
+      modulesMap.set(dirKey, {
+        name: path.basename(dirKey) || 'root',
+        path: dirKey,
+        purpose: `Primary ${path.basename(dirKey) || 'root'} module containing core application capabilities.`,
+        components: []
+      });
+    }
+
+    modulesMap.get(dirKey)!.components.push({
+      file: fileRelPath,
+      purpose: summary,
+      exports: fileSymbols.map(s => s.name)
+    });
+  }
+
+  onProgress?.({ phase: 'Synthesizing architecture blueprint', percent: 88 });
 
   const modulesList = Array.from(modulesMap.values());
   const archSynthesis = await summarizer.synthesizeArchitecture({
@@ -173,6 +197,8 @@ export async function scanProjectTopology(
     modules: modulesList,
     dependencyGraph
   });
+
+  onProgress?.({ phase: 'Scan complete', percent: 100 });
 
   return {
     project: projectName,
@@ -185,8 +211,8 @@ export async function scanProjectTopology(
     architectureMarkdown: archSynthesis.markdown,
     symbols
   };
-
 }
+
 
 
 function parseSymbolsFromFile(filePath: string, relativePath: string, symbols: ScannedSymbol[]): ScannedSymbol[] {

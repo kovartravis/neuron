@@ -76,6 +76,7 @@ export function parseFlags(args: string[]): {
     title?: string;
     format?: string;
     json?: boolean;
+    noProgress?: boolean;
   };
 } {
   const positionals: string[] = [];
@@ -93,6 +94,7 @@ export function parseFlags(args: string[]): {
   let title: string | undefined;
   let format: string | undefined;
   let json: boolean | undefined;
+  let noProgress: boolean | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -100,6 +102,8 @@ export function parseFlags(args: string[]): {
       format = args[++i];
     } else if (arg === '--json') {
       json = true;
+    } else if (arg === '--no-progress') {
+      noProgress = true;
     } else if (arg === '--tags') {
 
       const val = args[++i];
@@ -178,7 +182,8 @@ export function parseFlags(args: string[]): {
       type,
       title,
       format,
-      json
+      json,
+      noProgress
     }
   };
 }

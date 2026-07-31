@@ -1,7 +1,30 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { createRequire } from 'node:module';
 import envPaths from 'env-paths';
+
+const require = createRequire(import.meta.url);
+
+function applyCrossPlatformShims() {
+  if (process.platform === 'android') {
+    try {
+      const ort = require('onnxruntime-web');
+      if (ort && ort.env && ort.env.wasm) {
+        ort.env.wasm.numThreads = 1;
+        const distDir = path.dirname(require.resolve('onnxruntime-web'));
+        ort.env.wasm.wasmPaths = distDir + '/';
+      }
+      const resolvedOrt = require.resolve('onnxruntime-node');
+      (require.cache as any)[resolvedOrt] = { id: resolvedOrt, filename: resolvedOrt, loaded: true, exports: ort };
+    } catch (e) {}
+
+    try {
+      const resolvedSharp = require.resolve('sharp');
+      (require.cache as any)[resolvedSharp] = { id: resolvedSharp, filename: resolvedSharp, loaded: true, exports: {} };
+    } catch (e) {}
+  }
+}
 
 export interface SummarizerOptions {
   forceFallback?: boolean;
@@ -10,6 +33,8 @@ export interface SummarizerOptions {
 export class SmolLM2Summarizer {
   private cache: Map<string, string> = new Map();
   private cacheFilePath: string;
+  private generator: any = null;
+  private isInitializing: boolean = false;
 
   constructor() {
     const appPaths = envPaths('neuron', { suffix: '' });
@@ -20,6 +45,34 @@ export class SmolLM2Summarizer {
     this.cacheFilePath = path.join(cacheDir, 'scan_summaries.json');
     this.loadCache();
   }
+
+  private async getGenerator() {
+    if (this.generator) return this.generator;
+    if (this.isInitializing) {
+      while (this.isInitializing) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return this.generator;
+    }
+    this.isInitializing = true;
+    try {
+      applyCrossPlatformShims();
+      const { pipeline, env } = await import('@huggingface/transformers');
+      const appPaths = envPaths('neuron', { suffix: '' });
+      env.cacheDir = path.join(appPaths.data, 'models');
+      env.useFSCache = true;
+
+      this.generator = await pipeline('text-generation', 'Xenova/Qwen1.5-0.5B-Chat', {
+        dtype: 'q4'
+      });
+    } catch (e) {
+      this.generator = null;
+    } finally {
+      this.isInitializing = false;
+    }
+    return this.generator;
+  }
+
 
   private loadCache() {
     if (fs.existsSync(this.cacheFilePath)) {
@@ -59,6 +112,26 @@ export class SmolLM2Summarizer {
       return this.cache.get(cacheKey)!;
     }
 
+    if (!options.forceFallback && process.env.NODE_ENV !== 'test') {
+      try {
+        const generator = await this.getGenerator();
+        if (generator) {
+          const prompt = `<|im_start|>system\nSummarize the primary purpose of this code file in 1 concise sentence.\n<|im_end|>\n<|im_start|>user\nFile: ${filePath}\nCode:\n${content.slice(0, 1000)}\n<|im_end|>\n<|im_start|>assistant\n`;
+          const output = await generator(prompt, { max_new_tokens: 60 });
+          if (output && output[0] && output[0].generated_text) {
+            const generatedText: string = output[0].generated_text;
+            const assistantAnswer = generatedText.split('<|im_start|>assistant\n').pop()?.trim();
+            if (assistantAnswer && assistantAnswer.length > 10) {
+              this.cache.set(cacheKey, assistantAnswer);
+              this.saveCache();
+              return assistantAnswer;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+
     // Header JSDoc comment extraction
     const headerCommentMatch = content.match(/\/\*\*[\s\S]*?\*\//);
     if (headerCommentMatch) {
@@ -87,14 +160,26 @@ export class SmolLM2Summarizer {
     const classMatch = content.match(/export\s+class\s+([A-Za-z0-9_]+)/);
     const fnMatch = content.match(/export\s+(?:async\s+)?function\s+([A-Za-z0-9_]+)/);
 
+    // Extract method names
+    const methodNames: string[] = [];
+    const methodMatches = content.matchAll(/(?:async\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)/g);
+    for (const m of methodMatches) {
+      if (!['if', 'for', 'while', 'switch', 'catch', 'function', 'constructor'].includes(m[1])) {
+        methodNames.push(`${m[1]}()`);
+      }
+    }
+    const uniqueMethods = Array.from(new Set(methodNames)).slice(0, 4);
+    const methodStr = uniqueMethods.length > 0 ? ` (Methods: ${uniqueMethods.join(', ')})` : '';
+
     if (classMatch) {
-      return `Class ${classMatch[1]} in ${filename} manages core module contracts and operational execution.`;
+      return `Class ${classMatch[1]} in ${filename}${methodStr} manages module operations and interface contracts.`;
     }
     if (fnMatch) {
-      return `Function ${fnMatch[1]} in ${filename} handles utility and command processing.`;
+      return `Function ${fnMatch[1]} in ${filename}${methodStr} handles utility and command processing.`;
     }
-    return `Source file ${filename} exports primary project types and helper functions.`;
+    return `Source file ${filename}${methodStr} exports primary project types and helper functions.`;
   }
+
 
   async synthesizeArchitecture(scanData: {
     project: string;

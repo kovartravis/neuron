@@ -2,10 +2,11 @@ import path from 'node:path';
 
 export interface ScannedSymbol {
   file: string;
-  kind: 'class' | 'interface' | 'function' | 'struct' | 'command';
+  kind: 'class' | 'interface' | 'function' | 'struct' | 'command' | 'method';
   name: string;
   language: string;
   line?: number;
+  signature?: string;
 }
 
 export class DynamicGrammarLoader {
@@ -64,7 +65,8 @@ export class TreeSitterScanner {
           kind: isStruct ? 'struct' : 'class',
           name: classMatch[1],
           language,
-          line: lineNum
+          line: lineNum,
+          signature: line.trim()
         });
       } else if (goStructMatch) {
         symbols.push({
@@ -72,20 +74,32 @@ export class TreeSitterScanner {
           kind: 'struct',
           name: goStructMatch[1],
           language,
-          line: lineNum
+          line: lineNum,
+          signature: line.trim()
         });
       }
 
-
-      // Functions / Methods
+      // Methods / Functions
+      const methodMatch = line.match(/(?:async\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*(?::\s*([^{;]+))?/);
       const fnMatch = line.match(/(?:export\s+)?(?:async\s+)?(?:function|def|fn|func)\s+([A-Za-z0-9_]+)/);
+
       if (fnMatch) {
         symbols.push({
           file: filePath,
           kind: 'function',
           name: fnMatch[1],
           language,
-          line: lineNum
+          line: lineNum,
+          signature: line.trim()
+        });
+      } else if (methodMatch && !line.includes('constructor') && !line.includes('function') && !line.includes('if') && !line.includes('for') && !line.includes('while')) {
+        symbols.push({
+          file: filePath,
+          kind: 'method',
+          name: methodMatch[1],
+          language,
+          line: lineNum,
+          signature: `${methodMatch[1]}(${methodMatch[2]})${methodMatch[3] ? ': ' + methodMatch[3].trim() : ''}`
         });
       }
 
@@ -97,7 +111,8 @@ export class TreeSitterScanner {
           kind: 'interface',
           name: interfaceMatch[1],
           language,
-          line: lineNum
+          line: lineNum,
+          signature: line.trim()
         });
       }
     });
@@ -105,3 +120,4 @@ export class TreeSitterScanner {
     return symbols;
   }
 }
+

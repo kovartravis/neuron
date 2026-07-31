@@ -24,5 +24,14 @@ describe('CLI Command: scan', () => {
     expect(stdout).toContain('category: decisions');
     expect(stdout).toContain('Primary Subsystems');
   });
+
+  it('executes neuron scan --no-progress --json cleanly', () => {
+    const stdout = execSync(`node ${cliPath} scan --no-progress --json`).toString();
+    const result = JSON.parse(stdout);
+
+    expect(result.project).toBe('neuron');
+    expect(result.architectureSummary).toBeDefined();
+  });
 });
+
 

@@ -72,13 +72,19 @@ The multi-language static AST parsing module powered by WebAssembly (`web-tree-s
 
 The generated markdown/JSON memory block representing an analyzed codebase module, tech stack manifest, or API export signature ingested into the memory store.
 
-### SmolLM2-135M Local Summarizer (`src/components/summarizer.ts`)
+### Qwen2.5-0.5B Deep Code Summarizer (`src/components/summarizer.ts`)
 
-The lightweight, offline ONNX Instruct LLM pipeline (`HuggingFaceTB/SmolLM2-135M-Instruct`) running in Node.js via `@huggingface/transformers` to generate 1-sentence architectural purpose summaries for scanned files.
+The offline ONNX Instruct LLM pipeline (`Qwen/Qwen2.5-0.5B-Instruct`) running in Node.js via `@huggingface/transformers` to perform real, uncached semantic code summarization over AST-extracted method signatures, docstrings, and function implementations.
 
-### Summary Content Cache (`.neuron/cache/scan.json`)
+### Cross-File Call Graph Extraction
 
-The local cache storing file content hashes and generated 1-sentence architectural summaries to eliminate redundant LLM inference calls on unchanged files during re-scans.
+The process of parsing imports, exports, and inter-file function invocations to construct a directed dependency call graph between codebase modules and key component interfaces.
+
+### Scan Progress Indicator (`ScanProgressBar`)
+
+The terminal progress indicator rendered on `process.stderr` during `neuron scan`. It displays percentage progress (`[████████░░░░] 60%`), active phase status, and current file details while preserving clean stdout for markdown or JSON output.
+
+
 
 
 

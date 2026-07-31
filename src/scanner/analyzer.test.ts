@@ -45,5 +45,22 @@ describe('Scanner Engine: scanProjectTopology', () => {
     expect(result.dependencyGraph).toBeDefined();
     expect(result.architectureMarkdown).toContain('Subsystem Dependency Map');
   });
+
+  it('emits progress updates via onProgress callback', async () => {
+    const progressEvents: Array<{ phase: string; percent: number }> = [];
+
+    await scanProjectTopology(tempProjectDir, {
+      depth: 2,
+      onProgress: (p) => {
+        progressEvents.push({ phase: p.phase, percent: p.percent });
+      }
+    });
+
+    expect(progressEvents.length).toBeGreaterThan(0);
+    expect(progressEvents[0].percent).toBeLessThanOrEqual(10);
+    expect(progressEvents[progressEvents.length - 1].percent).toBe(100);
+    expect(progressEvents.some(e => e.phase.includes('Analyzing files') || e.phase.includes('Scanning topology'))).toBe(true);
+  });
 });
+
 
