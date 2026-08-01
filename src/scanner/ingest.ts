@@ -6,7 +6,6 @@ export interface IngestOptions {
   projectDir?: string;
   category?: string;
   depth?: number;
-  force?: boolean;
   /**
    * A topology scan the caller has already run. Supplying it avoids a second
    * full AST traversal when the caller (e.g. drift auto-rescan) just scanned.

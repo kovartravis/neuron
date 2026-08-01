@@ -50,6 +50,21 @@ every ticket resolved, every rc cut, stable published.
   packages** (8.49 MB, all 8 in ~1.0s) into an `env-paths` cache, pinned and
   manifest-attributed. Tarball holds at 612.6 KB with zero `.wasm`.
   [ADR 0008](../../docs/adr/0008-tree-sitter-grammar-distribution.md).
+- [02 — Replace Regex Extraction with Parsed-AST Symbol Queries](issues/02-ast-extraction-rewrite.md)
+  — Symbols now come from parsed ASTs; kind is read from the **node type**, not
+  the capture name. Symbol count on this repo **3290 → 233 (−92.9%)**; 94% of the
+  old total was call sites recorded as methods. Scope grew to `analyzer.ts`,
+  which had its own duplicate regex parser and was the only thing the blueprint
+  actually used — it missed every `export async function`. `ScannedSymbol` gains
+  `exported`; new `parseFile` reports per-file fidelity for `03`.
+- [03 — Parser Fidelity Labelling & Baseline Migration](issues/03-fidelity-labelling-baseline-migration.md)
+  — Cards record their parser as `<parser>/<generation>` (`ast/2`), stored as a
+  **default plus exceptions**. A fidelity mismatch is refused **wholesale** as an
+  incomparable measurement, never reported as drift; `--check` exits **2**.
+  Explicit `--diff` names the fix, the implicit rescan re-baselines **silently**.
+  The fingerprint was deliberately left parser-blind — the migration surfaces on
+  the next explicit check or next source edit.
+  [ADR 0009](../../docs/adr/0009-parser-fidelity-and-baseline-comparability.md).
 
 ### Settled while charting
 
@@ -90,7 +105,10 @@ ticket resolved them; they are premises the tickets are built on.
   until `14` lands.
 - **Grammars for the remaining 6 languages.** Ticket `02` covers the 8 languages
   the old ticket 06 required. Ruby, PHP, Swift, C# and the rest stay at regex
-  fidelity — whether they graduate in 2.2.0 or later is open.
+  fidelity — whether they graduate in 2.2.0 or later is open. Sharpened by `02`:
+  these languages now also carry a crude `export|public|pub` line test for the
+  new `exported` flag, so their export contracts are weaker than the AST
+  languages' in a second, less obvious way.
 - **Threat model for grammar delivery.** Ticket `01` fetches `.wasm` from the npm
   registry over TLS with pinned versions, but does not verify the registry's
   `dist.integrity` checksum — it bypasses npm, so npm's own verification does not

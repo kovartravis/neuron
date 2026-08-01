@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import envPaths from 'env-paths';
+import { fidelityFromComponents, formatFidelitySection } from '../scanner/fidelity.js';
 
 const require = createRequire(import.meta.url);
 
@@ -249,7 +250,7 @@ export class SmolLM2Summarizer {
       name: string;
       path: string;
       purpose: string;
-      components: Array<{ file: string; purpose: string; exports: string[] }>;
+      components: Array<{ file: string; purpose: string; exports: string[]; fidelity?: string }>;
     }>;
     dependencyGraph?: Record<string, string[]>;
   }, options?: { category?: string }): Promise<{ summary: string; markdown: string }> {
@@ -279,6 +280,7 @@ mtime: ${new Date().toISOString()}
 ## 🚀 System Purpose & Tech Stack
 ${overviewSummary}
 
+${formatFidelitySection(fidelityFromComponents(scanData.modules.flatMap(m => m.components)))}
 ## 🧾 Dependency Contract
 ${allDependencies.length > 0 ? allDependencies.map(d => `- \`${d}\``).join('\n') : '_No declared dependencies._'}
 

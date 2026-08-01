@@ -2,6 +2,59 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [Unreleased] — 2.2.0-rc1
+
+### Upgrading from 2.1.0 — action required
+
+**Your first `neuron scan --diff` after upgrading will report "Re-baseline
+Required" instead of drift. Run `neuron scan` once. That is the whole migration.**
+
+2.2.0 replaces regex symbol extraction with real Tree-Sitter AST parsing, which
+changes what a scan finds. On this repository the symbol count fell from 3290 to
+233 — almost all of the difference being call sites the old scanner had recorded
+as `method` symbols — while genuinely *adding* symbols it had never seen, because
+its export pattern matched `export function` but not `export async function`.
+
+A blueprint card written by 2.1.0 and a scan performed by 2.2.0 are therefore
+measurements taken with different instruments. Rather than report the difference
+as hundreds of changes you did not make, neuron now refuses the comparison and
+tells you to re-baseline.
+
+**If you gate CI on `neuron scan --check`**, note the new exit code:
+
+| Code | Meaning |
+|------|---------|
+| `0` | In sync |
+| `1` | Architectural drift detected |
+| `2` | Baseline not comparable — re-baseline required |
+
+A build that starts failing with **exit 2** immediately after upgrading is
+reporting the migration, not a regression. Run `neuron scan` to re-baseline.
+Re-baselining is destructive to drift history: changes accumulated before it are
+absorbed into the new card rather than itemised.
+
+Users who never run `--diff` explicitly need do nothing — the implicit re-scan
+behind `memory query` re-baselines silently on the next source edit.
+
+### Added
+
+- **Parser fidelity on the blueprint card**: a `## 🔬 Parser Fidelity` section
+  records the parser that produced the card as `<parser>/<generation>` — a
+  default plus only the files that deviate from it. See ADR 0009.
+- **Incomparable-baseline detection**: `neuron scan --diff` reports
+  `needsRebaseline` and names `neuron scan` as the fix rather than emitting
+  phantom drift; `--check` exits `2`.
+- **Loud grammar degradation**: a language that has a Tree-Sitter grammar but
+  could not load it now warns on `stderr`, naming the language and `neuron init`.
+  Languages with no grammar at all (Ruby, PHP, Swift, C#) stay silent, since
+  their regex fidelity is expected.
+
+### Removed
+
+- **`neuron scan --force`**: the flag was documented as "bypass the content cache
+  and force a full re-scan" but was never read by the ingest path. It did
+  nothing. `neuron scan` already re-scans and updates the card in place.
+
 ## [2.1.0] - 2026-07-31
 
 The architecture-awareness release. Neuron can now read the shape of a codebase

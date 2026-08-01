@@ -289,12 +289,16 @@ Options:
   --category <name>              Target memory category for blueprint ingestion (default: architecture)
   --depth <n>                    Max directory traversal depth (default: 3)
   --diff                         Report drift against the stored blueprint instead of ingesting
-  --check                        Like --diff, but exit with status code 1 if drift is detected (for CI)
+  --check                        Like --diff, but sets a non-zero exit code (for CI). See Exit codes.
   --dry-run                      Print the blueprint card without ingesting it
   --format <json|md>             Output format for --dry-run, --diff, and --check (default: md)
   --json                         Shortcut for --format json
-  --force                        Bypass the content cache and force a full re-scan
   --no-progress                  Disable the terminal progress bar
+
+Exit codes (--check):
+  0                              In sync with the baseline
+  1                              Architectural drift detected
+  2                              Baseline is not comparable — re-baseline required
 
 Examples:
   neuron scan                              Scan and ingest the blueprint
@@ -305,8 +309,12 @@ Examples:
 Defaults for --category, --depth, and auto-scan come from the scan: block in
 neuron.yaml when present.
 
-Note: symbol extraction is line-oriented pattern matching, not full AST parsing.
-Multi-line declarations may be truncated. See docs/adr/0003.`;
+Note: symbols are extracted from a parsed Tree-Sitter syntax tree for TypeScript,
+TSX, JavaScript, Python, Go, Rust, Java and C++. Other languages fall back to
+line-oriented matching, and the blueprint card records which parser produced each
+file. A card produced by a different parser than the current scan cannot be
+diffed against it, and --check reports that as exit code 2 rather than as drift.
+See docs/adr/0003, 0008 and 0009.`;
 
 export const MEMORY_HELP = `Usage: neuron memory <subcommand> [arguments] [flags]
 

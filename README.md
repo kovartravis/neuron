@@ -207,7 +207,7 @@ Browse categories, execute instant semantic queries, filter by scope/tags, and v
 
 * **`neuron init`**: Bootstraps project, pre-downloads local ONNX models with a terminal progress bar, and runs the initial scan if configured.
 * **`neuron exec -- <command>`**: Runs a command with pre-execution safety lookup, plus a drift warning when `scan.enabled`.
-* **`neuron scan`**: Scans codebase topology and ingests the architectural blueprint. Flags: `--category`, `--depth`, `--dry-run`, `--diff`, `--check`, `--format json|md`, `--json`, `--force`, `--no-progress`.
+* **`neuron scan`**: Scans codebase topology and ingests the architectural blueprint. Flags: `--category`, `--depth`, `--dry-run`, `--diff`, `--check`, `--format json|md`, `--json`, `--no-progress`. `--check` exits `0` in sync, `1` on drift, `2` when the baseline was produced by a different parser and must be re-baselined (see ADR 0009).
 * **`neuron memory add/query/list/update/delete/consolidate/prune`**: Multi-category operations. `--category` is required for `add`, `delete`, and `update`; `query` and `list` span categories by default and accept `--categories a,b`.
 * **`neuron sync`**: Synchronizes memories between Markdown files and SQLite DB (`--dry-run`, `--force`).
 * **`neuron status`**: Displays database, Markdown storage, embedding model, and architectural drift status as JSON.

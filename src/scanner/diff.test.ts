@@ -97,8 +97,18 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
     ]);
   });
 
+  /**
+   * The same card, declaring the fidelity the current scan is produced at.
+   * Drift tests must use this: against the legacy fixture the engine correctly
+   * refuses to compare at all, which would make them vacuous.
+   */
+  const comparableBaselineMarkdown = sampleBaselineMarkdown.replace(
+    '## 🚀 System Purpose & Tech Stack',
+    ['## 🔬 Parser Fidelity', 'Default: `ast/2`', '', '## 🚀 System Purpose & Tech Stack'].join('\n')
+  );
+
   it('calculates architectural diff identifying new modules, removed modules, and export contract changes', () => {
-    const diff = calculateArchitecturalDiff(sampleCurrentScan, sampleBaselineMarkdown);
+    const diff = calculateArchitecturalDiff(sampleCurrentScan, comparableBaselineMarkdown);
 
     expect(diff.hasDrift).toBe(true);
     expect(diff.totalChangesCount).toBeGreaterThan(0);
@@ -119,7 +129,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
   });
 
   it('formats markdown diff report cleanly', () => {
-    const diff = calculateArchitecturalDiff(sampleCurrentScan, sampleBaselineMarkdown);
+    const diff = calculateArchitecturalDiff(sampleCurrentScan, comparableBaselineMarkdown);
     const report = formatArchitecturalDiffMarkdown(diff);
 
     expect(report).toContain('### ⚠️ Architectural Drift Detected');
@@ -154,8 +164,9 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
       ],
     };
 
-    const diff = calculateArchitecturalDiff(identicalScan, sampleBaselineMarkdown);
+    const diff = calculateArchitecturalDiff(identicalScan, comparableBaselineMarkdown);
     expect(diff.hasDrift).toBe(false);
+    expect(diff.needsRebaseline).toBeFalsy();
     expect(diff.totalChangesCount).toBe(0);
 
     const report = formatArchitecturalDiffMarkdown(diff);
@@ -232,12 +243,197 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('skips dependency comparison for legacy cards with no dependency contract', () => {
       // sampleBaselineMarkdown predates the dependency section; its absence must
-      // not surface every current dependency as an addition.
-      const parsed = parseBaselineBlueprint(sampleBaselineMarkdown);
+      // not surface every current dependency as an addition. Uses the
+      // comparable variant so the engine actually reaches the dependency logic
+      // instead of refusing on fidelity first.
+      const parsed = parseBaselineBlueprint(comparableBaselineMarkdown);
       expect(parsed.hasDependencySection).toBe(false);
 
-      const diff = calculateArchitecturalDiff(sampleCurrentScan, sampleBaselineMarkdown);
+      const diff = calculateArchitecturalDiff(sampleCurrentScan, comparableBaselineMarkdown);
+      expect(diff.needsRebaseline).toBeFalsy();
       expect(diff.dependencyShifts).toEqual([]);
+    });
+  });
+
+  describe('parser fidelity', () => {
+    it('reads a card with no fidelity section as the 2.1.0 regex generation', () => {
+      // Absence is not "unknown" — it positively identifies a pre-2.2.0 card,
+      // whose symbols came from the old regex scanner.
+      const parsed = parseBaselineBlueprint(sampleBaselineMarkdown);
+      expect(parsed.fidelity).toEqual({ default: 'regex/1', exceptions: {} });
+    });
+
+    it('reads the default and only the files that deviate from it', () => {
+      const card = [
+        '# 🏛️ Repository Architectural Blueprint: sample-project',
+        '',
+        '## 🔬 Parser Fidelity',
+        'Default: `ast/2`',
+        'Degraded:',
+        '- `cmd/main.go` — `regex/2` (grammar unavailable)',
+        '- `lib/legacy.rb` — `regex/2` (no grammar for ruby)',
+        '',
+        '## 📦 Primary Subsystems & Module Boundaries',
+        '',
+        '### 🧩 Subsystem Alpha (`src/alpha`)',
+        'Core module.',
+        '',
+        '**Key Components & Export Contracts:**',
+        '- **`src/alpha/runner.ts`** (Exports: `RunnerClass`): Manages execution loop',
+      ].join('\n');
+
+      const parsed = parseBaselineBlueprint(card);
+
+      expect(parsed.fidelity.default).toBe('ast/2');
+      expect(parsed.fidelity.exceptions).toEqual({
+        'cmd/main.go': 'regex/2',
+        'lib/legacy.rb': 'regex/2',
+      });
+      // The fidelity section must not leak into the other buckets.
+      expect(parsed.exports).toEqual([
+        { file: 'src/alpha/runner.ts', symbol: 'RunnerClass' },
+      ]);
+      expect(parsed.dependencies).toEqual([]);
+    });
+
+    it('writes the dominant fidelity as the default and lists only deviations', async () => {
+      const mixedScan: ScanResult = {
+        ...sampleCurrentScan,
+        modules: [
+          {
+            name: 'Mixed Module',
+            path: 'src/mixed',
+            purpose: 'Module spanning several languages',
+            components: [
+              { file: 'src/mixed/a.ts', purpose: 'A', exports: ['A'], fidelity: 'ast' },
+              { file: 'src/mixed/b.ts', purpose: 'B', exports: ['B'], fidelity: 'ast' },
+              { file: 'src/mixed/c.rb', purpose: 'C', exports: ['C'], fidelity: 'regex' },
+            ],
+          },
+        ],
+      };
+
+      const summarizer = new SmolLM2Summarizer();
+      const { markdown } = await summarizer.synthesizeArchitecture(mixedScan, {
+        category: 'architecture',
+      });
+
+      const parsed = parseBaselineBlueprint(markdown);
+      expect(parsed.fidelity.default).toBe('ast/2');
+      expect(parsed.fidelity.exceptions).toEqual({ 'src/mixed/c.rb': 'regex/2' });
+      // The two ast files are the default, so they must not be listed.
+      expect(Object.keys(parsed.fidelity.exceptions)).toHaveLength(1);
+    });
+
+    it('round-trips fidelity so a scan does not drift against its own card', async () => {
+      const summarizer = new SmolLM2Summarizer();
+      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan, {
+        category: 'architecture',
+      });
+
+      const parsed = parseBaselineBlueprint(markdown);
+      const diff = calculateArchitecturalDiff(sampleCurrentScan, markdown);
+
+      expect(parsed.fidelity.default).toBe('ast/2');
+      expect(diff.needsRebaseline).toBeFalsy();
+      expect(diff.hasDrift).toBe(false);
+    });
+
+    it('refuses to diff a 2.1.0 regex baseline against a 2.2.0 AST scan', () => {
+      // The upgrade case every existing user hits. sampleBaselineMarkdown has
+      // no fidelity section, so it reads as regex/1 against an ast/2 scan.
+      const diff = calculateArchitecturalDiff(sampleCurrentScan, sampleBaselineMarkdown);
+
+      expect(diff.needsRebaseline).toBe(true);
+      expect(diff.baselineFidelity).toBe('regex/1');
+      expect(diff.currentFidelity).toBe('ast/2');
+      // A mismatch is not drift — it is an incomparable measurement.
+      expect(diff.hasDrift).toBe(false);
+      expect(diff.newModules).toEqual([]);
+      expect(diff.removedModules).toEqual([]);
+      expect(diff.exportChanges).toEqual([]);
+      expect(diff.dependencyShifts).toEqual([]);
+      expect(diff.totalChangesCount).toBe(0);
+      // Scope item 4: name the command, do not just warn.
+      expect(diff.summary).toContain('neuron scan');
+    });
+
+    it('refuses when the same default hides a different set of degraded files', async () => {
+      // Both cards are "mixed", but for different reasons. A bare `mixed` label
+      // would compare equal here while the measurements are incomparable.
+      const goDegraded: ScanResult = {
+        ...sampleCurrentScan,
+        modules: [
+          {
+            name: 'M', path: 'src/m', purpose: 'M',
+            components: [
+              { file: 'src/m/a.ts', purpose: 'A', exports: ['A'], fidelity: 'ast' },
+              { file: 'src/m/b.ts', purpose: 'B', exports: ['B'], fidelity: 'ast' },
+              { file: 'src/m/c.go', purpose: 'C', exports: ['C'], fidelity: 'regex' },
+            ],
+          },
+        ],
+      };
+      const rustDegraded: ScanResult = {
+        ...goDegraded,
+        modules: [
+          {
+            ...goDegraded.modules[0],
+            components: [
+              { file: 'src/m/a.ts', purpose: 'A', exports: ['A'], fidelity: 'ast' },
+              { file: 'src/m/b.ts', purpose: 'B', exports: ['B'], fidelity: 'ast' },
+              { file: 'src/m/c.go', purpose: 'C', exports: ['C'], fidelity: 'ast' },
+              { file: 'src/m/d.rs', purpose: 'D', exports: ['D'], fidelity: 'regex' },
+            ],
+          },
+        ],
+      };
+
+      const summarizer = new SmolLM2Summarizer();
+      const { markdown } = await summarizer.synthesizeArchitecture(goDegraded, {
+        category: 'architecture',
+      });
+
+      const diff = calculateArchitecturalDiff(rustDegraded, markdown);
+      expect(diff.needsRebaseline).toBe(true);
+    });
+
+    it('does not render an incomparable baseline as "In Sync"', () => {
+      // hasDrift is false on a mismatch, so the formatter must branch on
+      // needsRebaseline first or it reports a clean bill of health.
+      const diff = calculateArchitecturalDiff(sampleCurrentScan, sampleBaselineMarkdown);
+      const report = formatArchitecturalDiffMarkdown(diff);
+
+      expect(report).not.toContain('In Sync');
+      expect(report).toContain('Re-baseline Required');
+      expect(report).toContain('regex/1');
+      expect(report).toContain('ast/2');
+      expect(report).toContain('neuron scan');
+    });
+
+    it('still reports real drift when both sides share a fidelity', async () => {
+      // The refusal must not swallow genuine drift at matching fidelity.
+      const summarizer = new SmolLM2Summarizer();
+      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan, {
+        category: 'architecture',
+      });
+
+      const withNewExport: ScanResult = {
+        ...sampleCurrentScan,
+        modules: sampleCurrentScan.modules.map(m =>
+          m.path === 'src/gamma'
+            ? { ...m, components: [{ ...m.components[0], exports: ['GammaService', 'GammaExtra'] }] }
+            : m
+        ),
+      };
+
+      const diff = calculateArchitecturalDiff(withNewExport, markdown);
+
+      expect(diff.needsRebaseline).toBeFalsy();
+      expect(diff.hasDrift).toBe(true);
+      expect(diff.exportChanges).toContainEqual({
+        file: 'src/gamma/index.ts', symbol: 'GammaExtra', type: 'added',
+      });
     });
   });
 });

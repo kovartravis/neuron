@@ -92,7 +92,23 @@ The terminal progress indicator rendered on `process.stderr` during `neuron scan
 
 ### Architectural Drift (`neuron scan --diff` / `--check`)
 
-The structural variance detected when comparing current AST-scanned codebase topology (modules, export contracts, dependency graph) against the baseline Structural Memory Card stored in the memory store.
+The structural variance detected when comparing current AST-scanned codebase topology (modules, export contracts, dependency graph) against the baseline Structural Memory Card stored in the memory store. Drift is only meaningful between two measurements of matching **parser fidelity**; a difference across a fidelity change is an **incomparable baseline**, not drift.
+
+### parser fidelity
+
+How a file's symbols were obtained, written as `<parser>/<generation>` — e.g. `ast/2`, `regex/2`. The parser is `ast` when a Tree-Sitter grammar parsed the file and `regex` when it fell back to line-oriented matching. Recorded per file on the Structural Memory Card as a default plus the files that deviate from it.
+
+### scanner generation
+
+The integer half of a parser fidelity descriptor, incremented whenever symbol extraction changes shape — including changes to the regex fallback. It distinguishes two cards produced by the same named parser but by different versions of it, which are not comparable. Generation 1 is the 2.1.0 scanner; generation 2 is the 2.2.0 Tree-Sitter rewrite.
+
+### incomparable baseline
+
+A stored card whose parser fidelity differs from the current scan's, so the two cannot be subtracted from one another. Reported instead of a drift report, and never reported as drift. A card carrying no fidelity at all is an incomparable baseline of generation 1.
+
+### re-baseline
+
+Replacing the stored Structural Memory Card with a fresh scan, performed by running `neuron scan`. It resolves an incomparable baseline, and is destructive to drift history: whatever changed before the re-baseline is absorbed into the new card rather than reported.
 
 ### Deep E2E Benchmark & Correctness Suite (`npm run test:e2e`)
 
