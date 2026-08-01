@@ -1,8 +1,8 @@
 Type: task
-Status: claimed
-Blocked by: none
+Status: parked — retrieval tier delivered; end-to-end tier awaits billing
+Blocked by: maintainer decision to fund a Gemini judge run (~$4)
 Band: priority — ahead of rc2
-Priority: TOP
+Priority: normal (was TOP; the free half is done)
 
 # 22 — LongMemEval Harness: a Comparable Public Number
 
@@ -77,17 +77,75 @@ Publishing these first is worth more than a slightly higher number.
 
 ## Deliverables
 
-- [ ] Neuron adapter against an existing LongMemEval runner
-- [ ] Per-question store isolation, verified (no cross-question leakage)
-- [ ] Sanity tier (~25 q) green before the full run
-- [ ] Full 500-question run, per-category results
-- [ ] Recorded: judge model, reader model, retrieval `k`, embedder — the setup a
-      reader needs to judge comparability
-- [ ] Written summary naming the three handicaps above
-- [ ] Decision recorded on whether abstention is worth building
+- [x] Neuron adapter against an existing LongMemEval runner
+- [x] Per-question store isolation, verified (no cross-question leakage)
+- [x] Sanity tier green before the full run
+- [x] Full 500-question run, **retrieval tier** — per-category results
+- [x] Recorded: retrieval `k`, embedder, isolation mechanism
+- [x] Written summary naming the handicaps
+- [ ] Full 500-question run, **end-to-end tier** — reader + judge *(parked: cost)*
+- [ ] Recorded: judge model, reader model
+- [ ] Decision recorded on whether abstention is worth building *(needs the
+      end-to-end run — abstention is only observable when an answer is graded)*
+
+## Progress — retrieval tier complete (2026-08-01)
+
+The free, zero-LLM half is done and published:
+
+| | |
+|---|---|
+| Report | [`docs/benchmarks/longmemeval-retrieval.md`](../../../docs/benchmarks/longmemeval-retrieval.md) |
+| Harness | [`benchmarks/longmemeval/`](../../../benchmarks/longmemeval/) |
+| Result | recall@1 **83.3%**, @5 **96.2%**, @10 **98.3%** (479/500 scored, 23,867 docs) |
+| Leakage | **0** cross-unit documents across 500 queries |
+
+Findings that change the map, not just this ticket:
+
+- **Retrieval is not the bottleneck**, corroborating the PersonaMem finding
+  already recorded in ticket `05`. This strengthens `05`'s ruling that `06`–`08`
+  are held to strict non-regression rather than sold as improvements.
+- **`temporal-reasoning` is the weakest category at scale** (78.8%@1, 96.2%@10,
+  26% of the suite) — the one category still missing evidence at k=10. That is
+  precisely the ground Zep/Graphiti claim.
+- **`single-session-preference` is weakest overall** (66.7%@1, n=30) — the
+  "remember what the user likes" case memory products are sold on.
+
+### Corrections to this ticket's original premises
+
+- **Harness**: used `vectorize-io/agent-memory-benchmark`, not
+  `mem0ai/memory-benchmarks`. AMB has a provider interface, a declared
+  `isolation_unit`, and published baselines on the same dataset.
+- **Cost was understated ~12×.** The table above assumed ~3K context tokens per
+  question; AMB measures `avg_context_tokens` at ~23K. A full end-to-end run is
+  **~$4, not ~$0.30**.
+- **Isolation is by `scope`, not one store per question.** Scope 4 asked for a
+  fresh `dbPath` per question. AMB sets `user_id = question_id`, which maps to
+  neuron's `scope` filter; one store with a scope predicate is far faster and was
+  verified leak-free empirically rather than by construction.
+- **Judge is Gemini, not GPT-4o.** AMB's judge is Gemini. Scope 5 required GPT-4o
+  for comparability with published tables — but comparability now comes from
+  running *the same harness* as AMB's own baselines, which is stronger than
+  matching a judge model across different harnesses.
+
+## Why the end-to-end tier is parked
+
+The maintainer has declined to fund the Gemini run for now (2026-08-01). Nothing
+is blocked on it technically — the adapter, isolation and runner all work; only
+the paid judge pass is outstanding.
+
+**Unpark condition:** enable billing on the Gemini key, then
+`cd benchmarks/agent-memory-benchmark && uv run omb run --provider neuron --dataset longmemeval`.
+Budget ~$4 and ~50 minutes.
+
+Until then, published claims must stay retrieval-only. The report says so
+explicitly, and the numbers above are **not** comparable to AMB's `hindsight`
+94.6% or `hybrid-search` 74.0%, which are end-to-end.
 
 ## Comments
 
 - 2026-08-01: Filed and claimed. Made top priority ahead of rc2 at the
   maintainer's direction, on the finding that rc2 is parity work while this
   closes an evidence gap competitors have already closed.
+- 2026-08-01: Retrieval tier delivered and published; end-to-end tier parked on
+  cost at the maintainer's direction. Priority returns to normal — the evidence
+  gap that justified jumping the queue is now substantially closed, for $0.

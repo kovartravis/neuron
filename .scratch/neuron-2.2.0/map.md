@@ -106,16 +106,28 @@ ticket resolved them; they are premises the tickets are built on.
 - **Disclosure** — compatibility is reported by `neuron init` output plus a
   static README matrix.
 
-## Priority override
+## Priority override — lifted 2026-08-01
 
-**[22 — LongMemEval Harness](issues/22-longmemeval-harness.md) runs ahead of the
-rc2 band**, at the maintainer's direction (2026-08-01).
+**[22 — LongMemEval Harness](issues/22-longmemeval-harness.md) jumped ahead of the
+rc2 band and has now been stood down.** Its retrieval tier is published
+(recall@1 83.3%, @5 96.2%, @10 98.3%, 0 leakage — see
+[the report](../../docs/benchmarks/longmemeval-retrieval.md)); its end-to-end
+tier is **parked on cost**, at the maintainer's direction. The evidence gap that
+justified the jump is substantially closed, for $0. **Work resumes at `06`.**
 
-Rationale, recorded during ticket `05`'s grilling: tickets `06`–`08` are **parity
-features**. Automatic memory extraction is Mem0's headline feature; temporal
-supersession is Zep/Graphiti's — both with frontier models against neuron's 0.5B
-local one. Meanwhile competitors publish LongMemEval numbers and neuron publishes
-none. That gap is *evidence*, not features, and no amount of rc2 work closes it.
+Rationale for the original jump, recorded during ticket `05`'s grilling: tickets
+`06`–`08` are **parity features**. Automatic memory extraction is Mem0's headline
+feature; temporal supersession is Zep/Graphiti's — both with frontier models
+against neuron's 0.5B local one. Meanwhile competitors publish LongMemEval
+numbers and neuron published none. That gap is *evidence*, not features, and no
+amount of rc2 work closes it.
+
+**What `22` hands to `06`–`08`:** retrieval is measurably *not* the weak link
+(98.3%@10 on a standard benchmark), which independently confirms the PersonaMem
+finding `05` relied on. The strict non-regression bar is the right one, and `22`
+also supplies the A/B instrument to enforce it — `retrieval_eval.py` is
+deterministic, free, and would have caught the 2.1.1 stopword bug as a recall
+drop.
 
 Also recorded: drift detection is **not** the uncontested moat it was assumed to
 be — `mex`, Sentrux, Drift and VibeDrift all occupy that space. The defensible

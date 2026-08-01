@@ -1,6 +1,6 @@
 Type: task
-Status: unclaimed
-Blocked by: 05
+Status: claimed
+Blocked by: 05 (resolved)
 Band: 2.2.0-rc2
 
 # 06 — Write-Side Enrichment: Auto Tags, Importance, Category
