@@ -2,6 +2,35 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.1.1] - 2026-08-01
+
+### Fixed
+
+- **Keyword-only matches on common words could outrank the correct result.**
+  Hybrid search fuses its semantic and FTS legs with Reciprocal Rank Fusion,
+  which rewards a document's rank *position* rather than how well it matched.
+  Because query terms were joined with `OR` and every word was searchable, a
+  document matching a single common word entered the FTS ranking — and when it
+  was the only match, it entered at rank 1 and collected the full RRF
+  contribution.
+
+  Observed on a three-document store: the query *"what payment provider do we
+  use"* returned a document about a Rust auth daemon at score `0.869`, above the
+  correct billing document at `0.500`. The word `use` prefix-matched `used`,
+  while the correct document matched no keyword terms at all.
+
+  `cleanFtsQuery` now drops standard English stopwords and the FTS operator
+  words, and deduplicates terms. A query made entirely of stopwords produces an
+  empty expression, which is already handled as "no keyword leg" and answered
+  semantically — better than a `MATCH` that hits every row.
+
+  Short domain terms are deliberately preserved: `git`, `db` and `ci` are exactly
+  the terse fallback queries the agent protocol recommends.
+
+  This affects retrieval quality for every `neuron memory query`, `neuron exec`
+  pre-command lookup, and drift-triggered recall. No configuration change or
+  re-indexing is required — the fix applies at query time.
+
 ## [2.1.0] - 2026-07-31
 
 The architecture-awareness release. Neuron can now read the shape of a codebase
