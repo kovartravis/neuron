@@ -74,6 +74,16 @@ every ticket resolved, every rc cut, stable published.
   binary, so a stale 2.1.0 install silently re-baselined the card to `regex/1`
   during verification — `npm link` before verifying a release.
 
+- [05 — LLM Job Quality & Latency Guardrails](issues/05-llm-quality-latency-guardrails.md)
+  — Seven guardrails for the 0.5B model's new jobs. Expansion becomes **salvage**
+  (fires only on empty/weak retrieval), triggered by **raw cosine, not `score`**
+  (which is rank-based and ≥0.75 for any top hit). Silent degrade + a timeout
+  that does not yet exist + counters in `neuron status`. Auto-tagging is
+  **closed-vocabulary** — the model cannot mint a tag. Dedupe **detects and
+  selects, never writes**; losers are superseded, not deleted. Bar for all three
+  is **strict non-regression, A/B against job-disabled**.
+  [ADR 0010](../../docs/adr/0010-llm-job-guardrails.md).
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no
@@ -95,6 +105,22 @@ ticket resolved them; they are premises the tickets are built on.
   deciding what is worth recording is editorial judgment a 0.5B model cannot make.
 - **Disclosure** — compatibility is reported by `neuron init` output plus a
   static README matrix.
+
+## Priority override
+
+**[22 — LongMemEval Harness](issues/22-longmemeval-harness.md) runs ahead of the
+rc2 band**, at the maintainer's direction (2026-08-01).
+
+Rationale, recorded during ticket `05`'s grilling: tickets `06`–`08` are **parity
+features**. Automatic memory extraction is Mem0's headline feature; temporal
+supersession is Zep/Graphiti's — both with frontier models against neuron's 0.5B
+local one. Meanwhile competitors publish LongMemEval numbers and neuron publishes
+none. That gap is *evidence*, not features, and no amount of rc2 work closes it.
+
+Also recorded: drift detection is **not** the uncontested moat it was assumed to
+be — `mex`, Sentrux, Drift and VibeDrift all occupy that space. The defensible
+claim is **deterministic hook-based recall (rc3/rc4)**, since every competitor
+surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 
 ## Not yet specified
 

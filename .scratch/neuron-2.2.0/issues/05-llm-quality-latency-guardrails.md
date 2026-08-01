@@ -1,5 +1,5 @@
 Type: grilling
-Status: unclaimed
+Status: resolved
 Blocked by: 04
 Band: 2.2.0-rc2
 
@@ -58,9 +58,60 @@ holding these jobs to a strict "must not make recall worse" bar rather than a
 
 ## Deliverables
 
-- [ ] ADR recording the latency budget, failure-mode policy, and override semantics
-- [ ] A written pass/fail bar per job that tickets `06`–`08` are held to
-- [ ] Decision on which E2E pillar gains coverage for each job
+- [x] ADR recording the latency budget, failure-mode policy, and override semantics
+- [x] A written pass/fail bar per job that tickets `06`–`08` are held to
+- [x] Decision on which E2E pillar gains coverage for each job
+
+## Answer
+
+Recorded as [ADR 0010](../../../docs/adr/0010-llm-job-guardrails.md). Seven
+decisions, taken in a grilling session.
+
+1. **Expansion is salvage, not preprocessing.** It does not run in front of every
+   recall; it fires only when retrieval returns nothing or nothing close enough.
+   Zero cost on the happy path.
+2. **"Weak" is raw cosine, not `score`.** `score` is rank-based — a doc ranked #1
+   in both lists gets `normRrf = 1.0` regardless of distance, so the top hit of a
+   nonsense query still scores ≥ 0.75. It provably cannot separate a good match
+   from the best of a bad set, which also makes the existing `minScore: 0.35`
+   default far weaker than it looks. The trigger uses the raw `similarity`
+   already computed in `src/index.ts` and currently thrown away. **The floor is
+   calibrated against Pillar 2's corpus, not guessed.**
+3. **Silent degrade + a timeout + counters in `neuron status`.** No timeout
+   primitive exists anywhere in the codebase today — a hung `generate()` hangs
+   its caller forever.
+4. **Auto-tagging is closed-vocabulary; the model cannot mint a tag.** This
+   repo's own store is 224 entries / 191 distinct tags / **98 singletons** —
+   free generation would accelerate that. Also gives `categories.*.tags`, declared
+   in config and read by nothing, an actual job.
+5. **Explicit input wins per-field**; the model fills only unset fields.
+6. **Dedupe detects and selects, never writes.** No generated content enters the
+   store, so the worst case is a wrong survivor, not an invented memory.
+   Non-selected duplicates are marked superseded, not deleted.
+7. **Strict non-regression, A/B against job-disabled.** Neutral passes, worse
+   blocks. `06` → Pillar 7, `07` → Pillar 2, `08` → Pillar 7's existing
+   `supersededViolations`.
+
+### Correction to the ticket's premise
+
+The ticket states consolidation "destroys data by merging". It does not —
+`maintain({ consolidate: true })` is **read-only today**: it reads history rows
+past a watermark, advances the watermark, and returns them. `prune` is the
+destructive command. Ticket `08` would *introduce* destructiveness, which is why
+decision 6 bounds it to a reversible flag.
+
+### Strategic note recorded during the session
+
+These three jobs are **parity features, not differentiators**. Automatic memory
+extraction is Mem0's headline feature; temporal supersession is Zep/Graphiti's.
+Both do it with frontier models against a 0.5B local one. The chosen
+non-regression bar reflects that honestly.
+
+The differentiator is deterministic hook-based recall (rc3/rc4) — every
+competitor surveyed is agent-invoked, which the map's charting already identified
+as the core reliability failure. **A separate evidence gap was identified and is
+now top priority: no standard benchmark number exists for neuron.** Filed as
+ticket `22`.
 
 ## Comments
 
