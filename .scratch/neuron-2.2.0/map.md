@@ -36,7 +36,7 @@ every ticket resolved, every rc cut, stable published.
 | Band | Tickets | Delivers |
 |------|---------|----------|
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
-| `2.2.0-rc2` | `05`–`09` | Expanded Qwen1.5-0.5B usage |
+| `2.2.0-rc2` | `05`–`09`, `23` | Expanded Qwen1.5-0.5B usage |
 | `2.2.0-rc3` | `10`–`15` | Recall adapter layer + 2 reference adapters |
 | `2.2.0-rc4` | `16`–`20` | Remaining 3 adapters + disclosure |
 | `2.2.0` | `21` | Stable release |
@@ -133,6 +133,24 @@ Also recorded: drift detection is **not** the uncontested moat it was assumed to
 be — `mex`, Sentrux, Drift and VibeDrift all occupy that space. The defensible
 claim is **deterministic hook-based recall (rc3/rc4)**, since every competitor
 surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
+
+## In flight
+
+- **[06 — Write-Side Enrichment](issues/06-write-side-enrichment.md)** — claimed
+  and grilled 2026-08-01; spec at
+  [write-side-enrichment/spec.md](../write-side-enrichment/spec.md),
+  `ready-for-agent`. Implementation outstanding. Headline finding: the 0.5B model
+  costs **3205 ms to load per process** against the embedder's **177 ms**, and
+  the embedder is already loaded on the write path — so **tags moved off the
+  model entirely** (centroid cosine over a closed vocabulary), and only an
+  omitted `--category` pays for a model load.
+- **[23 — Configurable Automatic Pruning](issues/23-configurable-automatic-pruning.md)**
+  — spun out of `06`'s grilling. Pruning is hardcoded to the `history` category
+  from before categories were user-declared, so a project cannot prune its own
+  categories nor spare its history. Carries a **live data-loss hazard**: default
+  entry importance and default prune threshold are both `3` and the prune is
+  inclusive, so every history entry the protocol has ever written is
+  prune-eligible at 30 days. Does not block `06`.
 
 ## Not yet specified
 
