@@ -38,6 +38,18 @@ neuron memory add --category history "<detailed summary of work completed>" --ta
 neuron memory add --category decisions "<ADR / design choice rationale and details>" --tags adr,<topic>
 ```
 
+### On the metadata flags
+
+`--tags` and `--importance` are **optional** as of 2.2.0 — omit them and write-side
+enrichment fills them in. Omitted tags are selected from the vocabulary already in
+the store, which converges it; hand-written tags widen it (this store holds 191
+distinct tags, 98 used exactly once). **Prefer omitting `--tags`.**
+
+`--category` is also optional, but **keep passing it**. It is the only field whose
+omission can cost a model load or hard-fail the write, and you always know which
+category you mean. The commands above show the recommended posture: category
+explicit, the other two inferred.
+
 If the task changed module boundaries, added/removed a subsystem, or changed a
 public export contract, also refresh the architectural blueprint:
 ```bash

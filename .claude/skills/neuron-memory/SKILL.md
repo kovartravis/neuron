@@ -24,6 +24,7 @@ When asked to set up memory for a project or configure memory settings:
    - **Storage Mode**: Ask whether entries should be stored in the vector database only (`vector-only`), as Markdown files only (`md-only`), or both simultaneously (`dual` or `split`). Default is `vector-only`.
    - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
    - **Architectural Scan Config**: Ask whether to enable automatic architecture scanning (`enabled: true/false`), target category (default `architecture`), and directory traversal depth (default `3`). Explain how the scan analyzes codebase structure to ingest architecture cards into memory.
+   - **Write-Side Enrichment**: Ask which metadata the agent should keep supplying by hand and which `neuron memory add` should infer. See §0a below — this question has two halves, config *and* agent instructions, and answering only one produces a store that silently does not enrich.
 
 2. **Generate `neuron.yaml`**:
    Write `neuron.yaml` at the project root based on the user's answers (or standard defaults if they prefer default setup):
@@ -89,6 +90,91 @@ When asked to set up memory for a project or configure memory settings:
 
 4. **Synchronize On Edits**:
    Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
+
+## 0a. Write-Side Enrichment Interview
+
+`neuron memory add` can infer the metadata the caller did not supply. Every field
+is optional, and **anything passed explicitly is honoured untouched** — inference
+only ever fills a gap.
+
+### The trade-off to present
+
+| Posture | Write latency | Failure risk | Tag vocabulary |
+|---|---|---|---|
+| Agent passes all three flags | none | none | fragmented |
+| Agent omits all three | up to ~3.5s per write | hard error when inference cannot answer | converged |
+| **Agent passes `--category`, omits `--tags` and `--importance`** | **none** | **none** | **converged** |
+
+**Recommend the third.** It is not a compromise: `--category` is the only field
+whose omission can trigger a model load and the only one that can hard-fail the
+write, while tags are selected by the already-loaded embedder for about a
+millisecond and importance defers to a backlog that drains before the next read.
+
+Recommend the second posture for humans adding memories ad hoc, where a few
+seconds are invisible and a readable error beats learning the project's taxonomy
+first. The two can coexist — posture is protocol wording, not config.
+
+### Why omitting `--tags` is the point
+
+Tags and content are what the full-text index covers, so a fragmented tag
+vocabulary is fragmented keyword recall: an entry tagged `treesitter` is
+invisible to a query that says `tree-sitter`. Inferred tags are *selected* from a
+closed vocabulary — every tag declared in `neuron.yaml`, plus every store tag
+carried by at least three entries — so inference can only converge the
+vocabulary, never widen it. Minting a new tag stays a deliberate act: pass it.
+
+### The config half
+
+```yaml
+llm:
+  enrichment:
+    enabled: true          # master toggle; false is the A/B control arm
+    category: infer        # infer | <declared-category-name> | off
+    tags: infer            # infer | off
+    importance: off        # infer | off
+    categoryStrategy: centroid   # centroid | model
+    timeoutMs: 15000
+    maxTags: 3
+    minTagSimilarity: 0.5
+```
+
+Points worth raising with the user:
+
+- **`enabled` is separate from the per-field keys on purpose.** `enabled: false`
+  disables the whole job and is the measurement arm; `category: off` is a
+  standing preference that leaves the other fields inferring.
+- **A literal category name is the *fallback***, used when inference cannot
+  answer. Left as `infer`, that case is a hard error instead — which is the
+  right default if filing an entry into the wrong category would be worse than
+  being told to pass the flag.
+- **`importance: off` is the shipped default, on measured evidence.** The local
+  0.5B model's importance judgement benchmarked as *negatively* discriminating.
+  Inference can never lower an entry's importance below the default, so
+  switching it on is safe — but do not expect it to be useful yet.
+- **`categoryStrategy: centroid` beat `model` 9/9 to 1/9** on the benchmark
+  corpus. Its one weakness: a store with no entries has no centroids, so on a
+  cold store an omitted `--category` hard-errors until the first entries are
+  filed explicitly.
+
+### The agent-instruction half (do not skip)
+
+After writing `neuron.yaml`, update `AGENTS.md` / `CLAUDE.md` so the protocol's
+command examples match the chosen posture. Config that infers tags while the
+protocol still tells the agent to pass `--tags` on every write produces a store
+where enrichment never runs — the config looks right and does nothing.
+
+### Operating it
+
+```bash
+neuron memory add "<content>" --category learning   # recommended posture
+neuron memory enrich                                # drain the backlog on demand
+neuron status                                       # pending count + degradation counters
+```
+
+The backlog drains automatically before any query, so a read never sees
+unenriched data. Check `enrichment.degraded` in `neuron status` occasionally: a
+non-zero counter means inference is silently falling back, which is how a broken
+local model otherwise goes unnoticed for months.
 
 ## 1. Beginning of Run (Context Loading)
 

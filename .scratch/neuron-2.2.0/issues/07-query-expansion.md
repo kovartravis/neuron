@@ -97,3 +97,21 @@ one of this ticket.
   Original framing asked whether expansion "measurably improves recall enough to
   justify sitting on the interactive path" — the answer taken was that it does
   not, so it no longer sits there.
+
+## Input from 06
+
+Two findings from [06 — Write-Side Enrichment](06-write-side-enrichment.md) that
+change how this ticket should be built, both measured on the shipped model:
+
+1. **Prompt few-shot, or get nothing.** An instruction-style prompt asking for a
+   labelled field (`importance: <digit>`) was answered by *continuing the note*:
+   12 of 12 inferences unparseable. The identical task with three worked examples
+   answered with a bare token every time. At 0.5B this is not a refinement.
+2. **One field per generation.** A multi-field answer is not reliably parseable.
+   Two calls against an already-resident model cost ~183ms each — cheap next to
+   the ~3.2s load — so split the fields rather than the prompt.
+
+Available to reuse: `withTimeout` (`src/components/timeout.ts`), the shared
+process-level model singleton (`src/components/generator.ts`), the
+`recordDegradation` counters surfaced by `neuron status`, and the
+`llm.enrichment` config namespace's sibling slot under `llm`.

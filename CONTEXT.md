@@ -135,3 +135,33 @@ The structured performance report detailing per-pillar pass/fail, latency percen
 
 
 
+
+### write-side enrichment (`src/components/enricher.ts`)
+
+The process that fills in the metadata a caller did not supply on `neuron memory add` — tags, category and importance. Enrichment fills only unset fields; anything passed explicitly is honoured untouched. It hangs off `NeuronMemory.transact`, the single seam every write routes through.
+
+The three fields are inferred by different machinery because they are different kinds of problem: tags are **selected** by centroid cosine with no model involved, category is inferred from the store's category centroids (or, opt-in, by the model), and importance is inferred by the model. See `docs/adr/0010`.
+
+### tag vocabulary & centroid
+
+The closed set a tag can be selected from: every tag declared in `neuron.yaml`, plus every store tag carried by at least three entries. A tag's **centroid** is the L2-normalised mean of the embeddings of the entries carrying it — tag *strings* are never embedded, because a short label embeds poorly and ignores how the tag is actually used in this store. The three-entry floor is a requirement of the method rather than a tuning knob: a tag on one entry has a centroid identical to that entry.
+
+The vocabulary is computed once per process and never persisted, so a tag minted by an explicit write is selectable by the very next write.
+
+### enrichment backlog (`enriched_at`)
+
+The set of entries written with a field left for later, identified by a NULL `enriched_at` column. Only importance defers — it never justifies a ~3.2s model load on the interactive write path on its own. The backlog drains on the next memory command whenever it is non-empty, and the drain is **unbounded**: it completes rather than working to a budget, so retrieval quality never depends on how much was written recently. `neuron memory enrich` drives it on demand.
+
+A row whose inference degrades is still stamped enriched, so a permanently unavailable model cannot make every subsequent query re-attempt a cold load. The loss is made visible by the degradation counters instead.
+
+### degradation counters
+
+Per-reason counts of every time a model-backed job silently fell back, persisted in the `meta` table and surfaced under `enrichment.degraded` in `neuron status`. Silent degradation is the designed failure mode (ADR 0010 §3); silence *without* counters is how a broken local model goes unnoticed for months.
+
+### timeout primitive (`withTimeout`, `src/components/timeout.ts`)
+
+The bounded wait every model call is wrapped in. Before it, the only timeout in the codebase was SQLite's `busy_timeout` and a hung generation hung its caller forever. It bounds the wait, not the work: ONNX generation cannot be cancelled, so a timed-out call runs to completion in the background and its result is discarded.
+
+### shared text generator (`src/components/generator.ts`)
+
+The process-level singleton holding `Xenova/Qwen1.5-0.5B-Chat`. Loading costs ~3.2s against ~183ms per inference, so the load is 87% of a single-inference invocation and every CLI command is its own process. The singleton exists so a `neuron scan` that has already paid for the model hands it to enrichment for free.

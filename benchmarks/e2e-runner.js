@@ -28,6 +28,7 @@ const SUITES = [
   'test/e2e/benchmark-suite.test.ts',
   'test/e2e/adversarial-recall.test.ts',
   'test/e2e/concurrency-stress.test.ts',
+  'test/e2e/enrichment.test.ts',
 ];
 
 // Re-render the scorecard from the artifacts already on disk. Useful for
@@ -82,7 +83,7 @@ if (reportOnly) {
 const vitest = readJson(vitestJsonPath);
 const metrics = readJson(metricsPath);
 // Each suite writes its own metrics file; merge them into one pillar lookup.
-const extraMetrics = ['adversarial-metrics.json', 'contention-metrics.json']
+const extraMetrics = ['adversarial-metrics.json', 'contention-metrics.json', 'enrichment-metrics.json']
   .map(f => readJson(path.join(reportDir, f)))
   .filter(Boolean);
 const allPillarMetrics = [

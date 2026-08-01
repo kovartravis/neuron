@@ -1,31 +1,9 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { createRequire } from 'node:module';
 import envPaths from 'env-paths';
 import { fidelityFromComponents, formatFidelitySection } from '../scanner/fidelity.js';
-
-const require = createRequire(import.meta.url);
-
-function applyCrossPlatformShims() {
-  if (process.platform === 'android') {
-    try {
-      const ort = require('onnxruntime-web');
-      if (ort && ort.env && ort.env.wasm) {
-        ort.env.wasm.numThreads = 1;
-        const distDir = path.dirname(require.resolve('onnxruntime-web'));
-        ort.env.wasm.wasmPaths = distDir + '/';
-      }
-      const resolvedOrt = require.resolve('onnxruntime-node');
-      (require.cache as any)[resolvedOrt] = { id: resolvedOrt, filename: resolvedOrt, loaded: true, exports: ort };
-    } catch (e) {}
-
-    try {
-      const resolvedSharp = require.resolve('sharp');
-      (require.cache as any)[resolvedSharp] = { id: resolvedSharp, filename: resolvedSharp, loaded: true, exports: {} };
-    } catch (e) {}
-  }
-}
+import { getTextGenerator } from './generator.js';
 
 export interface SummarizerOptions {
   forceFallback?: boolean;
@@ -67,44 +45,14 @@ export class SmolLM2Summarizer {
     return clean;
   }
 
+  /**
+   * Delegates to the process-wide loader so a scan and write-side enrichment
+   * running in the same process share one ~3.2s model load rather than paying
+   * for it twice.
+   */
   private async getGenerator(onProgress?: (progress: { phase: string; percent?: number }) => void) {
     if (this.generator) return this.generator;
-    if (this.isInitializing) {
-      while (this.isInitializing) {
-        await new Promise(r => setTimeout(r, 100));
-      }
-      return this.generator;
-    }
-    this.isInitializing = true;
-    try {
-      applyCrossPlatformShims();
-      const { pipeline, env } = await import('@huggingface/transformers');
-      const appPaths = envPaths('neuron', { suffix: '' });
-      env.cacheDir = path.join(appPaths.data, 'models');
-      env.useFSCache = true;
-
-      onProgress?.({ phase: 'Loading ONNX summarizer model (Qwen1.5-0.5B)' });
-
-      this.generator = await pipeline('text-generation', 'Xenova/Qwen1.5-0.5B-Chat', {
-        dtype: 'q4',
-        progress_callback: (info: any) => {
-          if (info.status === 'progress' && info.total) {
-            const pct = Math.round((info.loaded / info.total) * 100);
-            const fileLabel = info.file ? ` (${info.file})` : '';
-            onProgress?.({ phase: `Loading ONNX model${fileLabel} ${pct}%` });
-          } else if (info.status === 'downloading' || info.status === 'initiate') {
-            const fileLabel = info.file ? ` (${info.file})` : '';
-            onProgress?.({ phase: `Downloading ONNX model${fileLabel}` });
-          } else if (info.status === 'ready' || info.status === 'done') {
-            onProgress?.({ phase: `ONNX model loaded` });
-          }
-        }
-      });
-    } catch (e) {
-      this.generator = null;
-    } finally {
-      this.isInitializing = false;
-    }
+    this.generator = await getTextGenerator(onProgress);
     return this.generator;
   }
 

@@ -21,7 +21,10 @@ export async function handleMemoryCommand(
   const { positionals, options } = parseFlags(rest);
 
   const category = options.category;
-  if (!category && ['add', 'delete', 'update'].includes(subCommand)) {
+  // `--category` is optional on `add` only — write-side enrichment infers it,
+  // or the write fails naming the cause. It stays required for `delete` and
+  // `update`, where it selects an existing entry and inference is meaningless.
+  if (!category && ['delete', 'update'].includes(subCommand)) {
     console.error(`Error: --category is required for 'memory ${subCommand}'`);
     process.exit(1);
   }
@@ -35,7 +38,7 @@ export async function handleMemoryCommand(
     const res = await memory.transact([
       {
         op: 'upsert',
-        category: category!,
+        category,
         content,
         tags: options.tags,
         importance: options.importance,
@@ -97,6 +100,12 @@ export async function handleMemoryCommand(
         project: projectName,
       })
     );
+  } else if (subCommand === 'enrich') {
+    // The backlog drains on its own before any query; this exists so the cost
+    // can be paid deliberately, and so the benchmark can drive enrichment
+    // deterministically rather than as a side effect of reading.
+    const report = await memory.drainEnrichment();
+    console.log(JSON.stringify({ status: 'enriched', ...report, project: projectName }));
   } else if (subCommand === 'prune') {
     const report = memory.maintain({
       pruneHistoryBeforeDays: options.days ?? 30,

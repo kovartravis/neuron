@@ -55,6 +55,64 @@ export const ScanConfigSchema = z.object({
 
 export type ScanConfig = z.infer<typeof ScanConfigSchema>;
 
+/**
+ * Write-side enrichment (ticket 06).
+ *
+ * `enabled` and the per-field keys are deliberately separate: `enabled: false`
+ * is the measurement arm that disables the whole job, while `category: off` is
+ * a standing user preference that leaves the other fields inferring. Collapsing
+ * them would make an A/B run indistinguishable from a preference change.
+ *
+ * `category` accepts `infer`, `off`, or a declared category name. A literal
+ * name is the *fallback* used when inference cannot produce an answer; left as
+ * `infer`, that case is a hard error instead.
+ */
+export const LlmEnrichmentConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  category: z.string().default('infer'),
+  tags: z.enum(['infer', 'off']).default('infer'),
+  /**
+   * Off by default on the evidence. Pillar 10 measured the shipped model's
+   * importance judgement as *negatively* discriminating — mean 3.0 on entries
+   * about irreversible data loss against 3.5 on typo fixes — so inferring it
+   * pays a model load for an inverted signal. The floor in `clampImportance`
+   * keeps it harmless when switched on; it does not make it useful. Revisit
+   * with a larger model.
+   */
+  importance: z.enum(['infer', 'off']).default('off'),
+  /** Bounds every model call. Cold load alone is >3s on fast hardware. */
+  timeoutMs: z.number().default(15000),
+  /** Top-K cap on centroid tag selection. */
+  maxTags: z.number().default(3),
+  /** Similarity floor, so a weakly-related entry gets few tags or none. */
+  minTagSimilarity: z.number().default(0.5),
+  /**
+   * The two strategies from the A/B. `centroid` is the default because it won
+   * on evidence: 9/9 against the model's 1/9 on the same corpus (Pillar 11).
+   * It also keeps the model off the write path entirely. Its cost is that a
+   * store with no entries yet has no centroids, so an omitted `--category` on
+   * a cold store hard-errors until the first few entries are filed explicitly.
+   */
+  categoryStrategy: z.enum(['model', 'centroid']).default('centroid'),
+});
+
+export type LlmEnrichmentConfig = z.infer<typeof LlmEnrichmentConfigSchema>;
+
+export const DEFAULT_LLM_ENRICHMENT: LlmEnrichmentConfig = LlmEnrichmentConfigSchema.parse({});
+
+/**
+ * Container for the release band's model-backed jobs. Only `enrichment` is
+ * populated by ticket 06; tickets 07 and 08 fill sibling sub-keys, so the shape
+ * is settled once rather than three times.
+ */
+export const LlmConfigSchema = z.object({
+  enrichment: LlmEnrichmentConfigSchema.default(DEFAULT_LLM_ENRICHMENT),
+});
+
+export type LlmConfig = z.infer<typeof LlmConfigSchema>;
+
+export const DEFAULT_LLM: LlmConfig = LlmConfigSchema.parse({});
+
 export const NeuronConfigSchema = z.object({
   version: z.string().default('1.0'),
   storage: StorageConfigSchema.default({ mode: 'vector-only', path: '.neuron' }),
@@ -69,6 +127,7 @@ export const NeuronConfigSchema = z.object({
     default: { categories: ['learning'], limit: 5, minScore: 0.35 },
     onExec: [],
   }),
+  llm: LlmConfigSchema.default(DEFAULT_LLM),
 });
 
 export type NeuronConfig = z.infer<typeof NeuronConfigSchema>;
@@ -149,6 +208,19 @@ export function validateNeuronYaml(raw: unknown): NeuronConfig {
         }
       }
     });
+  }
+
+  // A literal fallback category must be one of the declared categories —
+  // same cross-reference rule the pull rules above are held to.
+  const enrichmentCategory = config.llm.enrichment.category;
+  if (
+    enrichmentCategory !== 'infer' &&
+    enrichmentCategory !== 'off' &&
+    !config.categories[enrichmentCategory]
+  ) {
+    throw new Error(
+      `neuron.yaml: llm.enrichment.category references unknown category "${enrichmentCategory}"`
+    );
   }
 
   return config;

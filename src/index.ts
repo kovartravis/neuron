@@ -6,7 +6,14 @@ import { openDatabase } from './db.js';
 import {
   Embedder,
   TransformersEmbedder,
-  cleanFtsQuery
+  cleanFtsQuery,
+  EnrichmentModel,
+  LocalEnrichmentModel,
+  Centroid,
+  buildTagVocabulary,
+  buildCategoryCentroids,
+  selectTags,
+  selectCategory
 } from './components/index.js';
 import {
   MemoryKind,
@@ -26,7 +33,7 @@ export * from './config/index.js';
 
 import { DualStorageRouter } from './storage/dualStorageRouter.js';
 import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
-import { loadNeuronYaml } from './config/neuronYaml.js';
+import { loadNeuronYaml, NeuronConfig } from './config/neuronYaml.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
@@ -57,6 +64,15 @@ export class NeuronMemory {
   private projectId: string;
   private embedder: Embedder;
   private router: DualStorageRouter;
+  private config: NeuronConfig;
+  private enricher: EnrichmentModel;
+  /**
+   * Computed once per process and never persisted. Each command invocation is
+   * its own process, so per-process is always fresh — which matters more than
+   * speed here, because a tag minted by an explicit write must be selectable by
+   * the very next write.
+   */
+  private tagVocabulary: Centroid[] | null = null;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -70,6 +86,10 @@ export class NeuronMemory {
     this.embedder = options.embedder ?? new TransformersEmbedder();
 
     const config = loadNeuronYaml(options.projectRoot);
+    this.config = config;
+    this.enricher =
+      options.enricher ??
+      new LocalEnrichmentModel({ timeoutMs: config.llm.enrichment.timeoutMs });
     const configPath = config.storage?.path || '.neuron';
     const storagePath = path.isAbsolute(configPath)
       ? configPath
@@ -119,12 +139,17 @@ export class NeuronMemory {
     });
   }
 
-  static inMemory(projectName: string = 'test-project', embedder?: Embedder): NeuronMemory {
+  static inMemory(
+    projectName: string = 'test-project',
+    embedder?: Embedder,
+    enricher?: EnrichmentModel
+  ): NeuronMemory {
     return new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/in-memory/' + projectName,
       projectName,
-      embedder: embedder ?? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
+      embedder: embedder ?? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      enricher
     });
   }
 
@@ -346,9 +371,29 @@ export class NeuronMemory {
       })();
       currentVersion = 5;
     }
+
+    // --- Migration v6: enrichment timestamp ---
+    if (currentVersion < 6) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          ALTER TABLE memories ADD COLUMN enriched_at TEXT;
+          CREATE INDEX IF NOT EXISTS idx_memories_unenriched
+            ON memories (project_id) WHERE enriched_at IS NULL;
+        `);
+        // Existing rows were written with hand-supplied metadata, so they are
+        // enriched by definition. Leaving them NULL would put the entire store
+        // into the backlog and make the first query after upgrade drain it.
+        this.db.exec(`UPDATE memories SET enriched_at = updated_at WHERE enriched_at IS NULL;`);
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '6');
+        this.db.pragma('user_version = 6');
+      })();
+      currentVersion = 6;
+    }
   }
 
   public async query(q: MemoryQuery): Promise<Memory[]> {
+    await this.drainEnrichmentIfPending();
     return this.router.query(q);
   }
 
@@ -479,8 +524,248 @@ export class NeuronMemory {
     }
   }
 
+  /**
+   * The single seam for write-side enrichment. Every write routes through here
+   * — the CLI, the deprecated convenience helpers, and the storage router
+   * alike — so enrichment placed here is applied exactly once.
+   */
   public async transact(mutations: MemoryMutation[]): Promise<MutationResult[]> {
-    return this.router.transact(mutations);
+    const enriched: MemoryMutation[] = [];
+    for (const m of mutations) {
+      enriched.push(m.op === 'upsert' ? await this.enrichUpsert(m) : m);
+    }
+    return this.router.transact(enriched);
+  }
+
+  // --- Write-side enrichment ------------------------------------------------
+
+  /**
+   * Fill the metadata the caller left unset. Explicit input always wins
+   * per-field (ADR 0010 §5); an empty tag array counts as unset, since no
+   * caller means "definitely no tags" by passing one.
+   */
+  private async enrichUpsert(
+    m: Extract<MemoryMutation, { op: 'upsert' }>
+  ): Promise<MemoryMutation> {
+    const cfg = this.config.llm.enrichment;
+    const now = new Date().toISOString();
+    const explicitCategory = m.category ?? m.kind;
+
+    // Enrichment off entirely: category is still mandatory, and nothing is
+    // pending, so the write must not enter the backlog.
+    if (!cfg.enabled) {
+      if (!explicitCategory) throw categoryRequired('is disabled (llm.enrichment.enabled: false)');
+      return { ...m, enrichedAt: now };
+    }
+
+    const wantsTags = cfg.tags === 'infer' && (m.tags === undefined || m.tags.length === 0);
+    const wantsCategory = !explicitCategory;
+    const wantsImportance = cfg.importance === 'infer' && m.importance === undefined;
+
+    if (!wantsTags && !wantsCategory && !wantsImportance) {
+      if (!explicitCategory) throw categoryRequired('is off (llm.enrichment.category: off)');
+      return { ...m, enrichedAt: now };
+    }
+
+    // The embedder is already loaded on the write path, so this second embed
+    // costs ~4ms rather than the ~180ms a cold load would. It is computed here
+    // rather than reused from `transactVector` so that enrichment works
+    // identically in md-only mode, where `transactVector` never runs.
+    let embedding: Float32Array | null = null;
+    if (wantsTags || (wantsCategory && cfg.categoryStrategy === 'centroid')) {
+      try {
+        embedding = await this.embedder.embed(m.content);
+      } catch {
+        this.recordDegradation('embedder_unavailable');
+      }
+    }
+
+    const tags = wantsTags && embedding
+      ? selectTags(embedding, this.getTagVocabulary(), {
+          maxTags: cfg.maxTags,
+          minSimilarity: cfg.minTagSimilarity,
+        })
+      : m.tags;
+
+    let category = explicitCategory;
+    let importance = m.importance;
+
+    if (wantsCategory) {
+      if (cfg.category === 'off') throw categoryRequired('is off (llm.enrichment.category: off)');
+
+      const declared = Object.keys(this.config.categories);
+      let cause = 'is unavailable';
+
+      if (cfg.categoryStrategy === 'centroid') {
+        category = embedding
+          ? selectCategory(embedding, this.getCategoryCentroids(declared))
+          : undefined;
+        if (!category) {
+          cause = 'found no category close enough to this entry';
+          this.recordDegradation('category_centroid_miss');
+        }
+      } else {
+        // Importance rides the same call: with the model already loaded the
+        // extra inference is nearly free.
+        const result = await this.enricher.inferCategoryAndImportance({
+          content: m.content,
+          categories: declared.map(name => ({
+            name,
+            description: this.config.categories[name]?.description,
+          })),
+        });
+        if (result.degraded) {
+          cause = describeDegradation(result.degraded);
+          this.recordDegradation(result.degraded);
+        }
+        category = result.category;
+        if (wantsImportance) importance = clampImportance(result.importance);
+      }
+
+      if (!category) {
+        // A literal category name in the config is the configured fallback for
+        // exactly this case; left as `infer`, it is a hard error instead.
+        if (cfg.category !== 'infer' && cfg.category !== 'off') {
+          category = cfg.category;
+        } else {
+          throw categoryRequired(cause);
+        }
+      }
+    }
+
+    // Importance alone never justifies a ~3.2s model load on the interactive
+    // write path — it defers to the backlog, which drains before the next read.
+    const deferred = wantsImportance && importance === undefined;
+
+    return {
+      ...m,
+      category,
+      kind: undefined,
+      tags,
+      importance,
+      enrichedAt: deferred ? null : now,
+    };
+  }
+
+  private getTagVocabulary(): Centroid[] {
+    if (this.tagVocabulary) return this.tagVocabulary;
+    if (!this.db) return (this.tagVocabulary = []);
+
+    const declaredTags = Object.values(this.config.categories).flatMap(c => c.tags ?? []);
+    const rows = this.db.prepare(
+      `SELECT tags, embedding FROM memories WHERE project_id = ? AND tags != '[]'`
+    ).all(this.projectId) as any[];
+
+    const entries = rows.map(row => ({
+      tags: safeParseTags(row.tags),
+      embedding: toFloat32(row.embedding),
+    }));
+
+    this.tagVocabulary = buildTagVocabulary(entries, declaredTags);
+    return this.tagVocabulary;
+  }
+
+  private getCategoryCentroids(allowed: string[]): Centroid[] {
+    if (!this.db) return [];
+    const rows = this.db.prepare(
+      `SELECT category, embedding FROM memories WHERE project_id = ?`
+    ).all(this.projectId) as any[];
+    return buildCategoryCentroids(
+      rows.map(row => ({ category: row.category, embedding: toFloat32(row.embedding) })),
+      allowed
+    );
+  }
+
+  // --- The enrichment backlog ----------------------------------------------
+
+  /** Entries written with importance deferred, awaiting a drain. */
+  public countPendingEnrichment(): number {
+    if (!this.db) return 0;
+    const row = this.db.prepare(
+      `SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND enriched_at IS NULL`
+    ).get(this.projectId) as { count: number } | undefined;
+    return row?.count ?? 0;
+  }
+
+  /**
+   * Guard the drain on a single count, cheap enough to run on every command in
+   * the same spirit as the stat-only fingerprint guard on the drift rescan.
+   */
+  private async drainEnrichmentIfPending(): Promise<void> {
+    if (!this.db) return;
+    if (!this.config.llm.enrichment.enabled) return;
+    if (this.countPendingEnrichment() === 0) return;
+    try {
+      await this.drainEnrichment();
+    } catch {
+      // The backlog must never be able to break a read.
+    }
+  }
+
+  /**
+   * Drain the whole backlog. The drain is unbounded — it completes rather than
+   * working to a budget, because a bounded drain would make retrieval quality
+   * depend on how much had been written recently.
+   *
+   * A row whose inference degrades is still stamped enriched. Leaving it NULL
+   * would make every subsequent query re-attempt a cold model load forever; the
+   * degradation counter on `neuron status` is what makes the loss visible.
+   */
+  public async drainEnrichment(): Promise<{ drained: number; degraded: number }> {
+    if (!this.db) return { drained: 0, degraded: 0 };
+
+    const rows = this.db.prepare(
+      `SELECT id, content FROM memories WHERE project_id = ? AND enriched_at IS NULL ORDER BY rowid ASC`
+    ).all(this.projectId) as any[];
+    if (rows.length === 0) return { drained: 0, degraded: 0 };
+
+    const stamp = this.db.prepare(
+      `UPDATE memories SET importance = ?, enriched_at = ? WHERE id = ? AND project_id = ?`
+    );
+    let degraded = 0;
+
+    for (const row of rows) {
+      const result = await this.enricher.inferImportance({ content: row.content });
+      if (result.degraded) {
+        degraded++;
+        this.recordDegradation(result.degraded);
+      }
+      const importance = clampImportance(result.importance);
+      const now = new Date().toISOString();
+      if (importance !== undefined) {
+        stamp.run(importance, now, row.id, this.projectId);
+      } else {
+        this.db.prepare(
+          `UPDATE memories SET enriched_at = ? WHERE id = ? AND project_id = ?`
+        ).run(now, row.id, this.projectId);
+      }
+    }
+
+    return { drained: rows.length, degraded };
+  }
+
+  /**
+   * Silence without counters is how a broken 0.5B model goes unnoticed for
+   * months (ADR 0010 §3). Counts live in `meta` so they survive the process.
+   */
+  private recordDegradation(reason: string): void {
+    if (!this.db) return;
+    try {
+      this.db.prepare(`
+        INSERT INTO meta (key, value) VALUES (?, '1')
+        ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+      `).run(`${DEGRADATION_KEY_PREFIX}${reason}`);
+    } catch {}
+  }
+
+  private readDegradationCounters(): Record<string, number> {
+    if (!this.db) return {};
+    const rows = this.db.prepare(
+      `SELECT key, value FROM meta WHERE key LIKE ?`
+    ).all(`${DEGRADATION_KEY_PREFIX}%`) as any[];
+    return Object.fromEntries(
+      rows.map(r => [r.key.slice(DEGRADATION_KEY_PREFIX.length), parseInt(r.value, 10) || 0])
+    );
   }
 
   public async transactVector(mutations: MemoryMutation[]): Promise<MutationResult[]> {
@@ -524,6 +809,7 @@ export class NeuronMemory {
             }
             if (m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
             if (m.createdAt !== undefined) { sets.push('created_at = ?'); params.push(m.createdAt); }
+            if (m.enrichedAt !== undefined) { sets.push('enriched_at = ?'); params.push(m.enrichedAt); }
             sets.push('updated_at = ?'); params.push(new Date().toISOString());
             
             if (sets.length > 0) {
@@ -545,9 +831,9 @@ export class NeuronMemory {
             const taskId = m.taskId ?? null;
 
             this.db.prepare(`
-              INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(id, this.projectId, category, m.content, tagsJson, blob, scope, importance, isManualScope, taskId, createdAt, now);
+              INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at, enriched_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(id, this.projectId, category, m.content, tagsJson, blob, scope, importance, isManualScope, taskId, createdAt, now, m.enrichedAt ?? null);
             results.push({ id, status: 'created', project: this.projectName });
           } else {
             results.push({ id, status: 'not_found', project: this.projectName });
@@ -738,6 +1024,8 @@ export class NeuronMemory {
     const onnxPath = path.join(modelCacheDir, 'Xenova/bge-small-en-v1.5', 'onnx', 'model_quantized.onnx');
     const modelReady = fs.existsSync(onnxPath) ? 'ready' : 'not-cached';
 
+    const enrichmentCfg = this.config.llm.enrichment;
+
     return {
       project: this.projectName,
       projectRoot: this.projectRoot,
@@ -747,7 +1035,15 @@ export class NeuronMemory {
       totalCount,
       learnCount,
       historyCount,
-      categories
+      categories,
+      enrichment: {
+        enabled: enrichmentCfg.enabled,
+        category: enrichmentCfg.category,
+        tags: enrichmentCfg.tags,
+        importance: enrichmentCfg.importance,
+        pending: this.countPendingEnrichment(),
+        degraded: this.readDegradationCounters()
+      }
     };
   }
 
@@ -759,7 +1055,7 @@ export class NeuronMemory {
 
   // --- DEPRECATED METHODS (WRAPPERS) TO KEEP TESTS/CLI HAPPY TEMPORARILY ---
 
-  public async addLearning(content: string, tags: string[] = [], options: { importance?: number; scope?: string } = {}): Promise<any> {
+  public async addLearning(content: string, tags?: string[], options: { importance?: number; scope?: string } = {}): Promise<any> {
     const res = await this.transact([{ op: 'upsert', category: 'learning', content, tags, importance: options.importance, scope: options.scope }]);
     return res[0];
   }
@@ -828,4 +1124,70 @@ function dotProduct(a: Float32Array, b: Float32Array): number {
     s += a[i] * b[i];
   }
   return s;
+}
+
+const DEGRADATION_KEY_PREFIX = 'enrichment_degraded:';
+
+/**
+ * Category is a non-nullable column that determines storage routing, so no
+ * entry can be written without one. When inference cannot produce a declared
+ * category and no fallback is configured, the write fails naming the cause —
+ * it never guesses and never invents a category.
+ */
+function categoryRequired(cause: string): Error {
+  return new Error(
+    `Error: --category is required — category inference ${cause}. ` +
+      `Pass --category <name>, or set llm.enrichment.category in neuron.yaml to a ` +
+      `declared category to use as a fallback.`
+  );
+}
+
+function describeDegradation(reason: string): string {
+  switch (reason) {
+    case 'timeout': return 'timed out';
+    case 'model_disabled': return 'is disabled in this environment';
+    case 'model_unavailable': return 'could not load the local model';
+    case 'category_not_declared': return 'did not name a declared category';
+    case 'empty_generation': return 'produced no output';
+    case 'no_declared_categories': return 'has no declared categories to choose from';
+    default: return 'failed';
+  }
+}
+
+/** The `importance` column default, and the floor inference may not go below. */
+const DEFAULT_IMPORTANCE = 3;
+
+/**
+ * Inferred importance is floored at the entry default, so inference can raise
+ * an entry's importance but never lower it.
+ *
+ * The spec shipped this unclamped and deferred the decision to the benchmark,
+ * with the explicit trigger: revisit if the benchmark shows the model marking
+ * critical entries prune-eligible. Pillar 10 showed exactly that — asked to
+ * rate a note about irreversible production data loss, the model answered `1`.
+ * A floor makes enrichment incapable of *increasing* prune eligibility, which
+ * is the destructive direction; the upside (raising a genuinely critical entry
+ * clear of the threshold) is unaffected.
+ *
+ * Out-of-range values are dropped rather than floored so a malformed
+ * generation cannot violate the column's CHECK constraint.
+ */
+function clampImportance(value: number | undefined): number | undefined {
+  if (value === undefined || !Number.isFinite(value)) return undefined;
+  const rounded = Math.round(value);
+  if (rounded < 1 || rounded > 5) return undefined;
+  return Math.max(DEFAULT_IMPORTANCE, rounded);
+}
+
+function safeParseTags(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(t => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function toFloat32(blob: Buffer): Float32Array {
+  return new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
 }

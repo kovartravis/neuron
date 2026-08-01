@@ -84,6 +84,20 @@ every ticket resolved, every rc cut, stable published.
   is **strict non-regression, A/B against job-disabled**.
   [ADR 0010](../../docs/adr/0010-llm-job-guardrails.md).
 
+- [06 — Write-Side Enrichment: Auto Tags, Importance, Category](issues/06-write-side-enrichment.md)
+  — Shipped, and **the model ended up off the write path entirely**. Tags and
+  category are both centroid cosine over the already-loaded embedder; only
+  importance uses the model, and it ships `off`. The benchmark overrode the spec
+  three times: the category A/B inverted its premise (**centroid 9/9, model
+  1/9**), importance discrimination measured as noise (**-0.5 then +0.167**, so
+  it is floored at the default and disabled by default), and the prompts had to
+  become few-shot — instruction-only prompting left **12 of 12** inferences
+  unparseable. Pillar 12 met ADR 0010 §7's bar exactly: **delta 0.0** on
+  recall@1/@5/MRR between arms. The spec's absolute prune-safety assertion was
+  restated as a relative one, because it fails identically with the feature
+  switched off — that is ticket `23`'s hazard, now quantified.
+  252 unit tests, 14/14 pillars.
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no
@@ -136,26 +150,39 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 
 ## In flight
 
-- **[06 — Write-Side Enrichment](issues/06-write-side-enrichment.md)** — claimed
-  and grilled 2026-08-01; spec at
-  [write-side-enrichment/spec.md](../write-side-enrichment/spec.md),
-  `ready-for-agent`. Implementation outstanding. Headline finding: the 0.5B model
-  costs **3205 ms to load per process** against the embedder's **177 ms**, and
-  the embedder is already loaded on the write path — so **tags moved off the
-  model entirely** (centroid cosine over a closed vocabulary), and only an
-  omitted `--category` pays for a model load.
 - **[23 — Configurable Automatic Pruning](issues/23-configurable-automatic-pruning.md)**
   — spun out of `06`'s grilling. Pruning is hardcoded to the `history` category
   from before categories were user-declared, so a project cannot prune its own
   categories nor spare its history. Carries a **live data-loss hazard**: default
   entry importance and default prune threshold are both `3` and the prune is
   inclusive, so every history entry the protocol has ever written is
-  prune-eligible at 30 days. Does not block `06`.
+  prune-eligible at 30 days. **Now quantified rather than argued**: Pillar 10's
+  baseline arm — enrichment switched off, no model involved — deletes all twelve
+  corpus entries at the default threshold, including all six deliberately
+  known-critical ones. Ticket `06` could not assert its own prune-safety bar
+  absolutely because of this. Strongest remaining argument for scheduling it next.
 
 ## Not yet specified
 
 <!-- in-scope fog: real, but not yet sharp enough to ticket -->
 
+- **Bootstrapping category centroids on a cold store.** Surfaced by `06`:
+  centroid category inference beat the model 9/9 to 1/9, but it needs entries to
+  form centroids from, so a brand-new project cannot infer a category until a
+  few entries are filed explicitly. Whether that cliff is worth removing — and
+  how, given the spec's rejection of embedding short label strings — is
+  unformed. It may simply be acceptable: the recommended posture passes
+  `--category` anyway.
+- **Enrichment in `md-only` storage mode.** Tag and category centroids are
+  computed from the vector store, which `md-only` does not have, so enrichment
+  silently does nothing there. Whether md-only deserves parity, a documented
+  limitation, or a warning depends on how first-class that mode is meant to be —
+  a question this map has not asked.
+- **Tag vocabulary is a full-table read per process.** `06` reads every tagged
+  row's embedding to build centroids on the first inferring write. Fine at 224
+  entries; it wants a cached centroid table or an index long before it is a real
+  problem. Not ticketed because the trigger — what store size actually hurts —
+  has not been measured.
 - **Should `neuron exec`'s pre-command lookup also become a hook?** Step 2 of the
   protocol still asks the agent to wrap commands. A `PreToolUse`-style hook could
   enforce it, but only on harnesses that expose one. Hangs on ticket `10`.

@@ -325,13 +325,17 @@ Subcommands:
   delete <id>                    Delete a memory entry by ID
   update <id> "<content>"        Update a memory entry in-place
   consolidate                    Summarize consolidated history logs
+  enrich                         Drain the write-side enrichment backlog now
   prune                          Clean up old, minor history logs
 
 Options:
-  --category <name>              Specify the category (required for add, delete, update)
+  --category <name>              Specify the category (required for delete, update;
+                                 on add it is inferred when omitted, at the cost
+                                 of a ~3.5s model load)
   --categories <a,b,...>         Filter by multiple categories (query, list)
-  --tags <tag1,tag2,...>         Specify tags
-  --importance <1-5>             Set importance rating
+  --tags <tag1,tag2,...>         Specify tags (inferred from the store's
+                                 vocabulary when omitted)
+  --importance <1-5>             Set importance rating (inferred when omitted)
   --scope <scope>                Set scope
   --task-id <id>                 Associate a task ID
   --scopes <scope1,scope2,...>   Filter by active scopes (query)

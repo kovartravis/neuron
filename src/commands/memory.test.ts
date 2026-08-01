@@ -79,12 +79,72 @@ describe('CLI Command: memory', () => {
     expect(deleteRes.status).toBe('deleted');
   });
 
-  it('should validate --category requirement for memory add', () => {
+  describe('the --category contract', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
-    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+    let projectDir: string;
 
-    expect(() => {
-      execSync(`node ${cliPath} memory add "Content without category"`, { env, stdio: 'pipe' });
-    }).toThrow(/--category is required/);
+    /**
+     * A project whose config names a literal fallback category. The model is
+     * disabled under NODE_ENV=test, so the fallback is what makes the success
+     * path deterministic without loading 500M parameters.
+     */
+    beforeEach(() => {
+      projectDir = path.join(tempDbDir, `proj-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(projectDir, { recursive: true });
+      fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
+      fs.writeFileSync(
+        path.join(projectDir, 'neuron.yaml'),
+        `version: "1.0"\ncategories:\n  learning:\n    description: Rules\nllm:\n  enrichment:\n    category: learning\n`
+      );
+    });
+
+    it('accepts memory add without --category', () => {
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} memory add "An entry filed by inference"`, {
+        env,
+        cwd: projectDir,
+      }).toString();
+
+      const added = JSON.parse(stdout);
+      expect(added.status).toBe('created');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT category FROM memories WHERE id = ?').get(added.id) as any;
+      expect(row.category).toBe('learning');
+      db.close();
+    });
+
+    it('still requires --category for delete and update', () => {
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      expect(() => {
+        execSync(`node ${cliPath} memory delete some-id`, { env, cwd: projectDir, stdio: 'pipe' });
+      }).toThrow(/--category is required/);
+
+      expect(() => {
+        execSync(`node ${cliPath} memory update some-id "new content"`, {
+          env,
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/--category is required/);
+    });
+
+    it('fails naming the cause when inference cannot produce a category', () => {
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      // No fallback configured — the hard-error path.
+      fs.writeFileSync(
+        path.join(projectDir, 'neuron.yaml'),
+        `version: "1.0"\ncategories:\n  learning:\n    description: Rules\n`
+      );
+
+      expect(() => {
+        execSync(`node ${cliPath} memory add "Content nothing can file"`, {
+          env,
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/category inference found no category close enough/);
+    });
   });
 });

@@ -141,6 +141,70 @@ is Mem0's headline feature; temporal supersession is Zep/Graphiti's. Both do it
 with frontier models. A 0.5B local model will not win that comparison, which is
 exactly why the bar here is non-regression rather than improvement.
 
+## Amendments
+
+### 2026-08-01 — after implementing ticket `06`
+
+Five decisions above were written before the jobs were built and measured. They
+are amended, not withdrawn; the reasoning that produced them still holds, but
+implementation and Pillars 10-12 changed what follows from it.
+
+**§4 no longer describes tag selection.** The model does not select tags. §4's
+own constraint — that the model may not mint a tag — makes tagging a *ranking*
+problem over a closed set, not a generation one, and ranking is what the
+embedder already on the write path does for about a millisecond per tag. Tags
+are now the centroid of the entries carrying them, and selection is top-K cosine
+against the entry's embedding. The model is off the tagging path entirely.
+
+**§4's frequency floor is a property of the method, not a threshold.** A tag
+carried by one entry has a centroid identical to that entry, so selecting it is
+"most similar entry" wearing a label. The floor is three entries, plus every tag
+declared in `neuron.yaml` regardless of frequency. It is not a tuning knob.
+
+**§5's per-field precedence now has one conditional field.** Category is
+*conditionally required*: optional on `add`, still mandatory on `delete` and
+`update`, and hard-failing when inference cannot produce a declared category and
+no literal fallback is configured. It is a non-nullable column that determines
+storage routing, so unlike tags and importance it cannot be deferred and cannot
+be left unset. Explicit input still wins for all three.
+
+**The category strategy A/B is settled: centroid, not the model.** §7 required
+the choice be made on evidence. Pillar 11 ran both strategies over one corpus:
+centroid 9/9, model 1/9. The premise that the model would win because it can
+read the `description` fields as instructions did not survive contact with a 0.5B
+model — most of its answers were not a declared category at all. Centroid is the
+default, and it also removes the last model call from the write path. Its cost is
+a cold-store cliff: no entries means no centroids, so an omitted `--category` on
+an empty store hard-errors until the first entries are filed explicitly.
+
+**Inferred importance is floored, and ships off by default.** §5 implied
+unconstrained inference, and ticket `06` deliberately shipped importance
+unclamped in order to measure it, with the stated trigger for revisiting: the
+benchmark showing the model marking critical entries prune-eligible. Pillar 10
+showed exactly that — asked to rate a note about irreversible production data
+loss, the model answered `1`. Two consecutive runs measured its discrimination
+between deliberately unambiguous critical and trivial entries at **-0.5 and
++0.167**, which is noise, and per-entry stability at 0.5. Two changes follow:
+
+1. Inferred importance is floored at the entry default, so inference can raise
+   an entry's importance but never lower it. Enrichment is therefore incapable
+   of increasing prune eligibility, which is the destructive direction.
+2. `llm.enrichment.importance` defaults to `off`. The machinery ships and works;
+   recommending it as a default would be recommending a measured non-signal.
+   Revisit with a larger model.
+
+**§7's non-regression bar was met.** Pillar 12 ran the adversarial corpus with
+enrichment enabled and disabled, differing only in whether the gold entries'
+tags were hand-authored or inferred: `recallAt1`, `recallAt5` and `mrr` were
+identical in both arms (delta 0.0 on all three). Neutral is a pass.
+
+One thing this work did **not** fix, recorded because Pillar 10 quantified it:
+the default entry importance and the default prune threshold are both `3` and
+the prune is inclusive, so at the default threshold every entry written without
+an explicit `--importance` is prune-eligible after thirty days. This is true with
+enrichment switched off — the baseline arm of Pillar 10 deletes all twelve
+corpus entries including all six known-critical ones. It is owned by ticket `23`.
+
 ## Related
 
 - ADR 0004 — the lightweight local LLM summarizer

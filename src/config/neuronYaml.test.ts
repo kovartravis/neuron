@@ -187,4 +187,55 @@ pullRules:
     expect(res3.categories).toEqual(['learning']);
     expect(res3.limit).toBe(5);
   });
+
+  describe('llm.enrichment', () => {
+    it('defaults to the postures the benchmark evidence chose', () => {
+      const config = validateNeuronYaml({ categories: { learning: {} } });
+      expect(config.llm.enrichment.enabled).toBe(true);
+      expect(config.llm.enrichment.category).toBe('infer');
+      expect(config.llm.enrichment.tags).toBe('infer');
+      // Off by default: Pillar 10 measured the model's importance judgement as
+      // negatively discriminating. Centroid beat the model 9/9 to 1/9 on
+      // category (Pillar 11), so it is the default strategy.
+      expect(config.llm.enrichment.importance).toBe('off');
+      expect(config.llm.enrichment.categoryStrategy).toBe('centroid');
+      expect(config.llm.enrichment.timeoutMs).toBe(15000);
+    });
+
+    it('accepts a declared category name as the literal fallback', () => {
+      const config = validateNeuronYaml({
+        categories: { learning: {}, decisions: {} },
+        llm: { enrichment: { category: 'decisions' } },
+      });
+      expect(config.llm.enrichment.category).toBe('decisions');
+    });
+
+    it('rejects a literal fallback category that is not declared', () => {
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {} },
+          llm: { enrichment: { category: 'nonexistent' } },
+        })
+      ).toThrow(/llm\.enrichment\.category references unknown category "nonexistent"/);
+    });
+
+    it('keeps the master toggle separate from the per-field switches', () => {
+      const config = validateNeuronYaml({
+        categories: { learning: {} },
+        llm: { enrichment: { enabled: false, tags: 'infer', importance: 'off' } },
+      });
+      expect(config.llm.enrichment.enabled).toBe(false);
+      expect(config.llm.enrichment.tags).toBe('infer');
+      expect(config.llm.enrichment.importance).toBe('off');
+    });
+
+    it('rejects an unknown per-field value', () => {
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {} },
+          llm: { enrichment: { tags: 'maybe' } },
+        })
+      ).toThrow(/llm\.enrichment\.tags/);
+    });
+  });
 });

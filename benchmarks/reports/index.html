@@ -114,30 +114,30 @@
 <div class="wrap">
   <header>
     <h1>Neuron Benchmark Report</h1>
-    <div class="sub">2026-08-01T11:37:59.193Z · tier <strong>sanity</strong></div>
+    <div class="sub">2026-08-01T17:21:58.984Z · tier <strong>sanity</strong></div>
   </header>
 
   
   <div class="tiles">
     <div class="card tile">
       <div class="label">Grade</div>
-      <div class="value">B</div>
-      <div class="note">9/10 pillars passed</div>
+      <div class="value">A+</div>
+      <div class="note">14/14 pillars passed</div>
     </div>
     <div class="card tile">
       <div class="label">Status</div>
-      <div class="value"><span style="color:var(--critical)">✖</span></div>
-      <div class="note">FAILED</div>
+      <div class="value"><span style="color:var(--good)">✔</span></div>
+      <div class="note">PASSED</div>
     </div>
     <div class="card tile">
       <div class="label">Duration</div>
-      <div class="value">1.21<span style="font-size:.9rem;color:var(--ink2)"> min</span></div>
+      <div class="value">0.58<span style="font-size:.9rem;color:var(--ink2)"> min</span></div>
       <div class="note">meets 5-min floor</div>
     </div>
     <div class="card tile">
       <div class="label">Pass rate</div>
-      <div class="value">90%</div>
-      <div class="note">1 failing</div>
+      <div class="value">100%</div>
+      <div class="note">0 failing</div>
     </div>
   </div>
   <h2>Pillars</h2><div class="card pillars">
@@ -145,7 +145,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 7: Adversarial Retrieval Quality</div>
-        <div class="metrics">n=8 · p50 5ms · p95 8ms · p99 10ms</div>
+        <div class="metrics">n=8 · p50 10ms · p95 17ms · p99 18ms</div>
         
       </div>
     </div>
@@ -161,7 +161,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 6: Real Pipeline Integrity</div>
-        <div class="metrics">n=3 · p50 2.01s · p95 2.15s · p99 2.17s</div>
+        <div class="metrics">n=3 · p50 2.72s · p95 4.90s · p99 5.09s</div>
         
       </div>
     </div>
@@ -169,7 +169,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 1: Polyglot AST Traversal at Scale</div>
-        <div class="metrics">n=3 · p50 3.78s · p95 5.91s · p99 6.10s</div>
+        <div class="metrics">n=3 · p50 239ms · p95 462ms · p99 482ms</div>
         
       </div>
     </div>
@@ -177,7 +177,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 2: Adversarial Semantic Recall &amp; Distractor Resistance</div>
-        <div class="metrics">n=30 · p50 3ms · p95 4ms · p99 7ms</div>
+        <div class="metrics">n=30 · p50 6ms · p95 9ms · p99 11ms</div>
         
       </div>
     </div>
@@ -185,7 +185,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 3: High-Concurrency Multi-Agent Stress</div>
-        <div class="metrics">n=1 · p50 191ms · p95 191ms · p99 191ms</div>
+        <div class="metrics">n=1 · p50 391ms · p95 391ms · p99 391ms</div>
         
       </div>
     </div>
@@ -193,7 +193,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 4: Architectural Drift Detection &amp; Latency SLA</div>
-        <div class="metrics">n=3 · p50 8.24s · p95 11.39s · p99 11.67s</div>
+        <div class="metrics">n=3 · p50 206ms · p95 213ms · p99 214ms</div>
         
       </div>
     </div>
@@ -201,16 +201,16 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 5: Storage Corruption &amp; Self-Healing</div>
-        <div class="metrics">n=20 · p50 3ms · p95 11ms · p99 12ms</div>
+        <div class="metrics">n=20 · p50 4ms · p95 7ms · p99 14ms</div>
         
       </div>
     </div>
     <div class="pillar">
-      <div style="min-width:5.5rem"><span class="status fail">✖ FAILED</span></div>
+      <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 8: Multi-Process Contention &amp; Crash Recovery</div>
-        <div class="metrics">n=1 · p50 566ms · p95 566ms · p99 566ms</div>
-        <div class="metrics" style="color:var(--critical)">↳ AssertionError: 4/50 writes were rejected under contention: expected 0.08 to be less than 0.05</div>
+        <div class="metrics">n=1 · p50 671ms · p95 671ms · p99 671ms</div>
+        
       </div>
     </div>
     <div class="pillar">
@@ -220,6 +220,38 @@
         
         
       </div>
+    </div>
+    <div class="pillar">
+      <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Pillar 10: Importance Inference &amp; Prune Safety</div>
+        <div class="metrics">n=9 · p50 969ms · p95 9.25s · p99 13.57s</div>
+        
+      </div>
+    </div>
+    <div class="pillar">
+      <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Pillar 10: Importance Inference &amp; Prune Safety — stability</div>
+        
+        
+      </div>
+    </div>
+    <div class="pillar">
+      <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Pillar 11: Category Strategy A/B</div>
+        <div class="metrics">n=18 · p50 449ms · p95 1.41s · p99 1.62s</div>
+        
+      </div>
+    </div>
+    <div class="pillar">
+      <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Pillar 12: Enrichment Retrieval Non-Regression</div>
+        <div class="metrics">n=16 · p50 3ms · p95 3ms · p99 4ms</div>
+        
+      </div>
     </div></div>
   
   <h2>Adversarial retrieval</h2>
@@ -227,7 +259,7 @@
     <div class="tiles" style="margin-bottom:1.25rem">
       <div class="tile"><div class="label">recall@1</div><div class="value">0.375</div><div class="note">8 cases</div></div>
       <div class="tile"><div class="label">recall@5</div><div class="value">0.625</div></div>
-      <div class="tile"><div class="label">MRR</div><div class="value">0.458</div></div>
+      <div class="tile"><div class="label">MRR</div><div class="value">0.469</div></div>
       <div class="tile"><div class="label">corpus</div><div class="value">308</div><div class="note">8 evaluations</div></div>
     </div>
     <div style="font-size:.8125rem;color:var(--ink2);margin-bottom:.5rem">recall@1 by adversary family — lower is a weakness</div><svg viewBox="0 0 620 128" width="100%" height="128" role="img" aria-label="recall at 1 by family">
@@ -249,11 +281,11 @@
       <text class="val" x="574" y="80">1</text>
       <text x="108" y="109" text-anchor="end">multi-hop</text>
       <rect class="bar" x="118" y="98" width="2" height="15" rx="4">
-        <title>multi-hop: 0 (MRR 0.125)</title>
+        <title>multi-hop: 0 (MRR 0.167)</title>
       </rect>
       <text class="val" x="128" y="110">0</text></svg>
     <div class="metrics" style="margin-top:.75rem;font-size:.8125rem;color:var(--ink2)">superseded-outranks-current violations: <strong>0</strong></div>
-    <div style="margin-top:1rem;font-size:.8125rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Missed at rank 1</div><ul class="fail-list"><li><code>decoy-retry-budget</code> <span class="muted">(lexical-decoy)</span> — gold at rank 4<br><span class="muted">top hit: When a retry budget is exhausted the retry handler logs a retry limit warning for the paym…</span></li><li><code>para-token-expiry</code> <span class="muted">(paraphrase)</span> — gold at rank &gt;10<br><span class="muted">top hit: Users can be logged out manually by revoking their session from the admin console at any t…</span></li><li><code>para-memory-growth</code> <span class="muted">(paraphrase)</span> — gold at rank 6<br><span class="muted">top hit: Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during …</span></li><li><code>hop-cold-start</code> <span class="muted">(multi-hop)</span> — gold at rank 4<br><span class="muted">top hit: Sluggish commands are often caused by an oversized memory store that needs pruning…</span></li><li><code>hop-ci-only-failure</code> <span class="muted">(multi-hop)</span> — gold at rank &gt;10<br><span class="muted">top hit: Pipeline failures are usually caused by missing environment secrets that are present local…</span></li></ul>
+    <div style="margin-top:1rem;font-size:.8125rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Missed at rank 1</div><ul class="fail-list"><li><code>decoy-retry-budget</code> <span class="muted">(lexical-decoy)</span> — gold at rank 4<br><span class="muted">top hit: When a retry budget is exhausted the retry handler logs a retry limit warning for the paym…</span></li><li><code>para-token-expiry</code> <span class="muted">(paraphrase)</span> — gold at rank &gt;10<br><span class="muted">top hit: Users can be logged out manually by revoking their session from the admin console at any t…</span></li><li><code>para-memory-growth</code> <span class="muted">(paraphrase)</span> — gold at rank 6<br><span class="muted">top hit: Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during …</span></li><li><code>hop-cold-start</code> <span class="muted">(multi-hop)</span> — gold at rank 3<br><span class="muted">top hit: Sluggish commands are often caused by an oversized memory store that needs pruning…</span></li><li><code>hop-ci-only-failure</code> <span class="muted">(multi-hop)</span> — gold at rank &gt;10<br><span class="muted">top hit: Pipeline failures are usually caused by missing environment secrets that are present local…</span></li></ul>
   </div>
   
   <h2>Retrieval scale curve</h2>
@@ -279,14 +311,14 @@
   <div class="card">
     <div class="tiles">
       <div class="tile"><div class="label">processes</div><div class="value">3</div><div class="note">25/worker</div></div>
-      <div class="tile"><div class="label">committed</div><div class="value">46</div><div class="note">of 50 attempted</div></div>
-      <div class="tile"><div class="label">dropped</div><div class="value">4</div><div class="note">8.0% rejected on locks</div></div>
-      <div class="tile"><div class="label">throughput</div><div class="value">81</div><div class="note">writes/sec</div></div>
+      <div class="tile"><div class="label">committed</div><div class="value">48</div><div class="note">of 50 attempted</div></div>
+      <div class="tile"><div class="label">dropped</div><div class="value">2</div><div class="note">4.0% rejected on locks</div></div>
+      <div class="tile"><div class="label">throughput</div><div class="value">72</div><div class="note">writes/sec</div></div>
     </div>
     <div class="metrics" style="margin-top:1rem;display:flex;gap:1.25rem;flex-wrap:wrap">
       <span class="status pass">✔ silent data loss: 0</span>
       <span class="status pass">✔ init crashes: 0</span>
-      <span class="status warn">! lock errors: 4</span>
+      <span class="status warn">! lock errors: 2</span>
     </div>
     <div class="scroll" style="margin-top:1rem"><table>
       <thead><tr><th>Crash round</th><th class="num">Seeded</th><th class="num">Survivors</th><th>Readable + writable after SIGKILL</th></tr></thead>
@@ -299,6 +331,13 @@
     <table>
       <thead><tr><th>When</th><th>Tier</th><th class="num">Pass</th><th class="num">Min</th><th class="num">adv recall@1</th><th class="num">dropped writes</th></tr></thead>
       <tbody><tr>
+        <td>2026-08-01 17:21</td>
+        <td>sanity</td>
+        <td class="num">14/14</td>
+        <td class="num">0.58</td>
+        <td class="num">0.375</td>
+        <td class="num">4.0%</td>
+      </tr><tr>
         <td>2026-08-01 11:37</td>
         <td>sanity</td>
         <td class="num">9/10</td>

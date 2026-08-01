@@ -27,10 +27,17 @@ export interface Memory {
   score?: number;
 }
 
-export type MemoryMutation = 
-  | { op: 'upsert'; category: string; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string;
+/**
+ * `enrichedAt` marks a write as having been through write-side enrichment.
+ * It is set by `NeuronMemory.transact`, never by a caller: an entry that
+ * reaches storage with it unset is in the enrichment backlog and will be
+ * drained on the next memory command. `category` is optional on `upsert` only
+ * — enrichment fills it, or the write fails naming the cause.
+ */
+export type MemoryMutation =
+  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string; enrichedAt?: string | null;
       /** @deprecated Use `category` instead. */ kind?: string; }
-  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string;
+  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string; enrichedAt?: string | null;
       /** @deprecated Use `category` instead. */ kind?: string; }
   | { op: 'delete'; category: string; id: string;
       /** @deprecated Use `category` instead. */ kind?: string; };
