@@ -2,7 +2,14 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
 import type { ScanProgress } from '../ui/progress.js';
-import { SUPPORTED_SOURCE_EXTENSIONS } from './treesitter.js';
+import {
+  SUPPORTED_SOURCE_EXTENSIONS,
+  TreeSitterScanner,
+  type ParserFidelity,
+  type ScannedSymbol,
+} from './treesitter.js';
+
+export type { ScannedSymbol, ParserFidelity };
 
 /**
  * Traversal rules shared by the topology scan and the drift fingerprint guard.
@@ -29,14 +36,6 @@ export function isIgnoredEntryName(name: string): boolean {
   return name.startsWith('.') || IGNORED_DIR_NAMES.has(name);
 }
 
-export interface ScannedSymbol {
-  file: string;
-  kind: 'class' | 'interface' | 'function' | 'struct' | 'command';
-  name: string;
-  language: string;
-  line?: number;
-}
-
 export interface ModuleSummary {
   name: string;
   path: string;
@@ -45,6 +44,8 @@ export interface ModuleSummary {
     file: string;
     purpose: string;
     exports: string[];
+    /** How this file's symbols were obtained. Consumed by ticket 03. */
+    fidelity?: ParserFidelity;
   }>;
 }
 
@@ -65,6 +66,12 @@ export interface ScanResult {
   architectureSummary: string;
   architectureMarkdown: string;
   symbols: ScannedSymbol[];
+  /**
+   * File counts per parser fidelity. A blueprint built partly from ASTs and
+   * partly from regex is not comparable with one built the other way round, so
+   * the mix is recorded rather than inferred. Ticket 03 surfaces it in the card.
+   */
+  parserFidelity: Record<ParserFidelity, number>;
 }
 
 
@@ -75,7 +82,10 @@ export async function scanProjectTopology(
   const maxDepth = options.depth ?? 3;
   const projectName = path.basename(projectRoot);
   const summarizer = new SmolLM2Summarizer();
+  const scanner = new TreeSitterScanner();
   const onProgress = options.onProgress;
+  const parserFidelity: Record<ParserFidelity, number> = { ast: 0, regex: 0, unsupported: 0 };
+  const degradedLanguages = new Map<string, string>();
 
   onProgress?.({ phase: 'Discovering project topology & manifests', percent: 5 });
 
@@ -184,8 +194,22 @@ export async function scanProjectTopology(
       currentStep: step
     });
 
-    const fileSymbols = parseSymbolsFromFile(fullPath, fileRelPath, symbols);
-    const fileContent = fs.readFileSync(fullPath, 'utf8');
+    let fileContent = '';
+    try {
+      fileContent = fs.readFileSync(fullPath, 'utf8');
+    } catch {
+      continue;
+    }
+
+    const parsed = await scanner.parseFile(fileRelPath, fileContent);
+    parserFidelity[parsed.fidelity] += 1;
+    symbols.push(...parsed.symbols);
+
+    // Only a language that *has* a grammar can degrade; Ruby and PHP simply
+    // have none in 2.2.0, and reporting those as failures would be noise.
+    if (parsed.degradedReason && !degradedLanguages.has(parsed.language)) {
+      degradedLanguages.set(parsed.language, parsed.degradedReason);
+    }
 
     // Extract imports
     const fileImports: string[] = [];
@@ -212,11 +236,29 @@ export async function scanProjectTopology(
       });
     }
 
+    // Only the public surface belongs in `exports`. Feeding every symbol here
+    // — as the old regex pass effectively did — is what put private helpers and
+    // call sites into the `exportChanges` bucket of `neuron scan --diff`.
     modulesMap.get(dirKey)!.components.push({
       file: fileRelPath,
       purpose: summary,
-      exports: fileSymbols.map(s => s.name)
+      exports: parsed.symbols.filter(s => s.exported).map(s => s.name),
+      fidelity: parsed.fidelity
     });
+  }
+
+  // Loud, not fatal. The scan still produces a card; it is just a worse card
+  // than the user has any reason to expect, and silence would let a broken
+  // install masquerade as a clean scan.
+  if (degradedLanguages.size > 0) {
+    const languages = [...degradedLanguages.keys()].sort();
+    process.stderr.write(
+      `[neuron] ⚠️  Tree-Sitter grammar unavailable for: ${languages.join(', ')}.\n` +
+        `[neuron]     These files fell back to the regex scanner, which misses ` +
+        `multi-line declarations and cannot separate declarations from call sites.\n` +
+        `[neuron]     Run 'neuron init' to fetch the missing grammars.\n` +
+        [...degradedLanguages].sort().map(([lang, why]) => `[neuron]     ${lang}: ${why}\n`).join('')
+    );
   }
 
   onProgress?.({ phase: 'Synthesizing architecture blueprint', percent: 88 });
@@ -240,42 +282,9 @@ export async function scanProjectTopology(
     dependencyGraph,
     architectureSummary: archSynthesis.summary,
     architectureMarkdown: archSynthesis.markdown,
-    symbols
+    symbols,
+    parserFidelity
   };
 }
 
-
-
-function parseSymbolsFromFile(filePath: string, relativePath: string, symbols: ScannedSymbol[]): ScannedSymbol[] {
-  const fileSymbols: ScannedSymbol[] = [];
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.split('\n');
-
-    lines.forEach((line, idx) => {
-      const lineNum = idx + 1;
-      const classMatch = line.match(/export\s+class\s+([A-Za-z0-9_]+)/);
-      if (classMatch) {
-        const item: ScannedSymbol = { file: relativePath, kind: 'class', name: classMatch[1], language: 'typescript', line: lineNum };
-        symbols.push(item);
-        fileSymbols.push(item);
-      }
-
-      const fnMatch = line.match(/export\s+function\s+([A-Za-z0-9_]+)/);
-      if (fnMatch) {
-        const item: ScannedSymbol = { file: relativePath, kind: 'function', name: fnMatch[1], language: 'typescript', line: lineNum };
-        symbols.push(item);
-        fileSymbols.push(item);
-      }
-
-      const interfaceMatch = line.match(/export\s+interface\s+([A-Za-z0-9_]+)/);
-      if (interfaceMatch) {
-        const item: ScannedSymbol = { file: relativePath, kind: 'interface', name: interfaceMatch[1], language: 'typescript', line: lineNum };
-        symbols.push(item);
-        fileSymbols.push(item);
-      }
-    });
-  } catch (e) {}
-  return fileSymbols;
-}
 
