@@ -1,8 +1,28 @@
 Type: task
-Status: unclaimed
+Status: superseded
 Blocked by: none
+Superseded by: ../../neuron-2.2.0/map.md (tickets 01, 02, 03)
 
 # 06 — Replace the Pattern-Matching Scanner with a Real Tree-Sitter AST Engine
+
+> **Superseded 2026-07-31.** This work moved to the
+> [neuron 2.2.0 map](../../neuron-2.2.0/map.md) and was split into three tickets,
+> because acquisition, extraction and migration are separable and were blocking
+> each other as one unit:
+>
+> - [01 — Grammar Acquisition & Init-Time Caching](../../neuron-2.2.0/issues/01-grammar-acquisition-caching.md) — requirement 1
+> - [02 — AST Extraction Rewrite](../../neuron-2.2.0/issues/02-ast-extraction-rewrite.md) — requirements 2, 3, 4, 7
+> - [03 — Fidelity Labelling & Baseline Migration](../../neuron-2.2.0/issues/03-fidelity-labelling-baseline-migration.md) — requirements 5, 6, 8
+>
+> Two decisions were settled while charting that this ticket left open: grammars
+> **fetch at `neuron init`** rather than being bundled (keeps the tarball at
+> ~621 KB instead of ~20 MB), and a missing grammar **degrades to regex with the
+> fidelity labelled per-file** rather than failing loudly — requirement 5 was
+> reversed on the grounds that offline users should not be blocked.
+>
+> Ticket 03 also covers a gap this ticket missed: existing users' 2.1.0 baselines
+> will manufacture phantom drift when compared against AST scans. Requirement 8
+> re-baselined only the test fixtures.
 
 ## Goal
 

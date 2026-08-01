@@ -7,6 +7,7 @@ import { SmolLM2Summarizer } from '../components/summarizer.js';
 import { TransformersEmbedder } from '../components/embedder.js';
 import { ScanProgressBar } from '../ui/progress.js';
 import { ingestScanResults } from '../scanner/ingest.js';
+import { ensureGrammars, type GrammarFetchOutcome } from '../scanner/grammars.js';
 import { computeProjectFingerprint, writeReconciledFingerprint } from '../scanner/fingerprint.js';
 import { NeuronMemory } from '../index.js';
 
@@ -24,6 +25,7 @@ export async function handleInitCommand(args: string[]): Promise<void> {
   const skillsWritten = detectedSkillsDirs.map(dir => copySkill(projectDir, dir));
 
   const progressBar = new ScanProgressBar({ enabled: !options.noProgress, prefix: 'Initializing' });
+  let grammarOutcomes: GrammarFetchOutcome[] = [];
 
   // 1. Download & preload ONNX models
   if (process.env.NODE_ENV !== 'test') {
@@ -41,6 +43,20 @@ export async function handleInitCommand(args: string[]): Promise<void> {
       progressBar.update({ phase: 'Models ready', percent: 100 });
     } catch (e) {
       // Ignore pre-download errors in init
+    } finally {
+      progressBar.clear();
+    }
+
+    // 1b. Fetch Tree-Sitter grammars into the shared cache. Failures here are
+    // absorbed the same way model pre-download failures are: the affected
+    // language falls back to the regex scanner rather than blocking init.
+    try {
+      grammarOutcomes = await ensureGrammars({
+        onProgress: p => progressBar.update({ phase: p.phase, percent: p.percent ?? 0 }),
+      });
+    } catch (e) {
+      // Never fatal — ensureGrammars already absorbs per-grammar errors, so
+      // reaching here means something unexpected, not an unreachable registry.
     } finally {
       progressBar.clear();
     }
@@ -80,6 +96,19 @@ export async function handleInitCommand(args: string[]): Promise<void> {
 
 
 
+  // Report degraded parsing rather than letting it be discovered later as
+  // unexplained blueprint noise. A language without a grammar still scans, at
+  // regex fidelity.
+  const failedGrammars = grammarOutcomes.filter(o => o.status === 'failed');
+  if (failedGrammars.length > 0) {
+    console.error(
+      `⚠ ${failedGrammars.length} Tree-Sitter grammar(s) unavailable: ` +
+      `${failedGrammars.map(o => o.language).join(', ')}. ` +
+      `Those languages will be scanned with the regex parser at reduced accuracy. ` +
+      `Re-run 'neuron init' once the registry is reachable.`
+    );
+  }
+
   const callout = `⭐ Enjoying Neuron? Visit ${GITHUB_STAR_URL} and give it a star!`;
   console.error(drawBox([callout]));
 
@@ -89,6 +118,10 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     skillsWritten,
     scanConfigured: !!config.scan?.enabled,
     initialScan: scanIngestResult,
+    grammars: {
+      ready: grammarOutcomes.filter(o => o.status !== 'failed').map(o => o.language),
+      unavailable: failedGrammars.map(o => ({ language: o.language, error: o.error })),
+    },
     githubUrl: GITHUB_STAR_URL,
     callout
   }));

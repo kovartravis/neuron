@@ -4,16 +4,25 @@ Date: 2026-07-31
 
 ## Status
 
-**Deferred** (superseded in part by ADR 0008)
+**Partially implemented** as of 2.2.0-rc1. Grammar delivery is specified by
+ADR 0008.
 
-Accepted in principle, but **not implemented as of 2.1.0**. The shipping scanner
-(`src/scanner/treesitter.ts`) performs line-oriented pattern matching, not AST
-parsing: `web-tree-sitter` is not a dependency of the package and no `.wasm`
-grammar is loaded at runtime. The class name `TreeSitterScanner` is a
-placeholder for the engine described here. Tracking ticket:
-`.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md`.
+- **Done (2.2.0-rc1):** `web-tree-sitter` is a runtime dependency, and compiled
+  `.wasm` grammars for TypeScript, TSX, JavaScript, Python, Go, Rust, Java and
+  C++ are fetched at `neuron init` and loaded at runtime — see ADR 0008 and
+  `src/scanner/grammars.ts`.
+- **Not done:** symbol extraction still uses line-oriented pattern matching.
+  `src/scanner/treesitter.ts` has not yet been rewritten against parsed syntax
+  trees, so the S-expression query design below is not the shipping behaviour.
+  Tracked at `.scratch/neuron-2.2.0/issues/02-ast-extraction-rewrite.md`.
 
-Everything below records the intended design, not the current behavior.
+Only the six languages named in the Decision section had grammars required; 2.2.0
+adds TSX as an eighth. The remaining extensions in `SUPPORTED_SOURCE_EXTENSIONS`
+(Ruby, PHP, Swift, C#) stay on the regex scanner at labelled fidelity.
+
+The 2.1.0 tracking ticket
+(`.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md`)
+is superseded by the neuron 2.2.0 map.
 
 ## Context
 

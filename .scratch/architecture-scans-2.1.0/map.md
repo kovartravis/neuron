@@ -16,9 +16,10 @@ A complete technical implementation of Architecture Scans (`neuron scan`), Shell
 - [04 — Deep E2E Benchmark & Correctness Suite](.scratch/architecture-scans-2.1.0/issues/04-deep-testing-suite.md) — (RESOLVED - 2.1.0) 6-pillar suite under `test/e2e/`, driven by `benchmarks/e2e-runner.js` via `npm run test:e2e`. ADR 0007.
 - [04 — Shell Autocompletion & DX Enhancements](.scratch/architecture-scans-2.1.0/issues/04-shell-autocompletion-dx.md) — (DEFERRED past 2.1.0) `neuron completion` was never implemented; no `completion` command exists in `src/cli.ts`. Number collides with the testing-suite ticket — renumber when picked up.
 - [05 — Release Verification & 2.1.0 Publishing](.scratch/architecture-scans-2.1.0/issues/05-release-verification-2.1.0.md) — (RESOLVED - 2.1.0) Version bump, changelog, README/skill/help/CONTEXT updates, tag `v2.1.0`.
-- [06 — Real Tree-Sitter AST Engine](.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md) — (OPEN) `TreeSitterScanner` is regex-based, not AST-based; `web-tree-sitter` was never added as a dependency. 2.1.0 corrected the documentation instead of the implementation.
+- [06 — Real Tree-Sitter AST Engine](.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md) — (SUPERSEDED - 2026-07-31) Moved to the [neuron 2.2.0 map](../neuron-2.2.0/map.md) and split into tickets 01–03 there. `TreeSitterScanner` is still regex-based; 2.1.0 corrected the documentation instead of the implementation.
 
 ## Frontier
 
-- Open ticket: [06 — Real Tree-Sitter AST Engine](.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md)
-- Deferred: [04 — Shell Autocompletion & DX Enhancements](.scratch/architecture-scans-2.1.0/issues/04-shell-autocompletion-dx.md)
+- **This map is complete.** 2.1.0 shipped 2026-07-31; no open tickets remain.
+- Continues in the [neuron 2.2.0 map](../neuron-2.2.0/map.md).
+- Deferred: [04 — Shell Autocompletion & DX Enhancements](.scratch/architecture-scans-2.1.0/issues/04-shell-autocompletion-dx.md) — still unscheduled, carried as out-of-scope on the 2.2.0 map.
