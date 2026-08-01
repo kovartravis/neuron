@@ -65,6 +65,14 @@ every ticket resolved, every rc cut, stable published.
   The fingerprint was deliberately left parser-blind — the migration surfaces on
   the next explicit check or next source edit.
   [ADR 0009](../../docs/adr/0009-parser-fidelity-and-baseline-comparability.md).
+- [04 — Cut and Publish 2.2.0-rc1](issues/04-cut-rc1.md) — `v2.2.0-rc1` cut,
+  tagged and pushed; **npm publish is outstanding and owned by the maintainer**
+  (`npm publish --tag rc`). 227 unit tests green, 9/10 E2E pillars, tarball
+  613.1 KiB with zero `.wasm`. Docs restored to describe AST parsing scoped to
+  **8 grammars / 10 extensions** (the ticket's "9 languages" was wrong).
+  ADR 0003 now *Implemented*. Key trap found: `neuron exec` runs the **global**
+  binary, so a stale 2.1.0 install silently re-baselined the card to `regex/1`
+  during verification — `npm link` before verifying a release.
 
 ### Settled while charting
 
@@ -118,6 +126,13 @@ ticket resolved them; they are premises the tickets are built on.
 - **Cross-harness testing strategy.** Five adapters need verification against
   five real harnesses. Whether that is CI-automatable or stays manual is unknown
   until `10` reports.
+- **Duplicate blueprint cards.** Surfaced by `04`: four blueprint cards exist in
+  the `decisions` category. `ingestScanResults` locates "the" card with a
+  semantic query plus `.find()`, so which one it upserts is not guaranteed
+  stable and duplicates accumulate — while `SCAN_HELP` promises "Re-running
+  updates that card in place rather than adding a duplicate". The fix is
+  probably a deterministic card identity rather than a similarity search, but
+  whether that is a stable id, a tag, or a dedicated table is unformed.
 
 ## Out of scope
 
