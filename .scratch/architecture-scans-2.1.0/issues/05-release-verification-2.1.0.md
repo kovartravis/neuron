@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 01, 02, 03, 04
 
 # 05 — Release Verification & 2.1.0 Publishing (`2.1.0` Stable)
