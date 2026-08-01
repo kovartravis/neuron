@@ -7,6 +7,7 @@ import { SmolLM2Summarizer } from '../components/summarizer.js';
 import { TransformersEmbedder } from '../components/embedder.js';
 import { ScanProgressBar } from '../ui/progress.js';
 import { ingestScanResults } from '../scanner/ingest.js';
+import { computeProjectFingerprint, writeReconciledFingerprint } from '../scanner/fingerprint.js';
 import { NeuronMemory } from '../index.js';
 
 export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
@@ -53,12 +54,20 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     try {
       progressBar.update({ prefix: 'Scanning', phase: 'Running initial architecture scan', percent: 50 });
       const memory = NeuronMemory.open(projectDir);
+      const scanCategory = config.scan.category || 'architecture';
+      const scanDepth = config.scan.depth || 3;
       try {
+        const fingerprint = computeProjectFingerprint(projectDir, {
+          depth: scanDepth,
+          category: scanCategory,
+        });
         scanIngestResult = await ingestScanResults(memory, {
           projectDir,
-          category: config.scan.category || 'decisions',
-          depth: config.scan.depth || 3,
+          category: scanCategory,
+          depth: scanDepth,
         });
+        // Prime the drift guard so the first agent query doesn't re-scan.
+        writeReconciledFingerprint(projectDir, fingerprint);
       } finally {
         await memory.close();
       }

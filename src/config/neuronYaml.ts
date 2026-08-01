@@ -49,7 +49,7 @@ export type PullRulesConfig = z.infer<typeof PullRulesConfigSchema>;
 
 export const ScanConfigSchema = z.object({
   enabled: z.boolean().default(false),
-  category: z.string().default('decisions'),
+  category: z.string().default('architecture'),
   depth: z.number().default(3),
 });
 
@@ -62,8 +62,9 @@ export const NeuronConfigSchema = z.object({
     learning: { description: 'Agent conventions, rules, and failure fixes' },
     history: { description: 'Action history log and completed task summary' },
     decisions: { description: 'Architectural Decision Records (ADRs) & design choices' },
+    architecture: { description: 'Architectural blueprints & structure cards' },
   }),
-  scan: ScanConfigSchema.optional().default({ enabled: false, category: 'decisions', depth: 3 }),
+  scan: ScanConfigSchema.optional().default({ enabled: false, category: 'architecture', depth: 3 }),
   pullRules: PullRulesConfigSchema.default({
     default: { categories: ['learning'], limit: 5, minScore: 0.35 },
     onExec: [],

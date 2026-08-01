@@ -2,6 +2,32 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
 import type { ScanProgress } from '../ui/progress.js';
+import { SUPPORTED_SOURCE_EXTENSIONS } from './treesitter.js';
+
+/**
+ * Traversal rules shared by the topology scan and the drift fingerprint guard.
+ * Both must agree on exactly which files feed a scan: if the guard watches a
+ * narrower set than the scanner reads, edits to the difference are invisible
+ * and drift is never re-checked.
+ *
+ * Derived from the parser's own language list so the filter can never be
+ * narrower than what TreeSitterScanner can actually parse — a mismatch here
+ * silently hides whole languages (previously .tsx/.jsx/.cpp) from every scan.
+ */
+export const SCANNABLE_FILE_PATTERN = new RegExp(
+  `(${SUPPORTED_SOURCE_EXTENSIONS.map(e => e.replace('.', '\\.')).join('|')})$`,
+  'i'
+);
+
+export const IGNORED_DIR_NAMES = new Set(['node_modules', 'dist']);
+
+/** Root manifests that feed manifest.techStack / dependencies. */
+export const ROOT_MANIFEST_FILES = ['package.json', 'Cargo.toml', 'go.mod', 'pyproject.toml'];
+
+/** True for entries the scan skips outright (dotfiles, vendored, build output). */
+export function isIgnoredEntryName(name: string): boolean {
+  return name.startsWith('.') || IGNORED_DIR_NAMES.has(name);
+}
 
 export interface ScannedSymbol {
   file: string;
@@ -123,7 +149,7 @@ export async function scanProjectTopology(
     }
 
     for (const entry of entries) {
-      if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'dist') {
+      if (isIgnoredEntryName(entry.name)) {
         continue;
       }
       const fullPath = path.join(currentDir, entry.name);
@@ -131,7 +157,7 @@ export async function scanProjectTopology(
         await walk(fullPath, currentDepth + 1);
       } else if (entry.isFile()) {
         const fileRelPath = path.relative(projectRoot, fullPath);
-        if (/\.(ts|js|py|go|rs|java)$/.test(entry.name)) {
+        if (SCANNABLE_FILE_PATTERN.test(entry.name)) {
           targetFiles.push({ fullPath, fileRelPath });
         }
       }

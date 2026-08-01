@@ -80,6 +80,8 @@ export function parseFlags(args: string[]): {
     dryRun?: boolean;
     force?: boolean;
     noProgress?: boolean;
+    diff?: boolean;
+    check?: boolean;
   };
 } {
   const positionals: string[] = [];
@@ -101,6 +103,8 @@ export function parseFlags(args: string[]): {
   let dryRun: boolean | undefined;
   let force: boolean | undefined;
   let noProgress: boolean | undefined;
+  let diff: boolean | undefined;
+  let check: boolean | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -110,6 +114,10 @@ export function parseFlags(args: string[]): {
       json = true;
     } else if (arg === '--no-progress') {
       noProgress = true;
+    } else if (arg === '--diff') {
+      diff = true;
+    } else if (arg === '--check') {
+      check = true;
     } else if (arg === '--tags') {
 
       const val = args[++i];
@@ -201,7 +209,9 @@ export function parseFlags(args: string[]): {
       json,
       dryRun,
       force,
-      noProgress
+      noProgress,
+      diff,
+      check
     }
   };
 }
@@ -251,30 +261,52 @@ export const MASTER_HELP = `Usage: neuron <command> [subcommand] [arguments] [fl
 Commands:
   init                 Bootstrap the project for agentic memory store (pre-downloads ONNX models with progress bar)
   exec -- <command>    Run a command with pre-command memory lookup
-  status               Display status details for active database, project, and embedding cache
-  memory <subcommand>  Manage memories across any category
-  learn <subcommand>   Manage learnings (alias for memory --category learning)
-  history <subcommand> Manage action history (alias for memory --category history)
+  status               Display status details for active database, project, embedding cache, and architectural drift
+  memory <subcommand>  Manage memories across any category (use --category <name>)
+  scan                 Scan project topology and manifests, ingest an architectural blueprint, and detect drift
+  sync                 Sync memories between .neuron/*.md files and the vector database
+  ui                   Launch the local web dashboard for browsing and querying memories
   feedback [message]   Generate GitHub issue URL with pre-filled feedback parameters
-  scan                 Scan project topology, manifests, and ingest architectural blueprints into memory
+  learn <subcommand>   [Deprecated] Manage learnings (use 'neuron memory --category learning')
+  history <subcommand> [Deprecated] Manage action history (use 'neuron memory --category history')
 
 Options:
   -h, --help           Show this help information
 
-Run 'neuron memory --help', 'neuron learn --help', 'neuron history --help', or 'neuron scan --help' for details.`;
+Run 'neuron memory --help' or 'neuron scan --help' for details.`;
 
 export const SCAN_HELP = `Usage: neuron scan [flags]
 
-Perform static AST analysis and ingest architectural blueprints into the memory store.
+Scan project topology, manifests, and source symbols, then ingest a single
+Repository Architectural Blueprint card into the memory store. Re-running
+updates that card in place rather than adding a duplicate.
+
+With --diff or --check, compares the live codebase against the stored blueprint
+instead of ingesting, reporting drift in four buckets: new modules, removed
+modules, export changes, and dependency shifts.
 
 Options:
-  --category <name>              Target memory category for blueprint ingestion (default: decisions)
+  --category <name>              Target memory category for blueprint ingestion (default: architecture)
   --depth <n>                    Max directory traversal depth (default: 3)
-  --dry-run                      Output blueprint card without ingesting into memory store
-  --format <json|md>             Output format for dry-run scans (json or md)
+  --diff                         Report drift against the stored blueprint instead of ingesting
+  --check                        Like --diff, but exit with status code 1 if drift is detected (for CI)
+  --dry-run                      Print the blueprint card without ingesting it
+  --format <json|md>             Output format for --dry-run, --diff, and --check (default: md)
   --json                         Shortcut for --format json
-  --force                        Bypass content cache and force full re-scan
-  --no-progress                  Disable terminal progress bar`;
+  --force                        Bypass the content cache and force a full re-scan
+  --no-progress                  Disable the terminal progress bar
+
+Examples:
+  neuron scan                              Scan and ingest the blueprint
+  neuron scan --dry-run                    Preview the blueprint without writing to memory
+  neuron scan --diff                       Show what has changed since the last scan
+  neuron scan --check --json               Gate CI on architectural drift
+
+Defaults for --category, --depth, and auto-scan come from the scan: block in
+neuron.yaml when present.
+
+Note: symbol extraction is line-oriented pattern matching, not full AST parsing.
+Multi-line declarations may be truncated. See docs/adr/0003.`;
 
 export const MEMORY_HELP = `Usage: neuron memory <subcommand> [arguments] [flags]
 
@@ -284,6 +316,8 @@ Subcommands:
   list                           List recent memory entries
   delete <id>                    Delete a memory entry by ID
   update <id> "<content>"        Update a memory entry in-place
+  consolidate                    Summarize consolidated history logs
+  prune                          Clean up old, minor history logs
 
 Options:
   --category <name>              Specify the category (required for add, delete, update)
@@ -293,9 +327,11 @@ Options:
   --scope <scope>                Set scope
   --task-id <id>                 Associate a task ID
   --scopes <scope1,scope2,...>   Filter by active scopes (query)
+  --days <number>                Cutoff age in days for pruning (prune, default: 30)
   --limit <number>               Limit returned results`;
 
 export const LEARN_HELP = `Usage: neuron learn <subcommand> [arguments] [flags]
+[Deprecated: Use 'neuron memory <subcommand> --category learning' instead]
 
 Subcommands:
   add "<content>"                Add a new learning
@@ -312,6 +348,7 @@ Options:
   --limit <number>               Limit the number of returned results (query, list)`;
 
 export const HISTORY_HELP = `Usage: neuron history <subcommand> [arguments] [flags]
+[Deprecated: Use 'neuron memory <subcommand> --category history' instead]
 
 Subcommands:
   add "<content>"                Log a new action to history

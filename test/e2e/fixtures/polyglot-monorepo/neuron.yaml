@@ -1,0 +1,29 @@
+version: "1.0"
+
+storage:
+  mode: dual
+  path: .neuron
+
+categories:
+  learning:
+    description: Agent conventions, rules, and failure fixes
+  history:
+    description: Action history log and completed task summary
+  decisions:
+    description: Architectural Decision Records & design choices
+  architecture:
+    description: Architectural blueprints & structure cards
+
+scan:
+  enabled: true
+  category: architecture
+  depth: 3
+
+pullRules:
+  default:
+    categories:
+      - learning
+      - decisions
+      - architecture
+    limit: 5
+    minScore: 0.35

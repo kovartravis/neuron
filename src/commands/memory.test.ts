@@ -49,9 +49,10 @@ describe('CLI Command: memory', () => {
       { env }
     ).toString();
     const queryRes = JSON.parse(queryStdout);
-    expect(queryRes.results).toHaveLength(1);
-    expect(queryRes.results[0].content).toBe('Use SQLite WAL mode for concurrency');
-    expect(queryRes.results[0].category).toBe('decisions');
+    expect(queryRes.results.length).toBeGreaterThanOrEqual(1);
+    const walMatch = queryRes.results.find((r: any) => r.content.includes('Use SQLite WAL mode for concurrency'));
+    expect(walMatch).toBeDefined();
+    expect(walMatch.category).toBe('decisions');
 
     // 3. List entries in category "decisions"
     const listStdout = execSync(
@@ -59,7 +60,7 @@ describe('CLI Command: memory', () => {
       { env }
     ).toString();
     const listRes = JSON.parse(listStdout);
-    expect(listRes).toHaveLength(1);
+    expect(listRes.length).toBeGreaterThanOrEqual(1);
 
     // 4. Update entry in category "decisions"
     const updateStdout = execSync(

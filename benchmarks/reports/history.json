@@ -1,0 +1,28 @@
+[
+  {
+    "timestamp": "2026-07-31T23:56:30.382Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 90,
+    "pillarsRan": 10,
+    "pillarsPassed": 9,
+    "durationMin": 8.95,
+    "adversarialRecallAt1": 0.375,
+    "adversarialMrr": 0.458,
+    "droppedWriteRatio": 0,
+    "lostWrites": 0
+  },
+  {
+    "timestamp": "2026-08-01T00:33:01.702Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 80,
+    "pillarsRan": 10,
+    "pillarsPassed": 8,
+    "durationMin": 17.29,
+    "adversarialRecallAt1": 0.375,
+    "adversarialMrr": 0.458,
+    "droppedWriteRatio": 0.04,
+    "lostWrites": 0
+  }
+]

@@ -21,7 +21,7 @@ export function detectHarnesses(projectDir: string): string[] {
 export function copySkill(projectDir: string, skillsRelDir: string): string {
   const skillSrc = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
-    '../../.agents/skills/neuron-memory/SKILL.md'
+    '../../.claude/skills/neuron-memory/SKILL.md'
   );
   const destDir = path.join(projectDir, skillsRelDir, 'neuron-memory');
   fs.mkdirSync(destDir, { recursive: true });

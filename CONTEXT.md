@@ -10,7 +10,7 @@ The process of bootstrapping a project to support agentic memory store workflows
 
 ### neuron-memory
 
-The standard Antigravity skill (located at `.agents/skills/neuron-memory/SKILL.md`) that codifies how agents load memory store context at startup, record action history and new learnings at shutdown, and prune obsolete/redundant memories during periodic maintenance.
+The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) that codifies how agents load memory store context at startup, record action history and new learnings at shutdown, and prune obsolete/redundant memories during periodic maintenance.
 
 ### task-id
 
@@ -64,9 +64,15 @@ The module component responsible for reading, writing, parsing YAML frontmatter 
 
 The process of scanning a codebase directory topology, manifests (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`), and source files to extract structural contracts and module boundaries into the memory store.
 
-### TreeSitterScanner (`web-tree-sitter`)
+### Symbol Scanner (`TreeSitterScanner`, `src/scanner/treesitter.ts`)
 
-The multi-language static AST parsing module powered by WebAssembly (`web-tree-sitter`) that extracts exported classes, functions, interfaces, and structs across TypeScript/JS, Python, Go, Rust, Java, and C++.
+The multi-language symbol extraction module that pulls classes, structs, interfaces, functions, and methods out of source files across the 14 extensions listed in `SUPPORTED_SOURCE_EXTENSIONS` (`.ts`, `.js`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.java`, `.cpp`, `.hpp`, `.cs`, `.swift`, `.rb`, `.php`).
+
+As of 2.1.0 it matches **line-oriented patterns**, not a parsed AST. The class name is a placeholder for the WebAssembly Tree-Sitter engine described in `docs/adr/0003`, which is deferred — `web-tree-sitter` is not a package dependency and no `.wasm` grammar is loaded. The practical limits: symbols spanning multiple lines, and declarations nested inside expressions, are not reliably captured.
+
+### `SUPPORTED_SOURCE_EXTENSIONS`
+
+The single source of truth for scanner language support. The topology scan derives its file filter from this list, so adding an extension here makes it scannable rather than silently skipped before it reaches the scanner.
 
 ### Structural Memory Card
 
@@ -83,6 +89,25 @@ The process of parsing imports, exports, and inter-file function invocations to 
 ### Scan Progress Indicator (`ScanProgressBar`)
 
 The terminal progress indicator rendered on `process.stderr` during `neuron scan`. It displays percentage progress (`[████████░░░░] 60%`), active phase status, and current file details while preserving clean stdout for markdown or JSON output.
+
+### Architectural Drift (`neuron scan --diff` / `--check`)
+
+The structural variance detected when comparing current AST-scanned codebase topology (modules, export contracts, dependency graph) against the baseline Structural Memory Card stored in the memory store.
+
+### Deep E2E Benchmark & Correctness Suite (`npm run test:e2e`)
+
+The combined end-to-end correctness gate and performance benchmark, spanning 6 pillars: Polyglot AST Traversal at Scale, Adversarial Semantic Recall & Distractor Resistance, High-Concurrency Multi-Agent Stress, Architectural Drift Detection & Latency SLA, Storage Corruption & Self-Healing, and Real Pipeline Integrity.
+
+Unlike the unit suite, it runs the **real** production pipeline — the ONNX embedder and the Qwen1.5-0.5B summarizer — by overriding the `NODE_ENV=test` short-circuits in `summarizer.ts`. Runtime is therefore dominated by uncached LLM summarization (~1.57s/file), so a cold summarizer cache makes the first run substantially longer than a warm one.
+
+### Real Pipeline Integrity (Pillar 6)
+
+The guard pillar asserting that the embedder returns non-zero vectors and that the summarizer's LLM path actually executes rather than the heuristic fallback. It exists because a stubbed pipeline makes every other measurement in the suite meaningless while still reporting green.
+
+### Benchmark Scorecard (`benchmarks/reports/e2e-benchmark-scorecard.json`)
+
+The structured performance report detailing per-pillar pass/fail, latency percentiles (p50/p95/p99), throughput, recall accuracy, and drift-detection counts. Pillar status is sourced from vitest's JSON reporter merged with `e2e-metrics.json` written by the suite itself — never inferred from stdout text.
+
 
 
 

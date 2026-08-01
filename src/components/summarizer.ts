@@ -120,7 +120,12 @@ export class SmolLM2Summarizer {
         Object.entries(parsed).forEach(([k, v]) => {
           if (typeof v === 'string') {
             const cleaned = this.sanitizeSummary(v);
-            if (cleaned && cleaned.length > 5 && !/^(?:system|user|assistant)\b/i.test(cleaned)) {
+            if (
+              cleaned &&
+              cleaned.length > 5 &&
+              !/^(?:system|user|assistant)\b/i.test(cleaned) &&
+              !/[\u4e00-\u9fa5]/.test(cleaned)
+            ) {
               this.cache.set(k, cleaned);
             }
           }
@@ -163,12 +168,16 @@ export class SmolLM2Summarizer {
       try {
         const generator = await this.getGenerator(options.onProgress);
         if (generator) {
-          const prompt = `<|im_start|>system\nSummarize the primary purpose of this code file in 1 concise sentence.\n<|im_end|>\n<|im_start|>user\nFile: ${filePath}\nCode:\n${content.slice(0, 1000)}\n<|im_end|>\n<|im_start|>assistant\n`;
+          const prompt = `<|im_start|>system\nSummarize the primary purpose of this code file in 1 concise English sentence. Respond ONLY in English. Do not use Chinese characters.\n<|im_end|>\n<|im_start|>user\nFile: ${filePath}\nCode:\n${content.slice(0, 1000)}\n<|im_end|>\n<|im_start|>assistant\n`;
           const output = await generator(prompt, { max_new_tokens: 60, return_full_text: false });
           if (output && output[0] && output[0].generated_text) {
             const generatedText: string = output[0].generated_text;
             const assistantAnswer = this.sanitizeSummary(generatedText);
-            if (assistantAnswer && assistantAnswer.length > 10) {
+            if (
+              assistantAnswer &&
+              assistantAnswer.length > 10 &&
+              !/[\u4e00-\u9fa5]/.test(assistantAnswer)
+            ) {
               this.cache.set(cacheKey, assistantAnswer);
               this.saveCache();
               return assistantAnswer;
@@ -230,7 +239,12 @@ export class SmolLM2Summarizer {
 
   async synthesizeArchitecture(scanData: {
     project: string;
-    manifest: { name?: string; techStack: string[] };
+    manifest: {
+      name?: string;
+      techStack: string[];
+      dependencies?: string[];
+      devDependencies?: string[];
+    };
     modules: Array<{
       name: string;
       path: string;
@@ -238,14 +252,23 @@ export class SmolLM2Summarizer {
       components: Array<{ file: string; purpose: string; exports: string[] }>;
     }>;
     dependencyGraph?: Record<string, string[]>;
-  }): Promise<{ summary: string; markdown: string }> {
+  }, options?: { category?: string }): Promise<{ summary: string; markdown: string }> {
     const projectName = scanData.manifest.name || scanData.project;
     const techStackStr = scanData.manifest.techStack.join(', ') || 'TypeScript';
+    const category = options?.category || 'architecture';
 
     const overviewSummary = `${projectName} is a ${techStackStr} software system structured into ${scanData.modules.length} primary architectural modules.`;
 
+    // Merged runtime + dev dependency contract, recorded so `neuron scan --diff`
+    // can detect dependency shifts against this card. Must round-trip exactly
+    // through parseBaselineBlueprint(), so keep the format and ordering stable.
+    const allDependencies = [
+      ...(scanData.manifest.dependencies || []),
+      ...(scanData.manifest.devDependencies || [])
+    ].sort();
+
     let md = `---
-category: decisions
+category: ${category}
 title: "Repository Architectural Blueprint: ${projectName}"
 tags: [architecture, topology, scan, deep]
 mtime: ${new Date().toISOString()}
@@ -255,6 +278,9 @@ mtime: ${new Date().toISOString()}
 
 ## 🚀 System Purpose & Tech Stack
 ${overviewSummary}
+
+## 🧾 Dependency Contract
+${allDependencies.length > 0 ? allDependencies.map(d => `- \`${d}\``).join('\n') : '_No declared dependencies._'}
 
 ## 🔗 Subsystem Dependency Map
 \`\`\`text
@@ -270,7 +296,10 @@ ${scanData.modules.map((m, idx) => `${idx === scanData.modules.length - 1 ? '└
       md += `${mod.purpose}\n\n`;
       if (mod.components.length > 0) {
         md += `**Key Components & Export Contracts:**\n`;
-        mod.components.slice(0, 5).forEach(c => {
+        // Record every component: the card is the drift baseline, so any
+        // component omitted here reads as a permanently "added" export on
+        // every subsequent `scan --diff` and never converges.
+        mod.components.forEach(c => {
           const exportsStr = c.exports.length > 0 ? ` (Exports: \`${c.exports.join(', ')}\`)` : '';
           md += `- **\`${c.file}\`**${exportsStr}: ${c.purpose}\n`;
         });

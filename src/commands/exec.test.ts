@@ -55,4 +55,64 @@ describe('CLI Command: exec', () => {
     const execRes = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'build artifacts'], { env });
     expect(execRes.stdout.toString().trim()).toBe('build artifacts');
   });
+
+  it('retrieves with the real embedder rather than forcing the zero-vector stub', () => {
+    // Regression: exec used to set NEURON_MOCK_EMBEDDER='true' unconditionally.
+    // The stub embeds every text as an all-zero vector, so pre-command lookup
+    // silently degraded to keyword matching. Note the env below deliberately
+    // omits NEURON_MOCK_EMBEDDER.
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const env: NodeJS.ProcessEnv = { ...process.env, NEURON_DB_PATH: tempDbPath };
+    delete env.NEURON_MOCK_EMBEDDER;
+
+    execSync(
+      `node ${cliPath} learn add "Prefer WAL journal mode when many agents write concurrently" --tags db --importance 5`,
+      { env }
+    );
+
+    const res = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'concurrent database writes'], { env });
+    expect(res.stdout.toString().trim()).toBe('concurrent database writes');
+
+    // The learning is surfaced on stderr, which only happens when the query
+    // produced a real similarity score above the configured threshold.
+    expect(res.stderr.toString()).toContain('WAL journal mode');
+
+    // And exec must not leak the stub flag into the spawned child's env.
+    const probePath = path.join(tempDbDir, 'env-probe.cjs');
+    fs.writeFileSync(probePath, 'process.stdout.write(String(process.env.NEURON_MOCK_EMBEDDER));\n');
+
+    const envProbe = spawnSync('node', [cliPath, 'exec', '--', 'node', probePath], { env });
+    expect(envProbe.stdout.toString().trim()).toBe('undefined');
+  }, 120000);
+
+  it('preserves argument boundaries instead of re-splitting them in a shell', () => {
+    // Regression: exec joined argv with ' ' and ran the result through a
+    // shell, so `git commit -m "two words"` reached git as four arguments.
+    // Reported as: `/bin/sh: drift: command not found` / `too many arguments`.
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    const probePath = path.join(tempDbDir, 'argv-probe.cjs');
+    fs.writeFileSync(probePath, 'process.stdout.write(JSON.stringify(process.argv.slice(2)));\n');
+
+    const res = spawnSync(
+      'node',
+      [cliPath, 'exec', '--', 'node', probePath, '-m', 'release: v2.1.0 — drift detection', 'tail'],
+      { env }
+    );
+
+    expect(JSON.parse(res.stdout.toString())).toEqual([
+      '-m',
+      'release: v2.1.0 — drift detection',
+      'tail'
+    ]);
+  });
+
+  it('still runs a single argument through a shell so operators keep working', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    const res = spawnSync('node', [cliPath, 'exec', '--', 'echo first && echo second'], { env });
+    expect(res.stdout.toString().trim().split('\n')).toEqual(['first', 'second']);
+  });
 });

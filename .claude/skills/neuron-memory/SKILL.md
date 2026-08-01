@@ -1,0 +1,295 @@
+---
+name: neuron-memory
+description: Manage agent session context by interviewing the user, configuring neuron.yaml, loading learnings, recording history, and pruning obsolete entries from the memory store.
+---
+
+# Neuron Memory Store Management
+
+This skill guides how agents configure and interact with `@kovartravis/neuron` to maintain persistent, category-driven memory across sessions.
+
+> [!CRITICAL]
+> **USER INTERACTION & EXPLANATION MANDATE**
+> Before taking ANY action or executing any memory operation (including querying memory, modifying `neuron.yaml` or `AGENTS.md`, writing learnings/history/decisions, running sync commands, or pruning entries), the agent **MUST ALWAYS**:
+> 1. **Ask the User**: Ask the user what they want to do or confirm their explicit intent and options.
+> 2. **Explain First**: Clearly explain the exact action, CLI command, or file modification it plans to perform before executing it.
+
+## 0. Initial Project Setup & Interview Protocol
+
+When asked to set up memory for a project or configure memory settings:
+
+1. **Ask & Explain First (Interview Protocol)**:
+   Before taking any action or writing configuration files, explain to the user what setup steps will be performed, and ask how they would like memory configured for their project:
+   - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
+   - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
+   - **Storage Mode**: Ask whether entries should be stored in the vector database only (`vector-only`), as Markdown files only (`md-only`), or both simultaneously (`dual` or `split`). Default is `vector-only`.
+   - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
+   - **Architectural Scan Config**: Ask whether to enable automatic architecture scanning (`enabled: true/false`), target category (default `architecture`), and directory traversal depth (default `3`). Explain how the scan analyzes codebase structure to ingest architecture cards into memory.
+
+2. **Generate `neuron.yaml`**:
+   Write `neuron.yaml` at the project root based on the user's answers (or standard defaults if they prefer default setup):
+   ```yaml
+   version: "1.0"
+
+   storage:
+     mode: dual          # vector-only | md-only | dual | split
+     path: .neuron       # directory where .md category files are stored
+
+   categories:
+     learning:
+       description: Agent conventions, rules, and failure fixes
+       tags:
+         - rule
+         - convention
+
+     history:
+       description: Action history log and completed task summary
+
+     # Custom categories requested by user:
+     architecture:
+       description: Architectural blueprints & structure cards
+       tags:
+         - architecture
+         - topology
+         - scan
+
+   scan:
+     enabled: true          # auto-scan on init; also enables drift reporting
+                            # in `neuron status` and `neuron exec`
+     category: architecture # target category for the blueprint card
+     depth: 3               # structural traversal depth
+
+   pullRules:
+     default:
+       categories:
+         - learning
+         - architecture
+       limit: 5
+       minScore: 0.35
+
+     onExec:
+       - commandPattern: ".*"
+         categories:
+           - learning
+         limit: 5
+
+       - commandPattern: "^(git|gh|npm) "
+         categories:
+           - learning
+           - history
+         limit: 8
+   ```
+
+3. **Configure & Align `AGENTS.md` / Instruction Files (Mandatory)**:
+   Always write or update `AGENTS.md` (or `CLAUDE.md`, `CURSOR.md`) immediately after creating or updating `neuron.yaml`. Ensure `AGENTS.md` explicitly documents:
+   - All declared categories from `neuron.yaml` (e.g., `learning`, `history`, `architecture`).
+   - Architectural scan settings (e.g., `Architecture scan settings: enabled: true, category: architecture, depth: 3`).
+   - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
+   - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
+   - If `storage.mode` is `dual` or `md-only`, document the `.neuron/` directory and `neuron sync` command.
+
+4. **Synchronize On Edits**:
+   Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
+
+## 1. Beginning of Run (Context Loading)
+
+At the very start of a session, before running any other commands or modifying files, load relevant past context:
+
+1. Formulate a query matching your assigned task or current goal.
+2. Run the query against the categories relevant to the task:
+   ```bash
+   neuron memory query "<search query matching task>" --categories learning,decisions
+   ```
+   Omitting `--categories` searches every category:
+   ```bash
+   neuron memory query "<search query matching task>"
+   ```
+3. Read retrieved entries and treat relevant rules/decisions as active system instructions.
+4. If the query returns no results, try a broader term (e.g., `git`, `database`, `tdd`).
+
+## 2. Pre-Command Memory Lookup & Execution
+
+Before executing critical build, test, database, or tool commands:
+
+1. Wrap command execution with `neuron exec`:
+   ```bash
+   neuron exec -- <command>
+   ```
+   *Example:* `neuron exec -- npm test` or `neuron exec -- npx vitest run`
+2. `neuron exec` evaluates `pullRules.onExec` from `neuron.yaml` and prints matching entries from active categories to `stderr` before executing the command.
+3. If `neuron exec` is unavailable, run `neuron memory query "<command keywords>" --categories learning` manually prior to execution.
+
+## 3. Closed-Loop Failure Feedback (Failure-Triggered Learning Capture)
+
+Whenever a command execution, test run, or tool invocation fails:
+
+1. Investigate the failure and identify the verified root cause and fix.
+2. Immediately after resolving the issue (and before moving to the next task), record the learning to prevent future agents from repeating the mistake. **Do NOT write 1-sentence summaries.** Memory entries MUST be detailed, multi-sentence explanations (at least 3-4 sentences) capturing context, root cause, exact fix, and code/command examples:
+   ```bash
+   neuron memory add --category learning "Fix for <error/issue>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --tags failure-fix,<topic> --importance 4
+   ```
+
+## 4. End of Run (Memory Recording)
+
+Before finishing your turn and ending the session:
+
+1. **Log Action History**: Record the action you took using the history log:
+   ```bash
+   neuron memory add --category history "<summary of what was built or fixed>" --tags <related-topics> [--task-id <id>]
+   ```
+   - **`--tags`**: Use comma-separated tags from a standard vocabulary where possible (e.g., `tdd`, `db-schema`, `refactoring`, `debugging`, `git`).
+   - **`--task-id`**: Link the history to the ticket or issue being resolved. Use the ticket/issue number (e.g., `01-db-schema-postgres` for local issues, or `#42` for GitHub/GitLab). Do NOT use process/task IDs like `task-144`.
+2. **Record New Learnings**: If you established new rules, resolved configurations, or made architectural decisions, record them explicitly as detailed multi-sentence entries (3-4 sentences minimum):
+   ```bash
+   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>" --tags <topic>
+   ```
+3. **Record Architectural Decisions**: If you changed module boundaries or made a design choice worth preserving, write it to the `decisions` category:
+   ```bash
+   neuron memory add --category decisions "<decision, rationale, and alternatives considered>" --tags adr,<topic>
+   ```
+4. **Refresh the Blueprint** if the session changed the codebase structure — see Section 8.
+
+> **Note**: `neuron learn` and `neuron history` still work as aliases but are
+> deprecated as of 2.1.0 and print a warning to `stderr`. Prefer
+> `neuron memory --category <name>`.
+
+## 5. Markdown File Storage & Sync (`storage.mode: dual | md-only`)
+
+When `storage.mode` is set to `dual`, `md-only`, or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`):
+
+- **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`.
+- **Entry Format**: Each entry is a YAML frontmatter block followed by body text:
+  ```markdown
+  ---
+  id: 01j8x92a3b4c
+  category: learning
+  createdAt: 2026-07-29T04:00:00.000Z
+  importance: 4
+  tags:
+    - failure-fix
+    - gemini
+  ---
+  Always run the linter before pushing to CI...
+  ```
+- **Git-Trackable**: Commit `.neuron/*.md` files to Git to share memory across team members.
+- **Sync Command**: After manually editing `.neuron/*.md` files or pulling a colleague's changes, run:
+  ```bash
+  neuron sync                  # bidirectional sync: Markdown <-> vector DB
+  neuron sync --dry-run        # preview changes without writing
+  neuron sync --force          # force re-embed all entries ignoring content hashes
+  ```
+- **Auto-Scaffold**: On first `neuron init` or `neuron sync`, the `.neuron/` directory and default category files are created automatically if missing.
+
+## 6. Periodic Maintenance (Clean & Refresh)
+
+When the user requests memory maintenance (e.g., "clean memory", "prune obsolete learnings", or "refresh memory store"):
+
+1. **Review Learnings**:
+   - List active learnings:
+     ```bash
+     neuron memory list --categories learning --limit 100
+     ```
+   - Cross-reference each learning with the current state of the codebase, `AGENTS.md`, and any `docs/adr/*.md` files.
+   - Remove outdated or redundant learnings:
+     ```bash
+     neuron memory delete <id> --category learning
+     ```
+2. **Prune Old History**:
+   - Run compaction or clean commands to delete low-importance history logs (importance 1–2) older than 30 days, while keeping high-importance logs.
+3. **Sync After Prune** (if using `dual` or `md-only` mode):
+   - After pruning entries from the vector DB, run `neuron sync` to keep Markdown files consistent:
+     ```bash
+     neuron sync
+     ```
+
+## 7. Architectural Scan & Configuration Protocol (`neuron scan`)
+
+When asked to run an architectural scan or configure architecture analysis for a project:
+
+1. **Ask & Explain Options First**:
+   Before running any scan or modifying `neuron.yaml`, explain the available architectural scan options to the user and ask for their preferences:
+   - **`enabled`** (`true` / `false`): Enables or disables automatic architecture scanning on `neuron init`.
+   - **`category`** (e.g. `architecture`): Specifies which memory category stores the generated architecture blueprint card (default: `architecture`).
+   - **`depth`** (integer, default `3`): Controls directory tree traversal depth when analyzing codebase structure.
+   - **Config Persist Option**: Ask the user if they would like to add or update these scan settings directly in `neuron.yaml`.
+
+2. **Update Config & `AGENTS.md` (if confirmed by user)**:
+   If the user confirms adding or updating scan configuration:
+   - Add or update the `scan:` block in `neuron.yaml`:
+     ```yaml
+     scan:
+       enabled: true
+       category: architecture
+       depth: 3
+     ```
+   - Immediately update `AGENTS.md` to document the active architecture scan settings (`Architecture scan settings: enabled: true, category: architecture, depth: 3`).
+   - Explain the exact configuration edits made to the user.
+
+3. **Execute Architectural Scan**:
+   - Run the scan command:
+     ```bash
+     neuron scan --category architecture --depth 3
+     ```
+     Or wrap command execution with `neuron exec`: `neuron exec -- neuron scan`
+   - Explain the scan output (generated memory entry ID, target category, and summary of codebase structure) to the user.
+   - Re-running `neuron scan` updates the existing blueprint card in place. It
+     does not create a second card, so a re-scan after significant refactoring
+     is safe and is the correct way to refresh a stale baseline.
+   - Preview without writing to memory using `neuron scan --dry-run`
+     (add `--json` for structured topology output).
+
+4. **Read the Blueprint Before Changing Module Boundaries**:
+   The scan stores one **Repository Architectural Blueprint** card containing
+   the subsystem tree, tech-stack manifests, and exported symbol contracts.
+   Query it before moving code between modules or changing a public API:
+   ```bash
+   neuron memory query "<subsystem or symbol name>" --categories architecture
+   ```
+
+## 8. Architectural Drift Protocol (`neuron scan --diff` / `--check`)
+
+Drift is the gap between what the memory store believes the codebase looks like
+and what it actually looks like now. A stale blueprint is actively misleading —
+it will confidently describe modules that no longer exist.
+
+1. **Check for drift when architecture matters**:
+   ```bash
+   neuron scan --diff            # human-readable drift report
+   neuron scan --diff --json     # structured, for programmatic handling
+   neuron scan --check           # exits 1 when drift exists (CI gating)
+   ```
+
+2. **Read the four buckets.** The report separates variance into:
+   - `newModules` — directories or primary source files that appeared.
+   - `removedModules` — directories or primary source files that disappeared.
+   - `exportChanges` — exported classes, interfaces, functions, or structs added or removed.
+   - `dependencyShifts` — package manifest additions or removals.
+
+3. **React to drift, don't ignore it.** When drift is reported:
+   - If the changes are the intended result of work just completed, **ask the
+     user** whether to refresh the baseline, then run `neuron scan` to upsert
+     the blueprint.
+   - If the changes are unexpected, surface them to the user before proceeding
+     — an unexplained removed module or dropped dependency is worth a question.
+   - Do not silently re-scan to make a warning disappear.
+
+4. **Passive drift signals.** When `scan.enabled: true`, drift also appears
+   without an explicit check:
+   - `neuron status` includes `drift: { hasDrift, changesCount, summary }`.
+   - `neuron exec` prints a non-blocking warning to `stderr` before the command.
+   Treat both as a prompt to run `neuron scan --diff` and read the detail.
+
+5. **Refresh the baseline at session end** if the session changed module
+   boundaries, added or removed a subsystem, or changed a public export
+   contract. Pair it with the `decisions` entry explaining *why*:
+   ```bash
+   neuron scan
+   neuron memory add --category decisions "<why the boundary changed>" --tags adr,architecture
+   ```
+
+### Scanner accuracy caveat
+
+Symbol extraction is line-oriented pattern matching, not full AST parsing.
+Multi-line declarations may be truncated, and some ordinary call sites are
+recorded as `method` symbols. Treat the `exportChanges` bucket as a strong
+signal rather than a precise contract diff, and confirm against the source
+before telling the user an export was removed.

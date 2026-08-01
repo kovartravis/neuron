@@ -1,6 +1,6 @@
 {
   "name": "@kovartravis/neuron",
-  "version": "2.1.0-rc2.1",
+  "version": "2.1.0",
   "description": "Local-only agent memory store CLI",
   "keywords": [
     "agent-memory",
@@ -37,20 +37,20 @@
     "dist",
     "README.md",
     "LICENSE",
-    ".agents/skills/neuron-memory/",
+    ".claude/skills/neuron-memory/",
     "docs/images/"
   ],
   "scripts": {
-    "test": "npm run build && node ./node_modules/vitest/vitest.mjs run",
+    "test": "npm run build && node ./node_modules/vitest/vitest.mjs run --dir src",
     "test:watch": "node ./node_modules/vitest/vitest.mjs",
+    "test:e2e": "node benchmarks/e2e-runner.js",
+    "bench": "node benchmarks/e2e-runner.js --full",
+    "bench:report": "node benchmarks/e2e-runner.js --report-only",
+    "bench:view": "node benchmarks/open-report.js",
     "build": "node ./node_modules/typescript/bin/tsc",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
     "postinstall": "node -e \"if (process.platform === 'android') { try { require('child_process').execSync('termux-fix-shebang dist/cli.js 2>/dev/null || true'); } catch(e){} }\"",
-    "start": "node ./dist/cli.js",
-    "bench": "node benchmarks/runner.js --sanity",
-    "bench:sanity": "node benchmarks/runner.js --sanity",
-    "bench:full": "node benchmarks/runner.js --full",
-    "bench:view": "node benchmarks/runner.js --view"
+    "start": "node ./dist/cli.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",

@@ -9,12 +9,22 @@ export interface ScannedSymbol {
   signature?: string;
 }
 
+/**
+ * Every extension the parser can extract symbols from. This is the single
+ * source of truth for language support: the topology scan derives its file
+ * filter from it, so a language added here is immediately scannable rather
+ * than silently skipped before it ever reaches the parser.
+ */
+export const SUPPORTED_SOURCE_EXTENSIONS = [
+  '.ts', '.js', '.tsx', '.jsx', '.py', '.go', '.rs',
+  '.java', '.cpp', '.hpp', '.cs', '.swift', '.rb', '.php',
+];
+
 export class DynamicGrammarLoader {
   private loadedGrammars: Set<string> = new Set();
 
   isLanguageSupported(ext: string): boolean {
-    const supportedExts = ['.ts', '.js', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.cpp', '.hpp', '.cs', '.swift', '.rb', '.php'];
-    return supportedExts.includes(ext.toLowerCase());
+    return SUPPORTED_SOURCE_EXTENSIONS.includes(ext.toLowerCase());
   }
 
   resolveLanguage(ext: string): string {

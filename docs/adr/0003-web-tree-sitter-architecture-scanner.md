@@ -4,7 +4,16 @@ Date: 2026-07-31
 
 ## Status
 
-Accepted
+**Deferred** (superseded in part by ADR 0008)
+
+Accepted in principle, but **not implemented as of 2.1.0**. The shipping scanner
+(`src/scanner/treesitter.ts`) performs line-oriented pattern matching, not AST
+parsing: `web-tree-sitter` is not a dependency of the package and no `.wasm`
+grammar is loaded at runtime. The class name `TreeSitterScanner` is a
+placeholder for the engine described here. Tracking ticket:
+`.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md`.
+
+Everything below records the intended design, not the current behavior.
 
 ## Context
 

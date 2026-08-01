@@ -31,6 +31,35 @@ describe('Scanner Engine: scanProjectTopology', () => {
     }
   });
 
+  it('scans every language the parser supports, not just the JS/TS core', async () => {
+    // Regression: the traversal filter was narrower than TreeSitterScanner's
+    // grammar list, so .tsx/.jsx/.cpp/.cs/.swift/.rb/.php files were dropped
+    // before ever reaching the parser — invisible to scan and drift alike.
+    const polyDir = path.join(tempProjectDir, 'poly');
+    fs.mkdirSync(polyDir, { recursive: true });
+
+    const samples: Record<string, string> = {
+      'widget.tsx': 'export class Widget {}\n',
+      'legacy.jsx': 'export class Legacy {}\n',
+      'engine.cpp': 'class CppEngine {\npublic:\n  void run() {}\n};\n',
+      'engine.hpp': 'class CppHeader {};\n',
+      'service.cs': 'public class CsharpService {}\n',
+      'model.swift': 'class SwiftModel {}\n',
+      'helper.rb': 'class RubyHelper\nend\n',
+      'handler.php': '<?php\nclass PhpHandler {}\n',
+    };
+    for (const [name, content] of Object.entries(samples)) {
+      fs.writeFileSync(path.join(polyDir, name), content, 'utf8');
+    }
+
+    const result = await scanProjectTopology(tempProjectDir, { depth: 3 });
+    const scannedFiles = result.modules.flatMap(m => m.components.map(c => path.basename(c.file)));
+
+    for (const name of Object.keys(samples)) {
+      expect(scannedFiles).toContain(name);
+    }
+  });
+
   it('scans project manifest, deep dependency graph, and directory topology', async () => {
     const result = await scanProjectTopology(tempProjectDir, { depth: 2 });
 

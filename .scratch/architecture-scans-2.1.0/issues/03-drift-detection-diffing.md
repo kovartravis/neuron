@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 01, 02
 
 # 03 — Architectural Drift Detection & Diffing (`2.1.0-rc4`)
