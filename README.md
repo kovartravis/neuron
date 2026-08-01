@@ -186,10 +186,18 @@ When `scan.enabled: true` in `neuron.yaml`, drift is also surfaced passively:
 non-blocking warning to `stderr` before running your command. A fingerprint
 guard keeps this cheap — repeated commands don't re-scan an unchanged tree.
 
-> **On symbol extraction:** as of 2.1.0 this is line-oriented pattern matching,
-> not full AST parsing. Multi-line declarations may be truncated and some call
-> sites are recorded as methods. A real `web-tree-sitter` engine is planned;
-> see [ADR 0003](docs/adr/0003-web-tree-sitter-architecture-scanner.md).
+> **On symbol extraction:** as of 2.2.0 symbols come from a parsed Tree-Sitter
+> syntax tree for **TypeScript, TSX, JavaScript, Python, Go, Rust, Java and
+> C++** — ten of the fourteen supported extensions. The other four (`.cs`,
+> `.swift`, `.rb`, `.php`) have no grammar yet and fall back to line-oriented
+> matching, where multi-line declarations may still be truncated.
+>
+> The blueprint card records which parser produced each file, and a card
+> produced by a different parser than the current scan is reported as
+> "re-baseline required" rather than as drift. See
+> [ADR 0003](docs/adr/0003-web-tree-sitter-architecture-scanner.md),
+> [0008](docs/adr/0008-tree-sitter-grammar-distribution.md) and
+> [0009](docs/adr/0009-parser-fidelity-and-baseline-comparability.md).
 
 ---
 

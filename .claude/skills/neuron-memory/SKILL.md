@@ -286,10 +286,19 @@ it will confidently describe modules that no longer exist.
    neuron memory add --category decisions "<why the boundary changed>" --tags adr,architecture
    ```
 
-### Scanner accuracy caveat
+### Scanner accuracy
 
-Symbol extraction is line-oriented pattern matching, not full AST parsing.
-Multi-line declarations may be truncated, and some ordinary call sites are
-recorded as `method` symbols. Treat the `exportChanges` bucket as a strong
-signal rather than a precise contract diff, and confirm against the source
-before telling the user an export was removed.
+Symbols come from a parsed Tree-Sitter syntax tree for TypeScript, TSX,
+JavaScript, Python, Go, Rust, Java and C++. For those, `exportChanges` is a
+precise contract diff: call sites are no longer recorded as `method` symbols,
+and multi-line declarations are captured whole.
+
+`.cs`, `.swift`, `.rb` and `.php` have no grammar in 2.2.0 and fall back to
+line-oriented matching, where multi-line declarations may still be truncated.
+Treat their export contracts as a strong signal rather than a precise diff.
+
+If `neuron scan --diff` reports **"Re-baseline Required"**, the stored card was
+produced by a different parser than the current scan, so the two cannot be
+compared. That is not drift and nothing is wrong with the code — run
+`neuron scan` once to re-baseline. `--check` reports this as exit code `2`,
+distinct from `1` for real drift.

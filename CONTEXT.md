@@ -68,7 +68,9 @@ The process of scanning a codebase directory topology, manifests (`package.json`
 
 The multi-language symbol extraction module that pulls classes, structs, interfaces, functions, and methods out of source files across the 14 extensions listed in `SUPPORTED_SOURCE_EXTENSIONS` (`.ts`, `.js`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.java`, `.cpp`, `.hpp`, `.cs`, `.swift`, `.rb`, `.php`).
 
-As of 2.1.0 it matches **line-oriented patterns**, not a parsed AST. The class name is a placeholder for the WebAssembly Tree-Sitter engine described in `docs/adr/0003`, which is deferred — `web-tree-sitter` is not a package dependency and no `.wasm` grammar is loaded. The practical limits: symbols spanning multiple lines, and declarations nested inside expressions, are not reliably captured.
+As of 2.2.0 it extracts symbols from a **parsed syntax tree** by running S-expression queries against WebAssembly Tree-Sitter grammars (`docs/adr/0003`, `docs/adr/0008`). Eight grammars cover ten of the fourteen extensions: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.go`, `.rs`, `.java`, `.cpp`, `.hpp`. The remaining four — `.cs`, `.swift`, `.rb`, `.php` — have no grammar in 2.2.0 and stay on the line-oriented fallback.
+
+Which of the two produced a given file is recorded as its **parser fidelity**, never guessed. A grammar that should have loaded but did not degrades the file to the fallback *and* says so on `stderr`.
 
 ### `SUPPORTED_SOURCE_EXTENSIONS`
 

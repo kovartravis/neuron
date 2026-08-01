@@ -114,7 +114,7 @@
 <div class="wrap">
   <header>
     <h1>Neuron Benchmark Report</h1>
-    <div class="sub">2026-08-01T00:33:01.702Z · tier <strong>sanity</strong></div>
+    <div class="sub">2026-08-01T11:37:59.193Z · tier <strong>sanity</strong></div>
   </header>
 
   
@@ -122,7 +122,7 @@
     <div class="card tile">
       <div class="label">Grade</div>
       <div class="value">B</div>
-      <div class="note">8/10 pillars passed</div>
+      <div class="note">9/10 pillars passed</div>
     </div>
     <div class="card tile">
       <div class="label">Status</div>
@@ -131,13 +131,13 @@
     </div>
     <div class="card tile">
       <div class="label">Duration</div>
-      <div class="value">17.29<span style="font-size:.9rem;color:var(--ink2)"> min</span></div>
+      <div class="value">1.21<span style="font-size:.9rem;color:var(--ink2)"> min</span></div>
       <div class="note">meets 5-min floor</div>
     </div>
     <div class="card tile">
       <div class="label">Pass rate</div>
-      <div class="value">80%</div>
-      <div class="note">2 failing</div>
+      <div class="value">90%</div>
+      <div class="note">1 failing</div>
     </div>
   </div>
   <h2>Pillars</h2><div class="card pillars">
@@ -145,7 +145,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 7: Adversarial Retrieval Quality</div>
-        <div class="metrics">n=8 · p50 6ms · p95 12ms · p99 13ms</div>
+        <div class="metrics">n=8 · p50 5ms · p95 8ms · p99 10ms</div>
         
       </div>
     </div>
@@ -161,23 +161,23 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 6: Real Pipeline Integrity</div>
-        <div class="metrics">n=3 · p50 1.99s · p95 2.03s · p99 2.04s</div>
+        <div class="metrics">n=3 · p50 2.01s · p95 2.15s · p99 2.17s</div>
         
       </div>
     </div>
     <div class="pillar">
-      <div style="min-width:5.5rem"><span class="status fail">✖ FAILED</span></div>
+      <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 1: Polyglot AST Traversal at Scale</div>
-        <div class="metrics">n=3 · p50 9.11s · p95 889.02s · p99 967.23s</div>
-        <div class="metrics" style="color:var(--critical)">↳ Error: Test timed out in 900000ms.</div>
+        <div class="metrics">n=3 · p50 3.78s · p95 5.91s · p99 6.10s</div>
+        
       </div>
     </div>
     <div class="pillar">
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 2: Adversarial Semantic Recall &amp; Distractor Resistance</div>
-        <div class="metrics">n=30 · p50 5ms · p95 87ms · p99 2.11s</div>
+        <div class="metrics">n=30 · p50 3ms · p95 4ms · p99 7ms</div>
         
       </div>
     </div>
@@ -185,7 +185,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 3: High-Concurrency Multi-Agent Stress</div>
-        <div class="metrics">n=1 · p50 254ms · p95 254ms · p99 254ms</div>
+        <div class="metrics">n=1 · p50 191ms · p95 191ms · p99 191ms</div>
         
       </div>
     </div>
@@ -193,7 +193,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 4: Architectural Drift Detection &amp; Latency SLA</div>
-        <div class="metrics">n=3 · p50 4.10s · p95 4.18s · p99 4.18s</div>
+        <div class="metrics">n=3 · p50 8.24s · p95 11.39s · p99 11.67s</div>
         
       </div>
     </div>
@@ -201,7 +201,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 5: Storage Corruption &amp; Self-Healing</div>
-        <div class="metrics">n=20 · p50 3ms · p95 5ms · p99 15ms</div>
+        <div class="metrics">n=20 · p50 3ms · p95 11ms · p99 12ms</div>
         
       </div>
     </div>
@@ -209,8 +209,8 @@
       <div style="min-width:5.5rem"><span class="status fail">✖ FAILED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 8: Multi-Process Contention &amp; Crash Recovery</div>
-        <div class="metrics">n=1 · p50 565ms · p95 565ms · p99 565ms</div>
-        <div class="metrics" style="color:var(--critical)">↳ AssertionError: a process crashed opening the shared database concurrently: expected [ &#39;no such table: learnings&#39; ] to deeply equal []</div>
+        <div class="metrics">n=1 · p50 566ms · p95 566ms · p99 566ms</div>
+        <div class="metrics" style="color:var(--critical)">↳ AssertionError: 4/50 writes were rejected under contention: expected 0.08 to be less than 0.05</div>
       </div>
     </div>
     <div class="pillar">
@@ -270,7 +270,7 @@
     <div class="scroll" style="margin-top:1rem">
       <table>
         <thead><tr><th>Corpus</th><th class="num">p50</th><th class="num">p95</th><th class="num">recall@1</th></tr></thead>
-        <tbody><tr><td>500</td><td class="num">7ms</td><td class="num">10ms</td><td class="num">0.375</td></tr></tbody>
+        <tbody><tr><td>500</td><td class="num">7ms</td><td class="num">9ms</td><td class="num">0.375</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -279,14 +279,14 @@
   <div class="card">
     <div class="tiles">
       <div class="tile"><div class="label">processes</div><div class="value">3</div><div class="note">25/worker</div></div>
-      <div class="tile"><div class="label">committed</div><div class="value">24</div><div class="note">of 25 attempted</div></div>
-      <div class="tile"><div class="label">dropped</div><div class="value">1</div><div class="note">4.0% rejected on locks</div></div>
-      <div class="tile"><div class="label">throughput</div><div class="value">42</div><div class="note">writes/sec</div></div>
+      <div class="tile"><div class="label">committed</div><div class="value">46</div><div class="note">of 50 attempted</div></div>
+      <div class="tile"><div class="label">dropped</div><div class="value">4</div><div class="note">8.0% rejected on locks</div></div>
+      <div class="tile"><div class="label">throughput</div><div class="value">81</div><div class="note">writes/sec</div></div>
     </div>
     <div class="metrics" style="margin-top:1rem;display:flex;gap:1.25rem;flex-wrap:wrap">
       <span class="status pass">✔ silent data loss: 0</span>
-      <span class="status fail">✖ init crashes: 1</span>
-      <span class="status warn">! lock errors: 1</span>
+      <span class="status pass">✔ init crashes: 0</span>
+      <span class="status warn">! lock errors: 4</span>
     </div>
     <div class="scroll" style="margin-top:1rem"><table>
       <thead><tr><th>Crash round</th><th class="num">Seeded</th><th class="num">Survivors</th><th>Readable + writable after SIGKILL</th></tr></thead>
@@ -299,6 +299,13 @@
     <table>
       <thead><tr><th>When</th><th>Tier</th><th class="num">Pass</th><th class="num">Min</th><th class="num">adv recall@1</th><th class="num">dropped writes</th></tr></thead>
       <tbody><tr>
+        <td>2026-08-01 11:37</td>
+        <td>sanity</td>
+        <td class="num">9/10</td>
+        <td class="num">1.21</td>
+        <td class="num">0.375</td>
+        <td class="num">8.0%</td>
+      </tr><tr>
         <td>2026-08-01 00:33</td>
         <td>sanity</td>
         <td class="num">8/10</td>

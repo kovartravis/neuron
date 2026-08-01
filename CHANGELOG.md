@@ -2,7 +2,9 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
-## [Unreleased] — 2.2.0-rc1
+## [2.2.0-rc1] - 2026-08-01
+
+The real AST release. `TreeSitterScanner` finally uses Tree-Sitter.
 
 ### Upgrading from 2.1.0 — action required
 
@@ -38,6 +40,28 @@ behind `memory query` re-baselines silently on the next source edit.
 
 ### Added
 
+- **Real Tree-Sitter AST symbol extraction**: `src/scanner/treesitter.ts` now
+  runs S-expression queries against a parsed syntax tree instead of matching
+  line-oriented regexes. Covers **TypeScript, TSX, JavaScript, Python, Go, Rust,
+  Java and C++** — ten of the fourteen supported extensions. `.cs`, `.swift`,
+  `.rb` and `.php` have no grammar yet and keep the line-oriented fallback.
+  See ADR 0003.
+  - Multi-line declarations are captured whole, with true line numbers.
+  - Call sites are no longer recorded as `method` symbols. On this repository
+    that alone removed 3101 phantom symbols.
+  - Symbols gain `exported`, and a file's export contract is now its public
+    surface rather than every symbol found in it. Methods are not exports.
+  - TypeScript and TSX use hand-written queries; the `tags.scm` shipped with
+    those grammars covers only ambient declaration forms.
+- **Tree-Sitter grammars fetched at `neuron init`**: eight compiled `.wasm`
+  grammars (8.49 MB) are downloaded from the official `tree-sitter-<lang>` npm
+  packages and cached in the `env-paths` data dir, alongside the existing ONNX
+  models. Pinned by version and attributed by a manifest, so an unattributable
+  `.wasm` is ignored rather than loaded. Not bundled in the tarball, which stays
+  ~612 KB. Honours `npm_config_registry`; a fetch failure leaves that language on
+  the regex scanner rather than failing the install. See ADR 0008.
+- **`NEURON_GRAMMAR_DIR`**: overrides the grammar cache location, for CI cache
+  restoration and constrained environments.
 - **Parser fidelity on the blueprint card**: a `## 🔬 Parser Fidelity` section
   records the parser that produced the card as `<parser>/<generation>` — a
   default plus only the files that deviate from it. See ADR 0009.
@@ -48,6 +72,17 @@ behind `memory query` re-baselines silently on the next source edit.
   could not load it now warns on `stderr`, naming the language and `neuron init`.
   Languages with no grammar at all (Ruby, PHP, Swift, C#) stay silent, since
   their regex fidelity is expected.
+
+### Changed
+
+- **`web-tree-sitter`** is now a runtime dependency (~4.4 MB in `node_modules`).
+  It is the only dependency added in this release.
+- **Documentation describes AST parsing again.** 2.1.0 deliberately walked back
+  its AST claims to match what actually shipped; those descriptions in
+  `README.md`, `CONTEXT.md`, `SCAN_HELP` and the packaged `neuron-memory` skill
+  are restored — but scoped to the eight grammars that exist, with the remaining
+  four extensions still described as line-oriented.
+- **ADR 0003 is marked implemented**, no longer deferred.
 
 ### Removed
 

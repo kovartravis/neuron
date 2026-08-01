@@ -4,21 +4,30 @@ Date: 2026-07-31
 
 ## Status
 
-**Partially implemented** as of 2.2.0-rc1. Grammar delivery is specified by
-ADR 0008.
+**Implemented** as of 2.2.0-rc1, for the eight grammars named below. Grammar
+delivery is specified by ADR 0008; parser fidelity and baseline comparability by
+ADR 0009.
 
-- **Done (2.2.0-rc1):** `web-tree-sitter` is a runtime dependency, and compiled
-  `.wasm` grammars for TypeScript, TSX, JavaScript, Python, Go, Rust, Java and
-  C++ are fetched at `neuron init` and loaded at runtime — see ADR 0008 and
-  `src/scanner/grammars.ts`.
-- **Not done:** symbol extraction still uses line-oriented pattern matching.
-  `src/scanner/treesitter.ts` has not yet been rewritten against parsed syntax
-  trees, so the S-expression query design below is not the shipping behaviour.
-  Tracked at `.scratch/neuron-2.2.0/issues/02-ast-extraction-rewrite.md`.
+- `web-tree-sitter` is a runtime dependency, and compiled `.wasm` grammars for
+  TypeScript, TSX, JavaScript, Python, Go, Rust, Java and C++ are fetched at
+  `neuron init` and loaded at runtime — see `src/scanner/grammars.ts`.
+- Symbol extraction runs S-expression queries against parsed syntax trees —
+  see `src/scanner/treesitter.ts` and `src/scanner/queries.ts`.
 
-Only the six languages named in the Decision section had grammars required; 2.2.0
-adds TSX as an eighth. The remaining extensions in `SUPPORTED_SOURCE_EXTENSIONS`
-(Ruby, PHP, Swift, C#) stay on the regex scanner at labelled fidelity.
+Two qualifications on the design below, both learned in implementation:
+
+1. **The queries are not uniformly the shipped ones.** Six languages use the
+   `queries/tags.scm` that ships with their grammar, filtered to `@definition.*`
+   captures. TypeScript and TSX use hand-written queries, because their shipped
+   query covers only ambient declaration forms and has no rule for
+   `function_declaration` or `method_definition`.
+2. **Symbol kind is read from the AST node type, not the capture name.** The
+   shipped queries are too coarse to derive kinds from — Rust tags structs,
+   enums, unions and type aliases all as `@definition.class`.
+
+The remaining extensions in `SUPPORTED_SOURCE_EXTENSIONS` (Ruby, PHP, Swift, C#)
+stay on the regex scanner, and the blueprint card records which parser produced
+each file so the two are never silently mixed.
 
 The 2.1.0 tracking ticket
 (`.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md`)
