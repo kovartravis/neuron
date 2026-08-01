@@ -1,0 +1,57 @@
+{
+  "dataset": "longmemeval",
+  "split": "s",
+  "questions": 500,
+  "scored": 479,
+  "documents": 23867,
+  "ingest_seconds": 2216.5,
+  "ms_per_doc": 92.9,
+  "recall": {
+    "@1": 0.833,
+    "@5": 0.9624,
+    "@10": 0.9833
+  },
+  "retrieval_ms": {
+    "p50": 634.2,
+    "p95": 1685.5
+  },
+  "cross_unit_leaks": 0,
+  "per_category": {
+    "knowledge-update": {
+      "n": 72,
+      "@1": 0.9028,
+      "@5": 1.0,
+      "@10": 1.0
+    },
+    "multi-session": {
+      "n": 125,
+      "@1": 0.864,
+      "@5": 0.992,
+      "@10": 1.0
+    },
+    "single-session-assistant": {
+      "n": 56,
+      "@1": 0.9821,
+      "@5": 1.0,
+      "@10": 1.0
+    },
+    "single-session-preference": {
+      "n": 30,
+      "@1": 0.6667,
+      "@5": 0.9,
+      "@10": 0.9333
+    },
+    "single-session-user": {
+      "n": 64,
+      "@1": 0.7344,
+      "@5": 0.9531,
+      "@10": 0.9844
+    },
+    "temporal-reasoning": {
+      "n": 132,
+      "@1": 0.7879,
+      "@5": 0.9167,
+      "@10": 0.9621
+    }
+  }
+}

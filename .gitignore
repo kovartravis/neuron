@@ -13,3 +13,6 @@ benchmarks/reports/e2e-vitest-results.json
 benchmarks/reports/e2e-metrics.json
 test/e2e/fixtures/synthetic-polyglot/
 src/__tests__/temp-*/
+
+# External benchmark harness (cloned, not vendored)
+benchmarks/agent-memory-benchmark/
