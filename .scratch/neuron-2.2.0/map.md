@@ -36,7 +36,7 @@ every ticket resolved, every rc cut, stable published.
 | Band | Tickets | Delivers |
 |------|---------|----------|
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
-| `2.2.0-rc2` | `05`–`09`, `23` | Expanded Qwen1.5-0.5B usage |
+| `2.2.0-rc2` | `05`–`09`, `23`–`25` | Expanded Qwen1.5-0.5B usage |
 | `2.2.0-rc3` | `10`–`15` | Recall adapter layer + 2 reference adapters |
 | `2.2.0-rc4` | `16`–`20` | Remaining 3 adapters + disclosure |
 | `2.2.0` | `21` | Stable release |
@@ -98,6 +98,33 @@ every ticket resolved, every rc cut, stable published.
   switched off — that is ticket `23`'s hazard, now quantified.
   252 unit tests, 14/14 pillars.
 
+- [23 — Configurable Automatic Pruning](issues/23-configurable-automatic-pruning.md)
+  — Pruning is a **recall-quality** feature for history noise only; disk was
+  ruled out at 2.9 MB. **Hard `DELETE`, no undo** — soft-delete rejected on the
+  21 read sites it would tax, and `08`'s supersession kept separate (*lineage*
+  vs *routine-and-old*). Config is per-category and opt-in, where an **absent
+  `prune` block means never pruned** — which makes the upgrade path safe by
+  construction. A **usage gate was rejected**: it punishes the rare-critical
+  failure fix. The real finding is that ticket `06`'s importance failure was
+  **the ask, not the model** — an absolute scalar on an underspecified concept
+  with generic exemplars, ignoring 78 labelled entries. Split into `24` (the
+  A/B) and `25` (ships regardless). **Bar committed in advance: pruning must
+  beat no-prune, and a double null removes it from 2.2.0.**
+  [Test plan](../configurable-pruning/ab-test-plan.md).
+- [24 — Pruning A/B](issues/24-pruning-ab-test.md) — **Automatic pruning is
+  removed from 2.2.0.** Both candidate judgement arms failed Experiment 1's
+  pre-committed bar before Experiment 2 could even run: the recoverability
+  binary (A1) false-deleted 2 of 11 ground-truth-unrecoverable entries, the
+  recalibrated 1–5 scale (A2) false-deleted 4 of 11 — one shared miss was a
+  `decisions`-category ADR that reads like ordinary prose, showing content-only
+  judgement can't structurally distinguish an architectural record from a
+  routine note even re-shot on real exemplars. Per the plan's own rule, a
+  double disqualification collapses Experiment 2 ("no safe judgement to prune
+  with"), so the real/synthetic retrieval comparison was not run — the
+  disqualification is evidence stronger than a double null, not weaker.
+  Ticket `06`'s `importance: off` default stands with no ADR reversal.
+  [Full report and reusable scripts](../configurable-pruning/).
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no
@@ -148,23 +175,48 @@ be — `mex`, Sentrux, Drift and VibeDrift all occupy that space. The defensible
 claim is **deterministic hook-based recall (rc3/rc4)**, since every competitor
 surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 
-## In flight
+## Deferred
 
-- **[23 — Configurable Automatic Pruning](issues/23-configurable-automatic-pruning.md)**
-  — spun out of `06`'s grilling. Pruning is hardcoded to the `history` category
-  from before categories were user-declared, so a project cannot prune its own
-  categories nor spare its history. Carries a **live data-loss hazard**: default
-  entry importance and default prune threshold are both `3` and the prune is
-  inclusive, so every history entry the protocol has ever written is
-  prune-eligible at 30 days. **Now quantified rather than argued**: Pillar 10's
-  baseline arm — enrichment switched off, no model involved — deletes all twelve
-  corpus entries at the default threshold, including all six deliberately
-  known-critical ones. Ticket `06` could not assert its own prune-safety bar
-  absolutely because of this. Strongest remaining argument for scheduling it next.
+- **[25 — Prune Config & Collision Fix](issues/25-prune-config-and-collision-fix.md)**
+  — **deferred by the maintainer on 2026-08-01; do not implement.** It previously
+  read "ships whatever `24` concludes" and was listed here as the highest-value
+  thing on the frontier; that is **superseded**. Rationale for the deferral is
+  not yet recorded.
+  **The hazard it was to fix is still live and unfixed:** default entry
+  importance and default prune threshold are both `3` and the prune is
+  inclusive, so **155 of this project's 157 history entries become prune-eligible
+  from 2026-08-10**, with the hardcoded `category = 'history'` the only thing
+  shielding the 9 `decisions` entries at importance 3. Deferring the ticket did
+  not defer the hazard.
+  A later session claimed this ticket by mistake because every durable artifact
+  still said to work it — see the ticket's postmortem, and
+  *"When a decision is not written down"* under **Not yet specified**.
 
 ## Not yet specified
 
 <!-- in-scope fog: real, but not yet sharp enough to ticket -->
+
+- **Capturing a maintainer decision, not just an agent action.** Surfaced on
+  2026-08-01 when a session re-claimed the deferred ticket `25`. Protocol step 4
+  records what the *agent did*; nothing records what the *maintainer decided*,
+  so a verbal "don't do 25" left no trace in `neuron`, in the map, or in the
+  ticket — while three artifacts kept asserting the opposite. Retrieval worked
+  perfectly and returned the wrong answer, which means **rc3's deterministic
+  hooks do not fix this**: hooks own the read side, and this is a write-side
+  capture gap. What is unformed is whose job the write is (a protocol step the
+  agent must obey is the same reliability failure, relocated) and how a
+  reversal *supersedes* a stale high-confidence entry rather than merely
+  competing with it — which is ticket `08`'s supersession question arriving from
+  a different direction.
+- **A write-time content-integrity floor.** 61 of 239 entries (26%) hold a
+  single token — `Fix`, `Updated`, `When` — because unquoted shell arguments
+  word-split and `neuron memory add` keeps only `positionals[0]`. The rows are
+  otherwise well-formed (correct category, distinct meaningful tags, real
+  importance), so nothing flags them and they still occupy an embedding slot.
+  Whether the fix is a length floor, a whitespace check, a confirmation prompt,
+  or an argument-count guard is unformed — but a quarter of this store's recall
+  surface is destroyed content, which bears on every retrieval measurement the
+  map has taken.
 
 - **Bootstrapping category centroids on a cold store.** Surfaced by `06`:
   centroid category inference beat the model 9/9 to 1/9, but it needs entries to
@@ -193,7 +245,9 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 - **Restructuring the packaged `neuron-memory` skill.** Once step 1 leaves
   `CLAUDE.md`, the shipped skill at `.claude/skills/neuron-memory/SKILL.md`
   describes a protocol that no longer matches. Scope of the rewrite is unclear
-  until `14` lands.
+  until `14` lands. **Partly graduated by `25`**, which makes the skill the
+  one-stop setup shop and adds prune configuration to it; what remains fogged is
+  the read-side protocol rewrite that depends on `14`.
 - **Grammars for the remaining 6 languages.** Ticket `02` covers the 8 languages
   the old ticket 06 required. Ruby, PHP, Swift, C# and the rest stay at regex
   fidelity — whether they graduate in 2.2.0 or later is open. Sharpened by `02`:

@@ -1,0 +1,3479 @@
+[
+  {
+    "id": "7b5ab054-6356-4ac8-b8ac-8b6b215bbd69",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 495
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 997
+    }
+  },
+  {
+    "id": "99fc9e12-ed6b-4741-a259-0c1f03df32c1",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 456
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 972
+    }
+  },
+  {
+    "id": "6104d10a-3dd1-4b73-a30f-d92b1be72314",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 519
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1079
+    }
+  },
+  {
+    "id": "0854af70-be22-424c-af3d-df17ed71230a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 461
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 974
+    }
+  },
+  {
+    "id": "17008d3e-f5a8-4cca-b3ee-38c432daf1e2",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 454
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 964
+    }
+  },
+  {
+    "id": "66172d24-c3d2-4f03-ab50-e0f0b0e233d9",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 448
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 964
+    }
+  },
+  {
+    "id": "f4379b5f-e5ed-4c08-8850-02dd717bc7b3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 433
+    },
+    "a2": {
+      "raw": "The changes were welcomed",
+      "degraded": null,
+      "importance": null,
+      "ms": 1004
+    }
+  },
+  {
+    "id": "78ee54a6-e1ca-412b-9226-ec4e446c0b3b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 493
+    },
+    "a2": {
+      "raw": "It's difficult to",
+      "degraded": null,
+      "importance": null,
+      "ms": 1113
+    }
+  },
+  {
+    "id": "c336bef4-fb6b-4209-982c-f3bd362e3d3a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 438
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 946
+    }
+  },
+  {
+    "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 482
+    },
+    "a2": {
+      "raw": " 1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1029
+    }
+  },
+  {
+    "id": "e4500466-6f0b-45b0-b69a-31b01815fc6e",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 496
+    },
+    "a2": {
+      "raw": "1 \n\nThis commit",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1100
+    }
+  },
+  {
+    "id": "2d7ac47a-20f1-4496-a8c7-77a7d2331100",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 489
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1012
+    }
+  },
+  {
+    "id": "49f21081-12da-471f-b529-6e715910e52a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1007
+    }
+  },
+  {
+    "id": "f9851e32-b105-4455-b1ef-5b029c3e5f16",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 478
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1000
+    }
+  },
+  {
+    "id": "4f0da669-1401-4453-83f6-2d5c7b95f8e9",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 503
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1047
+    }
+  },
+  {
+    "id": "5f07a8c4-8a86-4777-9d7e-74afb12d5551",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 492
+    },
+    "a2": {
+      "raw": "0",
+      "degraded": null,
+      "importance": null,
+      "ms": 1021
+    }
+  },
+  {
+    "id": "91ca724f-a516-4c39-88b0-45d63392963f",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "W",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 508
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1035
+    }
+  },
+  {
+    "id": "e6725f37-e1e4-438a-816b-ff4ac9be3e34",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 489
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1035
+    }
+  },
+  {
+    "id": "e10a7f24-f163-4b4b-8689-f518864d6568",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "V1.2",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 587
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1227
+    }
+  },
+  {
+    "id": "3779bb06-93f1-48cf-ab0d-0e67fc1d0031",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "10",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1088
+    }
+  },
+  {
+    "id": "94618b29-7b77-4b30-a299-e450843fa0fc",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 482
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1007
+    }
+  },
+  {
+    "id": "e393f6c3-01dc-49f1-a93a-245d0514462b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 501
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1088
+    }
+  },
+  {
+    "id": "eddcf8ee-38cf-41e7-93a6-ec1af23b53e3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1013
+    }
+  },
+  {
+    "id": "09f2fdaf-fc07-491b-b3fc-a5cc6f458bb8",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 478
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1025
+    }
+  },
+  {
+    "id": "f11d25a3-bd6a-4a1a-a1c0-3cf3b5e68ef8",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 460
+    },
+    "a2": {
+      "raw": "2",
+      "degraded": null,
+      "importance": 2,
+      "ms": 1008
+    }
+  },
+  {
+    "id": "aae2dbb4-22e5-45af-96e7-1a0a116dcca4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 569
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1163
+    }
+  },
+  {
+    "id": "1cd9c654-b357-48bb-b030-239c0fa886e2",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 538
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1106
+    }
+  },
+  {
+    "id": "b7727e79-220b-419b-9991-8ffc500c8450",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 660
+    },
+    "a2": {
+      "raw": "```\n@test",
+      "degraded": null,
+      "importance": null,
+      "ms": 1771
+    }
+  },
+  {
+    "id": "aa967d8d-9abe-42b5-b593-de4adde04c70",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "R",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 642
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1123
+    }
+  },
+  {
+    "id": "7bd114f7-92f3-43a6-bed5-87ecb14b4a73",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Yes",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 599
+    },
+    "a2": {
+      "raw": "5.5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1218
+    }
+  },
+  {
+    "id": "8054e5d0-5b91-4dd5-aa71-caa531844206",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 580
+    },
+    "a2": {
+      "raw": "5/5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1331
+    }
+  },
+  {
+    "id": "9b4c69ea-7a6b-441c-b210-bdc40ac763a2",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 514
+    },
+    "a2": {
+      "raw": "It's recommended to",
+      "degraded": null,
+      "importance": null,
+      "ms": 1102
+    }
+  },
+  {
+    "id": "e4fc9543-d3e4-4291-9769-a6ec1e7e2ddf",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 486
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1038
+    }
+  },
+  {
+    "id": "faaca6cf-397d-41b1-b1d1-73d60b662726",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 465
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1047
+    }
+  },
+  {
+    "id": "2a4c6513-ec82-4c8e-bcf7-b16088795e03",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 546
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1114
+    }
+  },
+  {
+    "id": "bd990979-ca27-4b41-be54-a989492b4436",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 478
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1297
+    }
+  },
+  {
+    "id": "adbd4915-b7a0-4857-bc7c-ad200f7a8f21",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 526
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1053
+    }
+  },
+  {
+    "id": "525e70c1-7149-4f8d-b2e4-1f92b0b01b57",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 477
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1050
+    }
+  },
+  {
+    "id": "f11e0f59-93cb-4bdf-9abd-dd1f36800be9",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 482
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1043
+    }
+  },
+  {
+    "id": "485074be-6411-406d-b80a-cdf319418035",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 487
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1050
+    }
+  },
+  {
+    "id": "f8799235-7d3c-43cf-aa9d-ee8f4dad7e4b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 478
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1039
+    }
+  },
+  {
+    "id": "a69f24c2-1aca-4b01-ab85-42a7053ad0a4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Yes, answer is",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 543
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1043
+    }
+  },
+  {
+    "id": "da928f03-3129-47f3-9438-2949bea08e9f",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 471
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1023
+    }
+  },
+  {
+    "id": "18f41fae-dbe8-4c28-bc13-cf1a0a798492",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 477
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1031
+    }
+  },
+  {
+    "id": "8ff1f30a-8597-4730-80f0-4d625cd4ed2f",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 464
+    },
+    "a2": {
+      "raw": "The \"kb\"",
+      "degraded": null,
+      "importance": null,
+      "ms": 1107
+    }
+  },
+  {
+    "id": "9756c77b-dbca-4396-bd54-cfc66d7ae073",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 481
+    },
+    "a2": {
+      "raw": "This step is important",
+      "degraded": null,
+      "importance": null,
+      "ms": 1101
+    }
+  },
+  {
+    "id": "68dcbe4d-c33c-4652-a881-2e74cd5a6c4a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 506
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1063
+    }
+  },
+  {
+    "id": "d944c7b7-eaa4-47b4-a652-630bce2c6fbd",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 476
+    },
+    "a2": {
+      "raw": "You can rate ",
+      "degraded": null,
+      "importance": null,
+      "ms": 1107
+    }
+  },
+  {
+    "id": "ffdc2f37-8238-4d93-a1cc-28245ba43d28",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 499
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1108
+    }
+  },
+  {
+    "id": "c9c61848-645d-472b-8514-44c1f934b45a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 471
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1046
+    }
+  },
+  {
+    "id": "8a71b217-ce8a-420f-b801-98415323df67",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 483
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1067
+    }
+  },
+  {
+    "id": "a6a668b1-659f-488b-ae6b-fbf79b7eaf47",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 524
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1084
+    }
+  },
+  {
+    "id": "f8f53cda-d5eb-4e67-a453-03e1d072894a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 523
+    },
+    "a2": {
+      "raw": "none",
+      "degraded": null,
+      "importance": null,
+      "ms": 1107
+    }
+  },
+  {
+    "id": "6f747c10-be39-4357-b251-2733a96e13d0",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 711
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1498
+    }
+  },
+  {
+    "id": "501588d7-2af5-444a-a351-3bb9aec1e641",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 501
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1134
+    }
+  },
+  {
+    "id": "9566f40d-db84-4868-99f6-af233e86d23d",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "V",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 489
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1129
+    }
+  },
+  {
+    "id": "4d58c5bd-8c46-4866-9bf7-26812e98efe1",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "E",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 510
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1217
+    }
+  },
+  {
+    "id": "4ca2db79-e3af-4400-9859-52fe35cc171c",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 609
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1178
+    }
+  },
+  {
+    "id": "015bb2c9-35e2-4e31-adbe-060e9c521be2",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 701
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1180
+    }
+  },
+  {
+    "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 545
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1128
+    }
+  },
+  {
+    "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 549
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1170
+    }
+  },
+  {
+    "id": "bcbf0adf-79cf-41a9-a95b-2fa8fa5749f0",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 519
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1110
+    }
+  },
+  {
+    "id": "0e7cfe8a-19c1-4188-af90-c48ce144bfa9",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 552
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1154
+    }
+  },
+  {
+    "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 564
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1175
+    }
+  },
+  {
+    "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 566
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1179
+    }
+  },
+  {
+    "id": "fb1f2229-3c7c-4702-903d-84a9d882d438",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "T",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 611
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1223
+    }
+  },
+  {
+    "id": "920c38a1-4a8b-4942-aea0-1b18577e1fee",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 554
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1177
+    }
+  },
+  {
+    "id": "6d1f4a93-5c60-43dc-9a04-6c1d93522ca4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 565
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1157
+    }
+  },
+  {
+    "id": "7da9354d-0821-4ee7-9472-bc590a2d4043",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 553
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1150
+    }
+  },
+  {
+    "id": "b92fbe1d-c2a6-4f5e-83dc-6d6b96a1de14",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 794
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1799
+    }
+  },
+  {
+    "id": "704f1653-8c1e-45ab-9a68-58301cd8c2b1",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "MAYBE",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 686
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1221
+    }
+  },
+  {
+    "id": "2690c334-f500-4fa9-924a-fb238dba81d3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 450
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1048
+    }
+  },
+  {
+    "id": "7bd5942e-d91e-415d-af36-bf9996c8c831",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 465
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1087
+    }
+  },
+  {
+    "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 663
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1319
+    }
+  },
+  {
+    "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "P",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 655
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1285
+    }
+  },
+  {
+    "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 655
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1295
+    }
+  },
+  {
+    "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 669
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1276
+    }
+  },
+  {
+    "id": "43c72d1b-4a1e-4950-ae40-85479a1fcc41",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 660
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1280
+    }
+  },
+  {
+    "id": "4fb68838-34a4-4776-a508-1b00e5d2e656",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 698
+    },
+    "a2": {
+      "raw": "2",
+      "degraded": null,
+      "importance": 2,
+      "ms": 1345
+    }
+  },
+  {
+    "id": "ae3031b4-10a6-43c2-b6a6-af6837ef0897",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 688
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1323
+    }
+  },
+  {
+    "id": "bfd60a25-c585-41bb-b1b1-365516a91259",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 690
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1322
+    }
+  },
+  {
+    "id": "2de3c6e1-5272-4ebd-8e72-d5860a02c39e",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 707
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1336
+    }
+  },
+  {
+    "id": "ff30abe7-0208-4ac3-aa6b-5019cbdf7b91",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 689
+    },
+    "a2": {
+      "raw": "9",
+      "degraded": null,
+      "importance": null,
+      "ms": 1322
+    }
+  },
+  {
+    "id": "9c76e787-4f01-4d5f-9c99-bbd91046fe15",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 689
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1314
+    }
+  },
+  {
+    "id": "594d7b0e-b894-4efd-9d62-67c200a3a20b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 692
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1330
+    }
+  },
+  {
+    "id": "51e98b4a-5fed-4807-9913-c5e4d90d851d",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 692
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1319
+    }
+  },
+  {
+    "id": "95893688-000c-4580-9574-58f4a6064e6c",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 694
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1320
+    }
+  },
+  {
+    "id": "d0190493-718e-411e-b3bc-2ff436a66831",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 694
+    },
+    "a2": {
+      "raw": "2",
+      "degraded": null,
+      "importance": 2,
+      "ms": 1316
+    }
+  },
+  {
+    "id": "e71866b5-7576-4eb2-886a-d436a7aa256b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 692
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1323
+    }
+  },
+  {
+    "id": "75b5f4f8-86ff-4093-a3ba-7e9e38fec795",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 701
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1331
+    }
+  },
+  {
+    "id": "08599da1-0c4a-47ee-8cee-44eb58e1c5c4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 694
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1341
+    }
+  },
+  {
+    "id": "d2a6212d-8518-4903-8cc2-e4060dd07eb3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 700
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1333
+    }
+  },
+  {
+    "id": "a44c9ebd-dd00-4f68-a579-dee1ad3c3bea",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 696
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1338
+    }
+  },
+  {
+    "id": "455f1266-88e0-4d34-815f-28f210f0dae6",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 694
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1320
+    }
+  },
+  {
+    "id": "0eef662c-00e1-48ee-acec-4eb18bcfedd8",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 696
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1323
+    }
+  },
+  {
+    "id": "95ecdd53-ded4-4da0-81ce-3fd5efe65c48",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 699
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1343
+    }
+  },
+  {
+    "id": "30860d38-5e8d-4604-adf2-f0c62a423643",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 706
+    },
+    "a2": {
+      "raw": "2",
+      "degraded": null,
+      "importance": 2,
+      "ms": 1324
+    }
+  },
+  {
+    "id": "0145abde-a969-4ee4-9992-6cc6806655ca",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 696
+    },
+    "a2": {
+      "raw": "15",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1376
+    }
+  },
+  {
+    "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 727
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1382
+    }
+  },
+  {
+    "id": "5e6eea06-ea1b-4b38-896d-caa2aa979b2d",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 690
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1321
+    }
+  },
+  {
+    "id": "8e13c3e7-f3fb-446c-9439-debd6d19b1f3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 696
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1333
+    }
+  },
+  {
+    "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 761
+    },
+    "a2": {
+      "raw": "Level of the response",
+      "degraded": null,
+      "importance": null,
+      "ms": 1569
+    }
+  },
+  {
+    "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 991
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1457
+    }
+  },
+  {
+    "id": "4ce06b9f-a505-4ff3-b7cf-3e2e66c8d0b6",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": ".N",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 456
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1088
+    }
+  },
+  {
+    "id": "9c258536-2287-4dc7-b94d-7dc9451f6fb1",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 483
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1060
+    }
+  },
+  {
+    "id": "3e1eb7fa-b2de-44f3-8530-dae64526ea8f",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 476
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1089
+    }
+  },
+  {
+    "id": "e201f102-7bfd-4423-945f-c32ab1ec550f",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 477
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1085
+    }
+  },
+  {
+    "id": "69999f34-b537-4e70-9eea-41fab6b96ebf",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 483
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1074
+    }
+  },
+  {
+    "id": "420083b1-cc41-4dc2-9a34-f6b6714860c3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 477
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1083
+    }
+  },
+  {
+    "id": "f07e7a3f-41ac-479e-a6cd-8de0b7fd5223",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "L",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 479
+    },
+    "a2": {
+      "raw": "Note: It's",
+      "degraded": null,
+      "importance": null,
+      "ms": 1160
+    }
+  },
+  {
+    "id": "16cdd503-b7c9-4fea-9ede-92bc942e5f73",
+    "category": "history",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 562
+    },
+    "a2": {
+      "raw": "This issue may be",
+      "degraded": null,
+      "importance": null,
+      "ms": 1237
+    }
+  },
+  {
+    "id": "7bfa21ae-e45b-4aa9-b1b3-77b07b51fca7",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 476
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1072
+    }
+  },
+  {
+    "id": "879a3904-1a44-45a5-a765-da1c17770328",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1091
+    }
+  },
+  {
+    "id": "adcad23f-075a-4603-aeec-725ab17a1ba5",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "V",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 479
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1076
+    }
+  },
+  {
+    "id": "459647c0-246f-46f3-bf94-0a869fd86189",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 487
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1084
+    }
+  },
+  {
+    "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 776
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1539
+    }
+  },
+  {
+    "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 923
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1732
+    }
+  },
+  {
+    "id": "1da3f017-cdca-46c1-9ceb-ed6c992daac4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 501
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1155
+    }
+  },
+  {
+    "id": "c099e80a-4371-4333-b787-339f297fc2e7",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 474
+    },
+    "a2": {
+      "raw": "It seems like the",
+      "degraded": null,
+      "importance": null,
+      "ms": 1162
+    }
+  },
+  {
+    "id": "7758243f-aa84-4bc2-b91b-7bb7d80cdcc1",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 469
+    },
+    "a2": {
+      "raw": "How could this be",
+      "degraded": null,
+      "importance": null,
+      "ms": 1132
+    }
+  },
+  {
+    "id": "37d6e5d9-15cc-492a-918a-017e8fa64bf6",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 718
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1350
+    }
+  },
+  {
+    "id": "29723af5-35a5-4fef-a8cc-cf132467edc9",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 652
+    },
+    "a2": {
+      "raw": "3\n\nNote:",
+      "degraded": null,
+      "importance": 3,
+      "ms": 1410
+    }
+  },
+  {
+    "id": "7625eb56-7192-47a3-b4d9-3bf2575971e0",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 473
+    },
+    "a2": {
+      "raw": "None",
+      "degraded": null,
+      "importance": null,
+      "ms": 1076
+    }
+  },
+  {
+    "id": "7e2c6b87-dcd7-4f94-aa91-3565bee99b67",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 477
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1080
+    }
+  },
+  {
+    "id": "4090d527-a2d8-4ccc-b5bb-70880539b25b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 477
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1073
+    }
+  },
+  {
+    "id": "d873c6e0-7afa-4c4f-aec2-1ff9bb871984",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 478
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1080
+    }
+  },
+  {
+    "id": "0f9bdab2-47c0-43d6-932e-6f91e96c48e3",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 481
+    },
+    "a2": {
+      "raw": "4",
+      "degraded": null,
+      "importance": 4,
+      "ms": 1095
+    }
+  },
+  {
+    "id": "908418b8-f680-4ee5-99e1-bb31eabac361",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 487
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1156
+    }
+  },
+  {
+    "id": "80678e0f-90f1-4312-83a5-229b24f15427",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 488
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1084
+    }
+  },
+  {
+    "id": "ad41f1b6-dd4b-411b-8367-1b297e2a7318",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 736
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1532
+    }
+  },
+  {
+    "id": "4bc5777b-6146-4410-8bc9-b57939a59b7a",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 472
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1120
+    }
+  },
+  {
+    "id": "05dede41-ec7f-486d-8198-0156c14cd56b",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 472
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1083
+    }
+  },
+  {
+    "id": "0b088642-324e-4059-9554-0720953da720",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "W",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 479
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1093
+    }
+  },
+  {
+    "id": "429a08f3-6109-40b6-bc14-7db720992099",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1092
+    }
+  },
+  {
+    "id": "58645c68-0464-4e96-9da2-3188b10ab016",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 481
+    },
+    "a2": {
+      "raw": "Your question is unclear",
+      "degraded": null,
+      "importance": null,
+      "ms": 1162
+    }
+  },
+  {
+    "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 673
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1361
+    }
+  },
+  {
+    "id": "fcc481f1-50d3-4f91-9aa6-4024a14885b2",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 743
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1330
+    }
+  },
+  {
+    "id": "3eb1cabd-133f-43af-8d71-0919c9e9c523",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 490
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1085
+    }
+  },
+  {
+    "id": "e7ef10ac-7c40-4a5f-86c9-382cd5340a3f",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Yes",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "3",
+      "degraded": null,
+      "importance": 3,
+      "ms": 1083
+    }
+  },
+  {
+    "id": "289cdcdc-7577-4423-b0ee-96a0eefa8466",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 476
+    },
+    "a2": {
+      "raw": "3.5",
+      "degraded": null,
+      "importance": 3,
+      "ms": 1162
+    }
+  },
+  {
+    "id": "781ca207-f991-4c31-abfa-e3c3b982ba46",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 541
+    },
+    "a2": {
+      "raw": "The benchmark ran successfully",
+      "degraded": null,
+      "importance": null,
+      "ms": 1184
+    }
+  },
+  {
+    "id": "3419446c-4cbf-4683-930c-c2679f4004bf",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 471
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1080
+    }
+  },
+  {
+    "id": "c21fc957-482e-40e8-a509-893ebfcab1f4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1096
+    }
+  },
+  {
+    "id": "39ad4d0a-2f99-4c67-9498-a23ff57734f0",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 474
+    },
+    "a2": {
+      "raw": "15",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1117
+    }
+  },
+  {
+    "id": "6065b589-f77c-4d3a-98ed-fa82d40929e4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 475
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1087
+    }
+  },
+  {
+    "id": "7a781419-e0f0-4fcb-8dc6-44e8a631e9dd",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 480
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1080
+    }
+  },
+  {
+    "id": "7c0033f2-11d6-4d06-8bc7-61497df26152",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 479
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1075
+    }
+  },
+  {
+    "id": "32e4942b-71e6-45f1-a10c-55ff72658296",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 1010
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 2140
+    }
+  },
+  {
+    "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 1112
+    },
+    "a2": {
+      "raw": "Note: The `",
+      "degraded": null,
+      "importance": null,
+      "ms": 1738
+    }
+  },
+  {
+    "id": "a6a98b0b-b19c-4f8e-9f47-a3315ff251e5",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 978
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1643
+    }
+  },
+  {
+    "id": "e8885ca8-516c-4ba3-bba5-4e2bb211f37d",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 971
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1649
+    }
+  },
+  {
+    "id": "64c53574-1f84-4c0f-99ea-b9ee696cf5e4",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 996
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1657
+    }
+  },
+  {
+    "id": "aae7efd0-0631-48b7-a7d7-c187b7fb7d73",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 1062
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1733
+    }
+  },
+  {
+    "id": "067d429f-9f70-4888-a158-05ded24ef2c8",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 1019
+    },
+    "a2": {
+      "raw": "2",
+      "degraded": null,
+      "importance": 2,
+      "ms": 1696
+    }
+  },
+  {
+    "id": "104a98aa-5241-407c-8a92-b9ea0956dd23",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 1063
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1745
+    }
+  },
+  {
+    "id": "8e650898-e498-4f99-a251-82290875ae82",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 937
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1619
+    }
+  },
+  {
+    "id": "c5d2c5d1-261e-4e96-b657-d2bb13826789",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 957
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1656
+    }
+  },
+  {
+    "id": "092258c7-11e5-4b95-a550-2957e391d514",
+    "category": "history",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 950
+    },
+    "a2": {
+      "raw": "3",
+      "degraded": null,
+      "importance": 3,
+      "ms": 1605
+    }
+  },
+  {
+    "id": "1c61fba1-1814-44e7-b7c6-e478190687e0",
+    "category": "learning",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 516
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1143
+    }
+  },
+  {
+    "id": "f57c7f54-1e48-4dbe-b3bf-f6c059e92446",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 575
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1196
+    }
+  },
+  {
+    "id": "374f7bec-ec25-4238-9c58-8b5e5236ab99",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 557
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1194
+    }
+  },
+  {
+    "id": "d9d48be8-4f20-4538-ad4d-f40de941c218",
+    "category": "learning",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "R",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 595
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1264
+    }
+  },
+  {
+    "id": "3d41e402-efcf-4bbe-af53-fa889d72ccfe",
+    "category": "learning",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 526
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1146
+    }
+  },
+  {
+    "id": "a2c4c24c-9c04-4f66-b221-e5b0aaf9d1e0",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 666
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1726
+    }
+  },
+  {
+    "id": "8601ea58-939b-4f81-9177-dc2f4e1ffd09",
+    "category": "learning",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 3,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 702
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1331
+    }
+  },
+  {
+    "id": "80c47466-6a0e-4e81-83d6-53c417cd9363",
+    "category": "learning",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 481
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1071
+    }
+  },
+  {
+    "id": "c2d1928c-3e58-40a5-b478-6e3c955e89b0",
+    "category": "decisions",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 478
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1080
+    }
+  },
+  {
+    "id": "a9f5e6d8-c92f-43fb-9130-f353c8e239f3",
+    "category": "decisions",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 483
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1082
+    }
+  },
+  {
+    "id": "c218fd06-03b3-4536-8466-eb113db7c8f5",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 842
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1714
+    }
+  },
+  {
+    "id": "ea7069ac-ee62-44c2-8f99-b25fc42c49f3",
+    "category": "decisions",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 1124
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 2104
+    }
+  },
+  {
+    "id": "7071ca23-9f6f-4d1b-ae47-375ed2b31b8c",
+    "category": "decisions",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 1,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 1162
+    },
+    "a2": {
+      "raw": "05 = losing",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1844
+    }
+  },
+  {
+    "id": "92228cba-fb23-43d3-bc4d-2c9dceea568a",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 970
+    },
+    "a2": {
+      "raw": null,
+      "degraded": "empty_generation",
+      "importance": null,
+      "ms": 1607
+    }
+  },
+  {
+    "id": "e8b009df-9882-43d2-94b8-14b693c4d752",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 956
+    },
+    "a2": {
+      "raw": "It seems like there",
+      "degraded": null,
+      "importance": null,
+      "ms": 1697
+    }
+  },
+  {
+    "id": "136c5f4c-bfe4-440c-a2cd-f760369e36b4",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 933
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1532
+    }
+  },
+  {
+    "id": "5c02458b-8ac1-4cca-b06b-749d2d370aa6",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 980
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1657
+    }
+  },
+  {
+    "id": "98480ae3-7ff1-4318-bd94-50a2cf363e64",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 929
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1557
+    }
+  },
+  {
+    "id": "3e984761-bb67-4d30-b229-62111031f998",
+    "category": "learning",
+    "ground_truth_recoverable": true,
+    "ground_truth_grade": 2,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 931
+    },
+    "a2": {
+      "raw": "5",
+      "degraded": null,
+      "importance": 5,
+      "ms": 1524
+    }
+  },
+  {
+    "id": "7ae569af-1552-4f5e-8570-edde0e0b1050",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "M",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 1011
+    },
+    "a2": {
+      "raw": "6",
+      "degraded": null,
+      "importance": null,
+      "ms": 1694
+    }
+  },
+  {
+    "id": "757768a7-7bc5-4851-b7c1-c43e0d21556e",
+    "category": "learning",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 4,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 968
+    },
+    "a2": {
+      "raw": "none",
+      "degraded": null,
+      "importance": null,
+      "ms": 1670
+    }
+  },
+  {
+    "id": "9c95e12a-96b8-4318-a694-630ce06d5df1",
+    "category": "decisions",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 949
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1619
+    }
+  },
+  {
+    "id": "68455ac1-ef28-495d-8547-25fd29a35d4d",
+    "category": "decisions",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "N",
+      "degraded": null,
+      "verdict": "unrecoverable",
+      "importance": 4,
+      "ms": 960
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1658
+    }
+  },
+  {
+    "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+    "category": "decisions",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "Z",
+      "degraded": null,
+      "verdict": null,
+      "importance": null,
+      "ms": 688
+    },
+    "a2": {
+      "raw": "0",
+      "degraded": null,
+      "importance": null,
+      "ms": 1307
+    }
+  },
+  {
+    "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+    "category": "decisions",
+    "ground_truth_recoverable": false,
+    "ground_truth_grade": 5,
+    "a1": {
+      "raw": "Y",
+      "degraded": null,
+      "verdict": "recoverable",
+      "importance": 2,
+      "ms": 841
+    },
+    "a2": {
+      "raw": "1",
+      "degraded": null,
+      "importance": 1,
+      "ms": 1418
+    }
+  }
+]

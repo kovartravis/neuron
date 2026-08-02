@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: 05, 06, 07, 08
+Blocked by: 05, 06, 07, 08, 24, 25
 Band: 2.2.0-rc2
 
 # 09 — Cut and Publish 2.2.0-rc2

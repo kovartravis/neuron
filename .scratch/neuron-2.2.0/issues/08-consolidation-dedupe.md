@@ -1,4 +1,4 @@
-Type: task
+Type: grilling
 Status: unclaimed
 Blocked by: 05
 Band: 2.2.0-rc2
@@ -79,3 +79,55 @@ Available to reuse: `withTimeout` (`src/components/timeout.ts`), the shared
 process-level model singleton (`src/components/generator.ts`), the
 `recordDegradation` counters surfaced by `neuron status`, and the
 `llm.enrichment` config namespace's sibling slot under `llm`.
+
+## Measurement taken 2026-08-01 — grill the premise before the design
+
+A session claimed this ticket, measured the live store, and pivoted to another
+bug before grilling. **The measurement stands and it challenges the premise.**
+Whoever picks this up should start from "does dedupe have a subject at all?"
+rather than from the six scope items.
+
+Pairwise cosine over all 239 entries of this project's store:
+
+| cosine | pairs | cross-category (scope item 4 forbids merging these) |
+|--------|-------|------------------------------------------------|
+| ≥0.99  | **1** | 0 |
+| ≥0.95  | 3     | 2 |
+| ≥0.90  | 13    | 8 |
+| ≥0.85  | 57    | 32 |
+
+**Same-category pairs at ≥0.95: exactly one**, and it is a byte-identical
+repeat — findable by content hash, no model required. Lower the threshold to
+catch anything more and the band immediately fills with pairs that are
+*semantically opposite*:
+
+- `Explained NEURON_MOCK_EMBEDDER check in exec.ts` vs
+  `Removed NEURON_MOCK_EMBEDDER check from exec.ts` — cos **0.9210**
+- `Bumped version to 1.1.1` vs `Bumped version to 1.1.3` — cos **0.9436**,
+  different releases
+
+Adjudicating those demands reliable **negation detection**, the weakest
+capability of both a 0.5B model and the embedder shortlisting for it. That is
+the same shape as ticket `24`: content-only judgement by this model, gating an
+irreversible operation. `24` disqualified both its arms on exactly that.
+
+Two further findings that bear on scope:
+
+- **Most apparent "duplication" is a different bug.** 15 exact-content duplicate
+  groups exist (largest: 21 entries), but most are collided single-token rows
+  produced by the argv-truncation defect fixed in `v2.1.2`, not genuine repeats.
+  Re-measure duplicate density on a store written *after* that fix before
+  trusting any number here.
+- **ADR 0010 §7 points this ticket's A/B at the wrong instrument.** It nominates
+  Pillar 7's "existing `supersededViolations`", but that metric is a corpus
+  fixture measuring whether an older entry outranks its newer replacement in
+  *ranking*. It does not observe a `superseded_by` column and would not move if
+  dedupe were switched on or off. This ticket needs a new instrument.
+
+Retrieval was independently measured at recall@10 **98.3%** (ticket `22`), so
+the "near-duplicates crowd retrieval" premise has no supporting evidence in this
+store. Plausible outcomes: dedupe narrows to hash-exact with no model at all, or
+it is ruled out of 2.2.0 the way automatic pruning was. Its **supersession half
+may still be worth keeping** — the ticket-`25` near-miss showed the map needs a
+way for a decision to *supersede* a stale high-confidence entry rather than
+merely compete with it.

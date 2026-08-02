@@ -1,0 +1,3174 @@
+{
+  "5eec6a22-1d36-4699-8695-b6c3e2bcdc0b": {
+    "query": "readme documentation npm",
+    "query_tokens": [
+      "documentation",
+      "npm",
+      "readme"
+    ],
+    "good_answers": [
+      {
+        "id": "e4500466-6f0b-45b0-b69a-31b01815fc6e",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "68e8bdb2-09ae-4768-8bf5-ed56419fd355",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "f23f7d38-c988-475c-88b6-ae4e7f18278c",
+        "category": "decisions",
+        "overlap": 2
+      }
+    ]
+  },
+  "a2420435-3d2d-45a3-9cc8-169eaaebf1cc": {
+    "query": "git publish npm",
+    "query_tokens": [
+      "git",
+      "npm",
+      "publish"
+    ],
+    "good_answers": [
+      {
+        "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "4d58c5bd-8c46-4866-9bf7-26812e98efe1",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "4ca2db79-e3af-4400-9859-52fe35cc171c",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "ae3031b4-10a6-43c2-b6a6-af6837ef0897",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "0a924ae2-ca84-4a80-a4e2-826fe4195ab7": {
+    "query": "bge hybrid search",
+    "query_tokens": [
+      "bge",
+      "hybrid",
+      "search"
+    ],
+    "good_answers": [
+      {
+        "id": "8054e5d0-5b91-4dd5-aa71-caa531844206",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "6104d10a-3dd1-4b73-a30f-d92b1be72314",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "0b167146-b5c0-4e45-9f19-c2a42b22150a",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "b7727e79-220b-419b-9991-8ffc500c8450",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "aa967d8d-9abe-42b5-b593-de4adde04c70",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "f4414733-e18b-437a-b77f-9a01da526fe0": {
+    "query": "models components structure",
+    "query_tokens": [
+      "components",
+      "models",
+      "structure"
+    ],
+    "good_answers": [
+      {
+        "id": "e4fc9543-d3e4-4291-9769-a6ec1e7e2ddf",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "a387ec56-8c59-4c6b-ad72-fc0caca68051": {
+    "query": "model tests removal",
+    "query_tokens": [
+      "model",
+      "removal",
+      "tests"
+    ],
+    "good_answers": []
+  },
+  "beac183d-4602-4733-967f-b0b718744630": {
+    "query": "cli subcommands refactor",
+    "query_tokens": [
+      "cli",
+      "refactor",
+      "subcommands"
+    ],
+    "good_answers": [
+      {
+        "id": "c2c13a59-123d-40fb-8796-f820d5e7868d",
+        "category": "decisions",
+        "overlap": 2
+      }
+    ]
+  },
+  "0e9f6016-b60d-4895-899e-44d9d5b34b5a": {
+    "query": "exec command string query",
+    "query_tokens": [
+      "command",
+      "exec",
+      "query",
+      "string"
+    ],
+    "good_answers": [
+      {
+        "id": "adbd4915-b7a0-4857-bc7c-ad200f7a8f21",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "525e70c1-7149-4f8d-b2e4-1f92b0b01b57",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "46da2ede-b229-48c9-ae62-3d604b2adf5f": {
+    "query": "exec search history learnings",
+    "query_tokens": [
+      "exec",
+      "history",
+      "learnings",
+      "search"
+    ],
+    "good_answers": [
+      {
+        "id": "525e70c1-7149-4f8d-b2e4-1f92b0b01b57",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "aa967d8d-9abe-42b5-b593-de4adde04c70",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "6f747c10-be39-4357-b251-2733a96e13d0",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fb1f2229-3c7c-4702-903d-84a9d882d438",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "aae2dbb4-22e5-45af-96e7-1a0a116dcca4",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "53eedaf2-aaf5-4f40-a7ba-176632f4aa29": {
+    "query": "NEURON_MOCK_EMBEDDER threshold exec",
+    "query_tokens": [
+      "embedder",
+      "exec",
+      "mock",
+      "neuron",
+      "threshold"
+    ],
+    "good_answers": [
+      {
+        "id": "f11e0f59-93cb-4bdf-9abd-dd1f36800be9",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "485074be-6411-406d-b80a-cdf319418035",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "overlap": 3
+      }
+    ]
+  },
+  "b646592e-a635-47c5-b124-6a78ce69b28f": {
+    "query": "remove mock embedder check exec",
+    "query_tokens": [
+      "check",
+      "embedder",
+      "exec",
+      "mock",
+      "remove"
+    ],
+    "good_answers": [
+      {
+        "id": "f11e0f59-93cb-4bdf-9abd-dd1f36800be9",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "485074be-6411-406d-b80a-cdf319418035",
+        "category": "history",
+        "overlap": 4
+      }
+    ]
+  },
+  "836983da-003c-4511-84f6-95ce09b6e98e": {
+    "query": "cli test split command test files",
+    "query_tokens": [
+      "cli",
+      "command",
+      "files",
+      "split",
+      "test"
+    ],
+    "good_answers": [
+      {
+        "id": "f8799235-7d3c-43cf-aa9d-ee8f4dad7e4b",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "71bb943a-e328-4290-85b0-bdee6ed29016": {
+    "query": "cli exec feedback memory",
+    "query_tokens": [
+      "cli",
+      "exec",
+      "feedback",
+      "memory"
+    ],
+    "good_answers": [
+      {
+        "id": "374f7bec-ec25-4238-9c58-8b5e5236ab99",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "a69f24c2-1aca-4b01-ab85-42a7053ad0a4",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "7da9354d-0821-4ee7-9472-bc590a2d4043",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "6104d10a-3dd1-4b73-a30f-d92b1be72314",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "5669ffab-8cd6-4257-88cd-d9dc40b76029": {
+    "query": "background passive learning history recording",
+    "query_tokens": [
+      "background",
+      "history",
+      "learning",
+      "passive",
+      "recording"
+    ],
+    "good_answers": [
+      {
+        "id": "da928f03-3129-47f3-9438-2949bea08e9f",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "d450556e-3669-4149-8221-d46ffa199b57": {
+    "query": "subagent background observer design",
+    "query_tokens": [
+      "background",
+      "design",
+      "observer",
+      "subagent"
+    ],
+    "good_answers": [
+      {
+        "id": "18f41fae-dbe8-4c28-bc13-cf1a0a798492",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "dd163710-a27c-4b8e-9ea0-a1e773c6f371": {
+    "query": "remove subagent kill active subagents",
+    "query_tokens": [
+      "active",
+      "kill",
+      "remove",
+      "subagent",
+      "subagents"
+    ],
+    "good_answers": []
+  },
+  "a4a5c872-ed9c-401c-a65f-bb88bc929b79": {
+    "query": "init harness config detectHarnesses",
+    "query_tokens": [
+      "config",
+      "detectharnesses",
+      "harness",
+      "init"
+    ],
+    "good_answers": [
+      {
+        "id": "9756c77b-dbca-4396-bd54-cfc66d7ae073",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "49f21081-12da-471f-b529-6e715910e52a",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "f9851e32-b105-4455-b1ef-5b029c3e5f16",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "5f07a8c4-8a86-4777-9d7e-74afb12d5551",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "91ca724f-a516-4c39-88b0-45d63392963f",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "0e7d74dd-e38d-4581-9337-1cf148e74428": {
+    "query": "harnesses json config file loading",
+    "query_tokens": [
+      "config",
+      "file",
+      "harnesses",
+      "json",
+      "loading"
+    ],
+    "good_answers": [
+      {
+        "id": "68dcbe4d-c33c-4652-a881-2e74cd5a6c4a",
+        "category": "history",
+        "overlap": 4
+      }
+    ]
+  },
+  "8c0aaa03-4ebe-4d51-89fb-a6397496de33": {
+    "query": "roadmap improvement feature suggestions",
+    "query_tokens": [
+      "feature",
+      "improvement",
+      "roadmap",
+      "suggestions"
+    ],
+    "good_answers": [
+      {
+        "id": "c9c61848-645d-472b-8514-44c1f934b45a",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "146c6bda-fe50-4eab-88f1-db11146dba49": {
+    "query": "UI web dashboard database view import export analytics",
+    "query_tokens": [
+      "analytics",
+      "dashboard",
+      "database",
+      "export",
+      "import",
+      "ui",
+      "view",
+      "web"
+    ],
+    "good_answers": [
+      {
+        "id": "ffdc2f37-8238-4d93-a1cc-28245ba43d28",
+        "category": "history",
+        "overlap": 6
+      }
+    ]
+  },
+  "7be32753-24d2-448f-8d6a-7da362eee4e1": {
+    "query": "future feature todo ideas architecture",
+    "query_tokens": [
+      "architecture",
+      "feature",
+      "future",
+      "ideas",
+      "todo"
+    ],
+    "good_answers": [
+      {
+        "id": "c9c61848-645d-472b-8514-44c1f934b45a",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "d7a104a7-7954-4678-9abf-d6a2e691646d": {
+    "query": "add todo issue tickets",
+    "query_tokens": [
+      "add",
+      "issue",
+      "tickets",
+      "todo"
+    ],
+    "good_answers": [
+      {
+        "id": "ffdc2f37-8238-4d93-a1cc-28245ba43d28",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "8a71b217-ce8a-420f-b801-98415323df67",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "a1495bf4-d073-4771-93a8-a1d0f1b568bc": {
+    "query": "md file management",
+    "query_tokens": [
+      "file",
+      "management",
+      "md"
+    ],
+    "good_answers": [
+      {
+        "id": "a6a668b1-659f-488b-ae6b-fbf79b7eaf47",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "f8f53cda-d5eb-4e67-a453-03e1d072894a",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "120c66b5-b73d-4206-b6cd-7ccec61a53c1": {
+    "query": "grilling domain modeling .neuronrc",
+    "query_tokens": [
+      "domain",
+      "grilling",
+      "modeling",
+      "neuronrc"
+    ],
+    "good_answers": []
+  },
+  "fdd32309-c350-4e22-9d59-51e5c182aa73": {
+    "query": "ticket 17 web ui dashboard server",
+    "query_tokens": [
+      "17",
+      "dashboard",
+      "server",
+      "ticket",
+      "ui",
+      "web"
+    ],
+    "good_answers": [
+      {
+        "id": "6f747c10-be39-4357-b251-2733a96e13d0",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "501588d7-2af5-444a-a351-3bb9aec1e641",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "ffdc2f37-8238-4d93-a1cc-28245ba43d28",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "b92fbe1d-c2a6-4f5e-83dc-6d6b96a1de14",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "629dd5b5-38b1-4749-a547-5389821287cd": {
+    "query": "neuron learn query memory entry length",
+    "query_tokens": [
+      "entry",
+      "learn",
+      "length",
+      "memory",
+      "neuron",
+      "query"
+    ],
+    "good_answers": [
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "0984264e-23ba-4151-aae5-fbda45831cd3",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "6d1f4a93-5c60-43dc-9a04-6c1d93522ca4",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "0ec94469-6502-4051-b4ab-d213045e131d": {
+    "query": "memory entry length",
+    "query_tokens": [
+      "entry",
+      "length",
+      "memory"
+    ],
+    "good_answers": [
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "3bf6b689-730a-4937-a373-d9d6c0b9287b": {
+    "query": "neuron learn query neuronrc categories configuration",
+    "query_tokens": [
+      "categories",
+      "configuration",
+      "learn",
+      "neuron",
+      "neuronrc",
+      "query"
+    ],
+    "good_answers": [
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "0984264e-23ba-4151-aae5-fbda45831cd3",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "d15a0608-aecd-4ff5-8cae-413432ab061b": {
+    "query": "neuronrc categories configuration",
+    "query_tokens": [
+      "categories",
+      "configuration",
+      "neuronrc"
+    ],
+    "good_answers": [
+      {
+        "id": "a6a668b1-659f-488b-ae6b-fbf79b7eaf47",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 2
+      }
+    ]
+  },
+  "a5983be5-77f7-4e36-8ff4-2a935b906e4d": {
+    "query": "neuron learn query agents.md sync skill neuronrc",
+    "query_tokens": [
+      "agents",
+      "learn",
+      "md",
+      "neuron",
+      "neuronrc",
+      "query",
+      "skill",
+      "sync"
+    ],
+    "good_answers": [
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "6d1f4a93-5c60-43dc-9a04-6c1d93522ca4",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "0984264e-23ba-4151-aae5-fbda45831cd3",
+        "category": "learning",
+        "overlap": 4
+      }
+    ]
+  },
+  "dc36de1d-695b-428f-acc5-b56ce9588081": {
+    "query": "agents.md sync skill neuronrc",
+    "query_tokens": [
+      "agents",
+      "md",
+      "neuronrc",
+      "skill",
+      "sync"
+    ],
+    "good_answers": [
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "015bb2c9-35e2-4e31-adbe-060e9c521be2",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "6d1f4a93-5c60-43dc-9a04-6c1d93522ca4",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "5b21e56a-7d84-4862-9284-2808226b34a4",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "a105a56e-6c38-4c78-996f-de5de9f1d9a9": {
+    "query": "neuron learn query yaml config parser neuronrc",
+    "query_tokens": [
+      "config",
+      "learn",
+      "neuron",
+      "neuronrc",
+      "parser",
+      "query",
+      "yaml"
+    ],
+    "good_answers": [
+      {
+        "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 4
+      }
+    ]
+  },
+  "0533836c-a2d1-4db5-9f4f-a85043c395e2": {
+    "query": "yaml config parser neuronrc",
+    "query_tokens": [
+      "config",
+      "neuronrc",
+      "parser",
+      "yaml"
+    ],
+    "good_answers": [
+      {
+        "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "bcbf0adf-79cf-41a9-a95b-2fa8fa5749f0",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "80975389-641b-4a5c-aacc-b2146e1f9413": {
+    "query": "neuron learn query vector embeddings storage neuronrc",
+    "query_tokens": [
+      "embeddings",
+      "learn",
+      "neuron",
+      "neuronrc",
+      "query",
+      "storage",
+      "vector"
+    ],
+    "good_answers": [
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 4
+      }
+    ]
+  },
+  "453c5ad8-4a55-4e74-8225-455f5fa733be": {
+    "query": "vector embeddings storage neuronrc",
+    "query_tokens": [
+      "embeddings",
+      "neuronrc",
+      "storage",
+      "vector"
+    ],
+    "good_answers": [
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "6fb206eb-cd30-4508-92bf-b88df34efb98": {
+    "query": "neuron learn query grilling session ticket requirements",
+    "query_tokens": [
+      "grilling",
+      "learn",
+      "neuron",
+      "query",
+      "requirements",
+      "session",
+      "ticket"
+    ],
+    "good_answers": [
+      {
+        "id": "3d41e402-efcf-4bbe-af53-fa889d72ccfe",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "8e650898-e498-4f99-a251-82290875ae82",
+        "category": "history",
+        "overlap": 4
+      }
+    ]
+  },
+  "0bb5cb78-ad26-40a9-a97b-2b2125ffe685": {
+    "query": "grilling session ticket requirements",
+    "query_tokens": [
+      "grilling",
+      "requirements",
+      "session",
+      "ticket"
+    ],
+    "good_answers": [
+      {
+        "id": "3d41e402-efcf-4bbe-af53-fa889d72ccfe",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "8e650898-e498-4f99-a251-82290875ae82",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "64c53574-1f84-4c0f-99ea-b9ee696cf5e4",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "73a48c77-08c1-4a6b-952d-d9b818fc2c8f",
+        "category": "decisions",
+        "overlap": 2
+      }
+    ]
+  },
+  "10221490-95d8-44b8-af02-cebbf24d672c": {
+    "query": "neuron learn query database schema migration unified table",
+    "query_tokens": [
+      "database",
+      "learn",
+      "migration",
+      "neuron",
+      "query",
+      "schema",
+      "table",
+      "unified"
+    ],
+    "good_answers": [
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 5
+      },
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 5
+      }
+    ]
+  },
+  "7a178b6e-61e9-4786-a095-768acda85400": {
+    "query": "database schema migration unified table",
+    "query_tokens": [
+      "database",
+      "migration",
+      "schema",
+      "table",
+      "unified"
+    ],
+    "good_answers": [
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "d0e73a14-b6eb-499b-94f7-5fcf37007a5a": {
+    "query": "neuron learn query unit tests verification",
+    "query_tokens": [
+      "learn",
+      "neuron",
+      "query",
+      "tests",
+      "unit",
+      "verification"
+    ],
+    "good_answers": [
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fcc481f1-50d3-4f91-9aa6-4024a14885b2",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "86a4978a-6178-42cc-a8ba-bf8d8b23a15e": {
+    "query": "unit tests verification",
+    "query_tokens": [
+      "tests",
+      "unit",
+      "verification"
+    ],
+    "good_answers": [
+      {
+        "id": "b92fbe1d-c2a6-4f5e-83dc-6d6b96a1de14",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "ae3031b4-10a6-43c2-b6a6-af6837ef0897",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 2
+      },
+      {
+        "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "c218fd06-03b3-4536-8466-eb113db7c8f5",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "6e592851-74eb-491f-8229-c97d28114e0e": {
+    "query": "neuron learn query readme update neuron.yaml categories",
+    "query_tokens": [
+      "categories",
+      "learn",
+      "neuron",
+      "query",
+      "readme",
+      "update",
+      "yaml"
+    ],
+    "good_answers": [
+      {
+        "id": "0984264e-23ba-4151-aae5-fbda45831cd3",
+        "category": "learning",
+        "overlap": 5
+      },
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "6d1f4a93-5c60-43dc-9a04-6c1d93522ca4",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "5b21e56a-7d84-4862-9284-2808226b34a4",
+        "category": "learning",
+        "overlap": 4
+      }
+    ]
+  },
+  "de409968-7435-4d90-acf3-2b9fc1ee5780": {
+    "query": "readme update neuron.yaml categories",
+    "query_tokens": [
+      "categories",
+      "neuron",
+      "readme",
+      "update",
+      "yaml"
+    ],
+    "good_answers": [
+      {
+        "id": "0984264e-23ba-4151-aae5-fbda45831cd3",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "5b21e56a-7d84-4862-9284-2808226b34a4",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "a2975ffb-8ed4-4c23-8ce5-1b8b266e389f": {
+    "query": "neuron learn query git release npm package version tag",
+    "query_tokens": [
+      "git",
+      "learn",
+      "neuron",
+      "npm",
+      "package",
+      "query",
+      "release",
+      "tag",
+      "version"
+    ],
+    "good_answers": [
+      {
+        "id": "e10a7f24-f163-4b4b-8689-f518864d6568",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+        "category": "history",
+        "overlap": 5
+      }
+    ]
+  },
+  "4b4be889-6549-4095-ae40-8e8462c3d235": {
+    "query": "git release npm package version tag",
+    "query_tokens": [
+      "git",
+      "npm",
+      "package",
+      "release",
+      "tag",
+      "version"
+    ],
+    "good_answers": [
+      {
+        "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "e10a7f24-f163-4b4b-8689-f518864d6568",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "0e7cfe8a-19c1-4188-af90-c48ce144bfa9",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "e4500466-6f0b-45b0-b69a-31b01815fc6e",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "f980e0a9-a4ca-4f9c-94e1-d3ae42b35b80": {
+    "query": "neuron learn query readme killer features quickstart update",
+    "query_tokens": [
+      "features",
+      "killer",
+      "learn",
+      "neuron",
+      "query",
+      "quickstart",
+      "readme",
+      "update"
+    ],
+    "good_answers": [
+      {
+        "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+        "category": "history",
+        "overlap": 5
+      }
+    ]
+  },
+  "0b871926-f673-45fc-a52d-b8614a295164": {
+    "query": "readme killer features quickstart update",
+    "query_tokens": [
+      "features",
+      "killer",
+      "quickstart",
+      "readme",
+      "update"
+    ],
+    "good_answers": [
+      {
+        "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+        "category": "history",
+        "overlap": 4
+      }
+    ]
+  },
+  "81d5bbf4-e3be-4f93-9684-1b3237dfe9a8": {
+    "query": "neuron learn query quickstart agent-first skill setup interview",
+    "query_tokens": [
+      "agent",
+      "first",
+      "interview",
+      "learn",
+      "neuron",
+      "query",
+      "quickstart",
+      "setup",
+      "skill"
+    ],
+    "good_answers": [
+      {
+        "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+        "category": "history",
+        "overlap": 7
+      }
+    ]
+  },
+  "3cc62180-3e93-48b8-86a3-fa62d826c4cc": {
+    "query": "quickstart agent-first skill setup interview",
+    "query_tokens": [
+      "agent",
+      "first",
+      "interview",
+      "quickstart",
+      "setup",
+      "skill"
+    ],
+    "good_answers": [
+      {
+        "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+        "category": "history",
+        "overlap": 6
+      }
+    ]
+  },
+  "d6203501-45cb-4843-ab56-44f98491dd78": {
+    "query": "agents.md memory configuration align",
+    "query_tokens": [
+      "agents",
+      "align",
+      "configuration",
+      "md",
+      "memory"
+    ],
+    "good_answers": [
+      {
+        "id": "015bb2c9-35e2-4e31-adbe-060e9c521be2",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "bcbf0adf-79cf-41a9-a95b-2fa8fa5749f0",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fb1f2229-3c7c-4702-903d-84a9d882d438",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "04c74d49-e1bc-4132-b5d8-1e62de0141e2": {
+    "query": "neuron.yaml config CLI usage exec",
+    "query_tokens": [
+      "cli",
+      "config",
+      "exec",
+      "neuron",
+      "usage",
+      "yaml"
+    ],
+    "good_answers": [
+      {
+        "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "bcbf0adf-79cf-41a9-a95b-2fa8fa5749f0",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "7da9354d-0821-4ee7-9472-bc590a2d4043",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fb1f2229-3c7c-4702-903d-84a9d882d438",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "5f551286-ab43-4f8b-b268-2618c88aafe2": {
+    "query": "readme ui screenshot dashboard",
+    "query_tokens": [
+      "dashboard",
+      "readme",
+      "screenshot",
+      "ui"
+    ],
+    "good_answers": [
+      {
+        "id": "704f1653-8c1e-45ab-9a68-58301cd8c2b1",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "68e8bdb2-09ae-4768-8bf5-ed56419fd355",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "ffdc2f37-8238-4d93-a1cc-28245ba43d28",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "6f747c10-be39-4357-b251-2733a96e13d0",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "501588d7-2af5-444a-a351-3bb9aec1e641",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "cc0b4891-27d8-4f88-a7b9-d0ce78a69b3a": {
+    "query": "agent memory benchmark",
+    "query_tokens": [
+      "agent",
+      "benchmark",
+      "memory"
+    ],
+    "good_answers": [
+      {
+        "id": "8601ea58-939b-4f81-9177-dc2f4e1ffd09",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "c965ce22-8f3a-405d-9abd-5b1c3f6352b7",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "d58c343d-1f04-453f-b66d-e75e1efb8b80",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "537aef24-f791-47d2-96ca-11b6195c4a5c",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "cb1d5838-ccf7-4cce-949f-94e05513b970": {
+    "query": "ui benchmark recall",
+    "query_tokens": [
+      "benchmark",
+      "recall",
+      "ui"
+    ],
+    "good_answers": []
+  },
+  "ec543d9a-f0d4-4962-ab75-0d7ccf7792b2": {
+    "query": "benchmark output results JSON view",
+    "query_tokens": [
+      "benchmark",
+      "json",
+      "output",
+      "results",
+      "view"
+    ],
+    "good_answers": [
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "a2606013-e06b-469c-850c-c49b619bd302",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "fd685dbd-c452-4e08-af82-296efb3d58c4": {
+    "query": "benchmark score retrieval judging",
+    "query_tokens": [
+      "benchmark",
+      "judging",
+      "retrieval",
+      "score"
+    ],
+    "good_answers": [
+      {
+        "id": "8601ea58-939b-4f81-9177-dc2f4e1ffd09",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "c965ce22-8f3a-405d-9abd-5b1c3f6352b7",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "d58c343d-1f04-453f-b66d-e75e1efb8b80",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "537aef24-f791-47d2-96ca-11b6195c4a5c",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "d17f929c-bb56-48b9-8d9c-efbe8adc9c59",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "d061529b-9c2e-493e-826e-4d60a8353f7d": {
+    "query": "gemini free tier rate limits api",
+    "query_tokens": [
+      "api",
+      "free",
+      "gemini",
+      "limits",
+      "rate",
+      "tier"
+    ],
+    "good_answers": [
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "43c72d1b-4a1e-4950-ae40-85479a1fcc41",
+        "category": "history",
+        "overlap": 5
+      }
+    ]
+  },
+  "98ec3af9-ac74-4ecf-a43c-a6a4a66e341d": {
+    "query": "gemini api key env setup",
+    "query_tokens": [
+      "api",
+      "env",
+      "gemini",
+      "key",
+      "setup"
+    ],
+    "good_answers": [
+      {
+        "id": "c398792f-f2b5-4765-81ea-e85e72b98ffb",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "4ac39e2b-5fef-426c-acd4-c673f5724ad1": {
+    "query": "manifest accuracy merge",
+    "query_tokens": [
+      "accuracy",
+      "manifest",
+      "merge"
+    ],
+    "good_answers": []
+  },
+  "ebe2a105-0c46-405f-920b-ca9266aed90f": {
+    "query": "mv .scratch/agent-memory-benchmark benchmarks/agent-memory-benchmark",
+    "query_tokens": [
+      "agent",
+      "benchmark",
+      "benchmarks",
+      "memory",
+      "mv",
+      "scratch"
+    ],
+    "good_answers": [
+      {
+        "id": "a2606013-e06b-469c-850c-c49b619bd302",
+        "category": "decisions",
+        "overlap": 4
+      },
+      {
+        "id": "ae3031b4-10a6-43c2-b6a6-af6837ef0897",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "067d429f-9f70-4888-a158-05ded24ef2c8",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "4d7efffe-fc35-4e3f-aff0-298e55bb6b37",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "8601ea58-939b-4f81-9177-dc2f4e1ffd09",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "22fd1a3e-75ed-4e7e-aa14-f2ef477dd913": {
+    "query": "rm -f src/config/neuronrc.ts src/config/neuronrc.test.ts",
+    "query_tokens": [
+      "config",
+      "neuronrc",
+      "rm",
+      "src",
+      "test",
+      "ts"
+    ],
+    "good_answers": [
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 5
+      },
+      {
+        "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "f8799235-7d3c-43cf-aa9d-ee8f4dad7e4b",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "9756c77b-dbca-4396-bd54-cfc66d7ae073",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "overlap": 3
+      }
+    ]
+  },
+  "dd9579f3-01fd-481c-93cb-e4cc30e9613d": {
+    "query": "./node_modules/.bin/vitest run",
+    "query_tokens": [
+      "bin",
+      "modules",
+      "node",
+      "run",
+      "vitest"
+    ],
+    "good_answers": [
+      {
+        "id": "136c5f4c-bfe4-440c-a2cd-f760369e36b4",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "2d4d1c3f-cb42-40d6-a9b9-66ad70fb8faf": {
+    "query": "neuron learn query md-file-management",
+    "query_tokens": [
+      "file",
+      "learn",
+      "management",
+      "md",
+      "neuron",
+      "query"
+    ],
+    "good_answers": [
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "overlap": 4
+      }
+    ]
+  },
+  "ddd3d8eb-a1ed-4205-b4e1-319d98e0e7a1": {
+    "query": "md-file-management",
+    "query_tokens": [
+      "file",
+      "management",
+      "md"
+    ],
+    "good_answers": [
+      {
+        "id": "a6a668b1-659f-488b-ae6b-fbf79b7eaf47",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "f8f53cda-d5eb-4e67-a453-03e1d072894a",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "65dff280-7a8f-4f2b-861b-1c41e9ae6605": {
+    "query": "neuron learn query md-file-management storage",
+    "query_tokens": [
+      "file",
+      "learn",
+      "management",
+      "md",
+      "neuron",
+      "query",
+      "storage"
+    ],
+    "good_answers": [
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "overlap": 5
+      },
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 5
+      },
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+        "category": "history",
+        "overlap": 4
+      }
+    ]
+  },
+  "57d0c762-ffc0-4a01-b381-ac27e9544607": {
+    "query": "neuron learn query markdown vector sync engine",
+    "query_tokens": [
+      "engine",
+      "learn",
+      "markdown",
+      "neuron",
+      "query",
+      "sync",
+      "vector"
+    ],
+    "good_answers": [
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 4
+      }
+    ]
+  },
+  "5fd59d9e-e896-4d31-bbcc-6dbf5cb31c9b": {
+    "query": "cli sync command scaffolding",
+    "query_tokens": [
+      "cli",
+      "command",
+      "scaffolding",
+      "sync"
+    ],
+    "good_answers": [
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "99fc9e12-ed6b-4741-a259-0c1f03df32c1",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "59d6873e-875f-4d07-8ae0-b216bcbcf815": {
+    "query": "e2e testing md-file-management",
+    "query_tokens": [
+      "e2e",
+      "file",
+      "management",
+      "md",
+      "testing"
+    ],
+    "good_answers": [
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "overlap": 5
+      },
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "a6a668b1-659f-488b-ae6b-fbf79b7eaf47",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "f8f53cda-d5eb-4e67-a453-03e1d072894a",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "04315174-c0b9-47b5-b9c4-2a1eb584a09b": {
+    "query": "neuron learn query md-file-management test strategy",
+    "query_tokens": [
+      "file",
+      "learn",
+      "management",
+      "md",
+      "neuron",
+      "query",
+      "strategy",
+      "test"
+    ],
+    "good_answers": [
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "overlap": 5
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 4
+      },
+      {
+        "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+        "category": "history",
+        "overlap": 4
+      }
+    ]
+  },
+  "70b10daa-a5ac-4c3a-9d95-e78e010f1fb8": {
+    "query": "neuron learn query test setup runners project structure",
+    "query_tokens": [
+      "learn",
+      "neuron",
+      "project",
+      "query",
+      "runners",
+      "setup",
+      "structure",
+      "test"
+    ],
+    "good_answers": [
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 4
+      }
+    ]
+  },
+  "5c3eb933-a1ae-481b-8911-b26e0502d819": {
+    "query": "neuron learn query MdStorageAdapter markdown storage",
+    "query_tokens": [
+      "learn",
+      "markdown",
+      "mdstorageadapter",
+      "neuron",
+      "query",
+      "storage"
+    ],
+    "good_answers": [
+      {
+        "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "b75433c6-7fac-4d71-b098-c6675af73cda": {
+    "query": "git branch -a",
+    "query_tokens": [
+      "branch",
+      "git"
+    ],
+    "good_answers": [
+      {
+        "id": "ae3031b4-10a6-43c2-b6a6-af6837ef0897",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "0854af70-be22-424c-af3d-df17ed71230a",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "c336bef4-fb6b-4209-982c-f3bd362e3d3a",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+        "category": "history",
+        "overlap": 1
+      }
+    ]
+  },
+  "226a88e9-5123-4323-8772-1c9c8d44977a": {
+    "query": "neuron learn query MdStorageAdapter verification",
+    "query_tokens": [
+      "learn",
+      "mdstorageadapter",
+      "neuron",
+      "query",
+      "verification"
+    ],
+    "good_answers": []
+  },
+  "fc17d3cb-f0ac-4a7a-8fc0-c33d95fdac77": {
+    "query": "MdStorageAdapter stress test",
+    "query_tokens": [
+      "mdstorageadapter",
+      "stress",
+      "test"
+    ],
+    "good_answers": [
+      {
+        "id": "3d41e402-efcf-4bbe-af53-fa889d72ccfe",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "16cdd503-b7c9-4fea-9ede-92bc942e5f73",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "c218fd06-03b3-4536-8466-eb113db7c8f5",
+        "category": "learning",
+        "overlap": 2
+      },
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "6bee3113-427b-403c-87d3-36b323179bb6": {
+    "query": "MdStorageAdapter parse fix",
+    "query_tokens": [
+      "fix",
+      "mdstorageadapter",
+      "parse"
+    ],
+    "good_answers": []
+  },
+  "338addbc-9556-44cc-b09d-260c46f70f5a": {
+    "query": "MdStorageAdapter remediation fix",
+    "query_tokens": [
+      "fix",
+      "mdstorageadapter",
+      "remediation"
+    ],
+    "good_answers": []
+  },
+  "2de01dc3-f51b-413b-b714-278622e79bb6": {
+    "query": "neuron learn query forensic audit mdStorageAdapter round 2",
+    "query_tokens": [
+      "audit",
+      "forensic",
+      "learn",
+      "mdstorageadapter",
+      "neuron",
+      "query",
+      "round"
+    ],
+    "good_answers": []
+  },
+  "c93279a0-d044-4f9e-8647-9372702f7342": {
+    "query": "neuron learn query MdStorageAdapter empirical test",
+    "query_tokens": [
+      "empirical",
+      "learn",
+      "mdstorageadapter",
+      "neuron",
+      "query",
+      "test"
+    ],
+    "good_answers": [
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "144dd577-55b1-4849-bffa-749907dc61c0": {
+    "query": "MdStorageAdapter gate verification",
+    "query_tokens": [
+      "gate",
+      "mdstorageadapter",
+      "verification"
+    ],
+    "good_answers": []
+  },
+  "a2410317-ba39-4aac-9807-04ba604a4a80": {
+    "query": "personamem benchmark retrieval prompt failure mode",
+    "query_tokens": [
+      "benchmark",
+      "failure",
+      "mode",
+      "personamem",
+      "prompt",
+      "retrieval"
+    ],
+    "good_answers": [
+      {
+        "id": "f86c4960-233f-4e86-93ca-e71379b09182",
+        "category": "learning",
+        "overlap": 5
+      },
+      {
+        "id": "29723af5-35a5-4fef-a8cc-cf132467edc9",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "37d6e5d9-15cc-492a-918a-017e8fa64bf6",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "a9bd1555-7f94-4952-b099-9dd4cb6dd5a2": {
+    "query": "scan dry run",
+    "query_tokens": [
+      "dry",
+      "run",
+      "scan"
+    ],
+    "good_answers": [
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "b24d26f9-da4a-4477-894d-0757bd29d7f7": {
+    "query": "summarizer model loading progress chatml prompt leakage",
+    "query_tokens": [
+      "chatml",
+      "leakage",
+      "loading",
+      "model",
+      "progress",
+      "prompt",
+      "summarizer"
+    ],
+    "good_answers": []
+  },
+  "462d4ec9-614e-4a01-95f6-3a1001c6a63a": {
+    "query": "delete local model cache",
+    "query_tokens": [
+      "cache",
+      "delete",
+      "local",
+      "model"
+    ],
+    "good_answers": [
+      {
+        "id": "41c6f487-a5f2-4fa9-bc33-7aac62432baf",
+        "category": "decisions",
+        "overlap": 2
+      }
+    ]
+  },
+  "6957946f-bbcc-4957-ad3d-cc0269293ff5": {
+    "query": "2.1.0 release plan",
+    "query_tokens": [
+      "plan",
+      "release"
+    ],
+    "good_answers": [
+      {
+        "id": "3d41e402-efcf-4bbe-af53-fa889d72ccfe",
+        "category": "learning",
+        "overlap": 1
+      },
+      {
+        "id": "0e7cfe8a-19c1-4188-af90-c48ce144bfa9",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "fcc481f1-50d3-4f91-9aa6-4024a14885b2",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "f23f7d38-c988-475c-88b6-ae4e7f18278c",
+        "category": "decisions",
+        "overlap": 1
+      }
+    ]
+  },
+  "88ee8ab1-3530-4b7d-ad90-d49714ae7bd3": {
+    "query": "rc version bump release plan",
+    "query_tokens": [
+      "bump",
+      "plan",
+      "rc",
+      "release",
+      "version"
+    ],
+    "good_answers": []
+  },
+  "c33d2492-5640-409a-ae8f-3542ad43544b": {
+    "query": "ticket 2 memory store ingestion grilling domain model",
+    "query_tokens": [
+      "domain",
+      "grilling",
+      "ingestion",
+      "memory",
+      "model",
+      "store",
+      "ticket"
+    ],
+    "good_answers": []
+  },
+  "cb73f1af-be38-48be-9c7d-5055ca03ed38": {
+    "query": "documentation update readme skill help protocol",
+    "query_tokens": [
+      "documentation",
+      "help",
+      "protocol",
+      "readme",
+      "skill",
+      "update"
+    ],
+    "good_answers": [
+      {
+        "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "5b21e56a-7d84-4862-9284-2808226b34a4",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "32e4942b-71e6-45f1-a10c-55ff72658296",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "aae7efd0-0631-48b7-a7d7-c187b7fb7d73",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "92a6a01e-0616-4f05-8639-db7edbcc8f28": {
+    "query": "init loading bar scanning",
+    "query_tokens": [
+      "bar",
+      "init",
+      "loading",
+      "scanning"
+    ],
+    "good_answers": []
+  },
+  "52205683-60fb-42d5-af25-392302017f81": {
+    "query": "neuron learn query scan yaml section",
+    "query_tokens": [
+      "learn",
+      "neuron",
+      "query",
+      "scan",
+      "section",
+      "yaml"
+    ],
+    "good_answers": [
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "32776a05-911a-4b1f-b4c9-63626837d061",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "0984264e-23ba-4151-aae5-fbda45831cd3",
+        "category": "learning",
+        "overlap": 3
+      }
+    ]
+  },
+  "9fdc3212-629b-4b99-bb13-d03b41afeaec": {
+    "query": "neuron learn query architecture scan execution trigger",
+    "query_tokens": [
+      "architecture",
+      "execution",
+      "learn",
+      "neuron",
+      "query",
+      "scan",
+      "trigger"
+    ],
+    "good_answers": []
+  },
+  "b95098ba-53f1-40c9-a03b-42b19bd1f158": {
+    "query": "neuron learn query architecture scan lazy initialization memory call diffing",
+    "query_tokens": [
+      "architecture",
+      "call",
+      "diffing",
+      "initialization",
+      "lazy",
+      "learn",
+      "memory",
+      "neuron",
+      "query",
+      "scan"
+    ],
+    "good_answers": []
+  },
+  "763ca9c0-0d48-4029-bf45-cbdb1a1ed22f": {
+    "query": "neuron learn query ensureScanOrDiff subsequent scans diffing",
+    "query_tokens": [
+      "diffing",
+      "ensurescanordiff",
+      "learn",
+      "neuron",
+      "query",
+      "scans",
+      "subsequent"
+    ],
+    "good_answers": []
+  },
+  "347e641c-8e91-4f93-96fc-9f555621c598": {
+    "query": "neuron learn query revert scan diff code removal",
+    "query_tokens": [
+      "code",
+      "diff",
+      "learn",
+      "neuron",
+      "query",
+      "removal",
+      "revert",
+      "scan"
+    ],
+    "good_answers": []
+  },
+  "5a68a3d5-9ac6-49ca-8671-671e0dc33efb": {
+    "query": "git release push version",
+    "query_tokens": [
+      "git",
+      "push",
+      "release",
+      "version"
+    ],
+    "good_answers": [
+      {
+        "id": "0e7cfe8a-19c1-4188-af90-c48ce144bfa9",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "fcc481f1-50d3-4f91-9aa6-4024a14885b2",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "2fd47cdd-939a-4a29-b2c2-e78aa80dfc0f": {
+    "query": "architectural scan config",
+    "query_tokens": [
+      "architectural",
+      "config",
+      "scan"
+    ],
+    "good_answers": [
+      {
+        "id": "ea7069ac-ee62-44c2-8f99-b25fc42c49f3",
+        "category": "decisions",
+        "overlap": 2
+      },
+      {
+        "id": "7071ca23-9f6f-4d1b-ae47-375ed2b31b8c",
+        "category": "decisions",
+        "overlap": 2
+      },
+      {
+        "id": "921b7449-c235-47a7-ab38-1d086fc0a1ff",
+        "category": "decisions",
+        "overlap": 2
+      },
+      {
+        "id": "8114d254-7a40-43f1-ab1b-508af3589fd4",
+        "category": "decisions",
+        "overlap": 2
+      }
+    ]
+  },
+  "e6ae6744-14ea-4122-9bb7-b7bf7ee78921": {
+    "query": "architectural scan default category",
+    "query_tokens": [
+      "architectural",
+      "category",
+      "default",
+      "scan"
+    ],
+    "good_answers": [
+      {
+        "id": "ea7069ac-ee62-44c2-8f99-b25fc42c49f3",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "7071ca23-9f6f-4d1b-ae47-375ed2b31b8c",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "921b7449-c235-47a7-ab38-1d086fc0a1ff",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "8114d254-7a40-43f1-ab1b-508af3589fd4",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "6aa7336e-305c-4b3d-b6f9-2c08a10d3f89",
+        "category": "learning",
+        "overlap": 2
+      }
+    ]
+  },
+  "891dd5e0-0191-4269-9f09-2120dfe93aab": {
+    "query": "grill ticket 3",
+    "query_tokens": [
+      "grill",
+      "ticket"
+    ],
+    "good_answers": [
+      {
+        "id": "64c53574-1f84-4c0f-99ea-b9ee696cf5e4",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "4f0da669-1401-4453-83f6-2d5c7b95f8e9",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "5f07a8c4-8a86-4777-9d7e-74afb12d5551",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "3779bb06-93f1-48cf-ab0d-0e67fc1d0031",
+        "category": "history",
+        "overlap": 1
+      },
+      {
+        "id": "94618b29-7b77-4b30-a299-e450843fa0fc",
+        "category": "history",
+        "overlap": 1
+      }
+    ]
+  },
+  "05585cd9-2611-462a-b097-5c5386ddd370": {
+    "query": "architectural drift diffing",
+    "query_tokens": [
+      "architectural",
+      "diffing",
+      "drift"
+    ],
+    "good_answers": []
+  },
+  "de89b2a3-2c98-4a9d-99f7-f219164a08a7": {
+    "query": "grill summary plan complete",
+    "query_tokens": [
+      "complete",
+      "grill",
+      "plan",
+      "summary"
+    ],
+    "good_answers": []
+  },
+  "3f1edfd9-1e8c-45b6-b8eb-a2e7ddec5811": {
+    "query": "architecture category filtering scan tags",
+    "query_tokens": [
+      "architecture",
+      "category",
+      "filtering",
+      "scan",
+      "tags"
+    ],
+    "good_answers": [
+      {
+        "id": "ea7069ac-ee62-44c2-8f99-b25fc42c49f3",
+        "category": "decisions",
+        "overlap": 4
+      },
+      {
+        "id": "7071ca23-9f6f-4d1b-ae47-375ed2b31b8c",
+        "category": "decisions",
+        "overlap": 4
+      },
+      {
+        "id": "921b7449-c235-47a7-ab38-1d086fc0a1ff",
+        "category": "decisions",
+        "overlap": 4
+      },
+      {
+        "id": "8114d254-7a40-43f1-ab1b-508af3589fd4",
+        "category": "decisions",
+        "overlap": 4
+      }
+    ]
+  },
+  "295fa8ed-bcac-425b-b677-a0dfc67cfc13": {
+    "query": "md mode overwrite scan blueprint entry",
+    "query_tokens": [
+      "blueprint",
+      "entry",
+      "md",
+      "mode",
+      "overwrite",
+      "scan"
+    ],
+    "good_answers": [
+      {
+        "id": "82ce5afc-7126-4820-a452-702594f188a6",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "32e4942b-71e6-45f1-a10c-55ff72658296",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "a6743205-369e-4a31-9038-3f80d1529cfd": {
+    "query": "vector db upsert transact",
+    "query_tokens": [
+      "db",
+      "transact",
+      "upsert",
+      "vector"
+    ],
+    "good_answers": []
+  },
+  "585fb365-4788-4996-82c7-5a68864eeb70": {
+    "query": "memory query architectural drift auto scan",
+    "query_tokens": [
+      "architectural",
+      "auto",
+      "drift",
+      "memory",
+      "query",
+      "scan"
+    ],
+    "good_answers": [
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "43c72d1b-4a1e-4950-ae40-85479a1fcc41",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "2d71d09f-5634-4fb2-95ec-71c5993c3d01": {
+    "query": "auto re-scan on drift in memory query and exec",
+    "query_tokens": [
+      "auto",
+      "drift",
+      "exec",
+      "memory",
+      "query",
+      "re",
+      "scan"
+    ],
+    "good_answers": []
+  },
+  "c95c1dc4-1dee-46dd-b5df-f1096d51c636": {
+    "query": "learn command handler query subcommand scan",
+    "query_tokens": [
+      "command",
+      "handler",
+      "learn",
+      "query",
+      "scan",
+      "subcommand"
+    ],
+    "good_answers": []
+  },
+  "f2296330-8460-4366-819b-f578377ede01": {
+    "query": "fold learn and history into memory",
+    "query_tokens": [
+      "fold",
+      "history",
+      "into",
+      "learn",
+      "memory"
+    ],
+    "good_answers": [
+      {
+        "id": "2a4c6513-ec82-4c8e-bcf7-b16088795e03",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "a64b3023-a038-4cfd-9650-c581b941c416": {
+    "query": "why learn query autoRescanIfDriftDetected not scanning",
+    "query_tokens": [
+      "autorescanifdriftdetected",
+      "learn",
+      "not",
+      "query",
+      "scanning",
+      "why"
+    ],
+    "good_answers": []
+  },
+  "cae36bb2-c592-4a74-8490-94c18a176a4c": {
+    "query": "chinese characters summarizer architecture scan Qwen SmolLM2",
+    "query_tokens": [
+      "architecture",
+      "characters",
+      "chinese",
+      "qwen",
+      "scan",
+      "smollm2",
+      "summarizer"
+    ],
+    "good_answers": []
+  },
+  "a247e717-e4b1-48f7-a69b-8d4ec0c2c683": {
+    "query": "architecture scans 2.1.0 tickets roadmap next ticket",
+    "query_tokens": [
+      "architecture",
+      "next",
+      "roadmap",
+      "scans",
+      "ticket",
+      "tickets"
+    ],
+    "good_answers": []
+  },
+  "bc09458b-2a57-45e4-9263-4f7d5478ec24": {
+    "query": "benchmarking agent memory benchmark runner rate limit free tier",
+    "query_tokens": [
+      "agent",
+      "benchmark",
+      "benchmarking",
+      "free",
+      "limit",
+      "memory",
+      "rate",
+      "runner",
+      "tier"
+    ],
+    "good_answers": [
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "43c72d1b-4a1e-4950-ae40-85479a1fcc41",
+        "category": "history",
+        "overlap": 6
+      }
+    ]
+  },
+  "885128c7-4415-4bf6-99e9-8eacabda7120": {
+    "query": "deep testing suite architecture scans 2.1.0",
+    "query_tokens": [
+      "architecture",
+      "deep",
+      "scans",
+      "suite",
+      "testing"
+    ],
+    "good_answers": [
+      {
+        "id": "32e4942b-71e6-45f1-a10c-55ff72658296",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "f67ea98c-24b7-4819-af6d-6b14b736e05e": {
+    "query": "e2e benchmark suite test fixtures polyglot",
+    "query_tokens": [
+      "benchmark",
+      "e2e",
+      "fixtures",
+      "polyglot",
+      "suite",
+      "test"
+    ],
+    "good_answers": [
+      {
+        "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "32e4942b-71e6-45f1-a10c-55ff72658296",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "c2c1394d-5342-4daa-8b60-773e13aaac9e": {
+    "query": "synthetic data generation benchmark test runner terminal ui dashboard",
+    "query_tokens": [
+      "benchmark",
+      "dashboard",
+      "data",
+      "generation",
+      "runner",
+      "synthetic",
+      "terminal",
+      "test",
+      "ui"
+    ],
+    "good_answers": []
+  },
+  "840ba529-b2c4-4ebc-b561-97f3f909c9f9": {
+    "query": "release candidate rc release process",
+    "query_tokens": [
+      "candidate",
+      "process",
+      "rc",
+      "release"
+    ],
+    "good_answers": [
+      {
+        "id": "fcc481f1-50d3-4f91-9aa6-4024a14885b2",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "c5586b60-ae51-436f-a697-541a1ab1c30a": {
+    "query": "Repository Architectural Blueprint",
+    "query_tokens": [
+      "architectural",
+      "blueprint",
+      "repository"
+    ],
+    "good_answers": [
+      {
+        "id": "ea7069ac-ee62-44c2-8f99-b25fc42c49f3",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "7071ca23-9f6f-4d1b-ae47-375ed2b31b8c",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "921b7449-c235-47a7-ab38-1d086fc0a1ff",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "8114d254-7a40-43f1-ab1b-508af3589fd4",
+        "category": "decisions",
+        "overlap": 3
+      }
+    ]
+  },
+  "331cb36b-f193-4595-8724-a9f98ee09eb6": {
+    "query": "recall mechanism AGENTS.md CLAUDE.md instructions harness",
+    "query_tokens": [
+      "agents",
+      "claude",
+      "harness",
+      "instructions",
+      "md",
+      "mechanism",
+      "recall"
+    ],
+    "good_answers": []
+  },
+  "1fa73901-a1ca-4809-a4c5-1e3fae1413e4": {
+    "query": "tree-sitter wasm AST parsing",
+    "query_tokens": [
+      "ast",
+      "parsing",
+      "sitter",
+      "tree",
+      "wasm"
+    ],
+    "good_answers": [
+      {
+        "id": "f23f7d38-c988-475c-88b6-ae4e7f18278c",
+        "category": "decisions",
+        "overlap": 4
+      },
+      {
+        "id": "0a63263c-733d-4e1c-8cdb-20d6efa7b565",
+        "category": "decisions",
+        "overlap": 3
+      },
+      {
+        "id": "108b1eef-fdb8-44b0-9bd5-ef848d87dfab",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "98480ae3-7ff1-4318-bd94-50a2cf363e64",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "9ed8975d-a613-4f76-909a-3003ea006198",
+        "category": "decisions",
+        "overlap": 3
+      }
+    ]
+  },
+  "4e27a3d6-1094-437c-8ae7-2057a783caeb": {
+    "query": "small llm local model",
+    "query_tokens": [
+      "llm",
+      "local",
+      "model",
+      "small"
+    ],
+    "good_answers": [
+      {
+        "id": "6104d10a-3dd1-4b73-a30f-d92b1be72314",
+        "category": "history",
+        "overlap": 2
+      },
+      {
+        "id": "8e650898-e498-4f99-a251-82290875ae82",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "c893ca0f-91a3-4714-90b0-2433f1317f60": {
+    "query": "tree-sitter wasm grammar loading web-tree-sitter scanner",
+    "query_tokens": [
+      "grammar",
+      "loading",
+      "scanner",
+      "sitter",
+      "tree",
+      "wasm",
+      "web"
+    ],
+    "good_answers": [
+      {
+        "id": "108b1eef-fdb8-44b0-9bd5-ef848d87dfab",
+        "category": "learning",
+        "overlap": 6
+      },
+      {
+        "id": "f23f7d38-c988-475c-88b6-ae4e7f18278c",
+        "category": "decisions",
+        "overlap": 5
+      },
+      {
+        "id": "a6a98b0b-b19c-4f8e-9f47-a3315ff251e5",
+        "category": "history",
+        "overlap": 5
+      }
+    ]
+  },
+  "6e9b658e-99e2-4d9f-a7a9-95420af7e1a6": {
+    "query": "wayfinder map ticket tree-sitter grammars",
+    "query_tokens": [
+      "grammars",
+      "map",
+      "sitter",
+      "ticket",
+      "tree",
+      "wayfinder"
+    ],
+    "good_answers": [
+      {
+        "id": "a6a98b0b-b19c-4f8e-9f47-a3315ff251e5",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "0a63263c-733d-4e1c-8cdb-20d6efa7b565",
+        "category": "decisions",
+        "overlap": 5
+      },
+      {
+        "id": "98480ae3-7ff1-4318-bd94-50a2cf363e64",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "3e984761-bb67-4d30-b229-62111031f998",
+        "category": "learning",
+        "overlap": 3
+      },
+      {
+        "id": "9ed8975d-a613-4f76-909a-3003ea006198",
+        "category": "decisions",
+        "overlap": 3
+      }
+    ]
+  },
+  "586c6bd8-c6f7-4267-ad6c-7f816903f520": {
+    "query": "parser fidelity labelling baseline migration blueprint card drift",
+    "query_tokens": [
+      "baseline",
+      "blueprint",
+      "card",
+      "drift",
+      "fidelity",
+      "labelling",
+      "migration",
+      "parser"
+    ],
+    "good_answers": [
+      {
+        "id": "64c53574-1f84-4c0f-99ea-b9ee696cf5e4",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "ba8f8274-7a66-4755-b495-d956ab1ca111",
+        "category": "decisions",
+        "overlap": 4
+      }
+    ]
+  },
+  "ab6c5b01-1f9c-4de0-a39b-e6834761f41b": {
+    "query": "Qwen 0.5B summarizer latency quality guardrails LLM jobs",
+    "query_tokens": [
+      "5b",
+      "guardrails",
+      "jobs",
+      "latency",
+      "llm",
+      "quality",
+      "qwen",
+      "summarizer"
+    ],
+    "good_answers": []
+  },
+  "49513605-6121-4a37-a2a7-abeb0db1b5b9": {
+    "query": "PersonaMem benchmark harness gemini free tier judge overnight run",
+    "query_tokens": [
+      "benchmark",
+      "free",
+      "gemini",
+      "harness",
+      "judge",
+      "overnight",
+      "personamem",
+      "run",
+      "tier"
+    ],
+    "good_answers": [
+      {
+        "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+        "category": "history",
+        "overlap": 6
+      },
+      {
+        "id": "43c72d1b-4a1e-4950-ae40-85479a1fcc41",
+        "category": "history",
+        "overlap": 6
+      }
+    ]
+  },
+  "b5114651-2854-475d-b119-fe10da621545": {
+    "query": "longmemeval benchmark gemini billing deferred write-side enrichment auto tags importance",
+    "query_tokens": [
+      "auto",
+      "benchmark",
+      "billing",
+      "deferred",
+      "enrichment",
+      "gemini",
+      "importance",
+      "longmemeval",
+      "side",
+      "tags",
+      "write"
+    ],
+    "good_answers": []
+  },
+  "ca361333-ae3e-4ea7-9b94-2d2e85541656": {
+    "query": "wayfinder map tickets grilling",
+    "query_tokens": [
+      "grilling",
+      "map",
+      "tickets",
+      "wayfinder"
+    ],
+    "good_answers": [
+      {
+        "id": "0a63263c-733d-4e1c-8cdb-20d6efa7b565",
+        "category": "decisions",
+        "overlap": 4
+      },
+      {
+        "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+        "category": "history",
+        "overlap": 4
+      },
+      {
+        "id": "aae7efd0-0631-48b7-a7d7-c187b7fb7d73",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "8e650898-e498-4f99-a251-82290875ae82",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "78ee54a6-e1ca-412b-9226-ec4e446c0b3b",
+        "category": "history",
+        "overlap": 2
+      }
+    ]
+  },
+  "0535f0d5-ef71-4686-88e7-e932909d9074": {
+    "query": "wayfinder map ticket implementation",
+    "query_tokens": [
+      "implementation",
+      "map",
+      "ticket",
+      "wayfinder"
+    ],
+    "good_answers": [
+      {
+        "id": "a6a98b0b-b19c-4f8e-9f47-a3315ff251e5",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "e8885ca8-516c-4ba3-bba5-4e2bb211f37d",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "64c53574-1f84-4c0f-99ea-b9ee696cf5e4",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "aae7efd0-0631-48b7-a7d7-c187b7fb7d73",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "8e650898-e498-4f99-a251-82290875ae82",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  },
+  "df0ecd84-134a-42a9-8304-ef6f9d385c97": {
+    "query": "wayfinder map tickets tree-sitter grammars",
+    "query_tokens": [
+      "grammars",
+      "map",
+      "sitter",
+      "tickets",
+      "tree",
+      "wayfinder"
+    ],
+    "good_answers": [
+      {
+        "id": "0a63263c-733d-4e1c-8cdb-20d6efa7b565",
+        "category": "decisions",
+        "overlap": 6
+      },
+      {
+        "id": "a6a98b0b-b19c-4f8e-9f47-a3315ff251e5",
+        "category": "history",
+        "overlap": 5
+      },
+      {
+        "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+        "category": "history",
+        "overlap": 3
+      },
+      {
+        "id": "aae7efd0-0631-48b7-a7d7-c187b7fb7d73",
+        "category": "history",
+        "overlap": 3
+      }
+    ]
+  }
+}

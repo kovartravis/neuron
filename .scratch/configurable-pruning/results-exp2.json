@@ -1,0 +1,33 @@
+{
+  "status": "not_executed",
+  "reason": "Experiment 1 disqualified both candidate arms (see results-exp1.json). ab-test-plan.md section 3 states explicitly: \"If both arms disqualify, say so plainly — that is a legitimate result and it collapses Experiment 2, because there is no safe judgement to prune with.\" Running Experiment 2 requires applying one arm's importance rewrite to a copy of the store before pruning it; with no arm cleared as safe, doing so would mean gating a real deletion decision on a classifier already shown to false-delete an ADR and an undocumented failure-fix trap. That is the exact hazard the whole exercise exists to prevent, so it was not done.",
+  "infrastructure_built_and_validated": {
+    "query_filter": {
+      "script": "filter_queries.py",
+      "input_query_logs": 797,
+      "dropped_as_command_strings": 577,
+      "dropped_as_two_words_or_fewer": 43,
+      "surviving_semantic_queries": 177,
+      "surviving_after_dedup": 126,
+      "note": "Filter is content-based (CLI syntax, flags, shell/path vocabulary, length), not a command-prefix regex, per the plan's instruction. Confirms the plan's own estimate of roughly 100-150 terse semantic fragments."
+    },
+    "relevance_labels": {
+      "script": "build_relevance_labels.py",
+      "method": "Keyword/token co-occurrence between each query and each memory's content (capped at first 400 chars to stop the auto-generated architecture blueprint cards from dominating purely on length), independent of the hybrid FTS+vector ranking system under test — not circular. A memory is a 'good answer' if it shares at least half the query's significant tokens, capped at the top 5 by overlap.",
+      "queries_with_at_least_one_good_answer": 96,
+      "queries_with_zero": 30,
+      "total_query_good_answer_pairs": 331,
+      "caveat": "This is a coarse auditable proxy for human relevance judgement, not exhaustive manual labelling of all query x top-k pairs (which would have been ~1260 individual judgements). Spot-checked against manual reading on two random samples for face validity; both looked sound after the length-capping fix."
+    },
+    "paired_damage_gain_runner": {
+      "script": "run_exp2.mjs",
+      "design": "Copies a source DB to Arm B (untouched control) and Arm A (rewrite importance per a named Experiment-1 arm's predictions, then run the real NeuronMemory.maintain() prune path — the actual production deletion code, not a reimplementation). Runs the filtered query set against both via the real hybrid query() method with the real BGE embedder. Computes rank-in-top-10 for each query's labelled good answers in both arms to derive recall@1/@5/MRR and rank-change; cross-references deleted good-answer ids against Experiment 1's recoverability ground truth to flag hard-stop damage.",
+      "status": "implemented, smoke-tested on plumbing (NeuronMemory instantiation, query(), maintain()) via ad-hoc checks during development; NOT run end-to-end for a real verdict because there is no arm to run it with"
+    },
+    "synthetic_corpus_run2": {
+      "status": "not built",
+      "reason": "Run 2 (the ~1500-entry scale probe) only makes sense as a second data point once Run 1 has run; since Run 1 itself was withheld, building and backdating ~1300 synthetic entries would have produced a number with no experiment to attach it to. The construction method is specified and ready in ab-test-plan.md section 4.2 if a future session clears an arm and needs to re-run this."
+    }
+  },
+  "what_would_unblock_this": "A judgement method that clears Experiment 1's bar — zero false-deletes on the 11-entry unrecoverable negative-control set. Candidates not yet tried: a larger/different model, a prompt that surfaces category membership (decisions vs history) to the classifier so ADRs are structurally protected rather than judged on content alone, or accepting a per-category default (never infer importance for `decisions`, only for `history`) which sidesteps the ADR failure mode entirely but does not address the two content-only misses (e8b009df, 98480ae3)."
+}
