@@ -267,4 +267,65 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
       customDb.close();
     });
   });
+
+  /**
+   * `update`/`delete` in dual mode used to report only the markdown side's
+   * outcome — `vecResult` was computed and never consulted, unlike `upsert`,
+   * which does trust it. When the two stores disagreed (a prior write that
+   * landed on only one side, a manual .md edit not yet `sync`'d), a real
+   * vector-side change was reported as `not_found`: a false negative on data
+   * that did change. Fixed to report success if either store changed.
+   */
+  describe('dual-mode status reflects both stores, not markdown alone', () => {
+    it('delete reports "deleted" when only the vector row exists (md copy already gone)', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'diverge-del-1', content: 'Vector-only survivor' },
+      ]);
+      // Simulate drift: something removed the .md copy without touching the DB.
+      await mdAdapter.deleteEntry('learning', 'diverge-del-1');
+      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
+
+      const result = await router.transact([
+        { op: 'delete', category: 'learning', id: 'diverge-del-1' },
+      ]);
+
+      expect(result[0].status).toBe('deleted');
+      const dbQuery = await memoryDb.query({ category: 'learning' });
+      expect(dbQuery).toHaveLength(0);
+    });
+
+    it('update reports "updated" when only the vector row exists (md copy already gone)', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'diverge-upd-1', content: 'original content' },
+      ]);
+      await mdAdapter.deleteEntry('learning', 'diverge-upd-1');
+      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
+
+      const result = await router.transact([
+        { op: 'update', category: 'learning', id: 'diverge-upd-1', content: 'updated for real' },
+      ]);
+
+      expect(result[0].status).toBe('updated');
+      const dbQuery = await memoryDb.query({ category: 'learning' });
+      expect(dbQuery.find(m => m.id === 'diverge-upd-1')?.content).toBe('updated for real');
+    });
+
+    it('reports not_found when neither store has the id', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+
+      const delResult = await router.transact([
+        { op: 'delete', category: 'learning', id: 'never-existed' },
+      ]);
+      expect(delResult[0].status).toBe('not_found');
+
+      const updResult = await router.transact([
+        { op: 'update', category: 'learning', id: 'never-existed', content: 'x' },
+      ]);
+      expect(updResult[0].status).toBe('not_found');
+    });
+  });
 });

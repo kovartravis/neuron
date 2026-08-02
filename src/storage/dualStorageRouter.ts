@@ -63,15 +63,31 @@ export class DualStorageRouter {
             await this.mdAdapter.writeEntry(cat, { id: entryId, content: m.content || '', tags: m.tags || [], importance: m.importance, scope: m.scope, taskId: m.taskId });
             results.push({ id: entryId, status: vecResult.status || 'created', project: vecResult.project || 'neuron' });
           } else if (m.op === 'update') {
+            // Report success if EITHER store actually changed. The two can
+            // diverge (a prior write that landed on only one side, a manual
+            // .md edit not yet synced), and reporting only the md outcome
+            // meant a vector-side update could succeed while the caller was
+            // told 'not_found' — a false negative on data that did change.
+            let mdUpdated = true;
             try {
               await this.mdAdapter.updateEntry(cat, { id: m.id, content: m.content, tags: m.tags, importance: m.importance, scope: m.scope, taskId: m.taskId });
-              results.push({ id: m.id, status: 'updated', project: vecResult.project || 'neuron' });
             } catch {
-              results.push({ id: m.id, status: 'not_found', project: vecResult.project || 'neuron' });
+              mdUpdated = false;
             }
+            const vecUpdated = vecResult.status === 'updated';
+            results.push({
+              id: m.id,
+              status: mdUpdated || vecUpdated ? 'updated' : 'not_found',
+              project: vecResult.project || 'neuron',
+            });
           } else if (m.op === 'delete') {
-            const deleted = await this.mdAdapter.deleteEntry(cat, m.id);
-            results.push({ id: m.id, status: deleted ? 'deleted' : 'not_found', project: vecResult.project || 'neuron' });
+            const mdDeleted = await this.mdAdapter.deleteEntry(cat, m.id);
+            const vecDeleted = vecResult.status === 'deleted';
+            results.push({
+              id: m.id,
+              status: mdDeleted || vecDeleted ? 'deleted' : 'not_found',
+              project: vecResult.project || 'neuron',
+            });
           }
         }
       }
@@ -106,6 +122,9 @@ export class DualStorageRouter {
             });
             results.push({ id: entryId, status: vecResult.status || 'created', project: vecResult.project || 'neuron' });
           } else if (m.op === 'update') {
+            // Report success if EITHER store actually changed — see the
+            // matching comment in the split-mode branch above.
+            let mdUpdated = true;
             try {
               await this.mdAdapter.updateEntry(category, {
                 id: m.id,
@@ -115,13 +134,23 @@ export class DualStorageRouter {
                 scope: m.scope,
                 taskId: m.taskId,
               });
-              results.push({ id: m.id, status: 'updated', project: vecResult.project || 'neuron' });
             } catch {
-              results.push({ id: m.id, status: 'not_found', project: vecResult.project || 'neuron' });
+              mdUpdated = false;
             }
+            const vecUpdated = vecResult.status === 'updated';
+            results.push({
+              id: m.id,
+              status: mdUpdated || vecUpdated ? 'updated' : 'not_found',
+              project: vecResult.project || 'neuron',
+            });
           } else if (m.op === 'delete') {
-            const deleted = await this.mdAdapter.deleteEntry(category, m.id);
-            results.push({ id: m.id, status: deleted ? 'deleted' : 'not_found', project: vecResult.project || 'neuron' });
+            const mdDeleted = await this.mdAdapter.deleteEntry(category, m.id);
+            const vecDeleted = vecResult.status === 'deleted';
+            results.push({
+              id: m.id,
+              status: mdDeleted || vecDeleted ? 'deleted' : 'not_found',
+              project: vecResult.project || 'neuron',
+            });
           }
         } catch (err) {
           // Error isolation for disk failures
@@ -147,7 +176,11 @@ export class DualStorageRouter {
       const vecCats: string[] = [];
 
       for (const cat of categories) {
-        const catStorage = this.config?.categories?.[cat]?.storage || 'vector';
+        // Matches the write-side default (line 47) for self-documentation.
+        // Dispatch below only branches on '=== md', so this has no behavioural
+        // effect — 'vector' and 'dual' both land in the same "not md" bucket —
+        // but the mismatched literal read as if it might, which is misleading.
+        const catStorage = this.config?.categories?.[cat]?.storage || 'dual';
         if (catStorage === 'md') {
           mdCats.push(cat);
         } else {

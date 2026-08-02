@@ -89,6 +89,43 @@ behind `memory query` re-baselines silently on the next source edit.
 - **`neuron scan --force`**: the flag was documented as "bypass the content cache
   and force a full re-scan" but was never read by the ingest path. It did
   nothing. `neuron scan` already re-scans and updates the card in place.
+## [2.1.5] - 2026-08-02
+
+### Fixed
+
+- **`dual`-mode `update` and `delete` reported only the markdown side's
+  outcome, ignoring what actually happened in the vector database.** `upsert`
+  has always trusted the vector result (`vecResult.status`); `update` and
+  `delete` computed the same `vecResult` and never looked at it, deciding
+  success or failure purely from whether the corresponding `.md` file
+  operation found the id.
+
+  When the two stores disagree — a prior write that landed on only one side,
+  a manual `.md` edit not yet reconciled with `neuron sync` — this produced a
+  false negative on a real change:
+
+  ```
+  # entry exists in the vector DB; its .md copy was already removed
+  $ neuron memory delete <id> --category learning
+  {"status":"not_found"}   # the row WAS deleted from the vector DB
+  ```
+
+  The same happened on `update`: content was overwritten in the vector DB
+  while the CLI reported `not_found`, giving no indication a change had
+  occurred. There was also no signal anywhere that the two stores had
+  diverged.
+
+  Both operations now report success if **either** store actually changed,
+  matching the precedent `upsert` already set. Affects `storage.mode: dual`
+  and `split`-mode categories whose per-category `storage` resolves to `dual`
+  (including the unconfigured default). `vector-only` and `md-only` modes
+  were never affected.
+
+- Aligned a cosmetic default-value mismatch in `split`-mode storage
+  resolution (write path defaulted an unconfigured category's storage to
+  `'dual'`, read path defaulted to `'vector'`). Both branches only ever
+  dispatch on `=== 'md'`, so this had no behavioural effect, but the
+  mismatched literal read as if it might.
 ## [2.1.4] - 2026-08-01
 
 ### Fixed
