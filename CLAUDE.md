@@ -40,15 +40,26 @@ neuron memory add --category decisions "<ADR / design choice rationale and detai
 
 ### On the metadata flags
 
-`--tags` and `--importance` are **optional** as of 2.2.0 — omit them and write-side
-enrichment fills them in. Omitted tags are selected from the vocabulary already in
-the store, which converges it; hand-written tags widen it (this store holds 191
-distinct tags, 98 used exactly once). **Prefer omitting `--tags`.**
+`--tags` is **optional** as of 2.2.0 — omit it and write-side enrichment fills it
+in. Omitted tags are selected from the vocabulary already in the store, which
+converges it; hand-written tags widen it (this store holds 191 distinct tags, 98
+used exactly once). **Prefer omitting `--tags`.**
+
+`--importance` is optional too, but **omitting it infers nothing.** `importance`
+ships `off` on measured evidence (the 0.5B model's judgement benchmarked as
+*negatively* discriminating), so an omitted `--importance` is stored as the
+default **`3`** — no model call, no backlog. A trivial typo fix and a critical
+data-loss note both land on `3`.
+
+That default collides with `neuron memory prune`, whose ceiling also defaults to
+`3` and compares inclusively, so **every entry written without `--importance` is
+prune-eligible** once older than `--days`. **Pass `--importance 4` or `5` on
+anything that must survive a prune.**
 
 `--category` is also optional, but **keep passing it**. It is the only field whose
 omission can cost a model load or hard-fail the write, and you always know which
-category you mean. The commands above show the recommended posture: category
-explicit, the other two inferred.
+category you mean. The recommended posture is therefore: **category explicit,
+importance explicit when it matters, tags inferred.**
 
 If the task changed module boundaries, added/removed a subsystem, or changed a
 public export contract, also refresh the architectural blueprint:

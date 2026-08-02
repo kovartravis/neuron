@@ -108,7 +108,21 @@ only ever fills a gap.
 **Recommend the third.** It is not a compromise: `--category` is the only field
 whose omission can trigger a model load and the only one that can hard-fail the
 write, while tags are selected by the already-loaded embedder for about a
-millisecond and importance defers to a backlog that drains before the next read.
+millisecond.
+
+> [!IMPORTANT]
+> **Omitting `--importance` does not infer anything.** `importance` ships `off`
+> (see below), so an omitted `--importance` is simply stored as the default
+> **`3`** — no model call, no backlog, no inference. A trivial typo fix and a
+> critical data-loss warning both land on `3`.
+>
+> This matters because `3` is also `neuron memory prune`'s default ceiling and
+> the comparison is inclusive, so **every entry written without `--importance`
+> becomes prune-eligible** once it is older than `--days`. If you intend to
+> prune by importance later, you must pass `--importance` at write time. See §6.
+>
+> Only when `importance: infer` is switched on does the field defer to the
+> enrichment backlog that drains before the next read.
 
 Recommend the second posture for humans adding memories ad hoc, where a few
 seconds are invisible and a readable error beats learning the project's taxonomy
