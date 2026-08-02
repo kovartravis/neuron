@@ -1,9 +1,31 @@
 Type: grilling
-Status: unclaimed
+Status: out of scope — maintainer decision 2026-08-01, do not implement
 Blocked by: 05
-Band: 2.2.0-rc2
+Band: ~~2.2.0-rc2~~ — removed from the band
 
 # 08 — LLM-Assisted Consolidation & Dedupe
+
+> [!IMPORTANT]
+> **Ruled out of scope for 2.2.0 by the maintainer on 2026-08-01. Do not
+> implement.** The premise was measured before it was designed and it did not
+> survive: this store holds **one** genuine same-category semantic duplicate,
+> and the similarity band you would have to open to catch more is full of
+> semantic *opposites*. See "Measurement taken 2026-08-01" below for the
+> numbers.
+>
+> This is a **scope decision, not a resolution** — it is recorded in the map's
+> *Out of scope* section, not in *Decisions so far*, because it is not a step on
+> the route that was walked.
+>
+> **What this does not cancel:** ADR 0010 §6 still governs how dedupe would work
+> *if* it ever returns (detect and select, never write; superseded, not
+> deleted). And the **supersession half may return on its own merits** — the
+> ticket-`25` near-miss showed the system needs a way for a new decision to
+> supersede a stale high-confidence entry rather than merely outrank it. If that
+> becomes a ticket, it is a *new* one about supersession, not a revival of
+> dedupe.
+>
+> Ticket `09` (cut rc2) has been unblocked accordingly.
 
 ## Question
 

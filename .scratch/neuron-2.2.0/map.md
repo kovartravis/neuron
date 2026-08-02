@@ -36,7 +36,7 @@ every ticket resolved, every rc cut, stable published.
 | Band | Tickets | Delivers |
 |------|---------|----------|
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
-| `2.2.0-rc2` | `05`–`09`, `23`–`25` | Expanded Qwen1.5-0.5B usage |
+| `2.2.0-rc2` | `05`–`07`, `09`, `24` | Expanded Qwen1.5-0.5B usage — **much narrower than charted**: `08` is out of scope, `23`/`24` removed automatic pruning, `25` is deferred, and `06` shipped with the model off the write path |
 | `2.2.0-rc3` | `10`–`15` | Recall adapter layer + 2 reference adapters |
 | `2.2.0-rc4` | `16`–`20` | Remaining 3 adapters + disclosure |
 | `2.2.0` | `21` | Stable release |
@@ -206,8 +206,10 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   capture gap. What is unformed is whose job the write is (a protocol step the
   agent must obey is the same reliability failure, relocated) and how a
   reversal *supersedes* a stale high-confidence entry rather than merely
-  competing with it — which is ticket `08`'s supersession question arriving from
-  a different direction.
+  competing with it. That supersession question came up independently in ticket
+  `08`, which is now **out of scope** — so if supersession is worth building, it
+  graduates from *this* fog patch as its own ticket, and inherits nothing from
+  dedupe except ADR 0010 §6's "mark superseded, never delete" posture.
 - **A write-time content-integrity floor.** 61 of 239 entries (26%) hold a
   single token — `Fix`, `Updated`, `When` — because unquoted shell arguments
   word-split and `neuron memory add` keeps only `positionals[0]`. The rows are
@@ -274,6 +276,25 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 ## Out of scope
 
 <!-- ruled beyond this destination; closed, never graduates -->
+
+- **[08 — LLM-Assisted Consolidation & Dedupe](issues/08-consolidation-dedupe.md)**
+  — ruled out by the maintainer on **2026-08-01**, before being designed,
+  because the premise was measured and did not survive. Pairwise cosine over all
+  239 store entries found **exactly one** genuine same-category semantic
+  duplicate (a byte-identical repeat, findable by content hash with no model),
+  and the band you would have to open to catch more is full of semantic
+  *opposites* — `Explained NEURON_MOCK_EMBEDDER check` vs `Removed
+  NEURON_MOCK_EMBEDDER check` sit at cos **0.9210**. Adjudicating those needs
+  reliable negation detection, the weakest capability of both a 0.5B model and
+  the embedder shortlisting for it — the same shape that disqualified both arms
+  in `24`. Most apparent duplication was a *different* bug: collided
+  single-token rows from the argv-truncation defect fixed in `v2.1.2`.
+  Retrieval was already measured at recall@10 **98.3%** (`22`), so the
+  "near-duplicates crowd retrieval" premise had no supporting evidence.
+  ADR 0010 §6 still governs the design *if* it ever returns. **Its supersession
+  half may return as a new ticket on its own merits** — see *"Capturing a
+  maintainer decision"* under **Not yet specified** — but that would be a
+  supersession ticket, not a revival of dedupe.
 
 - **Recall synthesis / briefing compression via the 0.5B model** — considered as
   the highest-value LLM job and declined. A small model compressing retrieved
