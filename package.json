@@ -1,6 +1,6 @@
 {
   "name": "@kovartravis/neuron",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "Local-only agent memory store CLI",
   "keywords": [
     "agent-memory",
