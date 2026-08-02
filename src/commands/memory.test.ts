@@ -251,4 +251,98 @@ describe('CLI Command: memory', () => {
       expect(row.content).toBe('--dash-leading content');
     });
   });
+
+  /**
+   * `--category` is required on delete/update but was never part of the SQL
+   * predicate, so it validated nothing: any id could be deleted or overwritten
+   * regardless of its real category, and the required flag was pure ceremony.
+   * `list --categories` had the same shape of bug on the read side — it parsed
+   * successfully and filtered nothing.
+   */
+  describe('category enforcement', () => {
+    const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    const envFor = () => ({
+      ...process.env,
+      NEURON_DB_PATH: tempDbPath,
+      NEURON_MOCK_EMBEDDER: 'true',
+    });
+    const addEntry = (content: string, category: string): { id: string } =>
+      JSON.parse(
+        execSync(`node ${cliPath()} memory add "${content}" --category ${category}`, {
+          env: envFor(),
+        }).toString()
+      );
+
+    it('list --categories filters instead of returning every category', () => {
+      addEntry('a learning entry', 'learning');
+      addEntry('a history entry', 'history');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory list --categories learning --limit 100`, {
+          env: envFor(),
+        }).toString()
+      );
+
+      expect(out.every((r: any) => r.category === 'learning')).toBe(true);
+    });
+
+    it('refuses to delete when --category does not match the entry', () => {
+      const entry = addEntry('a history entry', 'history');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory delete ${entry.id} --category learning`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('not_found');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT id FROM memories WHERE id = ?').get(entry.id);
+      db.close();
+      expect(row).toBeDefined();
+    });
+
+    it('deletes when --category matches', () => {
+      const entry = addEntry('a history entry', 'history');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory delete ${entry.id} --category history`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('deleted');
+    });
+
+    it('refuses to update when --category does not match the entry, leaving content untouched', () => {
+      const entry = addEntry('original content', 'learning');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory update ${entry.id} "overwritten" --category history`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('not_found');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(entry.id) as any;
+      db.close();
+      expect(row.content).toBe('original content');
+    });
+
+    it('updates when --category matches', () => {
+      const entry = addEntry('original content', 'learning');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory update ${entry.id} "updated content" --category learning`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('updated');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(entry.id) as any;
+      db.close();
+      expect(row.content).toBe('updated content');
+    });
+  });
 });
