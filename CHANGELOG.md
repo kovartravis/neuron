@@ -2,6 +2,51 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.1.2] - 2026-08-01
+
+### Fixed
+
+- **Unquoted arguments were silently truncated to their first word.** An
+  argument containing spaces arrives as several separate `argv` entries. The
+  memory subcommands read only the first and discarded the rest, then exited
+  `0` and reported success:
+
+  ```
+  $ neuron memory add --category learning Fix for ONNX crash: pin onnxruntime
+  {"status":"created"}          # stored the single word "Fix"
+  ```
+
+  `add` and `update` now refuse the write with a non-zero exit and a message
+  naming the likely cause, rather than storing a fragment. Nothing is written
+  on refusal.
+
+  `neuron memory query` was affected in the same way — `neuron memory query
+  tree sitter grammar` searched for `tree` alone, which surfaced as poor recall
+  rather than as an error. A query is now joined and run in full. Reads are
+  joined rather than refused because a read harms nothing and retrying is free;
+  the write path is the one that must be strict.
+
+- **Mistyped and unrecognised flags were swallowed and ignored.** Any unknown
+  `--flag` fell through to the positional list and was discarded, so
+  `--tag onnx` (instead of `--tags`) and `--importanc 5` (instead of
+  `--importance`) both parsed as success while dropping the value:
+
+  ```
+  $ neuron memory add --category learning "content" --tag onnx --importanc 5
+  {"status":"created"}          # tags: [], importance: 3 (default)
+  ```
+
+  Unrecognised flags are now rejected with a suggestion for the nearest valid
+  option. Use `--` to end flag parsing when a value legitimately begins with a
+  dash: `neuron memory add --category learning -- "--dash-leading content"`.
+
+  `neuron exec -- <command>` is unaffected — its passthrough arguments are
+  split off before flag parsing and are never interpreted.
+
+- **`neuron memory add --help` stored a memory instead of printing help.**
+  `--help` was treated as content by any subcommand that did not check for it
+  first. `--help` and `-h` are now recognised everywhere.
+
 ## [2.1.1] - 2026-08-01
 
 ### Fixed
