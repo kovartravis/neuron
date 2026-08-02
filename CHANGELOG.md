@@ -2,6 +2,34 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.1.3] - 2026-08-01
+
+Documentation only. No behaviour changes — but it corrects documentation that
+described a destructive command as doing far less than it does.
+
+### Fixed
+
+- **`neuron memory prune` was documented as deleting "low-importance" entries
+  when it deletes nearly everything.** The packaged `neuron-memory` skill told
+  agents that pruning removes "low-importance history logs (importance 1–2)".
+  The actual defaults are `--days 30` and `--importance 3`, and the importance
+  comparison is **inclusive**.
+
+  Because an entry written without an explicit `--importance` is stored at the
+  default of **3**, a bare `neuron memory prune` deletes every history entry
+  older than 30 days that was not deliberately marked 4 or 5. On the reference
+  store that is **158 of 160 history entries**, against the 0 that the
+  documented "importance 1–2" rule would have matched.
+
+  There is no undo and no `--dry-run`. Nothing about the command changed in
+  this release; only the documentation now describes it accurately. If you have
+  run `neuron memory prune` on the strength of the old wording, the deleted
+  entries are not recoverable from the database.
+
+  Corrected in the packaged skill (§6) and in `neuron memory --help` /
+  `neuron history --help`, which now label `prune` as destructive and state the
+  inclusive default at the point of use.
+
 ## [2.1.2] - 2026-08-01
 
 ### Fixed
