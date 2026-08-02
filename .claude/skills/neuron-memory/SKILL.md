@@ -193,8 +193,43 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
      ```bash
      neuron memory delete <id> --category learning
      ```
-2. **Prune Old History**:
-   - Run compaction or clean commands to delete low-importance history logs (importance 1–2) older than 30 days, while keeping high-importance logs.
+2. **Prune Old History** — read this before running it:
+
+   > [!WARNING]
+   > **`neuron memory prune` deletes far more than "low-importance" entries, and
+   > there is no undo.**
+   >
+   > The defaults are `--days 30` and `--importance 3`, and the importance
+   > comparison is **inclusive** (`importance <= 3`). Every entry written
+   > *without* an explicit `--importance` is stored at the default of **3**, so
+   > a bare `neuron memory prune` deletes **every history entry older than 30
+   > days that was not explicitly marked 4 or 5**.
+   >
+   > In practice that is almost the whole category. On the reference store,
+   > 158 of 160 history entries match the default prune — not the handful the
+   > phrase "low-importance" suggests.
+
+   **Always preview before deleting.** There is no `--dry-run` for `prune`, so
+   count the matches first:
+
+   ```bash
+   # How many entries would a default prune remove?
+   neuron memory list --category history --limit 1000
+   ```
+
+   Then prune deliberately, passing the threshold you actually mean:
+
+   ```bash
+   neuron memory prune --days 30 --importance 1   # only entries marked 1
+   neuron memory prune --days 90 --importance 2   # older, still conservative
+   neuron memory prune                            # DANGER: --importance 3, i.e. nearly everything
+   ```
+
+   Because importance defaults to `3` on write, importance is only a useful
+   prune filter if entries are **explicitly** rated as they are created. If your
+   entries were written without `--importance`, treat `prune` as "delete all
+   history older than N days" and decide on that basis.
+
 3. **Sync After Prune** (if using `dual` or `md-only` mode):
    - After pruning entries from the vector DB, run `neuron sync` to keep Markdown files consistent:
      ```bash

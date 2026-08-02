@@ -59,9 +59,53 @@ export function drawBox(lines: string[]): string {
 
 
 
+/**
+ * Every option `parseFlags` understands. Used to reject unrecognised flags and
+ * to suggest a correction — a typo'd flag used to be pushed into `positionals`
+ * and silently discarded, so `--importanc 5` looked like it worked and wrote
+ * the default instead.
+ */
+const KNOWN_FLAGS = [
+  '--format', '--json', '--no-progress', '--diff', '--check', '--tags',
+  '--task-id', '--limit', '--file', '-f', '--importance', '--scope',
+  '--scopes', '--days', '--category', '--categories', '--depth', '--dry-run',
+  '--force', '--type', '--title', '--help', '-h',
+];
+
+/** Cheap edit distance, only ever called on the error path. */
+function editDistance(a: string, b: string): number {
+  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+  }
+  return d[a.length][b.length];
+}
+
+function unknownFlag(arg: string): never {
+  const near = KNOWN_FLAGS
+    .map(f => [f, editDistance(arg, f)] as const)
+    .filter(([, dist]) => dist <= 2)
+    .sort((x, y) => x[1] - y[1])[0];
+  console.error(`Error: unknown option '${arg}'`);
+  if (near) {
+    console.error(`  Did you mean '${near[0]}'?`);
+  }
+  console.error(`  Pass '--' before a value that legitimately begins with a dash.`);
+  process.exit(1);
+}
+
 export function parseFlags(args: string[]): {
   positionals: string[];
   options: {
+    help?: boolean;
     tags?: string[];
     taskId?: string;
     limit?: number;
@@ -86,6 +130,7 @@ export function parseFlags(args: string[]): {
 } {
   const positionals: string[] = [];
   const tags: string[] = [];
+  let help: boolean | undefined;
   let taskId: string | undefined;
   let limit: number | undefined;
   let depth: number | undefined;
@@ -108,7 +153,14 @@ export function parseFlags(args: string[]): {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--format') {
+    if (arg === '--') {
+      // End of flags. Everything after is positional verbatim, which is the
+      // escape hatch for content that legitimately begins with a dash.
+      positionals.push(...args.slice(i + 1));
+      break;
+    } else if (arg === '--help' || arg === '-h') {
+      help = true;
+    } else if (arg === '--format') {
       format = args[++i];
     } else if (arg === '--json') {
       json = true;
@@ -170,6 +222,10 @@ export function parseFlags(args: string[]): {
       type = args[++i];
     } else if (arg === '--title') {
       title = args[++i];
+    } else if (arg.startsWith('-') && arg.length > 1) {
+      // Previously fell through to `positionals`, where it was silently
+      // discarded by every caller. A mistyped flag must not look like success.
+      unknownFlag(arg);
     } else {
       positionals.push(arg);
     }
@@ -192,6 +248,7 @@ export function parseFlags(args: string[]): {
   return {
     positionals,
     options: {
+      help,
       tags: tags.length > 0 ? tags : undefined,
       taskId,
       limit,
@@ -317,7 +374,7 @@ Subcommands:
   delete <id>                    Delete a memory entry by ID
   update <id> "<content>"        Update a memory entry in-place
   consolidate                    Summarize consolidated history logs
-  prune                          Clean up old, minor history logs
+  prune                          Delete old history logs (DESTRUCTIVE, no undo)
 
 Options:
   --category <name>              Specify the category (required for add, delete, update)
@@ -328,6 +385,10 @@ Options:
   --task-id <id>                 Associate a task ID
   --scopes <scope1,scope2,...>   Filter by active scopes (query)
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
+  --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
+                                 Entries written without --importance default
+                                 to 3, so a bare prune deletes nearly all
+                                 history older than --days. There is no undo.
   --limit <number>               Limit returned results`;
 
 export const LEARN_HELP = `Usage: neuron learn <subcommand> [arguments] [flags]
@@ -356,7 +417,7 @@ Subcommands:
   list                           List recent history logs
   delete <id>                    Delete a history log by ID
   consolidate                    Summarize consolidated history since last cursor
-  prune                          Clean up old, minor history logs
+  prune                          Delete old history logs (DESTRUCTIVE, no undo)
 
 Options:
   --task-id <id>                 Associate a task ID with the log (add)
@@ -365,4 +426,8 @@ Options:
   --scope <scope>                Set scope for the log (add)
   --scopes <scope1,scope2,...>   Filter query results by active scopes (query)
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
+  --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
+                                 Entries written without --importance default
+                                 to 3, so a bare prune deletes nearly all
+                                 history older than --days. There is no undo.
   --limit <number>               Limit the number of returned results (query, list)`;

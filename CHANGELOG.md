@@ -2,6 +2,108 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.1.3] - 2026-08-01
+
+Documentation only. No behaviour changes — but it corrects documentation that
+described a destructive command as doing far less than it does.
+
+### Fixed
+
+- **`neuron memory prune` was documented as deleting "low-importance" entries
+  when it deletes nearly everything.** The packaged `neuron-memory` skill told
+  agents that pruning removes "low-importance history logs (importance 1–2)".
+  The actual defaults are `--days 30` and `--importance 3`, and the importance
+  comparison is **inclusive**.
+
+  Because an entry written without an explicit `--importance` is stored at the
+  default of **3**, a bare `neuron memory prune` deletes every history entry
+  older than 30 days that was not deliberately marked 4 or 5. On the reference
+  store that is **158 of 160 history entries**, against the 0 that the
+  documented "importance 1–2" rule would have matched.
+
+  There is no undo and no `--dry-run`. Nothing about the command changed in
+  this release; only the documentation now describes it accurately. If you have
+  run `neuron memory prune` on the strength of the old wording, the deleted
+  entries are not recoverable from the database.
+
+  Corrected in the packaged skill (§6) and in `neuron memory --help` /
+  `neuron history --help`, which now label `prune` as destructive and state the
+  inclusive default at the point of use.
+
+## [2.1.2] - 2026-08-01
+
+### Fixed
+
+- **Unquoted arguments were silently truncated to their first word.** An
+  argument containing spaces arrives as several separate `argv` entries. The
+  memory subcommands read only the first and discarded the rest, then exited
+  `0` and reported success:
+
+  ```
+  $ neuron memory add --category learning Fix for ONNX crash: pin onnxruntime
+  {"status":"created"}          # stored the single word "Fix"
+  ```
+
+  `add` and `update` now refuse the write with a non-zero exit and a message
+  naming the likely cause, rather than storing a fragment. Nothing is written
+  on refusal.
+
+  `neuron memory query` was affected in the same way — `neuron memory query
+  tree sitter grammar` searched for `tree` alone, which surfaced as poor recall
+  rather than as an error. A query is now joined and run in full. Reads are
+  joined rather than refused because a read harms nothing and retrying is free;
+  the write path is the one that must be strict.
+
+- **Mistyped and unrecognised flags were swallowed and ignored.** Any unknown
+  `--flag` fell through to the positional list and was discarded, so
+  `--tag onnx` (instead of `--tags`) and `--importanc 5` (instead of
+  `--importance`) both parsed as success while dropping the value:
+
+  ```
+  $ neuron memory add --category learning "content" --tag onnx --importanc 5
+  {"status":"created"}          # tags: [], importance: 3 (default)
+  ```
+
+  Unrecognised flags are now rejected with a suggestion for the nearest valid
+  option. Use `--` to end flag parsing when a value legitimately begins with a
+  dash: `neuron memory add --category learning -- "--dash-leading content"`.
+
+  `neuron exec -- <command>` is unaffected — its passthrough arguments are
+  split off before flag parsing and are never interpreted.
+
+- **`neuron memory add --help` stored a memory instead of printing help.**
+  `--help` was treated as content by any subcommand that did not check for it
+  first. `--help` and `-h` are now recognised everywhere.
+
+## [2.1.1] - 2026-08-01
+
+### Fixed
+
+- **Keyword-only matches on common words could outrank the correct result.**
+  Hybrid search fuses its semantic and FTS legs with Reciprocal Rank Fusion,
+  which rewards a document's rank *position* rather than how well it matched.
+  Because query terms were joined with `OR` and every word was searchable, a
+  document matching a single common word entered the FTS ranking — and when it
+  was the only match, it entered at rank 1 and collected the full RRF
+  contribution.
+
+  Observed on a three-document store: the query *"what payment provider do we
+  use"* returned a document about a Rust auth daemon at score `0.869`, above the
+  correct billing document at `0.500`. The word `use` prefix-matched `used`,
+  while the correct document matched no keyword terms at all.
+
+  `cleanFtsQuery` now drops standard English stopwords and the FTS operator
+  words, and deduplicates terms. A query made entirely of stopwords produces an
+  empty expression, which is already handled as "no keyword leg" and answered
+  semantically — better than a `MATCH` that hits every row.
+
+  Short domain terms are deliberately preserved: `git`, `db` and `ci` are exactly
+  the terse fallback queries the agent protocol recommends.
+
+  This affects retrieval quality for every `neuron memory query`, `neuron exec`
+  pre-command lookup, and drift-triggered recall. No configuration change or
+  re-indexing is required — the fix applies at query time.
+
 ## [2.1.0] - 2026-07-31
 
 The architecture-awareness release. Neuron can now read the shape of a codebase

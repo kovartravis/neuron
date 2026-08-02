@@ -20,6 +20,43 @@ export async function handleMemoryCommand(
   const rest = args.slice(2);
   const { positionals, options } = parseFlags(rest);
 
+  if (options.help) {
+    console.log(MEMORY_HELP);
+    process.exit(0);
+  }
+
+  // An unquoted argument arrives as several bare words. These subcommands used
+  // to read only the first and silently discard the rest, so `memory add Fix
+  // the ONNX crash` stored the single word "Fix" and reported success. The
+  // remainder is unrecoverable, so refuse the write rather than truncate it.
+  const EXPECTED: Record<string, { max: number; shape: string; example: string }> = {
+    add: {
+      max: 1,
+      shape: 'a single content argument',
+      example: `neuron memory add --category learning "your full text here"`,
+    },
+    update: {
+      max: 2,
+      shape: 'an id and a single content argument',
+      example: `neuron memory update <id> --category learning "your full text here"`,
+    },
+    delete: {
+      max: 1,
+      shape: 'a single id argument',
+      example: `neuron memory delete <id> --category learning`,
+    },
+  };
+  const expected = EXPECTED[subCommand];
+  if (expected && positionals.length > expected.max) {
+    console.error(
+      `Error: 'memory ${subCommand}' expects ${expected.shape}, but got ` +
+        `${positionals.length} bare arguments.`
+    );
+    console.error(`  Did you forget to quote it? Try:`);
+    console.error(`    ${expected.example}`);
+    process.exit(1);
+  }
+
   const category = options.category;
   if (!category && ['add', 'delete', 'update'].includes(subCommand)) {
     console.error(`Error: --category is required for 'memory ${subCommand}'`);
@@ -45,7 +82,10 @@ export async function handleMemoryCommand(
     ]);
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'query') {
-    const queryText = positionals[0];
+    // A read harms nothing and retrying is free, so an unquoted query is joined
+    // rather than refused — the write path is the one that must be strict.
+    // Truncating here silently searched one word and looked like a bad corpus.
+    const queryText = positionals.join(' ');
     if (!queryText) {
       console.error('Error: query text is required for memory query');
       process.exit(1);
