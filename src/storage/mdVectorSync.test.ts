@@ -106,24 +106,46 @@ describe('mdVectorSync (R3 Unit & Boundary Tests)', () => {
     expect(dbLearning.some(m => m.id === 'm-learn')).toBe(true);
   });
 
-  it('R3-T1-05: Timestamp Conflict Resolution: resolves entry update conflicts by favoring newer timestamp', async () => {
+  /**
+   * Previously named "Timestamp Conflict Resolution" and asserted that a
+   * newer `createdAt` on the markdown side won. That mechanism is gone: a
+   * normal `memory update` never touches `createdAt` on either side, and
+   * `.md` frontmatter has no `updatedAt`, so comparing `createdAt` was
+   * comparing two values that are almost always equal — which meant "md
+   * wins" fired on every real conflict, not just ones where md was
+   * genuinely newer. That silently reverted a real vector-side update to
+   * stale markdown content in production use. A conflict is now reported
+   * and left untouched unless --force explicitly says markdown wins.
+   */
+  it('R3-T1-05: a real content conflict is reported and left untouched, not resolved by createdAt', async () => {
     const olderDate = '2026-01-01T00:00:00.000Z';
     const newerDate = '2099-01-01T00:00:00.000Z';
 
     await memoryDb.transact([
-      { op: 'upsert', category: 'learning', id: 'conflict-1', content: 'Older DB content' },
+      { op: 'upsert', category: 'learning', id: 'conflict-1', content: 'DB content (the fresher one)' },
     ]);
 
+    // A later createdAt on the md side no longer wins by itself.
     await mdAdapter.writeEntry('learning', {
       id: 'conflict-1',
-      content: 'Newer MD content',
+      content: 'MD content (actually stale)',
       createdAt: newerDate,
     });
 
-    await syncMdWithVector(memoryDb, mdAdapter, defaultConfig);
+    const result = await syncMdWithVector(memoryDb, mdAdapter, defaultConfig);
+
+    expect(result.conflicts).toEqual([{ category: 'learning', id: 'conflict-1' }]);
+    expect(result.syncedToVector).toBe(0);
+    expect(result.syncedToMarkdown).toBe(0);
 
     const dbQuery = await memoryDb.query({ category: 'learning' });
-    expect(dbQuery[0].content).toContain('Newer MD content');
+    expect(dbQuery[0].content).toBe('DB content (the fresher one)');
+
+    // --force is the only side-picking path, and stays markdown-authoritative.
+    const forced = await syncMdWithVector(memoryDb, mdAdapter, defaultConfig, { force: true });
+    expect(forced.conflicts).toHaveLength(0);
+    const dbAfterForce = await memoryDb.query({ category: 'learning' });
+    expect(dbAfterForce[0].content).toBe('MD content (actually stale)');
   });
 
   // --- Tier 2 Boundary Tests (R3-T2-01 to R3-T2-05) ---

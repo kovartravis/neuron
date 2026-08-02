@@ -130,6 +130,38 @@ describe('CLI neuron sync & Scaffolding (R4 Unit & Boundary Tests)', () => {
     consoleSpy.mockRestore();
   });
 
+  /**
+   * A genuine content conflict (both sides present, different content) used
+   * to be silently resolved by comparing createdAt, which ties in the
+   * common case and defaulted to markdown winning — including when markdown
+   * was the stale side. Without --force, `sync` must now report the
+   * conflict, leave both stores untouched, and exit non-zero so a script or
+   * CI run notices rather than silently accepting a guessed resolution.
+   */
+  it('R4-T2-06: a real conflict is reported, leaves the vector DB untouched, and exits non-zero', async () => {
+    await memoryDb.transact([
+      { op: 'upsert', category: 'learning', id: 'cli-conflict-1', content: 'fresh vector content' },
+    ]);
+    const mdAdapter = new MdStorageAdapter({ storagePath });
+    await mdAdapter.writeEntry('learning', {
+      id: 'cli-conflict-1',
+      content: 'stale markdown content',
+    });
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.exitCode = 0;
+
+    await handleSyncCommand([], memoryDb);
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('cli-conflict-1'));
+    errorSpy.mockRestore();
+    process.exitCode = 0;
+
+    const dbQuery = await memoryDb.query({ category: 'learning' });
+    expect(dbQuery[0].content).toBe('fresh vector content');
+  });
+
   it('R4-T2-03: scaffoldNeuronDirectory preserves pre-existing category markdown files', () => {
     const targetDir = path.join(testDir, 'existing-project');
     const neuronDir = path.join(targetDir, '.neuron');

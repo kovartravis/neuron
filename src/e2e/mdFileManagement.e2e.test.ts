@@ -310,12 +310,30 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       scope: 'project',
     });
 
-    // Step 4: Run dry-run sync first, then actual sync
+    // Step 4: A manual .md edit changes content without touching createdAt,
+    // which is now indistinguishable from the vector side having drifted
+    // stale on its own — there is no reliable signal for "which side was
+    // actually edited". sync must not guess (guessing here previously
+    // caused a real content-loss regression), so this is reported as a
+    // conflict and left untouched on both a dry run and a real run.
     const dryRunResult = await syncMdWithVector(db, adapter, config, { dryRun: true });
-    expect(dryRunResult.syncedToVector).toBe(1);
+    expect(dryRunResult.syncedToVector).toBe(0);
+    expect(dryRunResult.conflicts).toEqual([{ category: 'learning', id: 'onboard-1' }]);
 
-    const actualSyncResult = await syncMdWithVector(db, adapter, config);
-    expect(actualSyncResult.syncedToVector).toBe(1);
+    const unforcedResult = await syncMdWithVector(db, adapter, config);
+    expect(unforcedResult.syncedToVector).toBe(0);
+    expect(unforcedResult.conflicts).toHaveLength(1);
+
+    // The manual edit only takes effect once the caller explicitly says
+    // markdown should win — this is the new required step after hand-editing
+    // a .md file, where previously a bare `neuron sync` was documented as
+    // sufficient. --force re-embeds every entry present on both sides
+    // regardless of hash match (its pre-existing, documented "ignore content
+    // hashes" behaviour, unchanged here) — both onboard-1 (the real change)
+    // and onboard-2 (already identical on both sides) get re-pushed.
+    const actualSyncResult = await syncMdWithVector(db, adapter, config, { force: true });
+    expect(actualSyncResult.syncedToVector).toBe(2);
+    expect(actualSyncResult.conflicts).toHaveLength(0);
 
     // Step 5: Execute vector query across all onboarded categories
     const searchResults = await db.query({ text: 'typecheck', categories: ['learning'], scopes: ['project', 'global', 'onboarding-repo'] });
