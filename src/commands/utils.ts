@@ -383,7 +383,7 @@ Subcommands:
   update <id> "<content>"        Update a memory entry in-place
   consolidate                    Summarize consolidated history logs
   enrich                         Drain the write-side enrichment backlog now
-  prune                          Clean up old, minor history logs
+  prune                          Delete old history logs (DESTRUCTIVE, no undo)
 
 Options:
   --category <name>              Specify the category (required for delete, update;
@@ -397,6 +397,10 @@ Options:
   --task-id <id>                 Associate a task ID
   --scopes <scope1,scope2,...>   Filter by active scopes (query)
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
+  --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
+                                 Entries written without --importance default
+                                 to 3, so a bare prune deletes nearly all
+                                 history older than --days. There is no undo.
   --limit <number>               Limit returned results`;
 
 export const LEARN_HELP = `Usage: neuron learn <subcommand> [arguments] [flags]
@@ -425,7 +429,7 @@ Subcommands:
   list                           List recent history logs
   delete <id>                    Delete a history log by ID
   consolidate                    Summarize consolidated history since last cursor
-  prune                          Clean up old, minor history logs
+  prune                          Delete old history logs (DESTRUCTIVE, no undo)
 
 Options:
   --task-id <id>                 Associate a task ID with the log (add)
@@ -434,4 +438,8 @@ Options:
   --scope <scope>                Set scope for the log (add)
   --scopes <scope1,scope2,...>   Filter query results by active scopes (query)
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
+  --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
+                                 Entries written without --importance default
+                                 to 3, so a bare prune deletes nearly all
+                                 history older than --days. There is no undo.
   --limit <number>               Limit the number of returned results (query, list)`;
