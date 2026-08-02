@@ -95,7 +95,9 @@ export async function handleMemoryCommand(
     const results = await memory.query({ text: queryText, categories, limit: options.limit, scopes: options.scopes });
     console.log(JSON.stringify({ results, project: projectName, query: queryText }));
   } else if (subCommand === 'list') {
-    const categories = options.category ? [options.category] : undefined;
+    // Was `options.category` only, so `--categories a,b` parsed successfully
+    // and silently had no filtering effect — `query` already reads both.
+    const categories = options.categories ?? (options.category ? [options.category] : undefined);
     const results = await memory.query({ categories, limit: options.limit });
     console.log(JSON.stringify(results));
   } else if (subCommand === 'delete') {

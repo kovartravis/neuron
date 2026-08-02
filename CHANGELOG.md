@@ -2,6 +2,38 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.1.4] - 2026-08-01
+
+### Fixed
+
+- **`neuron memory delete` and `neuron memory update` ignored `--category`.**
+  Both subcommands require `--category` on the CLI, but it was never part of
+  the SQL predicate — `delete` ran `WHERE id = ? AND project_id = ?`, so any id
+  could be deleted while claiming any category, and the same was true for
+  `update`. The required flag validated nothing; it looked like a safety check
+  and was ceremony:
+
+  ```
+  $ neuron memory delete <id-of-a-history-entry> --category learning
+  {"status":"deleted"}     # deleted regardless of the entry's real category
+  ```
+
+  Both now include `AND category = ?`. A mismatched category is treated the
+  same as a nonexistent id — `{"status":"not_found"}` — and nothing is
+  modified. This is a behaviour change: a call that previously "succeeded"
+  against the wrong category now fails, which is what the required flag always
+  implied it would do.
+
+  This directly affected the maintenance workflow the packaged skill
+  documents: it lists entries across every category (see next item), then
+  passes whatever id it finds to `delete --category learning` — which
+  previously deleted the entry regardless of its actual category.
+
+- **`neuron memory list --categories a,b` silently ignored the filter.**
+  `list` read only the singular `--category`; `query` already read both. A
+  multi-category filter parsed without error and returned every category
+  unfiltered. `list` now reads `--categories` the same way `query` does.
+
 ## [2.1.3] - 2026-08-01
 
 Documentation only. No behaviour changes — but it corrects documentation that

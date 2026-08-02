@@ -503,9 +503,20 @@ export class NeuronMemory {
         
         if (m.op === 'upsert' || m.op === 'update') {
           const id = m.id || crypto.randomUUID();
-          
-          const exists = this.db.prepare(`SELECT 1 FROM memories WHERE id = ? AND project_id = ?`).get(id, this.projectId);
-          
+
+          // `update` requires --category on the CLI (unlike `upsert`, which is
+          // add-or-create and has no existing category to be wrong about), so
+          // a mismatched category must behave as if the row were not found
+          // rather than silently updating a different category's entry.
+          const exists = m.op === 'update'
+            ? this.db.prepare(`SELECT 1 FROM memories WHERE id = ? AND project_id = ? AND category = ?`).get(id, this.projectId, category)
+            : this.db.prepare(`SELECT 1 FROM memories WHERE id = ? AND project_id = ?`).get(id, this.projectId);
+
+          if (m.op === 'update' && !exists) {
+            results.push({ id, status: 'not_found', project: this.projectName });
+            continue;
+          }
+
           if (exists) {
             const sets: string[] = [];
             const params: any[] = [];
@@ -553,7 +564,12 @@ export class NeuronMemory {
             results.push({ id, status: 'not_found', project: this.projectName });
           }
         } else if (m.op === 'delete') {
-          const info = this.db.prepare(`DELETE FROM memories WHERE id = ? AND project_id = ?`).run(m.id, this.projectId);
+          // `--category` is required on the CLI for delete, but was never part
+          // of the predicate, so a mismatched category deleted the row anyway —
+          // the flag looked like a safety check and was pure ceremony.
+          const info = this.db
+            .prepare(`DELETE FROM memories WHERE id = ? AND project_id = ? AND category = ?`)
+            .run(m.id, this.projectId, category);
           results.push({ id: m.id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName });
         }
       }
