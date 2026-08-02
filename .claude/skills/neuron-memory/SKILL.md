@@ -277,6 +277,18 @@ When `storage.mode` is set to `dual`, `md-only`, or `split`, memory entries are 
   neuron sync --dry-run        # preview changes without writing
   neuron sync --force          # force re-embed all entries ignoring content hashes
   ```
+
+  > [!IMPORTANT]
+  > **A manual `.md` edit needs `--force` to actually take effect.** `sync`
+  > only auto-propagates entries that exist on just one side — that's
+  > unambiguous. When an entry exists on **both** sides with **different**
+  > content, `sync` has no reliable way to tell which side was actually
+  > edited (there is no `updatedAt` in `.md` frontmatter, and a normal
+  > `memory update` never changes `createdAt` on either side), so it reports
+  > the entry as a **conflict**, exits non-zero, and touches neither store
+  > rather than guess. Run `neuron sync --force` to make markdown
+  > authoritative and push your edit through — this is genuinely required
+  > after hand-editing a `.md` file, not merely a `--dry-run`-style option.
 - **Auto-Scaffold**: On first `neuron init` or `neuron sync`, the `.neuron/` directory and default category files are created automatically if missing.
 
 ## 6. Periodic Maintenance (Clean & Refresh)

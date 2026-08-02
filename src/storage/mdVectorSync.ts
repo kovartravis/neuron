@@ -18,6 +18,18 @@ export interface SyncResult {
   skipped: number;
   categoriesProcessed: string[];
   errors: Array<{ category: string; id?: string; error: string }>;
+  /**
+   * Entries present on both sides with genuinely different content, left
+   * untouched. Neither store has a reliable last-modified signal — `.md`
+   * frontmatter has no `updatedAt`, and a normal `memory update` never
+   * touches `createdAt` on either side — so there is no safe way to guess
+   * which side is fresher. Guessing here is what caused a real regression:
+   * a legitimate vector-side update silently reverted to stale markdown
+   * content because their (unchanged, identical) `createdAt` values tied.
+   * Resolve explicitly with `--force` (markdown wins, matching its
+   * documented "force re-embed" semantics) after inspecting the conflict.
+   */
+  conflicts: Array<{ category: string; id: string }>;
 }
 
 export function computeMemoryHash(memory: Memory): string {
@@ -67,6 +79,7 @@ export async function syncMdWithVector(
     skipped: 0,
     categoriesProcessed: [...categories],
     errors: [],
+    conflicts: [],
   };
 
   // Clean up any orphaned .tmp files in storage path
@@ -101,66 +114,64 @@ export async function syncMdWithVector(
       const mdMap = new Map<string, Memory>(mdMemories.map(m => [m.id, m]));
       const dbMap = new Map<string, Memory>(dbMemories.map(m => [m.id, m]));
 
+      const pushMdToVector = async (mdEntry: Memory): Promise<void> => {
+        await vectorDb.transact([{
+          op: 'upsert',
+          category,
+          id: mdEntry.id,
+          content: mdEntry.content,
+          tags: mdEntry.tags,
+          importance: mdEntry.importance ?? 3,
+          scope: mdEntry.scope ?? 'project',
+          taskId: mdEntry.taskId ?? undefined,
+          createdAt: mdEntry.createdAt,
+        }]);
+      };
+
       // 1. Sync Markdown -> Vector DB
       for (const [id, mdEntry] of mdMap.entries()) {
         const dbEntry = dbMap.get(id);
-        const mdHash = computeMemoryHash(mdEntry);
 
         if (!dbEntry) {
+          // Unambiguous: exists only in markdown, nothing to conflict with.
           if (dryRun) {
             result.syncedToVector++;
           } else {
-            await vectorDb.transact([{
-              op: 'upsert',
-              category,
-              id: mdEntry.id,
-              content: mdEntry.content,
-              tags: mdEntry.tags,
-              importance: mdEntry.importance ?? 3,
-              scope: mdEntry.scope ?? 'project',
-              taskId: mdEntry.taskId ?? undefined,
-              createdAt: mdEntry.createdAt,
-            }]);
+            await pushMdToVector(mdEntry);
+            result.syncedToVector++;
+          }
+          continue;
+        }
+
+        const mdHash = computeMemoryHash(mdEntry);
+        const dbHash = computeMemoryHash(dbEntry);
+
+        if (mdHash === dbHash && !force) {
+          result.skipped++;
+        } else if (force) {
+          // Explicit and deliberate: --force means "markdown is
+          // authoritative, re-embed it" per its documented semantics. This
+          // is the only side-picking path — there is no equivalent
+          // "vector wins" flag, so leaving a conflict unresolved (below)
+          // is the safe default and vector's own data is left untouched
+          // either way.
+          if (dryRun) {
+            result.syncedToVector++;
+          } else {
+            await pushMdToVector(mdEntry);
             result.syncedToVector++;
           }
         } else {
-          const dbHash = computeMemoryHash(dbEntry);
-          if (force || mdHash !== dbHash) {
-            const mdTime = new Date(mdEntry.createdAt || 0).getTime();
-            const dbTime = new Date(dbEntry.createdAt || 0).getTime();
-
-            if (mdTime >= dbTime || force) {
-              if (dryRun) {
-                result.syncedToVector++;
-              } else {
-                await vectorDb.transact([{
-                  op: 'upsert',
-                  category,
-                  id: mdEntry.id,
-                  content: mdEntry.content,
-                  tags: mdEntry.tags,
-                  importance: mdEntry.importance ?? 3,
-                  scope: mdEntry.scope ?? 'project',
-                  taskId: mdEntry.taskId ?? undefined,
-                  createdAt: mdEntry.createdAt,
-                }]);
-                result.syncedToVector++;
-              }
-            } else {
-              if (dryRun) {
-                result.syncedToMarkdown++;
-              } else {
-                await mdAdapter.writeEntry(category, {
-                  ...dbEntry,
-                  importance: dbEntry.importance ?? 3,
-                  scope: dbEntry.scope ?? 'project',
-                });
-                result.syncedToMarkdown++;
-              }
-            }
-          } else {
-            result.skipped++;
-          }
+          // Genuine conflict: both sides hold the entry with different
+          // content, and neither store carries a reliable last-modified
+          // signal to break the tie safely — `.md` frontmatter has no
+          // `updatedAt`, and a normal `memory update` never touches
+          // `createdAt`. Guessing here (by comparing createdAt) is what
+          // caused a real content-loss regression: a legitimate vector-side
+          // update was silently reverted to stale markdown content because
+          // their untouched createdAt values tied. Report it; touch neither
+          // side. Re-run with --force to make markdown win explicitly.
+          result.conflicts.push({ category, id });
         }
       }
 

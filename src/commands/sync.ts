@@ -51,10 +51,21 @@ export async function handleSyncCommand(args: string[], memory: NeuronMemory, ov
     categories,
   });
 
-  if (dryRun) {
-    console.log(`[sync] DRY RUN complete: ${result.syncedToVector} to vector DB, ${result.syncedToMarkdown} to markdown, ${result.skipped} skipped.`);
-  } else {
-    console.log(`[sync] Sync complete: ${result.syncedToVector} to vector DB, ${result.syncedToMarkdown} to markdown, ${result.skipped} skipped.`);
+  const verb = dryRun ? 'DRY RUN complete' : 'Sync complete';
+  const conflictNote = result.conflicts.length > 0 ? `, ${result.conflicts.length} conflicts` : '';
+  console.log(`[sync] ${verb}: ${result.syncedToVector} to vector DB, ${result.syncedToMarkdown} to markdown, ${result.skipped} skipped${conflictNote}.`);
+
+  if (result.conflicts.length > 0) {
+    console.error(
+      `[sync] ${result.conflicts.length} entr${result.conflicts.length === 1 ? 'y has' : 'ies have'} ` +
+        `different content in the vector DB and markdown, and neither side is known to be fresher — ` +
+        `left untouched rather than guessed at:`
+    );
+    for (const c of result.conflicts) {
+      console.error(`  - ${c.category}/${c.id}`);
+    }
+    console.error(`[sync] Re-run with --force to make markdown authoritative for these entries.`);
+    process.exitCode = 1;
   }
 }
 

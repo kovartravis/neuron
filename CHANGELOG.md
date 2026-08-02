@@ -89,6 +89,45 @@ behind `memory query` re-baselines silently on the next source edit.
 - **`neuron scan --force`**: the flag was documented as "bypass the content cache
   and force a full re-scan" but was never read by the ingest path. It did
   nothing. `neuron scan` already re-scans and updates the card in place.
+## [2.1.6] - 2026-08-02
+
+### Fixed
+
+- **`neuron sync` could silently overwrite fresh content with stale content.**
+  When an entry existed on both the vector DB and its `.md` file with
+  different content, `sync` picked a winner by comparing `createdAt` — but
+  `.md` frontmatter has no `updatedAt`, and a normal `memory update` never
+  changes `createdAt` on either side, so the two values are almost always
+  equal. The tie-break (`mdTime >= dbTime`) then always favoured markdown,
+  regardless of which side was actually newer:
+
+  ```
+  $ neuron memory update <id> "the real, fresh, correct content" --category learning
+  {"status":"updated"}                    # vector DB now holds the fresh content
+
+  # ...some time later, .md happens to still hold stale content (a transient
+  # write hiccup, a stale git checkout, anything) ...
+
+  $ neuron sync
+  [sync] Sync complete: 1 to vector DB, 0 to markdown, 0 skipped.
+  # the vector DB's fresh content has just been overwritten with the stale
+  # markdown content, and nothing said so
+  ```
+
+  `sync` now only auto-propagates entries that exist on **just one side**
+  (unambiguous). An entry present on both sides with genuinely different
+  content is reported as a **conflict** — left untouched, printed by id, and
+  causes a non-zero exit — rather than resolved by a guess. `--force`
+  remains the explicit way to make markdown authoritative, matching its
+  existing documented "force re-embed, ignoring content hashes" meaning.
+
+  **This changes the documented "hand-edit a `.md` file, then run
+  `neuron sync`" workflow.** A manual edit is, by the same reasoning,
+  indistinguishable from vector-side drift — there is still no reliable
+  signal for "which side was actually edited" — so it is also now reported
+  as a conflict. `neuron sync --force` is required to make a manual `.md`
+  edit take effect; a bare `neuron sync` is no longer sufficient. Updated in
+  the packaged `neuron-memory` skill.
 ## [2.1.5] - 2026-08-02
 
 ### Fixed
