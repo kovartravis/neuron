@@ -67,12 +67,13 @@ describe('CLI Command: learn', () => {
     expect(updateRes.status).toBe('updated');
     expect(updateRes.id).toBe(added.id);
 
+    // --scope is accepted on both add and update (deprecated, ticket 38) but
+    // has no effect and no longer exists as a column at all.
     const db = openDatabase(tempDbPath);
-    const row = db.prepare('SELECT content, tags, importance, scope FROM memories WHERE id = ?').get(added.id) as any;
+    const row = db.prepare('SELECT content, tags, importance FROM memories WHERE id = ?').get(added.id) as any;
     expect(row.content).toBe('Updated learning content');
     expect(JSON.parse(row.tags)).toEqual(['updated']);
     expect(row.importance).toBe(5);
-    expect(row.scope).toBe('updated-scope');
     db.close();
   });
 

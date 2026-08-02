@@ -79,7 +79,6 @@ export async function handleMemoryCommand(
         content,
         tags: options.tags,
         importance: options.importance,
-        scope: options.scope,
         taskId: options.taskId,
       },
     ]);
@@ -95,7 +94,7 @@ export async function handleMemoryCommand(
     }
     await autoRescanIfDriftDetected(memory, process.cwd());
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
-    const results = await memory.query({ text: queryText, categories, limit: options.limit, scopes: options.scopes });
+    const results = await memory.query({ text: queryText, categories, limit: options.limit });
     console.log(JSON.stringify({ results, project: projectName, query: queryText }));
   } else if (subCommand === 'list') {
     // Was `options.category` only, so `--categories a,b` parsed successfully
@@ -126,28 +125,20 @@ export async function handleMemoryCommand(
         content,
         tags: options.tags,
         importance: options.importance,
-        scope: options.scope,
         taskId: options.taskId,
       },
     ]);
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'consolidate') {
-    const report = memory.maintain({ consolidate: true, autoPromote: true });
+    const report = memory.maintain({ consolidate: true });
     console.log(
       JSON.stringify({
         entries: report.consolidated?.entries || [],
         consolidatedAt: report.consolidated?.consolidatedAt,
         previousCursor: report.consolidated?.previousCursor,
-        promotions: report.promotions,
         project: projectName,
       })
     );
-  } else if (subCommand === 'enrich') {
-    // The backlog drains on its own before any query; this exists so the cost
-    // can be paid deliberately, and so the benchmark can drive enrichment
-    // deterministically rather than as a side effect of reading.
-    const report = await memory.drainEnrichment();
-    console.log(JSON.stringify({ status: 'enriched', ...report, project: projectName }));
   } else if (subCommand === 'prune') {
     const report = memory.maintain({
       pruneHistoryBeforeDays: options.days ?? 30,

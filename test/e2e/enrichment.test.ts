@@ -1,12 +1,13 @@
 /**
  * Pillars 10-12 — Write-side enrichment.
  *
- * Importance inference is *measured rather than constrained*: it ships
- * unclamped, and these pillars report what the model actually assigns and,
- * critically, what a prune would then delete. The one hard assertion is the
- * destructive direction — no known-critical entry may ever appear in the delete
- * set at the default prune threshold. False negatives are what lose data, so
- * that is the pass/fail bar; everything else is tracked, not gated.
+ * Pillar 10 was *Importance Inference & Prune Safety* and measured both halves.
+ * The inference half is gone: it measured the judgement as noise (discrimination
+ * -0.5 then +0.167, per-entry stability 0.5, a production-data-loss note rated
+ * `1`), the job shipped `off` on that evidence, and ticket 26 removed it. The
+ * prune-safety half is kept and is now the whole pillar, because ticket 23 left
+ * the underlying hazard live: the entry default and the `neuron memory prune`
+ * ceiling are both 3 and the comparison is inclusive.
  *
  * Runs against the real Qwen1.5-0.5B model. It is disabled under NODE_ENV=test,
  * so this suite is the only place these jobs can be measured at all.
@@ -18,7 +19,6 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
 import { NeuronMemory } from '../../src/index.js';
-import { LocalEnrichmentModel } from '../../src/components/enricher.js';
 import { MetricsRecorder } from './metrics.js';
 import { TIER, REPORT_DIR, byTier } from './tier.js';
 import {
@@ -29,12 +29,10 @@ import {
 } from './enrichment-corpus.js';
 import { ADVERSARIAL_CASES, buildFiller } from './adversarial-corpus.js';
 
-const IMPORTANCE_PILLAR = 'Pillar 10: Importance Inference & Prune Safety';
+const PRUNE_PILLAR = 'Pillar 10: Prune Safety';
 const CATEGORY_PILLAR = 'Pillar 11: Category Strategy A/B';
 const NONREGRESSION_PILLAR = 'Pillar 12: Enrichment Retrieval Non-Regression';
 
-/** Repeats for the stability measurement — the same entry across runs. */
-const STABILITY_REPEATS = byTier(2, 5);
 /** Corpus size for the non-regression arms. Both arms see the same one. */
 const NONREG_FILLER = byTier(150, 1500);
 
@@ -94,7 +92,7 @@ describe('Write-Side Enrichment Benchmark', () => {
     });
   }, 120000);
 
-  it(IMPORTANCE_PILLAR, async () => {
+  it(PRUNE_PILLAR, async () => {
     const byContent = new Map<string, LabelledEntry>(LABELLED_ENTRIES.map(e => [e.content, e]));
     const criticalContent = new Set(CRITICAL_ENTRIES.map(e => e.content));
     // Backdated so the whole corpus is past a 30-day prune cutoff, and written
@@ -102,133 +100,84 @@ describe('Write-Side Enrichment Benchmark', () => {
     const backdated = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
     const cutoff = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
-    async function runArm(enabled: boolean) {
-      // Importance inference ships off by default — on this pillar's evidence.
-      // The pillar switches it on so the measurement keeps running.
-      const yaml = `${CATEGORIES_YAML}llm:
-  enrichment:
-    enabled: ${enabled}
-    importance: infer
-`;
-      const memory = openStore(`importance-${enabled ? 'on' : 'off'}`, yaml);
-      await memory.transact(
-        LABELLED_ENTRIES.map(e => ({
-          op: 'upsert' as const,
-          category: 'history',
-          content: e.content,
-          tags: [],
-          createdAt: backdated,
-        }))
-      );
+    const memory = openStore('prune-safety', CATEGORIES_YAML);
 
-      let drain = { drained: 0, degraded: 0 };
-      if (enabled) {
-        // Every entry left importance unset, so the corpus *is* the backlog.
-        expect(memory.countPendingEnrichment()).toBe(LABELLED_ENTRIES.length);
-        drain = await metrics.time(IMPORTANCE_PILLAR, () => memory.drainEnrichment());
-        expect(memory.countPendingEnrichment()).toBe(0);
-      }
+    // Half the critical entries are written with an explicit `--importance 5`.
+    // That flag is now the *only* thing standing between a critical entry and a
+    // bare prune, so the pillar's job is to prove it works and to quantify what
+    // happens to the entries that lack it.
+    const guarded = new Set(CRITICAL_ENTRIES.filter((_, i) => i % 2 === 0).map(e => e.content));
+    await memory.transact(
+      LABELLED_ENTRIES.map(e => ({
+        op: 'upsert' as const,
+        category: 'history',
+        content: e.content,
+        tags: [],
+        createdAt: backdated,
+        ...(guarded.has(e.content) ? { importance: 5 } : {}),
+      }))
+    );
 
-      const scored = (
-        memory
-          .getDb()
-          .prepare(`SELECT content, importance FROM memories WHERE project_id = ?`)
-          .all(memory.getProjectId()) as any[]
-      ).map(r => ({ label: byContent.get(r.content)!.label, importance: r.importance }));
+    const stored = (
+      memory
+        .getDb()
+        .prepare(`SELECT content, importance FROM memories WHERE project_id = ?`)
+        .all(memory.getProjectId()) as any[]
+    ).map(r => ({
+      content: r.content,
+      label: byContent.get(r.content)!.label,
+      importance: r.importance,
+    }));
 
-      // The exact delete set at every threshold.
-      const preview: Record<number, { deleted: number; criticalDeleted: string[] }> = {};
-      for (const threshold of [1, 2, 3, 4, 5]) {
-        const deleted = prunePreview(memory, threshold, cutoff);
-        preview[threshold] = {
-          deleted: deleted.length,
-          criticalDeleted: deleted.filter(c => criticalContent.has(c)).map(c => byContent.get(c)!.id),
-        };
-      }
-
-      memory.close();
-      return { scored, preview, drain };
+    // The exact delete set at every threshold.
+    const preview: Record<number, { deleted: number; criticalDeleted: string[] }> = {};
+    for (const threshold of [1, 2, 3, 4, 5]) {
+      const deleted = prunePreview(memory, threshold, cutoff);
+      preview[threshold] = {
+        deleted: deleted.length,
+        criticalDeleted: deleted.filter(c => criticalContent.has(c)).map(c => byContent.get(c)!.id),
+      };
     }
+    memory.close();
 
-    const off = await runArm(false);
-    const on = await runArm(true);
-
-    const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-    const critical = on.scored.filter(s => s.label === 'critical').map(s => s.importance);
-    const trivial = on.scored.filter(s => s.label === 'trivial').map(s => s.importance);
-
-    // Distribution: the most likely small-model failure is collapsing every
-    // entry onto the default and calling it inference.
     const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (const s of on.scored) distribution[s.importance] = (distribution[s.importance] ?? 0) + 1;
+    for (const s of stored) distribution[s.importance] = (distribution[s.importance] ?? 0) + 1;
 
-    metrics.annotate(IMPORTANCE_PILLAR, {
+    const unguardedCriticalAtDefault = preview[3].criticalDeleted.length;
+
+    metrics.annotate(PRUNE_PILLAR, {
       corpus: LABELLED_ENTRIES.length,
-      drained: on.drain.drained,
-      degraded: on.drain.degraded,
-      meanCritical: round(mean(critical)),
-      meanTrivial: round(mean(trivial)),
-      discrimination: round(mean(critical) - mean(trivial)),
+      guardedWithExplicitImportance: guarded.size,
       distribution,
-      distinctValues: Object.values(distribution).filter(n => n > 0).length,
-      prunePreviewEnriched: on.preview,
-      prunePreviewBaseline: off.preview,
-      // Recorded because it is the headline number, and because it is a
-      // pre-existing hazard: default importance and default prune threshold
-      // are the same value and the prune is inclusive, so this set is
-      // non-empty with enrichment switched off. Owned by ticket 23.
-      criticalDeletedAtDefault: on.preview[3].criticalDeleted,
-      criticalDeletedAtDefaultBaseline: off.preview[3].criticalDeleted,
+      prunePreview: preview,
+      // The headline number, and the reason this pillar survives ticket 26:
+      // an entry written without `--importance` lands on 3, the prune ceiling
+      // defaults to 3, and the comparison is inclusive. Owned by ticket 23,
+      // still unfixed — recorded here so a regression is visible, not gated,
+      // because gating it would be a tripwire that can never go green.
+      criticalDeletedAtDefaultThreshold: preview[3].criticalDeleted,
+      unguardedCriticalAtDefault,
     });
 
-    // THE hard assertion, in the only form that isolates this feature:
-    // enrichment may not add a single critical entry to the delete set that
-    // was not already there without it. An absolute "must be empty" bar fails
-    // identically with enrichment disabled — it measures ticket 23's hazard,
-    // not this one's inference — so it would be a tripwire that can never go
-    // green and would tell nobody anything about the model.
-    const baseline = new Set(off.preview[3].criticalDeleted);
-    const newlyEligible = on.preview[3].criticalDeleted.filter(id => !baseline.has(id));
+    // Nothing infers importance any more (ticket 26), so every entry that did
+    // not pass the flag must sit on the default. A value other than 3 here
+    // means inference has come back from somewhere.
+    const unguarded = stored.filter(s => !guarded.has(s.content));
     expect(
-      newlyEligible,
-      'inferred importance made a known-critical entry prune-eligible that was safe without it'
+      [...new Set(unguarded.map(s => s.importance))],
+      'an entry written without --importance did not take the default'
+    ).toEqual([3]);
+
+    // THE hard assertion: `--importance` is the documented protection against a
+    // bare prune, so it must actually protect. Every guarded entry must be
+    // absent from the delete set at the default threshold.
+    const guardedIds = new Set(
+      stored.filter(s => guarded.has(s.content)).map(s => byContent.get(s.content)!.id)
+    );
+    expect(
+      preview[3].criticalDeleted.filter(id => guardedIds.has(id)),
+      'an entry written with --importance 5 was still prune-eligible at the default ceiling'
     ).toEqual([]);
-
-    // Inference must never lower an entry's importance below the default.
-    expect(Math.min(...on.scored.map(s => s.importance))).toBeGreaterThanOrEqual(3);
-  }, 1800000);
-
-  it(`${IMPORTANCE_PILLAR} — stability`, async () => {
-    // The same entry across repeated runs. A value that moves between runs is
-    // not stable enough to act on, whatever its mean.
-    const model = new LocalEnrichmentModel();
-    const perEntry: Array<{ id: string; values: number[]; stable: boolean }> = [];
-
-    for (const entry of LABELLED_ENTRIES.slice(0, byTier(4, LABELLED_ENTRIES.length))) {
-      const values: number[] = [];
-      for (let i = 0; i < STABILITY_REPEATS; i++) {
-        const result = await metrics.time(IMPORTANCE_PILLAR, () =>
-          model.inferImportance({ content: entry.content })
-        );
-        if (result.importance !== undefined) values.push(result.importance);
-      }
-      perEntry.push({
-        id: entry.id,
-        values,
-        stable: values.length > 0 && new Set(values).size === 1,
-      });
-    }
-
-    const stableCount = perEntry.filter(e => e.stable).length;
-    metrics.annotate(IMPORTANCE_PILLAR, {
-      stabilityRepeats: STABILITY_REPEATS,
-      stableEntries: stableCount,
-      stabilityRate: round(stableCount / Math.max(1, perEntry.length)),
-      perEntryStability: perEntry,
-    });
-
-    // Tracked, not gated — this pillar reports whether the value is actionable.
-    expect(perEntry.length).toBeGreaterThan(0);
   }, 1800000);
 
   it(CATEGORY_PILLAR, async () => {
@@ -310,7 +259,6 @@ describe('Write-Side Enrichment Benchmark', () => {
   enrichment:
     enabled: ${enabled}
     category: learning
-    importance: "off"
 `;
       const memory = openStore(`nonreg-${enabled ? 'on' : 'off'}`, yaml);
 

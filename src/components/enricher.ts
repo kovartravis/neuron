@@ -1,18 +1,25 @@
 /**
  * Write-side enrichment: inferring the metadata a caller did not supply.
  *
- * The three fields are inferred by different machinery, chosen by what each
- * field actually is (see `.scratch/write-side-enrichment/spec.md`):
+ * Two fields are inferred, by different machinery chosen from what each field
+ * actually is (see `.scratch/write-side-enrichment/spec.md`):
  *
  *   tags       — *selected* from a closed vocabulary by centroid cosine. No
  *                model: the embedder is already loaded on the write path, and
  *                ADR 0010 §4 forbids the model from minting a tag, which makes
  *                tagging a ranking problem rather than a generation one.
- *   category   — inferred by the model, which can read a category's
- *                `description` as an instruction rather than merely as a
- *                similarity target. A centroid strategy ships alongside it for
- *                the A/B.
- *   importance — inferred by the model, unclamped, free alongside category.
+ *   category   — centroid cosine by default, which beat the model 9/9 to 1/9 on
+ *                the same corpus (Pillar 11). The model strategy survives as an
+ *                opt-in because it can read a category's `description` as an
+ *                instruction rather than merely as a similarity target.
+ *
+ * `importance` was a third inferred field and is **not** inferred any more.
+ * Pillar 10 measured the shipped 0.5B model's judgement as noise — discrimination
+ * of -0.5 then +0.167 across consecutive runs, per-entry stability 0.5, and a
+ * note about irreversible production data loss rated `1`. It shipped `off` in
+ * ticket 06 and was removed outright in ticket 26; an omitted `--importance`
+ * takes the column default. Git history holds the implementation if a larger
+ * model ever makes the question worth reopening.
  */
 import { getTextGenerator } from './generator.js';
 import { withTimeout, TimeoutError } from './timeout.js';
@@ -161,13 +168,7 @@ export interface CategoryInferenceInput {
 
 export interface CategoryInferenceResult {
   category?: string;
-  importance?: number;
   /** Machine-readable reason the inference did not produce a value. */
-  degraded?: string;
-}
-
-export interface ImportanceInferenceResult {
-  importance?: number;
   degraded?: string;
 }
 
@@ -178,8 +179,7 @@ export interface ImportanceInferenceResult {
  * stored metadata without loading a 500M-parameter model.
  */
 export interface EnrichmentModel {
-  inferCategoryAndImportance(input: CategoryInferenceInput): Promise<CategoryInferenceResult>;
-  inferImportance(input: { content: string }): Promise<ImportanceInferenceResult>;
+  inferCategory(input: CategoryInferenceInput): Promise<CategoryInferenceResult>;
 }
 
 export interface LocalEnrichmentModelOptions {
@@ -199,7 +199,7 @@ export class LocalEnrichmentModel implements EnrichmentModel {
     this.forceFallback = options.forceFallback ?? false;
   }
 
-  async inferCategoryAndImportance(input: CategoryInferenceInput): Promise<CategoryInferenceResult> {
+  async inferCategory(input: CategoryInferenceInput): Promise<CategoryInferenceResult> {
     const declared = input.categories.map(c => c.name);
     if (declared.length === 0) return { degraded: 'no_declared_categories' };
 
@@ -207,21 +207,8 @@ export class LocalEnrichmentModel implements EnrichmentModel {
     if (typeof raw !== 'string') return { degraded: raw.degraded };
 
     const category = matchDeclaredCategory(raw, declared);
-    // A second generation rather than a second field of the first: at 0.5B a
-    // multi-field answer is not reliably parseable, while a second call
-    // against an already-resident model costs ~183ms.
-    const { importance } = await this.inferImportance({ content: input.content });
-
-    if (!category) return { importance, degraded: 'category_not_declared' };
-    return { category, importance };
-  }
-
-  async inferImportance(input: { content: string }): Promise<ImportanceInferenceResult> {
-    const raw = await this.generate(buildImportancePrompt(input.content), 4);
-    if (typeof raw !== 'string') return { degraded: raw.degraded };
-
-    const importance = parseImportance(raw);
-    return importance === undefined ? { degraded: 'importance_unparseable' } : { importance };
+    if (!category) return { degraded: 'category_not_declared' };
+    return { category };
   }
 
   /** Generated text, or the reason there is none. */
@@ -256,12 +243,12 @@ interface Degraded {
 // --- Prompting & parsing ---------------------------------------------------
 
 /**
- * Both prompts are few-shot. Measured on the shipped model: an instruction-only
- * prompt asking for `category: <name>` / `importance: <digit>` was answered by
- * continuing the note instead — 12 of 12 importance inferences were
- * unparseable. The same task with worked examples answers with a bare token
- * every time. The examples buy format compliance, not judgement; judgement is
- * what Pillar 10 and Pillar 11 measure.
+ * The prompt is few-shot. Measured on the shipped model: an instruction-only
+ * prompt asking for `category: <name>` was answered by continuing the note
+ * instead — the same failure ran 12 of 12 on the importance prompt that ticket
+ * 26 removed. With worked examples the model answers with a bare token every
+ * time. The examples buy format compliance, not judgement; judgement is what
+ * Pillar 11 measures.
  */
 function shot(user: string, assistant: string): string {
   return `<|im_start|>user\n${user}<|im_end|>\n<|im_start|>assistant\n${assistant}<|im_end|>\n`;
@@ -285,30 +272,6 @@ ${examples}<|im_start|>user
 ${input.content.slice(0, 700)}<|im_end|>
 <|im_start|>assistant
 `;
-}
-
-export function buildImportancePrompt(content: string): string {
-  return `<|im_start|>system
-Rate how important it is to keep a note. Reply with one digit from 1 to 5.
-5 = losing it causes real damage. 3 = ordinary. 1 = losing it costs nothing.<|im_end|>
-${shot(
-    'Deleting the production database backup schedule would make recovery impossible after any outage.',
-    '5'
-  )}${shot('Renamed a local variable for readability. No behaviour changed.', '1')}${shot(
-    'The queue consumer reconnects with exponential backoff after a dropped connection.',
-    '3'
-  )}<|im_start|>user
-${content.slice(0, 700)}<|im_end|>
-<|im_start|>assistant
-`;
-}
-
-export function parseImportance(raw: string): number | undefined {
-  const labelled = raw.match(/importance\s*[:=]\s*([1-5])/i);
-  if (labelled) return Number(labelled[1]);
-  // Few-shot answers are a bare digit; take the first one that appears.
-  const bare = raw.match(/[1-5]/);
-  return bare ? Number(bare[0]) : undefined;
 }
 
 function matchDeclaredCategory(raw: string, declared: string[]): string | undefined {

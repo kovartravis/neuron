@@ -203,7 +203,7 @@ describe('mdVectorSync (R3 Unit & Boundary Tests)', () => {
     expect(result.syncedToVector).toBe(100);
   });
 
-  it('R3-T2-04: handles duplicate entry IDs within a single markdown file gracefully', async () => {
+  it('R3-T2-04: a category with duplicate entry IDs fails that category\'s sync rather than silently picking a winner (ticket 35)', async () => {
     const dupMarkdown = `# Category: learning
 
 ---
@@ -227,7 +227,8 @@ tags: []
 
     const result = await syncMdWithVector(memoryDb, mdAdapter, defaultConfig);
     expect(result.errors.length).toBeGreaterThanOrEqual(1);
-    expect(result.errors[0].error).toContain('Duplicate entry ID');
+    expect(result.errors[0].error).toContain('Duplicate id "dup-id"');
+    expect(result.syncedToVector).toBe(0);
   });
 
   it('R3-T2-05: handles dry-run and force options in sync engine', async () => {

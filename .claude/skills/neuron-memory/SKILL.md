@@ -111,18 +111,16 @@ write, while tags are selected by the already-loaded embedder for about a
 millisecond.
 
 > [!IMPORTANT]
-> **Omitting `--importance` does not infer anything.** `importance` ships `off`
-> (see below), so an omitted `--importance` is simply stored as the default
-> **`3`** — no model call, no backlog, no inference. A trivial typo fix and a
-> critical data-loss warning both land on `3`.
+> **`--importance` is never inferred.** There is no setting that infers it: the
+> job was measured, found to be noise, and removed. An omitted `--importance` is
+> stored as the default **`3`** — no model call, no inference. A trivial typo fix
+> and a critical data-loss warning both land on `3`.
 >
 > This matters because `3` is also `neuron memory prune`'s default ceiling and
 > the comparison is inclusive, so **every entry written without `--importance`
-> becomes prune-eligible** once it is older than `--days`. If you intend to
-> prune by importance later, you must pass `--importance` at write time. See §6.
->
-> Only when `importance: infer` is switched on does the field defer to the
-> enrichment backlog that drains before the next read.
+> becomes prune-eligible** once it is older than `--days`. Passing
+> `--importance 4` or `5` at write time is the *only* thing that protects an
+> entry from a bare prune. See §6.
 
 Recommend the second posture for humans adding memories ad hoc, where a few
 seconds are invisible and a readable error beats learning the project's taxonomy
@@ -145,7 +143,6 @@ llm:
     enabled: true          # master toggle; false is the A/B control arm
     category: infer        # infer | <declared-category-name> | off
     tags: infer            # infer | off
-    importance: off        # infer | off
     categoryStrategy: centroid   # centroid | model
     timeoutMs: 15000
     maxTags: 3
@@ -161,10 +158,11 @@ Points worth raising with the user:
   answer. Left as `infer`, that case is a hard error instead — which is the
   right default if filing an entry into the wrong category would be worse than
   being told to pass the flag.
-- **`importance: off` is the shipped default, on measured evidence.** The local
-  0.5B model's importance judgement benchmarked as *negatively* discriminating.
-  Inference can never lower an entry's importance below the default, so
-  switching it on is safe — but do not expect it to be useful yet.
+- **There is no `importance` key.** It existed through 2.2.0-rc1/rc2 and was
+  removed: the local 0.5B model's importance judgement benchmarked as
+  *negatively* discriminating, so it shipped `off` and then went entirely. A
+  `neuron.yaml` still carrying the key parses fine — the key is ignored. Tell the
+  user to pass `--importance` on writes that must survive a prune.
 - **`categoryStrategy: centroid` beat `model` 9/9 to 1/9** on the benchmark
   corpus. Its one weakness: a store with no entries has no centroids, so on a
   cold store an omitted `--category` hard-errors until the first entries are
@@ -181,14 +179,14 @@ where enrichment never runs — the config looks right and does nothing.
 
 ```bash
 neuron memory add "<content>" --category learning   # recommended posture
-neuron memory enrich                                # drain the backlog on demand
-neuron status                                       # pending count + degradation counters
+neuron status                                       # degradation counters
 ```
 
-The backlog drains automatically before any query, so a read never sees
-unenriched data. Check `enrichment.degraded` in `neuron status` occasionally: a
-non-zero counter means inference is silently falling back, which is how a broken
-local model otherwise goes unnoticed for months.
+Enrichment resolves inline on every write — both inferred fields use the
+embedder that is already loaded on the write path — so there is nothing to drain
+and no backlog to watch. Check `enrichment.degraded` in `neuron status`
+occasionally: a non-zero counter means inference is silently falling back, which
+is how a broken local model otherwise goes unnoticed for months.
 
 ## 1. Beginning of Run (Context Loading)
 

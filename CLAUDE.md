@@ -45,11 +45,11 @@ in. Omitted tags are selected from the vocabulary already in the store, which
 converges it; hand-written tags widen it (this store holds 191 distinct tags, 98
 used exactly once). **Prefer omitting `--tags`.**
 
-`--importance` is optional too, but **omitting it infers nothing.** `importance`
-ships `off` on measured evidence (the 0.5B model's judgement benchmarked as
-*negatively* discriminating), so an omitted `--importance` is stored as the
-default **`3`** — no model call, no backlog. A trivial typo fix and a critical
-data-loss note both land on `3`.
+`--importance` is optional too, but **it is never inferred** — there is no
+setting that turns inference on. The job was measured (the 0.5B model's
+judgement benchmarked as *negatively* discriminating) and removed in 2.2.0-rc2.
+An omitted `--importance` is stored as the default **`3`**. A trivial typo fix
+and a critical data-loss note both land on `3`.
 
 That default collides with `neuron memory prune`, whose ceiling also defaults to
 `3` and compares inclusively, so **every entry written without `--importance` is

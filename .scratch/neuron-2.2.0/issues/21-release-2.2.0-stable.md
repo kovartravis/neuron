@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: 20
+Blocked by: 20, 34
 Band: 2.2.0
 
 # 21 — Release 2.2.0 Stable

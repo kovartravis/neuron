@@ -16,14 +16,6 @@ The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) th
 
 The identifier used to link logged history entries back to specification artifacts or requirements (e.g. ticket numbers like `01-db-schema-postgres` or issue references like `#42`). It should not refer to transient execution task/process IDs.
 
-### scope promotion & demotion
-
-The mechanism executed during consolidation that dynamically adjusts a learning's visibility tier (`people` -> `project` -> `global`) based on query frequency in a rolling 30-day window.
-
-### manual scope lock
-
-A flag (`is_manual_scope`) set when a user explicitly assigns a scope to a learning. It locks the learning's scope and exempts it from automated promotion or demotion.
-
 ### pre-command lookup (`neuron exec`)
 
 The mechanism that queries the memory store for relevant learnings before running a shell command. It outputs matching rules to `stderr` above a relevance threshold and executes the target command with inherited `stdio`.
@@ -138,9 +130,11 @@ The structured performance report detailing per-pillar pass/fail, latency percen
 
 ### write-side enrichment (`src/components/enricher.ts`)
 
-The process that fills in the metadata a caller did not supply on `neuron memory add` — tags, category and importance. Enrichment fills only unset fields; anything passed explicitly is honoured untouched. It hangs off `NeuronMemory.transact`, the single seam every write routes through.
+The process that fills in the metadata a caller did not supply on `neuron memory add` — tags and category. Enrichment fills only unset fields; anything passed explicitly is honoured untouched. It hangs off `NeuronMemory.transact`, the single seam every write routes through.
 
-The three fields are inferred by different machinery because they are different kinds of problem: tags are **selected** by centroid cosine with no model involved, category is inferred from the store's category centroids (or, opt-in, by the model), and importance is inferred by the model. See `docs/adr/0010`.
+The two fields are inferred by different machinery because they are different kinds of problem: tags are **selected** by centroid cosine with no model involved, and category is inferred from the store's category centroids (or, opt-in, by the model). See `docs/adr/0010`.
+
+**Importance is not inferred.** It was a third enriched field through rc1/rc2; Pillar 10 measured the shipped model's judgement as noise, it shipped `off`, and ticket 26 removed it. An omitted `--importance` takes the column default of `3` — which is also the default `neuron memory prune` ceiling, and the prune compares inclusively, so passing `--importance 4` or `5` is the only thing that protects an entry from a bare prune.
 
 ### tag vocabulary & centroid
 
@@ -148,11 +142,11 @@ The closed set a tag can be selected from: every tag declared in `neuron.yaml`, 
 
 The vocabulary is computed once per process and never persisted, so a tag minted by an explicit write is selectable by the very next write.
 
-### enrichment backlog (`enriched_at`)
+### `enriched_at`
 
-The set of entries written with a field left for later, identified by a NULL `enriched_at` column. Only importance defers — it never justifies a ~3.2s model load on the interactive write path on its own. The backlog drains on the next memory command whenever it is non-empty, and the drain is **unbounded**: it completes rather than working to a budget, so retrieval quality never depends on how much was written recently. `neuron memory enrich` drives it on demand.
+A timestamp recording that a write went through enrichment. Every write is stamped inline, because both remaining inferred fields resolve against an embedder that is already loaded on the write path.
 
-A row whose inference degrades is still stamped enriched, so a permanently unavailable model cannot make every subsequent query re-attempt a cold load. The loss is made visible by the degradation counters instead.
+It once identified an **enrichment backlog** — rows written NULL because importance inference had been deferred rather than pay a ~3.2s model load on the interactive write path — drained on the next memory command by `drainEnrichment`, with `neuron memory enrich` to drive it on demand. Ticket 26 removed the only deferred job, so nothing is ever written NULL and all of that machinery went with it. The column and its partial index are kept: the timestamp is still an honest record, and dropping a column would make an rc1/rc2 database non-downgradable for no gain.
 
 ### degradation counters
 

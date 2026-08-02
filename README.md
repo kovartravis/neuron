@@ -163,8 +163,8 @@ neuron ui
 
 ![Neuron dashboard](docs/images/dashboard.png)
 
-Browse categories, run instant semantic queries, filter by scope and tags, and
-inspect drift reports — all served locally.
+Browse categories, run instant semantic queries, filter by tags, and inspect
+drift reports — all served locally.
 
 ## 📚 Documentation
 

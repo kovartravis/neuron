@@ -3,10 +3,58 @@
 ## Destination
 
 `@kovartravis/neuron` **v2.2.0** published stable to npm, reached progressively
-through four release candidates. The release covers three themes: real
-WebAssembly Tree-Sitter AST parsing, expanded use of the shipped Qwen1.5-0.5B
-model, and harness-native recall across five coding agents with an `AGENTS.md`
-fallback for everything else.
+through five release candidates. The release covers four themes: real
+WebAssembly Tree-Sitter AST parsing, embedder-based write-side enrichment with a
+measured boundary on what a 0.5B model can be trusted with, harness-native
+recall across five coding agents with an `AGENTS.md` fallback for everything
+else, and — added 2026-08-02 — **deterministic, schema-enforced plain-markdown
+memory as the product's primary claim**.
+
+> **Theme 4 was added on 2026-08-02, mid-route, and it is a repositioning.**
+> The trigger was competitive: `codebase-memory-mcp` (tree-sitter + hybrid LSP,
+> 32.7k stars) already owns the architecture-analysis niche this project had been
+> pitching into. Neuron's defensible edge is the opposite of depth — memory that
+> lives as `.md` files a developer can open, diff, hand-edit and review in a PR.
+> Architecture scanning becomes a **supporting** feature, not the headline.
+>
+> This theme is not a docs exercise. The repositioning was drafted as a README
+> first, and checking that README against the shipped CLI found its central
+> promise is **not currently true**: `md-only` is not the default, `neuron init`
+> writes no `neuron.yaml` at all, and `md-only` has **no semantic search** — it
+> falls back to whole-string substring matching. The band below is the
+> engineering that makes the claim honest, and only then the README that makes it.
+>
+> **Sharpened later the same day.** "Memory as markdown files" is not defensible
+> — telling an agent to append to a `.md` file is a prompt, not a product. The
+> claim that is defensible is the *guarantee*: **an agent using the CLI cannot
+> write a malformed entry**, because the entry schema is declared in
+> `neuron.yaml` and enforced on write. That makes the CLI load-bearing rather
+> than a convenience wrapper, and it is a *governance* claim rather than a
+> capability claim — orthogonal to `codebase-memory-mcp`'s analysis depth
+> instead of competing with it. Tickets `35` and `36` carry it. Note the
+> guarantee is currently false in a second way that has nothing to do with
+> writing: the **reader** silently fabricates field values on hand-edited files
+> (`35`), which is the exact feature the pitch is built on.
+>
+> **Extended to `neuron scan` the same day.** Architecture scanning stops being
+> the apologetic *"lightweight, not as deep as purpose-built tools"* footnote and
+> comes under the same claim: **a deterministic way to get your architecture into
+> a markdown file that stays up to date.** Against `codebase-memory-mcp` this is
+> depth-versus-artifact rather than depth-versus-depth — they analyse; neuron
+> produces a file a human and an agent both read and a `git diff` can gate on.
+> That collapses the whole product to one idea — *deterministic markdown
+> artifacts your agent maintains and you review* — instead of a memory pitch with
+> a scanner bolted beside it. Measured: the card is **already** byte-identical
+> across runs except for a wall-clock `mtime` line, so the claim is one line and
+> one identity fix away (`37`).
+
+> **Theme 2 was rewritten on 2026-08-02, after the band was walked.** It read
+> *"expanded use of the shipped Qwen1.5-0.5B model"*. That was the bet; the
+> measurement went the other way. Across `05`–`08`, `23`, `24` and `26`, every
+> A/B concluded a cheaper method beat the model, and rc2 adds **zero** default-on
+> model jobs — `neuron scan` summarization remains the only one, as in 2.1.0.
+> The theme now names what was actually built and learned, because a destination
+> that advertises a result the route disproved is how a map starts lying.
 
 Reaching the end means: the way to `v2.2.0` is walked, not merely charted —
 every ticket resolved, every rc cut, stable published.
@@ -36,10 +84,16 @@ every ticket resolved, every rc cut, stable published.
 | Band | Tickets | Delivers |
 |------|---------|----------|
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
-| `2.2.0-rc2` | `05`–`07`, `09`, `24` | Expanded Qwen1.5-0.5B usage — **much narrower than charted**: `08` is out of scope, `23`/`24` removed automatic pruning, `25` is deferred, and `06` shipped with the model off the write path |
+| `2.2.0-rc2` | `05`, `06`, `09`, `24`, `26` | Centroid write-side enrichment, a timeout primitive, degradation counters — **and no new model jobs at all**: `07` and `08` are out of scope, `23`/`24` removed automatic pruning, `25` is deferred, `06` shipped with the model off the write path, and `26` removes the last model call from it |
 | `2.2.0-rc3` | `10`–`15` | Recall adapter layer + 2 reference adapters |
 | `2.2.0-rc4` | `16`–`20` | Remaining 3 adapters + disclosure |
+| `2.2.0-rc5` | `28`–`38` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
 | `2.2.0` | `21` | Stable release |
+
+> **rc5 has no technical dependency on rc3/rc4** and can be pulled forward if the
+> competitive pressure that motivated it outweighs the recall adapters. It is
+> placed last only because that is where the band was added. Nothing in `28`–`34`
+> reads anything rc3 or rc4 produces.
 
 ## Decisions so far
 
@@ -83,6 +137,10 @@ every ticket resolved, every rc cut, stable published.
   selects, never writes**; losers are superseded, not deleted. Bar for all three
   is **strict non-regression, A/B against job-disabled**.
   [ADR 0010](../../docs/adr/0010-llm-job-guardrails.md).
+  **Two of its seven guardrails are since withdrawn** (2026-08-02): salvage
+  expansion is out of scope, and the "≥0.75 for any top hit" claim behind the
+  raw-cosine trigger is factually wrong — measured 0.4375–0.5565. The
+  non-regression bar, the silent-degrade posture and the timeout all stand.
 
 - [06 — Write-Side Enrichment: Auto Tags, Importance, Category](issues/06-write-side-enrichment.md)
   — Shipped, and **the model ended up off the write path entirely**. Tags and
@@ -124,6 +182,82 @@ every ticket resolved, every rc cut, stable published.
   disqualification is evidence stronger than a double null, not weaker.
   Ticket `06`'s `importance: off` default stands with no ADR reversal.
   [Full report and reusable scripts](../configurable-pruning/).
+- [26 — Remove Model-Based Importance Inference](issues/26-remove-model-importance-inference.md)
+  — Removed, **and the enrichment backlog went with it**. Importance was the only
+  field that ever deferred, so once the job was gone no row could be written with
+  a NULL `enriched_at` and the whole deferral apparatus was unreachable:
+  `drainEnrichment`, the drain-on-read hook, `neuron memory enrich` and
+  `enrichment.pending`. Keeping it would have shipped a subcommand that could
+  only report `drained: 0`. `enriched_at` itself is kept — an honest record, and
+  dropping a column would make an rc1/rc2 DB non-downgradable. Migration
+  verified, not assumed: **Zod strips unknown keys, so a stale
+  `llm.enrichment.importance` is ignored, not a hard fail** — now asserted by a
+  test. Pillar 10 re-pointed from *Importance Inference & Prune Safety* to
+  **Prune Safety**, where it quantifies ticket `23`'s live hazard and verifies the
+  only guard against it: at the default ceiling **9 of 12 entries delete,
+  including 3 of 6 critical ones — every one of them an entry that did not pass
+  `--importance`**, while all three guarded entries survive. 270 tests green.
+  [ADR 0010 amendment](../../docs/adr/0010-llm-job-guardrails.md).
+
+- [28 — What `md-only` Parity Actually Means](issues/28-md-only-parity-design.md)
+  — **`md-only` is deleted, not fixed.** The question was wrong: `md-only`
+  reached markdown-first storage by *removing* SQLite, while `dual` already
+  reaches it by *demoting* SQLite — with full hybrid retrieval, working
+  enrichment and honest counts, because the database is present. Every defect the
+  ticket catalogued traces to one line, `this.db = null`. So `dual` is renamed
+  **`md`**, modes become `vector`/`md`/`split`, and the claim becomes *"your
+  memory is markdown; the vector store is a rebuildable index"* — stronger than
+  "no database," and unlike it, true. **Retrieval parity is achieved by
+  construction** (same hybrid RRF code path), so the README owes no caveat and
+  `queryMarkdownOnly`'s 80 lines of substring matching are deleted.
+  **`scope` is removed** — it was the *only* reason the cache claim was false,
+  and it is measurably dead: 1 distinct value across 264 entries, 0
+  manual-scope rows, 0 promotion matches ever, and 1.36 MB of a 3.1 MB database
+  spent on `query_logs` feeding a loop with one reader. Reconcile is a **strict
+  mirror** (markdown written first, absence means deletion, git is the recovery
+  story) with per-entry content hashing — 0.006 ms to detect, 2.39 ms to repair
+  one entry vs ~630 ms for its category. The one exception is a **bootstrap
+  seed**: first `md` run against a populated store exports vector → markdown and
+  records `meta.md_seeded_at`, without which "not seeded yet" and "a human
+  deleted everything" are the same state — the difference between exporting 264
+  entries and destroying 249 on this very repo. Hand-edits **repair the
+  incomplete, refuse the ambiguous**. Ships in 2.2.0 with `md-only`/`dual` and
+  `--scope`/`--scopes` aliased and warning.
+  [Spec](../md-first/spec.md);
+  [ADR 0011](../../docs/adr/0011-markdown-as-store-of-record.md).
+
+- [35 — Frontmatter Round-Trip Integrity](issues/35-frontmatter-roundtrip-integrity.md)
+  — Both reproductions fixed by a single **repair-the-incomplete,
+  refuse-the-ambiguous** rule in `MdStorageAdapter`, per ADR 0011 Consequence 4.
+  Missing `id`/`createdAt`/`importance` (including a file with no frontmatter
+  block at all) is generated **once** and **written back to disk**, closing the
+  churn loop `28` flagged as fatal under strict-mirror reconcile. Duplicate
+  `id`, unparseable YAML, non-numeric `importance`, and a wrong-typed `tags`
+  value now **hard-error naming the file** instead of silently fabricating or
+  dropping data — the line-by-line YAML-recovery fallback is deleted, not
+  fixed. Every repair prints one `[neuron warning]` to stderr, matching the
+  existing deprecation-warning convention (ADR 0010 §3). Fallout: `mdVectorSync`
+  carried its own duplicate-id tolerance that became dead code once the reader
+  refuses duplicates itself — removed; a category with a duplicate id now fails
+  that category's sync outright rather than silently picking a winner. Two
+  existing tests asserting the old silent-recovery behaviour rewritten; one of
+  them (`expect(async () => {}).not.toThrow()`) was tautological and had been
+  masking the fix as an unhandled rejection rather than a real failure.
+  12 new tests, 292 total, full suite green.
+
+- [38 — Remove `scope`](issues/38-remove-scope.md) — Gone: `scope`,
+  `is_manual_scope`, `query_logs`, `learning_query_matches`, the autoPromote
+  loop, and `checkAutoPromotions()`, via a real migration (v7, verified
+  against a hand-built pre-existing database) — the two tables had exactly one
+  reader and zero observed effect in three weeks of use while writing an
+  unbounded 1.5 KB log row per query. `--scope`/`--scopes` stay parsed and
+  ignored, warning on stderr, matching the `neuron learn`/`neuron history`
+  posture; a stray `scope:` frontmatter key is silently dropped, not an error.
+  This was the last thing keeping SQLite from being a pure, derivable cache of
+  the `.md` files (ADR 0011). Unblocks
+  [29 — The Markdown↔Vector Reconcile Engine](issues/29-md-only-semantic-search.md)
+  alongside `28` and `35`, both already resolved.
+  279 tests, full suite green.
 
 ### Settled while charting
 
@@ -187,7 +321,10 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   inclusive, so **155 of this project's 157 history entries become prune-eligible
   from 2026-08-10**, with the hardcoded `category = 'history'` the only thing
   shielding the 9 `decisions` entries at importance 3. Deferring the ticket did
-  not defer the hazard.
+  not defer the hazard. **`26` gave it a permanent tripwire**: the re-pointed
+  Pillar 10 measures it on every E2E run (9 of 12 deleted at the default ceiling,
+  3 of 6 critical) and asserts that `--importance` still protects — so the hazard
+  is now monitored rather than merely remembered.
   A later session claimed this ticket by mistake because every durable artifact
   still said to work it — see the ticket's postmortem, and
   *"When a decision is not written down"* under **Not yet specified**.
@@ -195,6 +332,21 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 ## Not yet specified
 
 <!-- in-scope fog: real, but not yet sharp enough to ticket -->
+
+- **Plan-vs-architecture-diff (`diffAgainstArchitecture`).** Requested in the
+  2026-08-02 repositioning handoff as a generic per-category flag in
+  `neuron.yaml`, letting a category's entries (e.g. `plans`) be compared against
+  the architecture diff by a two-stage pipeline — embedding similarity for
+  matching, the 0.5B model only for phrasing already-confirmed matches, never for
+  the match decision itself. **Cannot be ticketed: the handoff cites a full spec
+  at `neuron-plan-vs-drift-handoff.md` that does not exist in this repo or
+  anywhere reachable.** The handoff is explicit that the feature must be scoped
+  *exactly* as that spec has it — no new package, no PM-software creep, no
+  hardcoded category-name logic — so writing a replacement spec from the
+  one-paragraph summary would be inventing the thing it says not to invent.
+  Graduates the moment the spec is supplied. Note the two-stage shape is
+  consistent with everything this map measured: embedder decides, model only
+  phrases.
 
 - **Capturing a maintainer decision, not just an agent action.** Surfaced on
   2026-08-01 when a session re-claimed the deferred ticket `25`. Protocol step 4
@@ -220,18 +372,16 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   surface is destroyed content, which bears on every retrieval measurement the
   map has taken.
 
-- **Bootstrapping category centroids on a cold store.** Surfaced by `06`:
+- **Bootstrapping category centroids on a cold store.** Unchanged by `28`, which
+  checked: a fresh `md` project has exactly the cliff a fresh `vector` project
+  has, no better and no worse, because both read centroids from the same
+  database. It is not a storage-mode problem. Originally surfaced by `06`:
   centroid category inference beat the model 9/9 to 1/9, but it needs entries to
   form centroids from, so a brand-new project cannot infer a category until a
   few entries are filed explicitly. Whether that cliff is worth removing — and
   how, given the spec's rejection of embedding short label strings — is
   unformed. It may simply be acceptable: the recommended posture passes
   `--category` anyway.
-- **Enrichment in `md-only` storage mode.** Tag and category centroids are
-  computed from the vector store, which `md-only` does not have, so enrichment
-  silently does nothing there. Whether md-only deserves parity, a documented
-  limitation, or a warning depends on how first-class that mode is meant to be —
-  a question this map has not asked.
 - **Tag vocabulary is a full-table read per process.** `06` reads every tagged
   row's embedding to build centroids on the first inferring write. Fine at 224
   entries; it wants a cached centroid table or an index long before it is a real
@@ -249,13 +399,22 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   describes a protocol that no longer matches. Scope of the rewrite is unclear
   until `14` lands. **Partly graduated by `25`**, which makes the skill the
   one-stop setup shop and adds prune configuration to it; what remains fogged is
-  the read-side protocol rewrite that depends on `14`.
+  the read-side protocol rewrite that depends on `14`. `26` corrected the skill's
+  factually-wrong half — it was documenting an `importance` config key and a
+  `neuron memory enrich` command that no longer exist — but that was a
+  correction, not the restructure; this patch stays fogged.
 - **Grammars for the remaining 6 languages.** Ticket `02` covers the 8 languages
   the old ticket 06 required. Ruby, PHP, Swift, C# and the rest stay at regex
   fidelity — whether they graduate in 2.2.0 or later is open. Sharpened by `02`:
   these languages now also carry a crude `export|public|pub` line test for the
   new `exported` flag, so their export contracts are weaker than the AST
-  languages' in a second, less obvious way.
+  languages' in a second, less obvious way. **Explicitly deprioritised on
+  2026-08-02**: the repositioning handoff asked for a tree-sitter migration as its
+  "ticket group 3", not knowing `02` had already shipped it in rc1 — what actually
+  remains is these four extensions. The handoff's own ruling stands and is now
+  easier to accept: this is a *supporting-feature accuracy fix*, sequenced behind
+  markdown-memory work, but it should land before `scan --diff` fidelity is
+  advertised with confidence anywhere.
 - **Threat model for grammar delivery.** Ticket `01` fetches `.wasm` from the npm
   registry over TLS with pinned versions, but does not verify the registry's
   `dist.integrity` checksum — it bypasses npm, so npm's own verification does not
@@ -265,17 +424,55 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 - **Cross-harness testing strategy.** Five adapters need verification against
   five real harnesses. Whether that is CI-automatable or stays manual is unknown
   until `10` reports.
-- **Duplicate blueprint cards.** Surfaced by `04`: four blueprint cards exist in
-  the `decisions` category. `ingestScanResults` locates "the" card with a
-  semantic query plus `.find()`, so which one it upserts is not guaranteed
-  stable and duplicates accumulate — while `SCAN_HELP` promises "Re-running
-  updates that card in place rather than adding a duplicate". The fix is
-  probably a deterministic card identity rather than a similarity search, but
-  whether that is a stable id, a tag, or a dedicated table is unformed.
 
 ## Out of scope
 
 <!-- ruled beyond this destination; closed, never graduates -->
+
+- **`@neuron/core` — a separate package, SDK, or pluggable-provider system.**
+  Considered and explicitly deprioritised in the 2026-08-02 repositioning
+  handoff. Ruled out here so a later session does not rediscover it as an
+  attractive refactor while doing rc5's storage work — the reconcile engine in
+  `29` is exactly the kind of seam that invites it. (This originally named the
+  `md-only` embedding layer, which `28` deleted.)
+- **Competing on architecture-analysis depth** — AST completeness, call graphs,
+  cross-repo indexing. This is the repositioning's central concession:
+  `codebase-memory-mcp` (tree-sitter + hybrid LSP, 32.7k stars) owns that niche,
+  and the 2026-08-02 handoff rules out contesting it. `neuron scan` stays
+  deliberately lightweight. Does not affect rc1's shipped AST work, which was
+  about *accuracy* of a supporting feature, not depth.
+- **New top-level CLI commands**, unless something in `28`–`34` proves genuinely
+  insufficient without one. From the same handoff. Note this map had already
+  ruled out `neuron doctor` on separate grounds; that ruling now has a second
+  reason behind it.
+
+- **[30 — Write-Side Enrichment and Honest Counts in `md-only`](issues/30-md-only-enrichment-and-status.md)**
+  — superseded **2026-08-02** by `28`. Every defect it was filed to fix —
+  `tags: []` on every entry, an omitted `--category` hard-erroring 100% of the
+  time, dropped degradation counters, `neuron status` reporting `totalCount: 0`
+  — is a symptom of `md-only` setting `this.db = null`. `28` deletes the mode
+  rather than repairing it, so the database is present and all four work
+  unchanged. The work **vanishes rather than being done**, which is why this is
+  a scope boundary and not a step on the route. Its one durable item, cold-store
+  centroid bootstrapping, returned to **Not yet specified** unchanged.
+
+- **[07 — Salvage Expansion for Weak Retrieval](issues/07-query-expansion.md)**
+  — killed **2026-08-02** by its own scope step 3, which pre-committed to
+  calibrating the weakness floor rather than guessing it and to reporting a
+  failure to separate as a finding. It does not separate. Best top-1 cosine on
+  queries retrieval got **wrong** (mean 0.7779, max **0.9516**) is *higher* than
+  on queries it got **right** (mean 0.7518, min 0.6548) — every measured failure
+  is a *confidently wrong* retrieval, not a weak one, and no rewritten query
+  fixes a ranking that is confidently inverted. The floor *does* cleanly separate
+  no-answer and terse queries (≤0.6173 vs ≥0.6548), which is the `CLAUDE.md`
+  "try a broader keyword" case — but that population never appears in Pillar 7,
+  so the A/B bar would have returned delta 0.0 regardless. Also corrected: ADR
+  0010 §2's premise that a nonsense query's top hit scores ≥0.75 is **false**
+  (measured 0.4375–0.5565, because a nonsense query gets no FTS hits and
+  `normRrf` caps at 0.5), so raw `similarity` was never surfaced. The usable
+  half survives as [27](issues/27-minscore-is-inert.md).
+  [Evidence and re-runnable probe](../salvage-expansion/README.md);
+  [ADR 0010 amendment](../../docs/adr/0010-llm-job-guardrails.md).
 
 - **[08 — LLM-Assisted Consolidation & Dedupe](issues/08-consolidation-dedupe.md)**
   — ruled out by the maintainer on **2026-08-01**, before being designed,

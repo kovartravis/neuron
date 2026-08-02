@@ -117,7 +117,7 @@ Multi-category memory operations.
 | `list` | List entries |
 | `update` | Update an entry. `--category` required |
 | `delete` | Delete an entry. `--category` required |
-| `consolidate` | Merge and promote/demote by query frequency |
+| `consolidate` | Summarize history entries logged since the last consolidation |
 | `prune` | Remove obsolete or redundant entries |
 
 | Flag | Description |
@@ -125,7 +125,7 @@ Multi-category memory operations.
 | `--category <name>` | Single category — required for `add`, `update`, `delete` |
 | `--categories a,b` | Restrict `query`/`list` to specific categories |
 | `--tags a,b` | Attach or filter by tags |
-| `--importance <1-5>` | Entry importance |
+| `--importance <1-5>` | Entry importance. Never inferred — an omitted value stores `3`, which is also the default `prune` ceiling |
 | `--task-id <id>` | Link an entry to a ticket or spec |
 | `--limit <n>` | Max results |
 

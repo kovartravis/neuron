@@ -193,6 +193,10 @@ between deliberately unambiguous critical and trivial entries at **-0.5 and
    recommending it as a default would be recommending a measured non-signal.
    Revisit with a larger model.
 
+> **Both changes are superseded by the 2026-08-02 amendment below**, which
+> removes the inference outright. The floor and the config key no longer exist.
+> This paragraph is kept as the record of what ticket `06` decided and why.
+
 **§7's non-regression bar was met.** Pillar 12 ran the adversarial corpus with
 enrichment enabled and disabled, differing only in whether the gold entries'
 tags were hand-authored or inferred: `recallAt1`, `recallAt5` and `mrr` were
@@ -202,8 +206,119 @@ One thing this work did **not** fix, recorded because Pillar 10 quantified it:
 the default entry importance and the default prune threshold are both `3` and
 the prune is inclusive, so at the default threshold every entry written without
 an explicit `--importance` is prune-eligible after thirty days. This is true with
-enrichment switched off — the baseline arm of Pillar 10 deletes all twelve
-corpus entries including all six known-critical ones. It is owned by ticket `23`.
+enrichment switched off — Pillar 10's baseline arm deleted all twelve corpus
+entries including all six known-critical ones. It is owned by ticket `23`, and
+remains unfixed; the re-pointed Pillar 10 described below now measures it
+directly rather than as a side observation.
+
+### 2026-08-02 — after calibrating ticket `07`
+
+**§1 and §2 are withdrawn. Salvage expansion is out of scope for 2.2.0.**
+
+§2 required the weakness floor be *"calibrated against Pillar 2's corpus, not
+guessed"*, and §7 pre-committed the job to a strict non-regression bar. The
+calibration was run before the feature was built. It killed the trigger.
+
+Best top-1 cosine over a 308-entry corpus against the real embedder:
+
+| population | n | min | max | mean |
+|---|---|---|---|---|
+| gold **not**@1 (retrieval WRONG) | 5 | 0.6824 | **0.9516** | 0.7779 |
+| gold@1 (retrieval RIGHT) | 3 | **0.6548** | 0.8347 | 0.7518 |
+| nonsense (no answer exists) | 5 | 0.5097 | 0.6173 | 0.5713 |
+| terse (`git`/`tdd`/`db`/`wasm`) | 4 | 0.5061 | 0.6156 | 0.5561 |
+
+**The floor is inverted on ranking failure.** Queries retrieval got *wrong*
+score *higher* than queries it got right. The worst case in the suite carries
+the highest similarity measured (0.9516, gold at rank 4); the best correct case
+carries the lowest (0.6548). Every measured failure is a **confidently wrong**
+retrieval, not a weak one, and expansion cannot address that — rewriting a query
+to find more does not fix a ranking that is confidently inverted. §1's salvage
+framing was sound about *when* to pay the cost, and wrong about there being
+something to buy.
+
+**§2's factual premise is false.** It justified surfacing raw `similarity` over
+`score` on the grounds that *"the top hit of a nonsense query still scores
+≥ 0.75"*. Measured, nonsense queries score **0.4375–0.5565** and real queries
+**0.7896–0.9375**; `score` separated that population *better* than `similarity`
+did, by 0.233 against 0.038. The §2 argument assumed `normRrf = 1.0` from a
+document ranking #1 in **both** lists, but a nonsense query produces **no FTS
+hits at all**, so `normRrf` caps at 0.5 and the score caps near 0.4375. Raw
+`similarity` is therefore **not** surfaced on query results; nothing needs it.
+
+**§2 was right that `minScore: 0.35` is not the filter it appears to be** — and
+understated it. Because the top semantic hit always earns `normRrf ≥ 0.5`, its
+score can never fall below `0.375`, so the default threshold is **mathematically
+incapable** of excluding it. `neuron exec` injects at least one memory before
+every wrapped command regardless of relevance. That is a live defect in shipped
+behaviour rather than a 2.2.0 feature, and is owned by ticket `27`.
+
+**§7's table row for `07` is struck.** The bar it named was also wrong: §7
+inherited ADR 0007's title for Pillar 2, but Pillar 2 now measures 1.0/1.0 and
+is the *baseline easy* pillar; the adversarial one is Pillar 7. Both were inert
+as bars here for opposite reasons — Pillar 2 because nothing there is ever weak,
+Pillar 7 because nothing there is ever weak enough to trip a floor calibrated to
+exclude nonsense.
+
+This ADR **remains Accepted**: §3 (silent, bounded, observable), §5 (explicit
+input wins per-field) and §7's method still govern ticket `06`'s shipped
+enrichment. §4 was already restated by the `06` amendment, and §6 went out of
+scope with ticket `08`.
+
+Evidence and the re-runnable probe: `.scratch/salvage-expansion/`.
+
+### 2026-08-02 — model-based importance inference is removed
+
+The `06` amendment above shipped `llm.enrichment.importance` defaulting to
+`off`, on the strength of Pillar 10 measuring the model's discrimination at
+**-0.5 and +0.167** with per-entry stability 0.5. The maintainer has since
+decided that a dead-by-default path is worse than no path: it carries
+documentation, configuration and maintenance cost in exchange for a measured
+non-signal that nobody should switch on.
+
+The inference code and the `llm.enrichment.importance` key are removed
+(ticket `26`). `inferCategoryAndImportance` is renamed `inferCategory` and does
+only that — note it previously called `inferImportance` **unconditionally**, so
+the opt-in `categoryStrategy: 'model'` path invoked importance inference
+regardless of the `off` default. Entries take the default importance unless
+`--importance` is passed explicitly. The machinery remains in git history if a
+larger model ever makes the question worth reopening.
+
+**The enrichment backlog goes with it.** Importance was the only field that ever
+deferred — tags and category both resolve inline against an already-loaded
+embedder — so with the job gone no row is ever written with a NULL
+`enriched_at`, and `drainEnrichment`, `countPendingEnrichment`, the drain-on-read
+hook, the `neuron memory enrich` subcommand and `enrichment.pending` in
+`neuron status` were all unreachable. Removing the inference and keeping its
+backlog would have left a CLI subcommand that could only ever report
+`drained: 0`. The `enriched_at` column and its partial index are kept: the
+timestamp is still an honest record of a write having been enriched, and
+dropping a column would make an rc1/rc2 database non-downgradable for no gain.
+
+Existing configs were checked rather than assumed: Zod strips unknown keys, so a
+`neuron.yaml` still carrying `llm.enrichment.importance` parses without error and
+the key is ignored. This is asserted by a test, not left to inspection.
+
+**Pillar 10 is re-pointed, not deleted.** It was *Importance Inference & Prune
+Safety*; the inference half has nothing left to measure, and the prune-safety
+half is still live because ticket `23`'s hazard is unfixed. It is now
+*Pillar 10: Prune Safety*, and it measures the thing that actually protects an
+entry: writing half the known-critical corpus with an explicit `--importance 5`
+and previewing a prune at every threshold. The measurement on a 12-entry corpus
+— **9 of 12 deleted at the default ceiling, including 3 of 6 critical entries,
+with all 3 guarded entries surviving** — is the hazard quantified and the guard
+verified in one run. Its hard assertions are that nothing infers importance any
+more (every unguarded entry sits on exactly `3`) and that `--importance` works.
+It no longer loads the model, so the pillar runs in milliseconds.
+
+**Net effect of rc2 on the model's job list: none.** After `05`, `06`, `07`,
+`08`, `23`, `24` and `26`, the shipped Qwen1.5-0.5B still has exactly one
+default-on job — code summarization during `neuron scan` — the same job it had
+in 2.1.0. Tags and category are decided by centroid cosine over the embedder
+that is already on the write path. Every A/B this band ran concluded the same
+thing from a different direction, which is worth stating plainly rather than
+leaving implicit across six tickets: **at 0.5B, the cheaper method won every
+time it was measured.**
 
 ## Related
 

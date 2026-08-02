@@ -2,6 +2,77 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [Unreleased]
+
+### Removed — `scope`
+
+`scope` was designed for a multi-tenant ambition that was never pursued.
+Measured on this project's own store: 1 distinct value across 264 entries, 0
+manually-locked rows, and a promotion loop that had never fired in three weeks
+of use while writing an unbounded 1.5 KB log row on every query (1.36 MB of a
+3.1 MB database). It was also the only reason SQLite wasn't a pure,
+rebuildable cache of the `.md` files — removing it is a prerequisite for that
+claim, not a tidy-up (`docs/adr/0011`).
+
+- **`scope` and `is_manual_scope` are dropped from the `memories` table**, and
+  the `query_logs`/`learning_query_matches` tables are dropped entirely, via a
+  real migration — an existing database upgrades in place with no data loss.
+- **The automatic scope promotion/demotion loop is removed**, along with
+  `checkAutoPromotions()`.
+- **`--scope`/`--scopes` remain accepted everywhere** (`memory add/update`,
+  `learn`, `history`, `query`) so existing scripts and agent invocations don't
+  hard-fail, but they are now parsed, ignored, and warn on stderr — matching
+  the existing `neuron learn`/`neuron history` deprecation posture.
+- **A `scope:` key found in hand-edited frontmatter is silently ignored**, not
+  an error, and disappears the next time that entry is written.
+
+Ticket [38](.scratch/neuron-2.2.0/issues/38-remove-scope.md).
+
+### Fixed — frontmatter round-trip integrity
+
+Hand-editing a `.md` entry no longer silently corrupts it. Two defects, both
+reproducible by deleting a single frontmatter line:
+
+- **A missing `importance` line used to read back as `1`** (prune-eligible at
+  every threshold) even though the writer's own default is `3`. The reader now
+  agrees with the writer.
+- **A missing `id` used to mint a new random UUID on every read**, with no
+  write-back — `memory update`/`delete` could never target the entry again, and
+  `sync` would duplicate it forever. Missing `id`/`createdAt`/`importance` is now
+  generated **once** and written back to the file, so a second read is stable.
+- **Duplicate `id`, unparseable YAML frontmatter, a non-numeric `importance`, or
+  a `tags` value that is neither an array nor a string now hard-error**, naming
+  the file, instead of silently fabricating or dropping a value. `neuron sync`
+  surfaces this as a per-category error rather than picking a winner.
+- Every repair writes a `[neuron warning]` line to stderr naming the file and
+  field, matching the existing `neuron history`/`neuron learn` deprecation
+  warnings — nothing is silent, nothing is printed to stdout.
+
+Ticket [35](.scratch/neuron-2.2.0/issues/35-frontmatter-roundtrip-integrity.md).
+
+### Removed — model-based importance inference
+
+`importance` is no longer inferred. The shipped 0.5B model's judgement was
+measured as noise (discrimination of -0.5 then +0.167 across consecutive runs,
+per-entry stability 0.5, and a note about irreversible production data loss rated
+`1`), so it shipped `off` by default in rc2 — and a dead-by-default path costs
+documentation, config surface and maintenance for a signal nobody should enable.
+
+- **`llm.enrichment.importance` is removed from `neuron.yaml`.** No action
+  required: unknown keys are ignored, so a config still setting it parses without
+  error. Delete the line at your convenience.
+- **`neuron memory enrich` is removed.** It drained a backlog that only ever held
+  entries with deferred importance; nothing defers now, so it had nothing to do.
+- **`enrichment.pending` is removed from `neuron status`.** It was always `0`.
+- The `enriched_at` column is kept and still stamped on every write. No
+  migration, no data change.
+
+**An omitted `--importance` stores `3`.** That is also the default ceiling for
+`neuron memory prune`, and the prune compares inclusively — so passing
+`--importance 4` or `5` is what keeps an entry out of a bare prune. This is
+unchanged behaviour, but it is now the *only* thing that protects an entry, so it
+is worth stating plainly.
+
 ## [2.2.0-rc1] - 2026-08-01
 
 The real AST release. `TreeSitterScanner` finally uses Tree-Sitter.

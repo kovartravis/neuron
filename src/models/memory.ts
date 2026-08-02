@@ -9,7 +9,6 @@ export interface MemoryQuery {
   categories?: string[];
   /** @deprecated Use `categories` or `category` instead. Kept for backward compatibility. */
   kind?: MemoryKind;
-  scopes?: string[];
   limit?: number;
 }
 
@@ -20,7 +19,6 @@ export interface Memory {
   kind: string;
   content: string;
   tags: string[];
-  scope?: string;
   importance?: number;
   taskId?: string | null;
   createdAt: string;
@@ -35,9 +33,9 @@ export interface Memory {
  * — enrichment fills it, or the write fails naming the cause.
  */
 export type MemoryMutation =
-  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string; enrichedAt?: string | null;
+  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null;
       /** @deprecated Use `category` instead. */ kind?: string; }
-  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; scope?: string; taskId?: string; createdAt?: string; enrichedAt?: string | null;
+  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null;
       /** @deprecated Use `category` instead. */ kind?: string; }
   | { op: 'delete'; category: string; id: string;
       /** @deprecated Use `category` instead. */ kind?: string; };

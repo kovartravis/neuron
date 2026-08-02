@@ -182,19 +182,6 @@ export function generateDashboardHtml(): string {
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .scope-tag {
-      font-size: 11px; color: var(--text-2);
-      background: var(--surface-2); border: 1px solid var(--border-2);
-      border-radius: var(--radius-sm); padding: 1px 7px;
-      font-weight: 500;
-    }
-    .scope-tag.global {
-      color: var(--accent); background: var(--accent-dim); border-color: var(--accent-border);
-    }
-    .scope-tag.project {
-      color: var(--blue); background: var(--blue-dim); border-color: rgba(74,142,245,0.25);
-    }
-
     .imp-bar { display: flex; align-items: center; gap: 3px; }
     .imp-seg { width: 10px; height: 3px; border-radius: 2px; background: var(--border-2); }
     .imp-seg.on { background: var(--text-3); }
@@ -350,12 +337,6 @@ export function generateDashboardHtml(): string {
     return '<span class="imp-bar ' + cls + '" title="Importance ' + n + '">' + segs + '</span>';
   }
 
-  function scopeTag(scope) {
-    if (!scope) return '';
-    const cls = scope === 'global' ? 'global' : scope === 'project' ? 'project' : '';
-    return '<span class="scope-tag ' + cls + '">' + esc(scope) + '</span>';
-  }
-
   function tags(arr) {
     return (arr || []).map(t => '<span class="tag">' + esc(t) + '</span>').join('');
   }
@@ -367,7 +348,6 @@ export function generateDashboardHtml(): string {
       '<div class="entry-meta">' +
         catBadge +
         impBar(item.importance) +
-        scopeTag(item.scope) +
         (item.taskId ? '<span class="task-id">' + esc(item.taskId) + '</span>' : '') +
         tags(item.tags) +
         (showScore && item.score != null ? '<span class="score-tag">' + Math.round(item.score * 100) + '%</span>' : '') +

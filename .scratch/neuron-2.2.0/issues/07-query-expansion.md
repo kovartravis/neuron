@@ -1,7 +1,7 @@
 Type: task
-Status: unclaimed
+Status: out of scope — measured and killed 2026-08-02, do not implement
 Blocked by: 05
-Band: 2.2.0-rc2
+Band: ~~2.2.0-rc2~~ — removed from the band
 
 # 07 — Salvage Expansion for Weak Retrieval
 
@@ -115,3 +115,109 @@ Available to reuse: `withTimeout` (`src/components/timeout.ts`), the shared
 process-level model singleton (`src/components/generator.ts`), the
 `recordDegradation` counters surfaced by `neuron status`, and the
 `llm.enrichment` config namespace's sibling slot under `llm`.
+
+## Answer
+
+**Ruled out of scope on 2026-08-02.** The trigger this ticket is built on was
+calibrated before being built, as scope step 3 required, and it does not
+separate the population the ticket exists to rescue. Scope step 3 named this
+outcome in advance — *"if they do not separate, say so — that is a finding, and
+it kills the trigger"* — and it is the outcome that occurred.
+
+Evidence, scripts and the full write-up:
+[`.scratch/salvage-expansion/`](../../salvage-expansion/README.md). The probe
+runs in about a second against the real embedder and is kept runnable.
+
+### The bar named in this ticket was the wrong pillar
+
+Before any measurement, a naming error had to be resolved. This ticket and
+ADR 0010 §7 both name **Pillar 2** as salvage's non-regression bar and its
+calibration corpus, inheriting the title *"Adversarial Semantic Recall &
+Distractor Resistance"* from ADR 0007. But Pillar 2 measures
+**`recallAt1: 1.0`, `recallAt5: 1.0`** (`benchmarks/reports/e2e-metrics.json`)
+and is described in code as *"Pillar 2 — baseline (easy) recall"*
+(`test/e2e/tier.ts:39`). The genuinely adversarial pillar is **Pillar 7**, added
+later precisely because Pillar 2's distractors are only *lexically* noisy —
+`test/e2e/adversarial-corpus.ts` says so in its header.
+
+The maintainer settled it: **Pillar 7 is the bar.** That mattered less than
+expected, because the calibration then invalidated the trigger regardless.
+
+### The calibration
+
+Best top-1 cosine, 308-entry corpus, real embedder:
+
+| population | n | min | max | mean |
+|---|---|---|---|---|
+| gold **not**@1 (retrieval WRONG) | 5 | 0.6824 | **0.9516** | 0.7779 |
+| gold@1 (retrieval RIGHT) | 3 | **0.6548** | 0.8347 | 0.7518 |
+| nonsense (no answer exists) | 5 | 0.5097 | 0.6173 | 0.5713 |
+| terse (`git`/`tdd`/`db`/`wasm`) | 4 | 0.5061 | 0.6156 | 0.5561 |
+
+**The floor is inverted on the failures it was meant to catch.** Queries
+retrieval got *wrong* score *higher* than queries it got right. `decoy-retry-budget`
+— gold at rank 4, the worst case in the suite — carries the **highest**
+similarity of anything measured, 0.9516. `decoy-index-rebuild`, already correct
+at rank 1, carries the **lowest**, 0.6548. Every Pillar 7 failure is a
+**confidently wrong** retrieval, not a weak one. There is no floor that fires on
+`para-token-expiry`, `para-memory-growth` or `hop-ci-only-failure` without first
+firing on a case that needs no rescue.
+
+This is not a tuning problem. Expansion rewrites a query to find *more*; the
+measured defect is that the embedder finds the wrong thing and is **more**
+confident about it than when it is right. A different query does not fix a
+ranking that is confidently inverted — that is a reranking problem, and a
+different ticket than this one.
+
+**The floor does separate "no answer exists" — but that half is inert against
+the bar.** nonsense and terse top out at 0.6173, every real query starts at
+0.6548, so a floor near **0.63** cleanly separates them, thin margin (0.038) and
+small n notwithstanding. That is the `CLAUDE.md` *"try a broader keyword"*
+population this ticket set out to automate. But it means salvage would **never
+fire on any Pillar 7 case** — all of them sit at or above 0.6548 — so the A/B
+the maintainer had just chosen as the bar is guaranteed to return delta 0.0.
+Both candidate bars were inert, for opposite reasons: Pillar 2 because nothing
+there is ever weak, Pillar 7 because nothing there is ever weak *enough*.
+
+### ADR 0010 §2's stated premise is false
+
+§2 justified this ticket's prerequisite — surfacing raw `similarity` — on the
+grounds that *"the top hit of a nonsense query still scores ≥ 0.75"*. Measured,
+nonsense queries score **0.4375–0.5565** and real queries **0.7896–0.9375**. On
+this corpus `score` separated the no-answer population **better** than
+`similarity` did: margin 0.233 against 0.038.
+
+The §2 argument assumed `normRrf = 1.0` from a document ranking #1 in both the
+semantic and the FTS list. A nonsense query produces **no FTS hits at all**, so
+only one term of `rrfScore` is non-zero and `normRrf` caps at 0.5. The observed
+0.4375 is exactly `0.75·0.5 + 0.25·((2−1)/4)` for the importance-2 filler. The
+prerequisite did not survive its own justification, and `similarity` is **not**
+surfaced — nothing in the tree needs it now, and the probe recomputes it.
+
+ADR 0010 is amended accordingly (§1 and §2 withdrawn, §7's row for this ticket
+struck); it remains **Accepted** because its other sections still govern `06`.
+
+### What this leaves behind
+
+- The `CLAUDE.md` *"try a broader keyword"* workaround **stays**. This ticket's
+  deliverable to remove it is void.
+- The `minScore` arithmetic uncovered here is sharp enough to ticket on its own
+  and is filed as
+  [27 — `minScore` Is Structurally Inert](27-minscore-is-inert.md), which
+  inherits the usable 0.63 separating value as a candidate.
+- **Confident wrongness is deliberately not graduated.** Pillar 7's paraphrase
+  (0/2) and multi-hop (0/2) families losing to high-similarity decoys is a real
+  measured defect, but the maintainer chose not to open it as fog or as a
+  ticket. It is recorded here and nowhere else on purpose — if retrieval quality
+  is picked up again, this is the record to start from.
+- Ticket [09 — Cut and Publish 2.2.0-rc2](09-cut-rc2.md) drops `07` from its
+  blockers and gains `26`.
+
+## Comments
+
+- 2026-08-02: Killed after calibration. Note for anyone reading this ticket as a
+  precedent: the ticket was right to demand the floor be calibrated rather than
+  guessed, and right to pre-commit to a kill if it did not separate. The cost of
+  finding out was about one second of compute against a corpus that already
+  existed. The design that ADR 0010 spent a whole grilling session on would have
+  been built on a signal that points the wrong way.

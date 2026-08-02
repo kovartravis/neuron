@@ -112,8 +112,6 @@ export function parseFlags(args: string[]): {
     depth?: number;
     file?: string;
     importance?: number;
-    scope?: string;
-    scopes?: string[];
     days?: number;
     category?: string;
     categories?: string[];
@@ -136,8 +134,6 @@ export function parseFlags(args: string[]): {
   let depth: number | undefined;
   let file: string | undefined;
   let importance: number | undefined;
-  let scope: string | undefined;
-  let scopes: string[] | undefined;
   let days: number | undefined;
   let category: string | undefined;
   let categories: string[] | undefined;
@@ -191,12 +187,14 @@ export function parseFlags(args: string[]): {
         importance = parseInt(val, 10);
       }
     } else if (arg === '--scope') {
-      scope = args[++i];
+      // scope was removed in v2.2.0 (ticket 38) — kept in KNOWN_FLAGS and
+      // consumed here so unknownFlag() doesn't turn this into a hard outage
+      // for existing scripts/agent invocations.
+      i++;
+      process.stderr.write(`[neuron warning] '--scope' is deprecated and has no effect. Scope was removed in v2.2.0.\n`);
     } else if (arg === '--scopes') {
-      const val = args[++i];
-      if (val) {
-        scopes = val.split(',').map(s => s.trim()).filter(Boolean);
-      }
+      i++;
+      process.stderr.write(`[neuron warning] '--scopes' is deprecated and has no effect. Scope was removed in v2.2.0.\n`);
     } else if (arg === '--days') {
       const val = args[++i];
       if (val) {
@@ -255,8 +253,6 @@ export function parseFlags(args: string[]): {
       depth,
       file,
       importance,
-      scope,
-      scopes,
       days,
       category,
       categories,
@@ -382,20 +378,21 @@ Subcommands:
   delete <id>                    Delete a memory entry by ID
   update <id> "<content>"        Update a memory entry in-place
   consolidate                    Summarize consolidated history logs
-  enrich                         Drain the write-side enrichment backlog now
   prune                          Delete old history logs (DESTRUCTIVE, no undo)
 
 Options:
   --category <name>              Specify the category (required for delete, update;
-                                 on add it is inferred when omitted, at the cost
-                                 of a ~3.5s model load)
+                                 on add it is inferred when omitted, from the
+                                 categories already in the store)
   --categories <a,b,...>         Filter by multiple categories (query, list)
   --tags <tag1,tag2,...>         Specify tags (inferred from the store's
                                  vocabulary when omitted)
-  --importance <1-5>             Set importance rating (inferred when omitted)
-  --scope <scope>                Set scope
+  --importance <1-5>             Set importance rating. NOT inferred when
+                                 omitted — the entry takes the default of 3.
+                                 See the prune ceiling below.
+  --scope <scope>                [Deprecated, no effect] scope was removed in v2.2.0
   --task-id <id>                 Associate a task ID
-  --scopes <scope1,scope2,...>   Filter by active scopes (query)
+  --scopes <scope1,scope2,...>   [Deprecated, no effect] scope was removed in v2.2.0
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
   --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
                                  Entries written without --importance default
@@ -416,8 +413,8 @@ Subcommands:
 Options:
   --tags <tag1,tag2,...>         Specify tags for the learning (add, update)
   --importance <1-5>             Set importance rating (add, update)
-  --scope <scope>                Set scope for the learning (add, update)
-  --scopes <scope1,scope2,...>   Filter query results by active scopes (query)
+  --scope <scope>                [Deprecated, no effect] scope was removed in v2.2.0
+  --scopes <scope1,scope2,...>   [Deprecated, no effect] scope was removed in v2.2.0
   --limit <number>               Limit the number of returned results (query, list)`;
 
 export const HISTORY_HELP = `Usage: neuron history <subcommand> [arguments] [flags]
@@ -435,8 +432,8 @@ Options:
   --task-id <id>                 Associate a task ID with the log (add)
   --tags <tag1,tag2,...>         Specify tags for the log (add)
   --importance <1-5>             Set importance rating (add)
-  --scope <scope>                Set scope for the log (add)
-  --scopes <scope1,scope2,...>   Filter query results by active scopes (query)
+  --scope <scope>                [Deprecated, no effect] scope was removed in v2.2.0
+  --scopes <scope1,scope2,...>   [Deprecated, no effect] scope was removed in v2.2.0
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
   --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
                                  Entries written without --importance default

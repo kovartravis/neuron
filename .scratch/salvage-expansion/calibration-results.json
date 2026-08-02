@@ -1,0 +1,138 @@
+[
+  {
+    "population": "gold not@1 (WRONG)",
+    "id": "decoy-retry-budget",
+    "family": "lexical-decoy",
+    "goldRank": 4,
+    "bestSim": 0.9515606305050878,
+    "bestScore": 0.875
+  },
+  {
+    "population": "gold@1 (RIGHT)",
+    "id": "decoy-index-rebuild",
+    "family": "lexical-decoy",
+    "goldRank": 1,
+    "bestSim": 0.6547527370830392,
+    "bestScore": 0.90234375
+  },
+  {
+    "population": "gold not@1 (WRONG)",
+    "id": "para-token-expiry",
+    "family": "paraphrase",
+    "goldRank": null,
+    "bestSim": 0.7475013198632888,
+    "bestScore": 0.8689516129032259
+  },
+  {
+    "population": "gold not@1 (WRONG)",
+    "id": "para-memory-growth",
+    "family": "paraphrase",
+    "goldRank": 6,
+    "bestSim": 0.8195569966443166,
+    "bestScore": 0.8689516129032259
+  },
+  {
+    "population": "gold@1 (RIGHT)",
+    "id": "contra-storage-default",
+    "family": "contradiction",
+    "goldRank": 1,
+    "bestSim": 0.8347269455585529,
+    "bestScore": 0.9254032258064515
+  },
+  {
+    "population": "gold@1 (RIGHT)",
+    "id": "contra-scan-category",
+    "family": "contradiction",
+    "goldRank": 1,
+    "bestSim": 0.7658054385224595,
+    "bestScore": 0.9375
+  },
+  {
+    "population": "gold not@1 (WRONG)",
+    "id": "hop-cold-start",
+    "family": "multi-hop",
+    "goldRank": 3,
+    "bestSim": 0.6823755208001352,
+    "bestScore": 0.875
+  },
+  {
+    "population": "gold not@1 (WRONG)",
+    "id": "hop-ci-only-failure",
+    "family": "multi-hop",
+    "goldRank": null,
+    "bestSim": 0.6883776402920404,
+    "bestScore": 0.7895569620253164
+  },
+  {
+    "population": "nonsense (NO ANSWER EXISTS)",
+    "id": "kubernetes ingress certificate rotation",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.6161494362305024,
+    "bestScore": 0.4375
+  },
+  {
+    "population": "nonsense (NO ANSWER EXISTS)",
+    "id": "sourdough starter hydration ratio",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.5303105613542671,
+    "bestScore": 0.5564516129032258
+  },
+  {
+    "population": "nonsense (NO ANSWER EXISTS)",
+    "id": "quarterly revenue forecast spreadsheet",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.5829731986837743,
+    "bestScore": 0.4375
+  },
+  {
+    "population": "nonsense (NO ANSWER EXISTS)",
+    "id": "bluetooth pairing firmware handshake",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.6172912280669746,
+    "bestScore": 0.4375
+  },
+  {
+    "population": "nonsense (NO ANSWER EXISTS)",
+    "id": "tax withholding allowance form",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.509706232224166,
+    "bestScore": 0.4966216216216216
+  },
+  {
+    "population": "terse",
+    "id": "git",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.6156369188764221,
+    "bestScore": 0.4375
+  },
+  {
+    "population": "terse",
+    "id": "tdd",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.5060810268373179,
+    "bestScore": 0.5
+  },
+  {
+    "population": "terse",
+    "id": "db",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.5707460146859609,
+    "bestScore": 0.4807692307692307
+  },
+  {
+    "population": "terse",
+    "id": "wasm",
+    "family": "-",
+    "goldRank": null,
+    "bestSim": 0.5318257670027792,
+    "bestScore": 0.5
+  }
+]

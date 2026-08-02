@@ -40,7 +40,7 @@ describe('Neuron CLI Core & Flag Options', () => {
     expect(shortHelpStdout).toContain('Usage: neuron');
   });
 
-  it('should support adding learnings and history with custom importance and scope flags', () => {
+  it('should support adding learnings and history with custom importance, tolerating the deprecated --scope flag', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
@@ -59,13 +59,13 @@ describe('Neuron CLI Core & Flag Options', () => {
     expect(addHistRes.status).toBe('created');
 
     const db = openDatabase(tempDbPath);
-    
-    const l1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(addLearnRes.id) as { scope: string; importance: number };
-    expect(l1.scope).toBe('custom-scope');
+
+    // --scope is accepted (deprecated, ticket 38) but has no effect and no
+    // longer exists as a column at all.
+    const l1 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(addLearnRes.id) as { importance: number };
     expect(l1.importance).toBe(5);
 
-    const h1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(addHistRes.id) as { scope: string; importance: number };
-    expect(h1.scope).toBe('global');
+    const h1 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(addHistRes.id) as { importance: number };
     expect(h1.importance).toBe(4);
 
     db.close();
@@ -84,36 +84,28 @@ describe('Neuron CLI Core & Flag Options', () => {
     }).toThrow(/--importance must be an integer between 1 and 5/);
   });
 
-  it('should support querying learnings and history by specific scopes via the --scopes flag', () => {
+  it('should ignore the deprecated --scopes flag on query, returning every match regardless of its value (ticket 38)', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
     execSync(`node ${cliPath} learn add "Scope Alpha rule" --scope alpha`, { env });
     execSync(`node ${cliPath} learn add "Scope Beta rule" --scope beta`, { env });
 
-    const queryAlphaStdout = execSync(`node ${cliPath} learn query "rule" --scopes alpha`, { env }).toString();
-    const queryAlphaRes = JSON.parse(queryAlphaStdout);
-    expect(queryAlphaRes.results).toHaveLength(1);
-    expect(queryAlphaRes.results[0].content).toBe('Scope Alpha rule');
-
-    const queryBothStdout = execSync(`node ${cliPath} learn query "rule" --scopes alpha,beta`, { env }).toString();
-    const queryBothRes = JSON.parse(queryBothStdout);
-    expect(queryBothRes.results).toHaveLength(2);
+    // --scopes no longer filters anything — every stored entry matches
+    // regardless of what value (or how many) is passed.
+    const queryOneStdout = execSync(`node ${cliPath} learn query "rule" --scopes alpha`, { env }).toString();
+    const queryOneRes = JSON.parse(queryOneStdout);
+    expect(queryOneRes.results).toHaveLength(2);
 
     const queryGammaStdout = execSync(`node ${cliPath} learn query "rule" --scopes gamma`, { env }).toString();
     const queryGammaRes = JSON.parse(queryGammaStdout);
-    expect(queryGammaRes.results).toHaveLength(0);
+    expect(queryGammaRes.results).toHaveLength(2);
 
     execSync(`node ${cliPath} history add "Alpha pipeline complete" --scope alpha`, { env });
     execSync(`node ${cliPath} history add "Beta deployment finished" --scope beta`, { env });
 
-    const histAlphaStdout = execSync(`node ${cliPath} history query "pipeline" --scopes alpha`, { env }).toString();
-    const histAlphaRes = JSON.parse(histAlphaStdout);
-    expect(histAlphaRes.results).toHaveLength(1);
-    expect(histAlphaRes.results[0].content).toBe('Alpha pipeline complete');
-
     const histGammaStdout = execSync(`node ${cliPath} history query "pipeline" --scopes gamma`, { env }).toString();
     const histGammaRes = JSON.parse(histGammaStdout);
-    expect(histGammaRes.results).toHaveLength(0);
+    expect(histGammaRes.results).toHaveLength(2);
   });
 });

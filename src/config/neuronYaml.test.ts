@@ -194,12 +194,23 @@ pullRules:
       expect(config.llm.enrichment.enabled).toBe(true);
       expect(config.llm.enrichment.category).toBe('infer');
       expect(config.llm.enrichment.tags).toBe('infer');
-      // Off by default: Pillar 10 measured the model's importance judgement as
-      // negatively discriminating. Centroid beat the model 9/9 to 1/9 on
-      // category (Pillar 11), so it is the default strategy.
-      expect(config.llm.enrichment.importance).toBe('off');
+      // Centroid beat the model 9/9 to 1/9 on category (Pillar 11), so it is
+      // the default strategy.
       expect(config.llm.enrichment.categoryStrategy).toBe('centroid');
       expect(config.llm.enrichment.timeoutMs).toBe(15000);
+    });
+
+    it('ignores a stale importance key rather than failing an existing config', () => {
+      // `importance` was a real key through rc1/rc2 and ticket 26 removed it.
+      // Zod strips unknown keys, so an unedited neuron.yaml still parses — this
+      // asserts that rather than assuming it, because the alternative is a
+      // hard-fail on upgrade for a key users were told to set.
+      const config = validateNeuronYaml({
+        categories: { learning: {} },
+        llm: { enrichment: { importance: 'infer' } },
+      });
+      expect(config.llm.enrichment).not.toHaveProperty('importance');
+      expect(config.llm.enrichment.enabled).toBe(true);
     });
 
     it('accepts a declared category name as the literal fallback', () => {
@@ -222,11 +233,11 @@ pullRules:
     it('keeps the master toggle separate from the per-field switches', () => {
       const config = validateNeuronYaml({
         categories: { learning: {} },
-        llm: { enrichment: { enabled: false, tags: 'infer', importance: 'off' } },
+        llm: { enrichment: { enabled: false, tags: 'infer', category: 'off' } },
       });
       expect(config.llm.enrichment.enabled).toBe(false);
       expect(config.llm.enrichment.tags).toBe('infer');
-      expect(config.llm.enrichment.importance).toBe('off');
+      expect(config.llm.enrichment.category).toBe('off');
     });
 
     it('rejects an unknown per-field value', () => {

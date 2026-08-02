@@ -74,7 +74,6 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
         content: 'T3-01 Atomic Swap Test Entry',
         tags: ['integration', 'atomic'],
         importance: 4,
-        scope: 'project',
       },
     ];
 

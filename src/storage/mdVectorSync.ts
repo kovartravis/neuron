@@ -35,10 +35,9 @@ export interface SyncResult {
 export function computeMemoryHash(memory: Memory): string {
   const content = (memory.content || '').trim();
   const tags = (memory.tags || []).join(',');
-  const scope = memory.scope || 'project';
   const importance = memory.importance ?? 3;
   const taskId = memory.taskId || '';
-  const payload = `${content}|${tags}|${scope}|${importance}|${taskId}`;
+  const payload = `${content}|${tags}|${importance}|${taskId}`;
   return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
@@ -89,19 +88,11 @@ export async function syncMdWithVector(
 
   for (const category of categories) {
     try {
-      const rawMdMemories = await mdAdapter.readCategory(category);
-
-      // Handle duplicate entry IDs in markdown file
-      const seenIds = new Set<string>();
-      const mdMemories: Memory[] = [];
-      for (const m of rawMdMemories) {
-        if (seenIds.has(m.id)) {
-          result.errors.push({ category, id: m.id, error: `Duplicate entry ID "${m.id}" found in ${category}.md; retaining latest entry.` });
-        } else {
-          seenIds.add(m.id);
-          mdMemories.push(m);
-        }
-      }
+      // Duplicate or malformed frontmatter is refused by MdStorageAdapter
+      // itself (ADR 0011 Consequence 4), so a category with a duplicate id
+      // fails this category's sync outright via the catch below rather than
+      // silently picking a winner here.
+      const mdMemories = await mdAdapter.readCategory(category);
 
       let dbMemories: Memory[] = [];
       try {
@@ -122,7 +113,6 @@ export async function syncMdWithVector(
           content: mdEntry.content,
           tags: mdEntry.tags,
           importance: mdEntry.importance ?? 3,
-          scope: mdEntry.scope ?? 'project',
           taskId: mdEntry.taskId ?? undefined,
           createdAt: mdEntry.createdAt,
         }]);
@@ -184,7 +174,6 @@ export async function syncMdWithVector(
             await mdAdapter.writeEntry(category, {
               ...dbEntry,
               importance: dbEntry.importance ?? 3,
-              scope: dbEntry.scope ?? 'project',
             });
             result.syncedToMarkdown++;
           }

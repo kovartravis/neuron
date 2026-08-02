@@ -66,20 +66,17 @@ export type ScanConfig = z.infer<typeof ScanConfigSchema>;
  * `category` accepts `infer`, `off`, or a declared category name. A literal
  * name is the *fallback* used when inference cannot produce an answer; left as
  * `infer`, that case is a hard error instead.
+ *
+ * There was a third field key, `importance`, removed by ticket 26 after Pillar
+ * 10 measured the model's judgement as noise. Zod strips unknown keys, so an
+ * existing `neuron.yaml` still carrying it parses without error and the key is
+ * simply ignored — entries take the column default unless `--importance` is
+ * passed.
  */
 export const LlmEnrichmentConfigSchema = z.object({
   enabled: z.boolean().default(true),
   category: z.string().default('infer'),
   tags: z.enum(['infer', 'off']).default('infer'),
-  /**
-   * Off by default on the evidence. Pillar 10 measured the shipped model's
-   * importance judgement as *negatively* discriminating — mean 3.0 on entries
-   * about irreversible data loss against 3.5 on typo fixes — so inferring it
-   * pays a model load for an inverted signal. The floor in `clampImportance`
-   * keeps it harmless when switched on; it does not make it useful. Revisit
-   * with a larger model.
-   */
-  importance: z.enum(['infer', 'off']).default('off'),
   /** Bounds every model call. Cold load alone is >3s on fast hardware. */
   timeoutMs: z.number().default(15000),
   /** Top-K cap on centroid tag selection. */

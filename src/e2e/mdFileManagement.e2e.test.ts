@@ -59,7 +59,6 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
         content: 'Developer A shared convention: Always run linter before PR',
         tags: ['git', 'convention', 'pr'],
         importance: 5,
-        scope: 'project',
       },
     ]);
 
@@ -96,7 +95,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
     expect(syncResB.syncedToVector).toBe(1);
 
     // Developer B can now search and retrieve Developer A's learning
-    const afterSyncB = await dbB.query({ text: 'linter before PR', categories: ['learning'], scopes: ['project', 'global', 'collab-project'] });
+    const afterSyncB = await dbB.query({ text: 'linter before PR', categories: ['learning'] });
     expect(afterSyncB).toHaveLength(1);
     expect(afterSyncB[0].id).toBe('git-commit-mem-1');
     expect(afterSyncB[0].content).toContain('Always run linter before PR');
@@ -151,7 +150,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     expect(syncResult.syncedToVector).toBe(1);
 
     // Query vector DB to verify offline decision is indexed
-    const queryResults = await db.query({ text: 'Dual Storage Parity', categories: ['decisions'], scopes: ['project', 'global', 'offline-project'] });
+    const queryResults = await db.query({ text: 'Dual Storage Parity', categories: ['decisions'] });
     expect(queryResults).toHaveLength(1);
     expect(queryResults[0].id).toBe('adr-001');
     expect(queryResults[0].importance).toBe(5);
@@ -298,8 +297,8 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     const router = new DualStorageRouter(db, adapter, config);
 
     await router.transact([
-      { op: 'upsert', category: 'learning', id: 'onboard-1', content: 'Onboarding rule: Always format code', tags: ['onboarding'], scope: 'project' },
-      { op: 'upsert', category: 'decisions', id: 'onboard-2', content: 'Onboarding decision: Use Vitest runner', tags: ['test'], scope: 'project' },
+      { op: 'upsert', category: 'learning', id: 'onboard-1', content: 'Onboarding rule: Always format code', tags: ['onboarding'] },
+      { op: 'upsert', category: 'decisions', id: 'onboard-2', content: 'Onboarding decision: Use Vitest runner', tags: ['test'] },
     ]);
 
     // Step 3: Manual modification to one markdown entry
@@ -307,7 +306,6 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       id: 'onboard-1',
       content: 'Onboarding rule: Always format code and run typecheck',
       importance: 5,
-      scope: 'project',
     });
 
     // Step 4: A manual .md edit changes content without touching createdAt,
@@ -336,7 +334,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     expect(actualSyncResult.conflicts).toHaveLength(0);
 
     // Step 5: Execute vector query across all onboarded categories
-    const searchResults = await db.query({ text: 'typecheck', categories: ['learning'], scopes: ['project', 'global', 'onboarding-repo'] });
+    const searchResults = await db.query({ text: 'typecheck', categories: ['learning'] });
     expect(searchResults).toHaveLength(1);
     expect(searchResults[0].id).toBe('onboard-1');
     expect(searchResults[0].content).toContain('run typecheck');

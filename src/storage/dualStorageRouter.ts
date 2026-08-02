@@ -60,7 +60,7 @@ export class DualStorageRouter {
           const entryId = m.id || vecResult.id;
 
           if (m.op === 'upsert') {
-            await this.mdAdapter.writeEntry(cat, { id: entryId, content: m.content || '', tags: m.tags || [], importance: m.importance, scope: m.scope, taskId: m.taskId });
+            await this.mdAdapter.writeEntry(cat, { id: entryId, content: m.content || '', tags: m.tags || [], importance: m.importance, taskId: m.taskId });
             results.push({ id: entryId, status: vecResult.status || 'created', project: vecResult.project || 'neuron' });
           } else if (m.op === 'update') {
             // Report success if EITHER store actually changed. The two can
@@ -70,7 +70,7 @@ export class DualStorageRouter {
             // told 'not_found' — a false negative on data that did change.
             let mdUpdated = true;
             try {
-              await this.mdAdapter.updateEntry(cat, { id: m.id, content: m.content, tags: m.tags, importance: m.importance, scope: m.scope, taskId: m.taskId });
+              await this.mdAdapter.updateEntry(cat, { id: m.id, content: m.content, tags: m.tags, importance: m.importance, taskId: m.taskId });
             } catch {
               mdUpdated = false;
             }
@@ -117,7 +117,6 @@ export class DualStorageRouter {
               content: m.content || '',
               tags: m.tags || [],
               importance: m.importance,
-              scope: m.scope,
               taskId: m.taskId,
             });
             results.push({ id: entryId, status: vecResult.status || 'created', project: vecResult.project || 'neuron' });
@@ -131,7 +130,6 @@ export class DualStorageRouter {
                 content: m.content,
                 tags: m.tags,
                 importance: m.importance,
-                scope: m.scope,
                 taskId: m.taskId,
               });
             } catch {
@@ -272,9 +270,6 @@ export class DualStorageRouter {
       filtered = filtered.filter(m => m.content.toLowerCase().includes(textLower) || m.tags.some(t => t.toLowerCase().includes(textLower)));
     }
 
-    if (query.scopes && query.scopes.length > 0) {
-      filtered = filtered.filter(m => !m.scope || query.scopes!.includes(m.scope));
-    }
     if (query.limit) {
       filtered = filtered.slice(0, query.limit);
     }
@@ -300,7 +295,6 @@ export class DualStorageRouter {
           content: m.content || '',
           tags: m.tags || [],
           importance: m.importance,
-          scope: m.scope,
           taskId: m.taskId,
         });
         results.push({ id: entry.id, status: 'created', project: 'neuron' });
@@ -311,7 +305,6 @@ export class DualStorageRouter {
             content: m.content,
             tags: m.tags,
             importance: m.importance,
-            scope: m.scope,
             taskId: m.taskId,
           });
           results.push({ id: updated.id, status: 'updated', project: 'neuron' });

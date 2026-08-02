@@ -1,180 +1,19 @@
 {
-  "timestamp": "2026-08-01T17:21:58.819Z",
+  "timestamp": "2026-08-02T19:14:59.796Z",
   "tier": "sanity",
-  "suiteDurationMs": 34212,
+  "suiteDurationMs": 25029,
   "pillars": [
-    {
-      "pillar": "Pillar 10: Importance Inference & Prune Safety",
-      "samples": 9,
-      "p50Ms": 969.04,
-      "p95Ms": 9247.5,
-      "p99Ms": 13567.44,
-      "minMs": 668.86,
-      "maxMs": 14647.42,
-      "meanMs": 2451.44,
-      "totalMs": 22062.99,
-      "throughputPerSec": 0.41,
-      "extra": {
-        "corpus": 12,
-        "drained": 12,
-        "degraded": 1,
-        "meanCritical": 3.5,
-        "meanTrivial": 3.333,
-        "discrimination": 0.167,
-        "distribution": {
-          "1": 0,
-          "2": 0,
-          "3": 9,
-          "4": 1,
-          "5": 2
-        },
-        "distinctValues": 3,
-        "prunePreviewEnriched": {
-          "1": {
-            "deleted": 0,
-            "criticalDeleted": []
-          },
-          "2": {
-            "deleted": 0,
-            "criticalDeleted": []
-          },
-          "3": {
-            "deleted": 9,
-            "criticalDeleted": [
-              "crit-prod-dataloss",
-              "crit-credentials",
-              "crit-security",
-              "crit-release-block"
-            ]
-          },
-          "4": {
-            "deleted": 10,
-            "criticalDeleted": [
-              "crit-prod-dataloss",
-              "crit-credentials",
-              "crit-corruption",
-              "crit-security",
-              "crit-release-block"
-            ]
-          },
-          "5": {
-            "deleted": 12,
-            "criticalDeleted": [
-              "crit-prod-dataloss",
-              "crit-credentials",
-              "crit-corruption",
-              "crit-security",
-              "crit-irreversible",
-              "crit-release-block"
-            ]
-          }
-        },
-        "prunePreviewBaseline": {
-          "1": {
-            "deleted": 0,
-            "criticalDeleted": []
-          },
-          "2": {
-            "deleted": 0,
-            "criticalDeleted": []
-          },
-          "3": {
-            "deleted": 12,
-            "criticalDeleted": [
-              "crit-prod-dataloss",
-              "crit-credentials",
-              "crit-corruption",
-              "crit-security",
-              "crit-irreversible",
-              "crit-release-block"
-            ]
-          },
-          "4": {
-            "deleted": 12,
-            "criticalDeleted": [
-              "crit-prod-dataloss",
-              "crit-credentials",
-              "crit-corruption",
-              "crit-security",
-              "crit-irreversible",
-              "crit-release-block"
-            ]
-          },
-          "5": {
-            "deleted": 12,
-            "criticalDeleted": [
-              "crit-prod-dataloss",
-              "crit-credentials",
-              "crit-corruption",
-              "crit-security",
-              "crit-irreversible",
-              "crit-release-block"
-            ]
-          }
-        },
-        "criticalDeletedAtDefault": [
-          "crit-prod-dataloss",
-          "crit-credentials",
-          "crit-security",
-          "crit-release-block"
-        ],
-        "criticalDeletedAtDefaultBaseline": [
-          "crit-prod-dataloss",
-          "crit-credentials",
-          "crit-corruption",
-          "crit-security",
-          "crit-irreversible",
-          "crit-release-block"
-        ],
-        "stabilityRepeats": 2,
-        "stableEntries": 2,
-        "stabilityRate": 0.5,
-        "perEntryStability": [
-          {
-            "id": "crit-prod-dataloss",
-            "values": [
-              1,
-              1
-            ],
-            "stable": true
-          },
-          {
-            "id": "crit-credentials",
-            "values": [
-              4,
-              3
-            ],
-            "stable": false
-          },
-          {
-            "id": "crit-corruption",
-            "values": [
-              4
-            ],
-            "stable": true
-          },
-          {
-            "id": "crit-security",
-            "values": [
-              4,
-              2
-            ],
-            "stable": false
-          }
-        ]
-      }
-    },
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "samples": 18,
-      "p50Ms": 448.93,
-      "p95Ms": 1414.92,
-      "p99Ms": 1624.57,
-      "minMs": 4.7,
-      "maxMs": 1676.99,
-      "meanMs": 540.07,
-      "totalMs": 9721.24,
-      "throughputPerSec": 1.85,
+      "p50Ms": 262.46,
+      "p95Ms": 3530.59,
+      "p99Ms": 9179.76,
+      "minMs": 10.61,
+      "maxMs": 10592.05,
+      "meanMs": 1122.78,
+      "totalMs": 20209.99,
+      "throughputPerSec": 0.89,
       "extra": {
         "cases": 9,
         "accuracy": {
@@ -187,10 +26,10 @@
             "cat-learning-1: expected learning, got (hard error)",
             "cat-learning-2: expected learning, got (hard error)",
             "cat-history-1: expected history, got (hard error)",
-            "cat-history-2: expected history, got learning",
+            "cat-history-2: expected history, got (hard error)",
             "cat-history-3: expected history, got (hard error)",
             "cat-decisions-1: expected decisions, got (hard error)",
-            "cat-decisions-2: expected decisions, got (hard error)",
+            "cat-decisions-2: expected decisions, got learning",
             "cat-decisions-3: expected decisions, got (hard error)"
           ],
           "centroid": []
@@ -200,14 +39,14 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "samples": 16,
-      "p50Ms": 2.58,
-      "p95Ms": 3.24,
-      "p99Ms": 3.94,
-      "minMs": 2.28,
-      "maxMs": 4.12,
-      "meanMs": 2.68,
-      "totalMs": 42.86,
-      "throughputPerSec": 373.29,
+      "p50Ms": 5.36,
+      "p95Ms": 10.99,
+      "p99Ms": 14.08,
+      "minMs": 3.15,
+      "maxMs": 14.86,
+      "meanMs": 6.44,
+      "totalMs": 103.11,
+      "throughputPerSec": 155.18,
       "extra": {
         "corpusSize": 158,
         "cases": 8,
@@ -268,6 +107,64 @@
           "recallAt5": 0,
           "mrr": 0
         }
+      }
+    },
+    {
+      "pillar": "Pillar 10: Prune Safety",
+      "samples": 0,
+      "extra": {
+        "corpus": 12,
+        "guardedWithExplicitImportance": 3,
+        "distribution": {
+          "1": 0,
+          "2": 0,
+          "3": 9,
+          "4": 0,
+          "5": 3
+        },
+        "prunePreview": {
+          "1": {
+            "deleted": 0,
+            "criticalDeleted": []
+          },
+          "2": {
+            "deleted": 0,
+            "criticalDeleted": []
+          },
+          "3": {
+            "deleted": 9,
+            "criticalDeleted": [
+              "crit-credentials",
+              "crit-security",
+              "crit-release-block"
+            ]
+          },
+          "4": {
+            "deleted": 9,
+            "criticalDeleted": [
+              "crit-credentials",
+              "crit-security",
+              "crit-release-block"
+            ]
+          },
+          "5": {
+            "deleted": 12,
+            "criticalDeleted": [
+              "crit-prod-dataloss",
+              "crit-credentials",
+              "crit-corruption",
+              "crit-security",
+              "crit-irreversible",
+              "crit-release-block"
+            ]
+          }
+        },
+        "criticalDeletedAtDefaultThreshold": [
+          "crit-credentials",
+          "crit-security",
+          "crit-release-block"
+        ],
+        "unguardedCriticalAtDefault": 3
       }
     }
   ]

@@ -1,9 +1,25 @@
-Status: ready-for-agent
+Status: shipped — importance sections superseded by ticket 26
 Ticket: [06 — Write-Side Enrichment](../neuron-2.2.0/issues/06-write-side-enrichment.md)
 Band: 2.2.0-rc2
 ADRs: [0010 — Guardrails for the 0.5B Model's New Jobs](../../docs/adr/0010-llm-job-guardrails.md)
 
 # Write-Side Enrichment: Auto Tags, Importance, Category
+
+> [!IMPORTANT]
+> **Every requirement below concerning `importance` is superseded.**
+> [26 — Remove Model-Based Importance Inference](../neuron-2.2.0/issues/26-remove-model-importance-inference.md)
+> removed the job outright after Pillar 10 measured the model's judgement as
+> noise. `importance` is not enriched, the `llm.enrichment.importance` config key
+> is gone, and an omitted `--importance` takes the column default of `3`.
+>
+> The **deferral and backlog** design (stories 18 and 23, and the *Deferral and
+> the backlog* section) went with it — importance was the only field that ever
+> deferred, so `drainEnrichment`, `neuron memory enrich` and `enrichment.pending`
+> no longer exist. Tags and category, and everything this spec says about them,
+> shipped and stand.
+>
+> The spec is left otherwise intact as the record of what ticket `06` was asked
+> to build and measured. Read it as history, not as instructions.
 
 ## Problem Statement
 

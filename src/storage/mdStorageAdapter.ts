@@ -63,7 +63,17 @@ export class MdStorageAdapter {
       return [];
     }
     const fileContent = fs.readFileSync(filePath, 'utf8');
-    return this.parseMarkdown(fileContent, category);
+    const { memories, repairs } = this.parseMarkdownDetailed(fileContent, category, filePath);
+
+    if (repairs.length > 0) {
+      const formattedContent = this.formatMarkdown(memories, category);
+      this.atomicWriteFile(filePath, formattedContent);
+      for (const repair of repairs) {
+        process.stderr.write(`[neuron warning] repaired ${filePath}: ${repair}\n`);
+      }
+    }
+
+    return memories;
   }
 
   /**
@@ -109,7 +119,6 @@ export class MdStorageAdapter {
       kind: category,
       content: entry.content || '',
       tags: Array.isArray(entry.tags) ? entry.tags : [],
-      scope: entry.scope || 'project',
       importance: entry.importance !== undefined ? entry.importance : 3,
       taskId: entry.taskId !== undefined ? entry.taskId : null,
       createdAt,
@@ -149,7 +158,6 @@ export class MdStorageAdapter {
       kind: category,
       content: entry.content !== undefined ? entry.content : current.content,
       tags: entry.tags !== undefined ? entry.tags : current.tags,
-      scope: entry.scope !== undefined ? entry.scope : current.scope,
       importance: entry.importance !== undefined ? entry.importance : current.importance,
       taskId: entry.taskId !== undefined ? entry.taskId : current.taskId,
       createdAt: entry.createdAt !== undefined ? entry.createdAt : current.createdAt,
@@ -230,9 +238,6 @@ export class MdStorageAdapter {
       tags: memory.tags || [],
     };
 
-    if (memory.scope !== undefined && memory.scope !== null) {
-      frontmatterObj.scope = memory.scope;
-    }
     if (memory.taskId !== undefined) {
       frontmatterObj.taskId = memory.taskId;
     }
@@ -247,7 +252,22 @@ export class MdStorageAdapter {
    * Parses Markdown content into an array of Memory objects.
    */
   parseMarkdown(content: string, category: string): Memory[] {
+    return this.parseMarkdownDetailed(content, category, category).memories;
+  }
+
+  /**
+   * Parses Markdown content, additionally reporting which fields (if any)
+   * needed a missing-field repair. `readCategory` uses `repairs` to write
+   * the repair back to disk once and warn once, per ADR 0011 Consequence 4
+   * and ADR 0010 §3 ("silent, bounded, observable").
+   */
+  private parseMarkdownDetailed(
+    content: string,
+    category: string,
+    filePath: string
+  ): { memories: Memory[]; repairs: string[] } {
     const memories: Memory[] = [];
+    const repairs: string[] = [];
 
     // Find all valid frontmatter blocks delimited by `---` on dedicated lines
     const frontmatterRegex = /(?:^|\n)---\r?\n([\s\S]*?)\r?\n---\r?\n/g;
@@ -277,18 +297,22 @@ export class MdStorageAdapter {
       // Fallback for files without frontmatter blocks
       const cleanContent = content.replace(/^# Category:.*$/m, '').trim();
       if (cleanContent) {
+        const mintedId = crypto.randomUUID();
         memories.push({
-          id: crypto.randomUUID(),
+          id: mintedId,
           category,
           kind: category,
           content: cleanContent,
           tags: [],
-          importance: 1,
+          importance: 3,
           createdAt: new Date().toISOString(),
         });
+        repairs.push(`entry ${mintedId}: no frontmatter block at all — minted id, createdAt and importance`);
       }
-      return memories;
+      return { memories, repairs };
     }
+
+    const explicitIdsSeen = new Set<string>();
 
     for (let i = 0; i < matches.length; i++) {
       const current = matches[i];
@@ -307,39 +331,66 @@ export class MdStorageAdapter {
         } else {
           frontmatter = {};
         }
-      } catch {
-        // Fallback: line-by-line key extraction if YAML parsing throws on malformed syntax
-        const lines = yamlStr.split(/\r?\n/);
-        for (const line of lines) {
-          const keyMatch = line.match(/^\s*([a-zA-Z0-9_-]+)\s*:\s*(.+?)\s*$/);
-          if (keyMatch) {
-            const key = keyMatch[1];
-            let val = keyMatch[2].trim();
-            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-              val = val.slice(1, -1);
-            }
-            frontmatter[key] = val;
-          }
-        }
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `Malformed YAML frontmatter in ${filePath} (entry ${i + 1} of ${matches.length}): ${reason}`
+        );
       }
 
-      const id = frontmatter.id ? String(frontmatter.id) : crypto.randomUUID();
-      const createdAt = frontmatter.createdAt ? String(frontmatter.createdAt) : new Date().toISOString();
-      const importance = typeof frontmatter.importance === 'number'
-        ? frontmatter.importance
-        : (frontmatter.importance ? parseInt(String(frontmatter.importance), 10) || 1 : 1);
+      let id: string;
+      if (frontmatter.id) {
+        id = String(frontmatter.id);
+        if (explicitIdsSeen.has(id)) {
+          throw new Error(
+            `Duplicate id "${id}" in ${filePath}: entry frontmatter must have unique ids`
+          );
+        }
+        explicitIdsSeen.add(id);
+      } else {
+        id = crypto.randomUUID();
+        repairs.push(`entry ${id}: missing id — minted`);
+      }
+
+      let createdAt: string;
+      if (frontmatter.createdAt) {
+        createdAt = String(frontmatter.createdAt);
+      } else {
+        createdAt = new Date().toISOString();
+        repairs.push(`entry ${id}: missing createdAt — minted`);
+      }
+
+      let importance: number;
+      if (frontmatter.importance === undefined || frontmatter.importance === null) {
+        importance = 3;
+        repairs.push(`entry ${id}: missing importance — defaulted to 3`);
+      } else if (typeof frontmatter.importance === 'number') {
+        importance = frontmatter.importance;
+      } else {
+        const coerced = parseInt(String(frontmatter.importance), 10);
+        if (!Number.isFinite(coerced)) {
+          throw new Error(
+            `Malformed importance "${frontmatter.importance}" in ${filePath} (entry ${i + 1} of ${matches.length}): must be a number`
+          );
+        }
+        importance = coerced;
+      }
 
       let tags: string[] = [];
       if (Array.isArray(frontmatter.tags)) {
         tags = frontmatter.tags.map(String);
       } else if (typeof frontmatter.tags === 'string') {
         tags = frontmatter.tags.split(',').map(s => s.trim()).filter(Boolean);
+      } else if (frontmatter.tags !== undefined && frontmatter.tags !== null) {
+        throw new Error(
+          `Malformed tags "${frontmatter.tags}" in ${filePath} (entry ${i + 1} of ${matches.length}): must be an array or a comma-separated string`
+        );
       }
 
-      const scope = (frontmatter.scope !== undefined && frontmatter.scope !== null)
-        ? String(frontmatter.scope)
-        : undefined;
-
+      // A `scope:` key is a residue of a field removed in v2.2.0 (ticket 38).
+      // It is neither read into the Memory object nor treated as a repair —
+      // just silently ignored, and it disappears the next time this entry
+      // is written, since formatEntry no longer emits it.
       const taskId = frontmatter.taskId !== undefined
         ? (frontmatter.taskId === null ? null : String(frontmatter.taskId))
         : undefined;
@@ -350,14 +401,13 @@ export class MdStorageAdapter {
         kind: category,
         content: bodyStr,
         tags,
-        scope,
         importance,
         taskId,
         createdAt,
       });
     }
 
-    return memories;
+    return { memories, repairs };
   }
 }
 
