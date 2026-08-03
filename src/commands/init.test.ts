@@ -96,6 +96,79 @@ describe('CLI Command: init', () => {
     fs.rmSync(initTempDir, { recursive: true });
   });
 
+  // --- Ticket 31: init produces a project that matches the documented default ---
+
+  it('writes a neuron.yaml declaring md mode when the project has none', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const initTempDir = path.join(tempDbDir, 'config-scaffold-test');
+    fs.mkdirSync(initTempDir, { recursive: true });
+    // Marks this as its own project root, so config discovery stops here
+    // instead of walking up into the neuron repo's own neuron.yaml.
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
+
+    const configPath = path.join(initTempDir, 'neuron.yaml');
+    expect(fs.existsSync(configPath)).toBe(true);
+    expect(result.config).toEqual({ path: configPath, created: true, storageMode: 'md' });
+
+    fs.rmSync(initTempDir, { recursive: true });
+  });
+
+  /**
+   * The end-to-end claim ticket 31 exists to make true: the README's Quick Start,
+   * run verbatim, leaves markdown in the repo rather than an invisible database.
+   */
+  it('leaves a project where the first memory add produces a .neuron/*.md file', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const initTempDir = path.join(tempDbDir, 'quickstart-test');
+    fs.mkdirSync(initTempDir, { recursive: true });
+    // Marks this as its own project root, so config discovery stops here
+    // instead of walking up into the neuron repo's own neuron.yaml.
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+    execSync(
+      `node ${cliPath} memory add --category learning "Use the Repository Pattern for database access"`,
+      { env, cwd: initTempDir }
+    );
+
+    const mdFile = path.join(initTempDir, '.neuron', 'learning.md');
+    expect(fs.existsSync(mdFile)).toBe(true);
+    expect(fs.readFileSync(mdFile, 'utf8')).toContain('Use the Repository Pattern');
+
+    fs.rmSync(initTempDir, { recursive: true });
+  });
+
+  it('does not clobber an edited neuron.yaml on a re-run', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const initTempDir = path.join(tempDbDir, 'config-preserve-test');
+    fs.mkdirSync(initTempDir, { recursive: true });
+    // Marks this as its own project root, so config discovery stops here
+    // instead of walking up into the neuron repo's own neuron.yaml.
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+    const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+    execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+    const configPath = path.join(initTempDir, 'neuron.yaml');
+    const edited = fs.readFileSync(configPath, 'utf8') + '\n# hand-edited marker\n';
+    fs.writeFileSync(configPath, edited);
+
+    const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+    const result = JSON.parse(stdout);
+
+    expect(result.config.created).toBe(false);
+    expect(fs.readFileSync(configPath, 'utf8')).toBe(edited);
+
+    fs.rmSync(initTempDir, { recursive: true });
+  });
+
   it('is idempotent — running twice overwrites skill without error', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-idempotent-test');

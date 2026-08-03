@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: 16, 17, 18
+Blocked by: 16, 40
 Band: 2.2.0-rc4
 
 # 19 — Compatibility Disclosure: `neuron init` Reporting & README Matrix

@@ -32,8 +32,21 @@ const RawStorageModeSchema = z.preprocess((val) => {
   return val;
 }, StorageModeEnum);
 
+/**
+ * `md` is the default (ticket 31), not `vector-only`. The product's claim is
+ * that your memory is markdown you can open, diff and hand-edit; a default of
+ * `vector-only` made that claim reachable only through a setup interview the
+ * README mentions in passing, so the out-of-box project contradicted the
+ * headline. `md` keeps SQLite — it is demoted to a rebuildable index, not
+ * removed (ADR 0011).
+ *
+ * This default is only safe because ticket 29's bootstrap seed exists: the
+ * first `md`-mode command against a populated vector store exports it to
+ * markdown before the strict mirror ever runs. Without that, flipping this
+ * line would delete every entry that had never been written to a `.md` file.
+ */
 export const StorageConfigSchema = z.object({
-  mode: RawStorageModeSchema.default('vector-only'),
+  mode: RawStorageModeSchema.default('md'),
   path: z.string().default('.neuron'),
 });
 
@@ -153,7 +166,7 @@ export const DEFAULT_LLM: LlmConfig = LlmConfigSchema.parse({});
 
 export const NeuronConfigSchema = z.object({
   version: z.string().default('1.0'),
-  storage: StorageConfigSchema.default({ mode: 'vector-only', path: '.neuron' }),
+  storage: StorageConfigSchema.default({ mode: 'md', path: '.neuron' }),
   categories: z.record(z.string(), CategoryConfigSchema).default({
     learning: { description: 'Agent conventions, rules, and failure fixes' },
     history: { description: 'Action history log and completed task summary' },

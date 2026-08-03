@@ -12,4 +12,12 @@ export interface NeuronMemoryOptions {
    * it unset and gets `LocalEnrichmentModel`.
    */
   enricher?: EnrichmentModel;
+  /**
+   * Overrides `storage.mode` from the discovered `neuron.yaml`. Exists for
+   * callers whose `projectRoot` is not a real directory — `NeuronMemory.inMemory`
+   * fabricates one — where the mode has to be pinned rather than inherited,
+   * since the schema default (`md`, ticket 31) would otherwise route markdown
+   * writes at a path that does not exist.
+   */
+  storageMode?: 'vector-only' | 'md' | 'split';
 }

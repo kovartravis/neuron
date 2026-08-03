@@ -22,14 +22,18 @@ describe('neuron.yaml Config Loader & Zod Parser', () => {
     }
   });
 
-  it('should return default config with storage.mode = "vector-only" and path = ".neuron" when no neuron.yaml exists', () => {
+  // Ticket 31: the default is `md`, not `vector-only`. A project with no
+  // neuron.yaml must land on the mode the product's claim is built on —
+  // markdown you can open and diff — rather than on the one that produces no
+  // .md files at all.
+  it('should return default config with storage.mode = "md" and path = ".neuron" when no neuron.yaml exists', () => {
     const emptyDir = path.join(tempDir, 'empty-proj');
     fs.mkdirSync(emptyDir, { recursive: true });
     fs.writeFileSync(path.join(emptyDir, 'package.json'), '{}');
 
     const config = loadNeuronYaml(emptyDir);
     expect(config.version).toBe('1.0');
-    expect(config.storage.mode).toBe('vector-only');
+    expect(config.storage.mode).toBe('md');
     expect(config.storage.path).toBe('.neuron');
     expect(config.categories.learning).toBeDefined();
     expect(config.categories.history).toBeDefined();

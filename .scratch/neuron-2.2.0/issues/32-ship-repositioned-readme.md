@@ -139,3 +139,27 @@ Check whether `36` made the guarantee mode-dependent. If it holds only in
 - 2026-08-02: Filed as part of the rc5 markdown-first band. Deliberately blocked
   by `29`, `30` and `31` — shipping the README first would mean publishing four
   false claims and racing to make them true.
+
+- 2026-08-03: **`31` resolved, and it hands this ticket a contract.** The
+  README's configuration example is no longer the source of truth for what a
+  project's config looks like — `neuron init` now *generates* one, and that
+  template (`NEURON_YAML_TEMPLATE` in `src/config/scaffold.ts`) is what a user
+  actually gets. **Publish the template, do not re-draft it.** Two concrete
+  corrections it forces on `.scratch/md-first/README-draft.md`:
+
+  - The draft says `mode: md-only   # Options: md-only, vector-only, dual, split`
+    and describes four modes. `28` deleted `md-only` and renamed `dual`; the
+    modes are **`md` / `vector-only` / `split`**, `md` is the default, and the
+    old spellings alias with a stderr deprecation warning.
+  - The draft's example declares `learning`/`history`/`decisions` only. The
+    generated config also declares **`architecture`**, because `scan.category`
+    defaults to it — `31` measured what happens when it is undeclared, and the
+    answer was silent deletion of the entries in it.
+
+  Also void: the draft's *"`md-only` — pure markdown … zero SQLite overhead"*
+  bullet. Under `md` the database is always present as a rebuildable index. The
+  honest claim is `28`'s — *"your memory is markdown; the vector store is a
+  rebuildable index"* — which is stronger than "no database" and, unlike it,
+  true. The **current** shipped `README.md` still carries the pre-`28` mode
+  table naming `md-only` and `dual`; `31` deliberately left it for this ticket
+  rather than half-repairing it.

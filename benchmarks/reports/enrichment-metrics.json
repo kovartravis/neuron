@@ -1,23 +1,23 @@
 {
-  "timestamp": "2026-08-03T01:38:53.202Z",
+  "timestamp": "2026-08-03T12:34:53.933Z",
   "tier": "sanity",
-  "suiteDurationMs": 15390,
+  "suiteDurationMs": 17650,
   "pillars": [
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "samples": 18,
-      "p50Ms": 244.36,
-      "p95Ms": 1782.73,
-      "p99Ms": 4463.1,
-      "minMs": 6.15,
-      "maxMs": 5133.2,
-      "meanMs": 629.61,
-      "totalMs": 11332.97,
-      "throughputPerSec": 1.59,
+      "p50Ms": 246.98,
+      "p95Ms": 2007.56,
+      "p99Ms": 4900.06,
+      "minMs": 13.32,
+      "maxMs": 5623.18,
+      "meanMs": 682.1,
+      "totalMs": 12277.76,
+      "throughputPerSec": 1.47,
       "extra": {
         "cases": 9,
         "accuracy": {
-          "model": 0,
+          "model": 0.111,
           "centroid": 1
         },
         "winner": "centroid",
@@ -25,12 +25,11 @@
           "model": [
             "cat-learning-1: expected learning, got (hard error)",
             "cat-learning-2: expected learning, got (hard error)",
-            "cat-learning-3: expected learning, got (hard error)",
             "cat-history-1: expected history, got (hard error)",
             "cat-history-2: expected history, got (hard error)",
             "cat-history-3: expected history, got (hard error)",
-            "cat-decisions-1: expected decisions, got (hard error)",
-            "cat-decisions-2: expected decisions, got learning",
+            "cat-decisions-1: expected decisions, got learning",
+            "cat-decisions-2: expected decisions, got (hard error)",
             "cat-decisions-3: expected decisions, got (hard error)"
           ],
           "centroid": []
@@ -40,14 +39,14 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "samples": 16,
-      "p50Ms": 6.13,
-      "p95Ms": 7.41,
-      "p99Ms": 7.49,
+      "p50Ms": 4.97,
+      "p95Ms": 7.76,
+      "p99Ms": 7.79,
       "minMs": 3.82,
-      "maxMs": 7.52,
-      "meanMs": 5.79,
-      "totalMs": 92.67,
-      "throughputPerSec": 172.66,
+      "maxMs": 7.79,
+      "meanMs": 5.13,
+      "totalMs": 82.05,
+      "throughputPerSec": 195,
       "extra": {
         "corpusSize": 158,
         "cases": 8,

@@ -407,6 +407,41 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
       const dbQuery = await memoryDb.query({ category: 'learning' });
       expect(dbQuery.some(m => m.id === 'seed-2')).toBe(false);
     });
+
+    /**
+     * Ticket 31. Nothing validates `--category` against `neuron.yaml`, so a
+     * store routinely holds categories the config never declares —
+     * `neuron scan` writes into `architecture`, which `scan.category` defaults
+     * to. Seeding only the declared categories looks harmless (the mirror never
+     * visits an undeclared one) until the user declares it: the mirror then
+     * finds index rows with no markdown behind them and deletes them, on data
+     * the seed skipped. Making `md` the default put every upgrading user on
+     * this path, so the seed takes the union of requested and stored.
+     */
+    it('seeds categories the config does not declare, so declaring one later does not delete its entries', async () => {
+      await memoryDb.transact([
+        { op: 'upsert', category: 'learning', id: 'declared-1', content: 'declared entry' },
+        { op: 'upsert', category: 'architecture', id: 'undeclared-1', content: 'blueprint card from neuron scan' },
+      ]);
+
+      const config = makeConfig('md'); // declares learning/history/decisions only
+      expect(config.categories.architecture).toBeUndefined();
+
+      const router = new DualStorageRouter(memoryDb, mdAdapter, config);
+      await router.query({ category: 'learning' }); // triggers bootstrap
+
+      expect((await mdAdapter.readCategory('architecture')).some(m => m.id === 'undeclared-1')).toBe(true);
+
+      // The user now declares the category. The mirror visits it for the first
+      // time and must find markdown already backing it.
+      const withArchitecture = makeConfig('md');
+      withArchitecture.categories.architecture = { description: 'blueprints' };
+      router.setConfig(withArchitecture);
+      await router.query({ category: 'learning' });
+
+      const stillThere = await memoryDb.query({ category: 'architecture' });
+      expect(stillThere.some(m => m.id === 'undeclared-1')).toBe(true);
+    });
   });
 
   describe('Ticket 29: markdown-first write ordering in md mode (ADR 0011 Consequence 2)', () => {

@@ -85,10 +85,31 @@ every ticket resolved, every rc cut, stable published.
 |------|---------|----------|
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
 | `2.2.0-rc2` | `05`, `06`, `09`, `24`, `26` | Centroid write-side enrichment, a timeout primitive, degradation counters — **and no new model jobs at all**: `07` and `08` are out of scope, `23`/`24` removed automatic pruning, `25` is deferred, `06` shipped with the model off the write path, and `26` removes the last model call from it |
-| `2.2.0-rc3` | `10`–`15` | Recall adapter layer + 2 reference adapters |
-| `2.2.0-rc4` | `16`–`20` | Remaining 3 adapters + disclosure |
+| `2.2.0-rc3` | `10`–`15`, `39`, `41` | Recall adapter layer + the 2 `deterministic` adapters (Claude Code, Codex CLI) + the `instruction-only` fallback + the relevance gate (`27` designed it; `41` ships the structural half, `39` the one fitted constant) |
+| `2.2.0-rc4` | `16`, `40`, `19`, `20` | The 2 **documented** `best-effort` adapters (Copilot CLI, Cursor) + disclosure. Was 3 adapters: `17`/`18` are out of scope |
 | `2.2.0-rc5` | `28`–`38` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
 | `2.2.0` | `21` | Stable release |
+
+> **`11` is partially grilled, not resolved** (2026-08-03). Six of its eight
+> decision points are settled and written into the ticket — scope, capability
+> model, the injection ledger, the `context-reset` point, the payload ceiling, and
+> the two `neuron init` consent policies. **Point 4's relevance floor acquired a
+> blocker**, [39 — Relevance Floor Validation](issues/39-relevance-floor-validation.md),
+> because the pilot's viable cutoff rests on a 0.061 margin from 20 queries against
+> this repo's own store. **Point 6 (multi-harness resolution) was never reached.**
+> Neither `12` nor `13` depends on `39`, so rc3's adapters are not waiting on a
+> benchmark run.
+>
+> **The floor's *shape* is no longer open** (2026-08-03). `27` settled it as a
+> two-leg conjunction and **rewrote `39`'s design**: the old three-quantity sweep
+> is dead — the hybrid-`score` arm ceased to exist once importance left the score,
+> and the `normRrf` arm is bimodal rather than sweepable. `39` now measures one
+> fitted constant (the cosine floor, conditioned on the lexical leg) and one
+> unvalidated claim (the lexical leg's false-silence rate, which can sink the
+> design). Its **bar is untouched** — committed before any number was seen, and
+> `27` has since seen numbers. `27` also supplies point 3's ledger with the floor
+> it requires, and puts the gate in the retrieval layer so `12`/`13` inherit it
+> rather than reimplementing it.
 
 > **rc5 has no technical dependency on rc3/rc4** and can be pulled forward if the
 > competitive pressure that motivated it outweighs the recall adapters. It is
@@ -139,8 +160,10 @@ every ticket resolved, every rc cut, stable published.
   [ADR 0010](../../docs/adr/0010-llm-job-guardrails.md).
   **Two of its seven guardrails are since withdrawn** (2026-08-02): salvage
   expansion is out of scope, and the "≥0.75 for any top hit" claim behind the
-  raw-cosine trigger is factually wrong — measured 0.4375–0.5565. The
-  non-regression bar, the silent-degrade posture and the timeout all stand.
+  raw-cosine trigger is factually wrong — **a nonsense query's top hit *scores*
+  0.4375–0.5565** (hybrid RRF, which caps at 0.5 with no FTS hits — *not* raw
+  cosine, which runs 0.635–0.826 on real queries). The non-regression bar, the
+  silent-degrade posture and the timeout all stand.
 
 - [06 — Write-Side Enrichment: Auto Tags, Importance, Category](issues/06-write-side-enrichment.md)
   — Shipped, and **the model ended up off the write path entirely**. Tags and
@@ -199,6 +222,24 @@ every ticket resolved, every rc cut, stable published.
   `--importance`**, while all three guarded entries survive. 270 tests green.
   [ADR 0010 amendment](../../docs/adr/0010-llm-job-guardrails.md).
 
+- [10 — Harness Compatibility Research: Injection Surfaces Across Six Agents](issues/10-harness-compatibility-research.md)
+  — Scope grew from five harnesses to six mid-research: **Cursor** added at the
+  maintainer's request (the research agent initially treated the request as a
+  possible injection until it found the ticket file's own on-disk edit as
+  independent corroboration). Fidelity verdicts: `deterministic` for **Claude
+  Code** and **OpenAI Codex CLI** only (per-turn injection, documented
+  fail-open failure/timeout semantics, a documented payload cap). `best-effort`
+  for **GitHub Copilot CLI**, **Google Antigravity CLI**, **OpenCode**, and
+  **Cursor** — each for a different reason: Copilot CLI and Cursor inject only
+  at session start (their per-turn hook is permission-only, not a context
+  carrier); Antigravity's `injectSteps` is the most general per-turn mechanism
+  on paper but its own docs disagree on config paths; OpenCode's
+  `chat.message`/`chat.params` is the richest surface but has no documented
+  failure/timeout/payload behaviour. **None landed at pure
+  `instruction-only`.** Verifiability (confirming a hook actually *fired*, not
+  just that it's configured) is an undocumented gap across all six — flagged
+  as an open risk for `11`, not assumed solvable.
+  [Full research](research/harness-compatibility.md).
 - [09 — Cut and Publish 2.2.0-rc2](issues/09-cut-rc2.md) — **`v2.2.0-rc2` cut,
   tagged and pushed; npm publish left to the maintainer**, matching `04`'s
   precedent. The ticket's original gating question was void by the time it was
@@ -287,6 +328,60 @@ every ticket resolved, every rc cut, stable published.
   masking the fix as an unhandled rejection rather than a real failure.
   12 new tests, 292 total, full suite green.
 
+- [27 — `minScore` Is Structurally Inert](issues/27-minscore-is-inert.md)
+  — **The ticket's own diagnosis was wrong, and the correction is the finding.**
+  `minScore` is not a threshold set too low; the *quantity* it reads is unfit to
+  gate on, for two independent reasons. First, `score` blends relevance with
+  importance, and importance wins often enough to be a **ranking defect on every
+  query** — measured live, the entry ranked **1st** by cosine (imp 3, score
+  0.500) is displaced by the one ranked **3rd** (imp 5, score 0.613). So
+  importance is stripped from `score`, and **not** demoted to a tie-break: ranks
+  are unique per row, so ties are measure-zero and there is no tie-break job.
+  Second — unanticipated — decontamination alone does not help, because `normRrf`
+  is **bimodal** (exactly 0.5000 with no FTS match, ~0.97–1.0 with any) and is
+  therefore a *keyword-presence detector*, not a relevance score. Hence a
+  **conjunctive gate**: lexical corroboration **and** a cosine floor, load-bearing
+  in both directions because they fail on disjoint sets — `pytorch` (cos 0.6143)
+  and `kubernetes` (0.6074) score *above* the lowest genuinely-relevant query
+  (0.6072) so no floor rejects them, while `make me a sandwich` rides one stray
+  `"make"*` prefix hit to `normRrf` 0.9692 so no predicate rejects it. Zero
+  results becomes a legitimate, **announced** output carrying the rejected count,
+  and the gate moves into the retrieval layer to run on **both** `exec` and
+  `memory query` — a split posture was proposed and declined. `importance`
+  survives as a **prune-only** field: removing it would reverse `25`'s deferral by
+  the back door and delete the only guard against `23`'s live hazard.
+  Work splits on the *needs-a-fitted-constant* line into
+  [41](issues/41-decontaminate-score-and-lexical-gate.md) (structural, unblocked)
+  and `39` (the cosine floor). All 15 probes are self-referential and **no number
+  becomes a default**. Measured: `neuron exec -- ls` injects 5 entries / 4,245
+  characters today, 0 under `41`.
+  [ADR 0012](../../docs/adr/0012-relevance-gate-and-score-decontamination.md).
+
+- [31 — Make `md` the Actual Default](issues/31-md-only-as-default.md)
+  — Two schema lines flipped to `md`, and `neuron init` now writes the
+  `neuron.yaml` that says so; the audit for a third place found none. **The
+  scope item about `neuron scan`'s category was hiding a data-loss bug.**
+  `architecture` does resolve when undeclared (nothing validates `--category`),
+  but `bootstrapSeed` seeded only *declared* categories — so an undeclared
+  category's rows never reached markdown, and the strict mirror deleted them
+  the moment someone declared it. Measured on the CLI: **1 of 2 entries
+  destroyed, silently**, on the `vector-only` → `md` → declare-the-category
+  path this flip puts every upgrading user on. Fixed by seeding the **union**
+  of requested and stored categories — a seed is a complete export or it is not
+  a safety net — while steady-state reconcile stays on the declared set.
+  Decisions: `init` **never** touches an existing config (including an
+  ancestor's — `init` is re-run routinely, so anything it edits it re-edits over
+  your hand-tuning); the **generated template is the contract, not the README
+  example**, which predates `28` and names a deleted mode; the template turns on
+  nothing the schema defaults leave off (`scan.enabled: false`), so generating it
+  changes what a project *says*, not what it does; and the router's invalid-mode
+  fallback deliberately stays `vector-only`, because guessing `md` on a config
+  we cannot parse turns "unrecognised setting" into deletion. Corrects this
+  ticket's own Verification: *"and no SQLite file"* is void — `28` deleted
+  `md-only`, so the database is always present as a rebuildable index.
+  **This repo's own `neuron.yaml` is deliberately not flipped** — it would seed
+  264 entries into `.neuron/*.md`, which is the maintainer's call. 290 → 303
+  tests, full suite green; 12/13 E2E pillars (Pillar 8 pre-existing).
 - [38 — Remove `scope`](issues/38-remove-scope.md) — Gone: `scope`,
   `is_manual_scope`, `query_logs`, `learning_query_matches`, the autoPromote
   loop, and `checkAutoPromotions()`, via a real migration (v7, verified
@@ -414,7 +509,30 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   surface is destroyed content, which bears on every retrieval measurement the
   map has taken.
 
-- **Bootstrapping category centroids on a cold store.** Unchanged by `28`, which
+- **An undeclared category is written but never mirrored.** Left behind by
+  `31`'s fix. Nothing validates `--category` against `neuron.yaml`, so a store
+  routinely holds categories the config never declares — `neuron scan`'s
+  `architecture` being the standing example. `31` made the **bootstrap seed**
+  cover them (it had to; the omission was destroying data), but **steady-state
+  reconcile still runs on the declared set only**. So a hand-edit to
+  `.neuron/architecture.md` in a project that doesn't declare `architecture` is
+  silently ignored, which is precisely the promise the `md` default is sold on.
+  Unformed because the sharp question is one level up and is a behaviour change
+  across every command: should `--category` be *validated* against the config
+  (making undeclared categories impossible, and the asymmetry moot), or should
+  `categories` be advisory and reconcile follow the store rather than the
+  config? Note the two answers have opposite ergonomics — the first makes
+  `neuron scan` fail on a config that doesn't declare its own `scan.category`.
+
+- **Bootstrapping category centroids on a cold store.** **Sharpened by `31`,
+  which made it the out-of-box experience rather than an edge case**: `init` now
+  produces a working project, so the very first `neuron memory add` a user runs
+  is against an empty store — and without `--category` it hard-errors
+  (*"category inference found no category close enough"*), verified on the CLI
+  against a freshly generated config. The recommended posture passes
+  `--category`, so this may still be acceptable; what changed is that the cliff
+  is now the first thing a new user can hit, not something reachable only by
+  skipping setup. Unchanged by `28`, which
   checked: a fresh `md` project has exactly the cliff a fresh `vector` project
   has, no better and no worse, because both read centroids from the same
   database. It is not a storage-mode problem. Originally surfaced by `06`:
@@ -430,12 +548,26 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   problem. Not ticketed because the trigger — what store size actually hurts —
   has not been measured.
 - **Should `neuron exec`'s pre-command lookup also become a hook?** Step 2 of the
-  protocol still asks the agent to wrap commands. A `PreToolUse`-style hook could
-  enforce it, but only on harnesses that expose one. Hangs on ticket `10`.
-- **Recall payload token budget.** The PersonaMem sanity run retrieved 28k tokens
-  successfully and the *large* model then over-reasoned on it. Auto-injection on
-  every turn makes this sharper, not softer. Needs a budget, a truncation
-  strategy, and possibly a relevance floor. Hangs on ticket `11`.
+  protocol still asks the agent to wrap commands. `10` confirms every one of the
+  six harnesses exposes *some* `PreToolUse`-equivalent (Claude Code's is
+  blocking on exit 2; the other five range from permission-decision-only to
+  undocumented failure behaviour), so the prerequisite fact is now known — but
+  *whether* to build on it is a design call for `11`'s adapter architecture, not
+  a separable decision, so it is not spun into its own ticket here.
+- **Confidently-wrong retrieval is unowned.** Ticket `07` measured raw cosine
+  *inverted* on it — top-1 cosine on queries retrieval got **wrong** (mean 0.7779,
+  max 0.9516) is *higher* than on queries it got **right** (mean 0.7518, min
+  0.6548) — and killed salvage expansion on exactly that finding, since no
+  rewritten query fixes a ranking that is confidently inverted. `27`'s gate does
+  **not** address it either, and says so: a relevance gate rejects the
+  *irrelevant*, not the *wrong*, and both its legs measure forms of confidence.
+  So every measurement this map has taken agrees the failure mode exists and
+  nothing on the route touches it. Unformed because the prior question is
+  unanswered: is a confidently-wrong top hit *detectable at all* from retrieval
+  signals, or does catching it require the thing `08` was ruled out for —
+  adjudicating semantic opposites, the weakest capability of both the embedder and
+  the 0.5B model? If undetectable, the honest response may be a **disclosure**
+  rather than a fix.
 - **Restructuring the packaged `neuron-memory` skill.** Once step 1 leaves
   `CLAUDE.md`, the shipped skill at `.claude/skills/neuron-memory/SKILL.md`
   describes a protocol that no longer matches. Scope of the rewrite is unclear
@@ -534,6 +666,24 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   half may return as a new ticket on its own merits** — see *"Capturing a
   maintainer decision"* under **Not yet specified** — but that would be a
   supersession ticket, not a revival of dedupe.
+
+- **[17 — Google Antigravity CLI Adapter](issues/17-antigravity-adapter.md)** and
+  **[18 — OpenCode Adapter](issues/18-opencode-adapter.md)** — ruled out of 2.2.0
+  on **2026-08-03**, during `11`'s grilling. **Not for weak mechanisms** —
+  Antigravity's `injectSteps` is the most general per-turn surface of the six
+  researched, and OpenCode's `chat.message` is the richest. They are out because
+  **their reliability cannot be stated**: Antigravity's own docs contradict
+  themselves on config paths, and neither documents failure, timeout, payload
+  limit or verification anywhere reachable (`10`). `11` settled that capability is
+  a per-point map the *code reads*, so shipping these means publishing a
+  capability record neuron has no source for — the abstraction lying, which is the
+  hazard `11` exists to prevent. OpenCode carries a second reason: its mechanism
+  is arbitrary plugin code, so `init` would ship and maintain executable source in
+  a user's project, a different installation contract from every other adapter.
+  They return only behind a research ticket that **measures** the behaviour — an
+  adapter ticket cannot manufacture the facts it must declare. Their rc4 slot went
+  to [40 — Cursor Adapter](issues/40-cursor-adapter.md), which was researched at
+  the maintainer's request in `10` but had no ticket.
 
 - **Recall synthesis / briefing compression via the 0.5B model** — considered as
   the highest-value LLM job and declined. A small model compressing retrieved

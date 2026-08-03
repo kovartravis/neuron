@@ -46,6 +46,10 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       projectRoot: devADir,
       projectName: 'collab-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapterA = new MdStorageAdapter({ storagePath: mdStoragePathA });
     const routerA = new DualStorageRouter(dbA, adapterA, configA);
@@ -83,6 +87,10 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       projectRoot: devBDir,
       projectName: 'collab-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapterB = new MdStorageAdapter({ storagePath: mdStoragePathB });
 
@@ -120,6 +128,10 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       projectRoot: devADir,
       projectName: 'offline-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapter = new MdStorageAdapter({ storagePath: mdStoragePath });
 
@@ -169,6 +181,10 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       projectRoot: devADir,
       projectName: 'migration-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
 
     // 1. Project operates initially in vector-only mode
@@ -225,6 +241,10 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       projectRoot: devADir,
       projectName: 'recovery-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapter = new MdStorageAdapter({ storagePath: mdStoragePath });
 
@@ -276,6 +296,10 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       projectRoot: devADir,
       projectName: 'onboarding-repo',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
 
     const config: NeuronConfig = {

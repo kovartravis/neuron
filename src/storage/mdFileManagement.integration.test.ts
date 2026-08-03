@@ -33,6 +33,12 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
         embed: async () => new Float32Array(384),
         embedQuery: async () => new Float32Array(384),
       },
+      // This db is the router's *vector* collaborator — production passes it a
+      // vector-only delegate, not a NeuronMemory that routes again. Pinning the
+      // mode keeps the fixture matching that, now that the schema default is
+      // `md` (ticket 31) and tempDir would otherwise get two markdown writers
+      // aimed at the same directory.
+      storageMode: 'vector-only',
     });
 
     mdAdapter = new MdStorageAdapter({ storagePath: mdStoragePath });

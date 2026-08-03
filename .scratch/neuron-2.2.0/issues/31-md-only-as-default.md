@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 29, 38
 Band: 2.2.0-rc5
 
@@ -70,11 +70,123 @@ fix is a release note, not architecture.
 
 ## Deliverables
 
-- [ ] Schema default is `md-only`
-- [ ] `neuron init` writes a working `neuron.yaml`
-- [ ] `init` idempotent, existing config untouched
-- [ ] Packaged skill reconciled for the storage-mode half
-- [ ] `neuron scan`'s category resolves under a README-shaped config
+- [x] Schema default is `md` (rescoped from `md-only` by `28`)
+- [x] `neuron init` writes a working `neuron.yaml`
+- [x] `init` idempotent, existing config untouched
+- [x] Packaged skill reconciled for the storage-mode half
+- [x] `neuron scan`'s category resolves under a README-shaped config
+
+## Answer
+
+**The default is `md`, and `neuron init` now writes the config that says so.**
+Two lines in `src/config/neuronYaml.ts` (`StorageConfigSchema.mode` and
+`NeuronConfigSchema.storage`) plus a new `src/config/scaffold.ts` that `init`
+calls before anything reads config. The audit for a third place found none:
+`neuron ui`, `neuron status` and `neuron sync` all read the mode rather than
+assume one, and the only other literal is the router's invalid-mode fallback,
+which is **deliberately not** a duplicate of the default (see below).
+
+### The scope item that turned out to hide a data-loss bug
+
+Scope item 5 asked whether `neuron scan`'s default category `architecture`
+"still resolves" under a config that declares only `learning`/`history`/
+`decisions`. It resolves — writes land in `.neuron/architecture.md` and the card
+is queryable, because nothing validates `--category` against `neuron.yaml`. But
+asking the question surfaced a worse one, one number away from it.
+
+`bootstrapSeed` seeded only the **declared** categories, then set
+`meta.md_seeded_at`. An undeclared category's vector rows were therefore never
+exported to markdown — harmless, because the mirror never visits an undeclared
+category either — right up until someone declares it. The mirror then visits a
+category whose markdown was never written, finds index rows markdown does not
+have, and deletes them. Exactly as designed, on data the seed skipped.
+
+Measured on the CLI before the fix, on the `vector-only` → `md` →
+declare-`architecture` sequence: **1 of 2 entries destroyed, silently.** This is
+this ticket's bug, not `29`'s: before the default flip, nobody reached `md` mode
+without asking for it, and `scan.category` defaults to `architecture` while no
+config template is required to declare it.
+
+Fixed by making the seed take the **union** of the requested and the stored
+categories — a seed is a one-time complete export or it is not a safety net.
+Steady-state reconcile still runs on the declared set only, since that is a
+per-command cost and an undeclared category is inert there. Needed one new
+public method, `NeuronMemory.listStoredCategories()`. The regression test fails
+without the fix (verified by reverting the one line).
+
+### Decisions
+
+1. **`init` never touches an existing config** — not to add missing keys, not to
+   merge. `init` is re-run routinely to refresh skills, models and grammars, so
+   anything it edits it edits again over the user's hand-tuning. Detection reuses
+   `findNeuronYaml`, so a config in an **ancestor** directory that already
+   governs the project counts as present; writing a second file would silently
+   shadow the first. Stated in code, per scope item 3.
+2. **The generated file is the contract; the README must match it.** The ticket
+   said the README example is the contract, but that example predates `28` (it
+   says `mode: md-only`, a mode that no longer exists) and omits `architecture`
+   while `scan.category` defaults to it. A generated file executes; a README
+   example is prose. `32` should publish `NEURON_YAML_TEMPLATE` rather than the
+   draft's block.
+3. **The template turns nothing on that the schema defaults leave off.**
+   `scan.enabled` stays `false`, matching a config-less project, so generating
+   the file changes what a project *says*, not what it does. An `init` that
+   quietly started scanning — loading the summarizer, filing a blueprint card
+   nobody asked for — would be a behaviour change disguised as a convenience.
+4. **The router's invalid-mode fallback stays `vector-only`** and is now
+   documented as intentionally different from the schema default. It fires only
+   for a mode string that bypassed Zod. `md` runs a mirror that deletes; guessing
+   `md` on a config we do not understand converts "unrecognised setting" into
+   data loss. The safe failure direction is the read-only mode.
+5. **`NeuronMemoryOptions.storageMode` added** to pin the mode for callers whose
+   `projectRoot` is fabricated. `NeuronMemory.inMemory()` invents
+   `/in-memory/<name>`, so the new default aimed markdown writes at a path that
+   cannot exist; 22 test fixtures constructing a `NeuronMemory` as the router's
+   *vector collaborator* had the same problem, since production passes the router
+   a vector-only delegate, not a `NeuronMemory` that routes again. Pinning makes
+   the fixtures match production rather than papering over the flip.
+6. **A failed markdown write now names its reason on stderr.** `status: "error"`
+   with no explanation was unreachable under a `vector-only` default and is
+   reachable under this one (read-only checkout, unwritable `storage.path`).
+   Verified with `chmod 500 .neuron`.
+
+### Corrections to this ticket's own text
+
+- *"and no SQLite file"* in Verification is void. `28` deleted `md-only`; under
+  `md` the database is always present as a rebuildable index. The observable
+  claim is that the **project directory** holds `.md` files, and the SQLite file
+  lives outside it in the `env-paths` data dir unless `NEURON_DB_PATH` says
+  otherwise.
+- The *"migration is not a concern"* paragraph was already superseded by the
+  2026-08-02 comment; the seed bug above is the second, unanticipated way that
+  original ruling was wrong.
+
+### Not done, deliberately
+
+- **The README** stays for `32`, which is blocked on this ticket precisely so it
+  can describe the finished state. Its storage-mode table still names `md-only`
+  and `dual`, which `28` deleted — a factual error `28` introduced, and `32`'s to
+  fix, not one to half-repair here.
+- **This repo's own `neuron.yaml` still says `vector-only`.** Flipping it would
+  bootstrap-seed 264 vector entries into `.neuron/*.md` on the next command —
+  a real, consequential change to the maintainer's own store, and the maintainer's
+  call, not this ticket's. Worth making, since the project not dogfooding its own
+  headline default is how the next defect goes unfound.
+
+### Verification
+
+- Empty dir: `neuron init` → `neuron.yaml` with `mode: md`;
+  `neuron memory add --category learning "…"` → `.neuron/learning.md`. ✅
+- `init` twice: second run reports `created: false`, hand-edited config
+  byte-identical. ✅
+- Generated config parses, and a round-trip test asserts **every** key in the
+  template survives `NeuronConfigSchema.parse` — no aspirational keys, and
+  `llm.enrichment.importance` (removed by `26`) is asserted absent. ✅
+- `scan.enabled: true` against the generated config: card written to
+  `.neuron/architecture.md`, queryable, counted by `neuron status`. ✅
+- **290 → 303 unit tests, full suite green.** 12/13 E2E pillars; Pillar 8
+  (`table memories has no column named scope`) is the pre-existing failure `09`
+  already recorded, unrelated to storage mode.
 
 ## Comments
 

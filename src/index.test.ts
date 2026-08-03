@@ -9,6 +9,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project'
     });
 
@@ -87,6 +90,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project'
     });
 
@@ -102,6 +108,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
     });
@@ -147,6 +156,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -179,6 +191,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -209,6 +224,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -270,6 +288,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -331,6 +352,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -362,6 +386,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project'
     });
 
@@ -420,6 +447,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -499,6 +529,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -543,6 +576,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -568,6 +604,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -604,6 +643,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -651,6 +693,9 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });

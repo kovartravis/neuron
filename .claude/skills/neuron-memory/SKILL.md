@@ -17,11 +17,25 @@ This skill guides how agents configure and interact with `@kovartravis/neuron` t
 
 When asked to set up memory for a project or configure memory settings:
 
+> [!IMPORTANT]
+> **`neuron init` already wrote a working `neuron.yaml`.** As of 2.2.0 the
+> project is usable before this interview runs: `init` scaffolds a config with
+> `storage.mode: md`, the four standard categories, and default pull rules. So
+> this interview is a **refinement** step, not the only path to a working
+> project — and it now has an existing file to reason about.
+>
+> That changes two things. First, **read the file before asking anything** and
+> present the questions below as *"here is what you have; what should change?"*
+> rather than as a blank-slate questionnaire. Second, **never rewrite the file
+> wholesale** — it may already carry the user's edits. Change the keys the user
+> asked about and leave the rest alone.
+
 1. **Ask & Explain First (Interview Protocol)**:
    Before taking any action or writing configuration files, explain to the user what setup steps will be performed, and ask how they would like memory configured for their project:
    - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
    - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
-   - **Storage Mode**: Ask whether entries should be stored in the vector database only (`vector-only`), as Markdown files only (`md-only`), or both simultaneously (`dual` or `split`). Default is `vector-only`.
+   - **Storage Mode**: Ask whether memory should live as markdown files with SQLite kept as a derived index (`md` — the default, and what `init` wrote), in the SQLite vector database only with no `.md` files (`vector-only`), or routed per-category (`split`). `md-only` and `dual` are the pre-2.2.0 spellings: both now mean `md`, both still parse, and both warn on `stderr` — do not write either into a new config.
+     - Under `md`, the `.md` files are the **record of truth**: they are reconciled into the index on every command, and an entry deleted from a `.md` file is deleted from the index. That is the point of the mode, but say it out loud before recommending it — it means hand-editing those files is a supported operation *and* a destructive one.
    - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
    - **Architectural Scan Config**: Ask whether to enable automatic architecture scanning (`enabled: true/false`), target category (default `architecture`), and directory traversal depth (default `3`). Explain how the scan analyzes codebase structure to ingest architecture cards into memory.
    - **Write-Side Enrichment**: Ask which metadata the agent should keep supplying by hand and which `neuron memory add` should infer. See §0a below — this question has two halves, config *and* agent instructions, and answering only one produces a store that silently does not enrich.
@@ -32,7 +46,7 @@ When asked to set up memory for a project or configure memory settings:
    version: "1.0"
 
    storage:
-     mode: dual          # vector-only | md-only | dual | split
+     mode: md            # md | vector-only | split
      path: .neuron       # directory where .md category files are stored
 
    categories:
@@ -86,7 +100,7 @@ When asked to set up memory for a project or configure memory settings:
    - Architectural scan settings (e.g., `Architecture scan settings: enabled: true, category: architecture, depth: 3`).
    - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
    - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
-   - If `storage.mode` is `dual` or `md-only`, document the `.neuron/` directory and `neuron sync` command.
+   - If `storage.mode` is `md` or `split` (i.e. anything but `vector-only`), document the `.neuron/` directory, that those files are the record of truth, and the `neuron sync` command.
 
 4. **Synchronize On Edits**:
    Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
@@ -253,9 +267,9 @@ Before finishing your turn and ending the session:
 > deprecated as of 2.1.0 and print a warning to `stderr`. Prefer
 > `neuron memory --category <name>`.
 
-## 5. Markdown File Storage & Sync (`storage.mode: dual | md-only`)
+## 5. Markdown File Storage & Sync (`storage.mode: md | split`)
 
-When `storage.mode` is set to `dual`, `md-only`, or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`):
+Under `md` (the default) or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`), and those files are the **record of truth** — SQLite is a derived index reconciled from them on every command, not a second copy:
 
 - **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`.
 - **Entry Format**: Each entry is a YAML frontmatter block followed by body text:
@@ -343,7 +357,7 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
    entries were written without `--importance`, treat `prune` as "delete all
    history older than N days" and decide on that basis.
 
-3. **Sync After Prune** (if using `dual` or `md-only` mode):
+3. **Sync After Prune** (if using `md` or `split` mode):
    - After pruning entries from the vector DB, run `neuron sync` to keep Markdown files consistent:
      ```bash
      neuron sync

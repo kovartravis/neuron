@@ -4,6 +4,39 @@ All notable changes to `@kovartravis/neuron` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — markdown is the default, and `neuron init` says so on disk
+
+The product's claim is that your agent's memory is markdown you can open, diff
+and hand-edit. Until now that was reachable only by a path the README mentioned
+in passing: the schema default was `vector-only`, and `neuron init` wrote no
+`neuron.yaml` at all, so following the Quick Start verbatim produced a SQLite
+database and **zero `.md` files**.
+
+- **`storage.mode` now defaults to `md`.** SQLite is kept — under `md` it is a
+  rebuildable index reconciled from the markdown on every command (ADR 0011),
+  not removed. Existing projects that name their mode explicitly are unaffected.
+- **`neuron init` writes a `neuron.yaml`** when the project has none, declaring
+  `md` mode and the four standard categories. An existing config — including one
+  in an ancestor directory that already governs the project — is never touched,
+  rewritten, or merged into. `init` is re-run routinely to refresh skills, models
+  and grammars, and anything it edits it would edit again over your changes. The
+  JSON output gains a `config` object reporting which file governs the project
+  and whether this run created it.
+- **The bootstrap seed now exports undeclared categories too.** Nothing validates
+  `--category` against `neuron.yaml`, so a store routinely holds categories the
+  config never declares — `neuron scan` writes into `architecture`, which
+  `scan.category` defaults to. Seeding only the declared set left those entries
+  in the index with no markdown behind them, and the strict mirror then deleted
+  them the moment someone declared the category. Measured before the fix: 1 of 2
+  entries destroyed, silently, on the `vector-only` → `md` → declare-the-category
+  path this default flip puts upgrading users on.
+- **A failed markdown write now explains itself** on `stderr` instead of
+  returning a bare `status: "error"`. An unwritable `storage.path` was
+  unreachable under a `vector-only` default and is reachable under this one.
+- Upgrading an existing `vector-only` project is a one-line config change: the
+  first `md`-mode command exports the vector store to markdown and records
+  `meta.md_seeded_at` before any mirroring happens.
+
 ## [2.2.0-rc2] - 2026-08-02
 
 This band set out to expand the shipped Qwen1.5-0.5B model's job list and

@@ -85,7 +85,10 @@ export class NeuronMemory {
     
     this.embedder = options.embedder ?? new TransformersEmbedder();
 
-    const config = loadNeuronYaml(options.projectRoot);
+    const discovered = loadNeuronYaml(options.projectRoot);
+    const config: NeuronConfig = options.storageMode
+      ? { ...discovered, storage: { ...discovered.storage, mode: options.storageMode } }
+      : discovered;
     this.config = config;
     this.enricher =
       options.enricher ??
@@ -108,6 +111,7 @@ export class NeuronMemory {
       query: (q: MemoryQuery) => this.queryVector(q),
       getMeta: (key: string) => this.getMeta(key),
       setMeta: (key: string, value: string) => this.setMeta(key, value),
+      listStoredCategories: () => this.listStoredCategories(),
     } as any;
 
     this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config);
@@ -151,7 +155,12 @@ export class NeuronMemory {
       projectRoot: '/in-memory/' + projectName,
       projectName,
       embedder: embedder ?? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
-      enricher
+      enricher,
+      // `projectRoot` here is fabricated, so `.neuron/` under it is a path
+      // nobody can write. Pinning the mode keeps an in-memory store in memory
+      // now that the schema default is `md` (ticket 31); markdown routing is
+      // exercised by constructing a router against a real directory instead.
+      storageMode: 'vector-only',
     });
   }
 
@@ -163,6 +172,21 @@ export class NeuronMemory {
     if (!this.db) return null;
     const row = this.db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;
     return row ? row.value : null;
+  }
+
+  /**
+   * Every category the index actually holds rows for, which is not the same
+   * set as the categories declared in `neuron.yaml` — nothing validates a
+   * `--category` against the config, so a store routinely holds categories no
+   * config mentions (`neuron scan`'s `architecture` being the common one).
+   * The bootstrap seed needs the real set, not the declared one.
+   */
+  public listStoredCategories(): string[] {
+    if (!this.db) return [];
+    const rows = this.db
+      .prepare('SELECT DISTINCT category FROM memories WHERE project_id = ?')
+      .all(this.projectId) as { category: string }[];
+    return rows.map(r => r.category).filter(Boolean);
   }
 
   public setMeta(key: string, value: string): void {

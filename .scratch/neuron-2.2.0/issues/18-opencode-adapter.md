@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: out of scope — 2026-08-03, reliability undocumented, do not implement
 Blocked by: 15
 Band: 2.2.0-rc4
 
@@ -50,3 +50,27 @@ at the right level. Feed any strain back into `11`'s ADR.
 - [ ] Truthful fidelity verdict feeding ticket `19`
 - [ ] Plugin-install safety verified
 - [ ] Any interface strain fed back into `11`'s ADR
+
+## Out of scope — 2026-08-03
+
+Ruled out of 2.2.0 during ticket `11`'s grilling. **Not for a weak mechanism** —
+`chat.message` / `chat.params` / `experimental.chat.system.transform` give
+arbitrary code control over every outgoing prompt, the **richest** surface of the
+six harnesses researched.
+
+It is out for two reasons (ticket `10`):
+
+1. **No reliability property is documented anywhere reachable** — not failure, not
+   timeout, not payload limit, not verification.
+2. The mechanism is **arbitrary plugin code rather than declarative config**, so
+   `neuron init` would be shipping and maintaining executable plugin source inside
+   a user's project, not merging a config entry. That is a materially different
+   installation contract from every other adapter, and ticket `11`'s consent and
+   overwrite policy is written for config entries.
+
+Ticket `11` settled that capability is a per-point map the code reads. Shipping
+this would mean publishing a capability record neuron has no source for.
+
+Returns if the docs settle, or behind a **research ticket that measures the
+behaviour empirically**. Its rc4 slot went to
+[`40` — Cursor Adapter](40-cursor-adapter.md).

@@ -9,14 +9,22 @@ Every command also responds to `--help`.
 
 ## `neuron init`
 
-Bootstraps a project: detects `CLAUDE.md` or `AGENTS.md` (creating `AGENTS.md` if
-neither exists), appends or updates the memory-store instructions block in place,
-pre-downloads the local ONNX models with a progress bar, fetches Tree-Sitter
-grammars, and runs the initial scan if configured.
+Bootstraps a project: writes a `neuron.yaml` if the project has none, detects
+`CLAUDE.md` or `AGENTS.md` (creating `AGENTS.md` if neither exists), appends or
+updates the memory-store instructions block in place, pre-downloads the local
+ONNX models with a progress bar, fetches Tree-Sitter grammars, and runs the
+initial scan if configured.
 
 | Flag | Description |
 |---|---|
 | `--file`, `-f` | Target instructions file instead of auto-detecting |
+
+The generated `neuron.yaml` sets `storage.mode: md` and declares `learning`,
+`history`, `decisions` and `architecture`. An **existing** config — including one
+in an ancestor directory that already governs this project — is never touched,
+rewritten or merged into; `init` is re-run routinely to refresh skills, models
+and grammars, and anything it edits it would edit again over your changes. The
+JSON output reports which config governs the project under `config`.
 
 Model and grammar downloads are best-effort — a failure leaves that capability
 degraded rather than failing the whole bootstrap.
@@ -141,7 +149,8 @@ neuron memory add --category learning "..." --tags failure-fix --importance 4
 ## `neuron sync`
 
 Synchronizes memories between Markdown files and the SQLite database. Relevant in
-`dual` and `split` storage modes.
+`md` and `split` storage modes, where it is the *explicit* forced rebuild —
+ordinary commands already reconcile markdown into the index automatically.
 
 | Flag | Description |
 |---|---|
@@ -188,7 +197,7 @@ Generates pre-filled GitHub issue links.
 version: "1.0"
 
 storage:
-  mode: md-only          # md-only | vector-only | dual | split
+  mode: md               # md (default) | vector-only | split
   path: .neuron
 
 categories:

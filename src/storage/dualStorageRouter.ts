@@ -149,7 +149,16 @@ export class DualStorageRouter {
         project: 'neuron',
       }];
     } catch (err) {
-      // Error isolation for disk failures on the markdown write itself.
+      // Error isolation for disk failures on the markdown write itself. This
+      // became a reachable path for ordinary users when `md` became the default
+      // (ticket 31) — a read-only checkout or an unwritable `storage.path` now
+      // fails the write, where a `vector-only` default could not. `status:
+      // 'error'` alone gives the user nothing to act on, so the reason goes to
+      // stderr the same way vector-side drift does.
+      const reason = err instanceof Error ? err.message : String(err);
+      process.stderr.write(
+        `[neuron warning] markdown write failed for category ${category}: ${reason} — nothing was recorded.\n`
+      );
       return [{ id: (m as any).id || 'error', status: 'error', project: 'neuron' }];
     }
   }
@@ -182,6 +191,16 @@ export class DualStorageRouter {
     return this.vectorDb.query(query);
   }
 
+  /**
+   * The *schema* default is `md` (ticket 31), but this fallback deliberately
+   * stays `vector-only` and is not a duplicate of it. It fires only when the
+   * config reaching this router carries a mode the router does not recognise —
+   * i.e. something that bypassed Zod, which is the one case where we know
+   * nothing about the caller's intent. `md` runs a strict mirror that deletes
+   * index entries absent from markdown, so guessing `md` on an unparseable
+   * config would turn "I don't understand this setting" into data loss.
+   * Falling back to the read-only-safe mode is the correct failure direction.
+   */
   private getStorageMode(): string {
     const validModes = ['vector-only', 'md', 'split'];
     const mode = this.config?.storage?.mode;
@@ -235,7 +254,27 @@ export class DualStorageRouter {
     }
   }
 
-  private async bootstrapSeed(categories: string[]): Promise<void> {
+  /**
+   * The seed exports **every category the index holds**, not just the declared
+   * ones it was asked to reconcile. Nothing validates `--category` against
+   * `neuron.yaml`, so a store routinely holds undeclared categories —
+   * `neuron scan` writes into `architecture`, which `scan.category` defaults to
+   * but the config template need not declare.
+   *
+   * Seeding only the declared set looks harmless (the mirror never visits an
+   * undeclared category, so nothing is deleted) right up until someone declares
+   * it. Then the mirror visits a category whose markdown was never written,
+   * finds the index holding rows markdown does not, and deletes them — exactly
+   * as designed, on data the seed skipped. Measured: 1 of 2 entries destroyed,
+   * silently, on the `vector-only` → `md` → declare-`architecture` path that
+   * ticket 31's default flip puts every upgrading user on.
+   *
+   * A seed is a one-time complete export or it is not a safety net, so it takes
+   * the union. Steady-state reconcile still runs on the declared set only —
+   * that is a per-command cost, and an undeclared category is inert there.
+   */
+  private async bootstrapSeed(requested: string[]): Promise<void> {
+    const categories = [...new Set([...requested, ...this.vectorDb.listStoredCategories()])];
     for (const category of categories) {
       const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT });
       for (const entry of vecEntries) {

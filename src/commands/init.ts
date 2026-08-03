@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { parseFlags, drawBox } from './utils.js';
 import { HARNESSES, detectHarnesses, copySkill } from '../config/index.js';
 import { loadNeuronConfig } from '../config/neuronYaml.js';
+import { scaffoldNeuronYaml } from '../config/scaffold.js';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
 import { TransformersEmbedder } from '../components/embedder.js';
 import { ScanProgressBar } from '../ui/progress.js';
@@ -16,6 +17,12 @@ export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
 export async function handleInitCommand(args: string[]): Promise<void> {
   const { options } = parseFlags(args.slice(1));
   const projectDir = process.cwd();
+
+  // Write a working neuron.yaml before anything reads config, so an
+  // initialized project is one whose behaviour is declared on disk rather than
+  // inherited from schema defaults nobody can see. Existing config is left
+  // alone — see scaffoldNeuronYaml.
+  const configResult = scaffoldNeuronYaml(projectDir);
 
   // Detect harnesses and copy the bundled neuron-memory skill
   let detectedSkillsDirs = detectHarnesses(projectDir);
@@ -116,6 +123,11 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     status: 'initialized',
     projectRoot: projectDir,
     skillsWritten,
+    config: {
+      path: configResult.path,
+      created: configResult.created,
+      storageMode: config.storage.mode,
+    },
     scanConfigured: !!config.scan?.enabled,
     initialScan: scanIngestResult,
     grammars: {

@@ -63,5 +63,31 @@
     "adversarialMrr": 0.469,
     "droppedWriteRatio": 0.06,
     "lostWrites": 0
+  },
+  {
+    "timestamp": "2026-08-03T12:34:29.464Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 92,
+    "pillarsRan": 13,
+    "pillarsPassed": 12,
+    "durationMin": 0.43,
+    "adversarialRecallAt1": 0.375,
+    "adversarialMrr": 0.469,
+    "droppedWriteRatio": null,
+    "lostWrites": null
+  },
+  {
+    "timestamp": "2026-08-03T12:35:02.093Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 92,
+    "pillarsRan": 13,
+    "pillarsPassed": 12,
+    "durationMin": 0.44,
+    "adversarialRecallAt1": 0.375,
+    "adversarialMrr": 0.469,
+    "droppedWriteRatio": 0.06,
+    "lostWrites": 0
   }
 ]

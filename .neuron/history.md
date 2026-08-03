@@ -7,7 +7,6 @@ importance: 3
 tags:
   - bugfix
   - termux
-scope: neuron
 taskId: null
 ---
 Fixed neuron cross-platform database and embedder support on Termux
@@ -20,7 +19,6 @@ tags:
   - termux
   - sqlite
   - bugfix
-scope: neuron
 taskId: null
 ---
 Fixed neuron cross-platform database and embedder support on Termux via node:sqlite fallback
@@ -33,7 +31,6 @@ tags:
   - test
   - sqlite
   - termux
-scope: neuron
 taskId: null
 ---
 Verified full test suite passes with 28/28 tests green, including node:sqlite cross-platform fallback and isolated SQLite tests
@@ -46,7 +43,6 @@ tags:
   - issue-tracker
   - cleanup
   - neuron
-scope: neuron
 taskId: null
 ---
 Logged issue 09 (Pre-Command Memory Lookup) and issue 10 (Importance Prototype) in local issue tracker; cleaned codebase
@@ -59,7 +55,6 @@ tags:
   - refactoring
   - models
   - architecture
-scope: neuron
 taskId: null
 ---
 Refactored src/index.ts models into src/models/ directory and database helpers into src/db.ts
@@ -72,7 +67,6 @@ tags:
   - refactoring
   - components
   - architecture
-scope: neuron
 taskId: null
 ---
 Renamed src/models to src/components directory and updated index imports
@@ -85,7 +79,6 @@ tags:
   - testing
   - components
   - vitest
-scope: neuron
 taskId: null
 ---
 Created dedicated unit test files for each component in src/components and src/db.ts; 37/37 tests passing
@@ -97,7 +90,6 @@ importance: 3
 tags:
   - task-queue
   - triage
-scope: neuron
 taskId: null
 ---
 Queried the memory store and task queue under .scratch/ to identify upcoming tickets. Identified issue #01 (.neuronrc Configuration Schema & Parser under md-file-management) and issue #18 (Memory Import/Export & Git Sync under agent-memory-cli) as the next unblocked items in the task queue.
@@ -110,7 +102,6 @@ tags:
   - git
   - stash
   - pull
-scope: neuron
 taskId: null
 ---
 Fetched
@@ -124,7 +115,6 @@ tags:
   - merge
   - pull
   - stash
-scope: neuron
 taskId: null
 ---
 Stashed local changes, pulled latest commits from origin/main, resolved merge conflicts in package.json and package-lock.json for Termux compatibility, popped stash, and verified TypeScript build.
@@ -136,7 +126,6 @@ importance: 3
 tags:
   - cli
   - test
-scope: project
 taskId: task-123
 ---
 Wrote test for CLI
@@ -146,7 +135,6 @@ id: 1d4c0547-0847-48a2-ae95-5940c2488ebd
 createdAt: 2026-07-29T12:38:42.473Z
 importance: 1
 tags: []
-scope: project
 taskId: null
 ---
 Old entry
@@ -157,7 +145,6 @@ createdAt: 2026-07-29T12:38:45.130Z
 importance: 4
 tags:
   - CI
-scope: global
 taskId: null
 ---
 Crucial pipeline update
@@ -167,7 +154,6 @@ id: f81e6e39-975e-4918-ad7f-798784f3ace7
 createdAt: 2026-07-29T12:38:46.767Z
 importance: 3
 tags: []
-scope: project
 taskId: null
 ---
 Old default entry
@@ -177,7 +163,2038 @@ id: 92861ee5-562f-4e7f-b8ef-22a997c4e5c7
 createdAt: 2026-07-29T12:38:49.691Z
 importance: 4
 tags: []
-scope: project
 taskId: null
 ---
 Old important entry
+
+---
+id: 7b5ab054-6356-4ac8-b8ac-8b6b215bbd69
+createdAt: 2026-07-11T18:54:40.807Z
+importance: 3
+tags:
+  - setup
+  - publish
+taskId: null
+---
+Successfully set up, built, tested, and published the @kovartravis/neuron package to npm
+
+---
+id: 99fc9e12-ed6b-4741-a259-0c1f03df32c1
+createdAt: 2026-07-11T19:02:07.473Z
+importance: 3
+tags:
+  - setup
+  - publish
+  - cli
+taskId: null
+---
+Implemented, tested, and published 'neuron init' command for auto-scaffolding agent rules
+
+---
+id: 6104d10a-3dd1-4b73-a30f-d92b1be72314
+createdAt: 2026-07-11T19:02:45.275Z
+importance: 3
+tags:
+  - setup
+  - tdd
+  - db
+  - vector
+  - publish
+taskId: null
+---
+Built, tested, and published the @kovartravis/neuron agent memory CLI, featuring local SQLite migrations, unit-normalised vector dot-product search via BGE-small, cursor-based consolidation, and project init bootstrapping
+
+---
+id: 0854af70-be22-424c-af3d-df17ed71230a
+createdAt: 2026-07-11T19:08:04.159Z
+importance: 3
+tags:
+  - git
+  - github
+  - publish
+taskId: null
+---
+Created git repository and published neuron codebase to GitHub under kovartravis/neuron using gh CLI
+
+---
+id: 17008d3e-f5a8-4cca-b3ee-38c432daf1e2
+createdAt: 2026-07-11T19:09:07.874Z
+importance: 3
+tags:
+  - documentation
+  - github
+taskId: null
+---
+Added comprehensive, user-friendly README.md using the beads project as an example, and pushed updates to GitHub
+
+---
+id: 66172d24-c3d2-4f03-ab50-e0f0b0e233d9
+createdAt: 2026-07-11T19:11:11.009Z
+importance: 3
+tags:
+  - documentation
+  - github
+taskId: null
+---
+Rewrote README to match Steve Yegge's beads project style, format, and structure
+
+---
+id: f4379b5f-e5ed-4c08-8850-02dd717bc7b3
+createdAt: 2026-07-11T19:12:22.819Z
+importance: 3
+tags:
+  - license
+  - github
+taskId: null
+---
+Added standard MIT License file and pushed to GitHub
+
+---
+id: 78ee54a6-e1ca-412b-9226-ec4e446c0b3b
+createdAt: 2026-07-12T21:24:36.545Z
+importance: 3
+tags:
+  - planning
+  - wayfinder
+taskId: null
+---
+Created wayfinding map and 4 open tickets for SaaS features (importance ranking, hybrid retrieval, history decay, team mode, database adapter, and scoped auto-promotion)
+
+---
+id: c336bef4-fb6b-4209-982c-f3bd362e3d3a
+createdAt: 2026-07-15T03:17:26.172Z
+importance: 3
+tags:
+  - git
+  - pull
+taskId: null
+---
+Pulled the latest changes from GitHub, fast-forwarding to main branch.
+
+---
+id: 19b5a452-8c42-4ea6-88f3-5915a230d20b
+createdAt: 2026-07-15T03:20:07.872Z
+importance: 3
+tags:
+  - release
+  - npm
+  - git
+taskId: null
+---
+Bumped version to 1.1.1, published to npm registry, and pushed git commit and tag v1.1.1 to GitHub.
+
+---
+id: e4500466-6f0b-45b0-b69a-31b01815fc6e
+createdAt: 2026-07-15T03:21:01.307Z
+importance: 3
+tags:
+  - config
+  - npm
+  - metadata
+taskId: null
+---
+Updated package.json to include repository, homepage, and bugs metadata, and explicitly included README.md and LICENSE in the files array; bumped version to 1.1.2 and published to npm.
+
+---
+id: 2d7ac47a-20f1-4496-a8c7-77a7d2331100
+createdAt: 2026-07-15T03:25:09.318Z
+importance: 3
+tags:
+  - release
+  - npm
+  - public
+taskId: null
+---
+Bumped version to 1.1.3 and published to npm with public access (--access public), and pushed commits and tag v1.1.3 to GitHub.
+
+---
+id: 49f21081-12da-471f-b529-6e715910e52a
+createdAt: 2026-07-15T03:44:16.603Z
+importance: 3
+tags:
+  - spec
+  - init
+  - harness
+  - neuron-memory
+taskId: null
+---
+Grilled, designed, and published spec 06-init-harness-integration: neuron init multi-harness skill scaffolding with auto-detection and fallback.
+
+---
+id: f9851e32-b105-4455-b1ef-5b029c3e5f16
+createdAt: 2026-07-15T03:46:20.454Z
+importance: 3
+tags:
+  - tickets
+  - init
+  - harness
+  - neuron-memory
+taskId: 06-init-harness-integration
+---
+Published tickets 07 and 08 for spec 06 (init harness integration): bundle skill file + harness auto-detection and scaffolding.
+
+---
+id: 4f0da669-1401-4453-83f6-2d5c7b95f8e9
+createdAt: 2026-07-15T03:49:01.979Z
+importance: 3
+tags:
+  - tdd
+  - init
+  - neuron-memory
+  - release
+taskId: 07-bundle-skill-and-update-block
+---
+Implemented ticket 07: replaced MEMORY_STORE_BLOCK with prose-only template referencing neuron-memory skill by name; added .agents/skills/ to package.json files array; updated init test. All 10 tests green.
+
+---
+id: 5f07a8c4-8a86-4777-9d7e-74afb12d5551
+createdAt: 2026-07-15T03:52:10.042Z
+importance: 3
+tags:
+  - tdd
+  - init
+  - harness
+  - neuron-memory
+taskId: 08-harness-detection-and-skill-scaffolding
+---
+Implemented ticket 08 via TDD: harness auto-detection + neuron-memory skill scaffolding in neuron init. 4 red-green cycles, 14 tests total, all green.
+
+---
+id: 91ca724f-a516-4c39-88b0-45d63392963f
+createdAt: 2026-07-15T03:53:28.600Z
+importance: 3
+tags:
+  - release
+  - npm
+  - init
+  - harness
+  - neuron-memory
+taskId: null
+---
+Released v1.2.0 to npm (public): neuron init harness auto-detection, neuron-memory skill scaffolding, prose-only Memory Store block. Only neuron-memory/SKILL.md bundled in tarball.
+
+---
+id: e6725f37-e1e4-438a-816b-ff4ac9be3e34
+createdAt: 2026-07-15T04:00:15.838Z
+importance: 3
+tags:
+  - release
+  - npm
+  - fix
+  - init
+  - harness
+taskId: null
+---
+Released v1.2.1: fixed harness detection to probe project root only (not home dir), eliminating false positives from globally-installed tools like ~/.agents/.
+
+---
+id: e10a7f24-f163-4b4b-8689-f518864d6568
+createdAt: 2026-07-16T22:49:40.531Z
+importance: 3
+tags:
+  - git
+  - npm
+taskId: null
+---
+Pulled latest commits from GitHub, bumped package version to 1.2.2, pushed commit and tag v1.2.2 to GitHub, and published @kovartravis/neuron@1.2.2 to npm
+
+---
+id: 3779bb06-93f1-48cf-ab0d-0e67fc1d0031
+createdAt: 2026-07-25T19:48:43.374Z
+importance: 3
+tags:
+  - wayfinder
+  - db-schema
+taskId: 05-multi-tenant-isolation
+---
+Deferred multi-tenant isolation ticket as wontfix (SaaS features out of scope for now)
+
+---
+id: 94618b29-7b77-4b30-a299-e450843fa0fc
+createdAt: 2026-07-25T19:48:48.162Z
+importance: 3
+tags:
+  - wayfinder
+  - db-schema
+taskId: 05-multi-tenant-isolation
+---
+Deferred multi-tenant isolation ticket as wontfix (SaaS features out of scope for now)
+
+---
+id: e393f6c3-01dc-49f1-a93a-245d0514462b
+createdAt: 2026-07-25T19:56:36.042Z
+importance: 3
+tags:
+  - cli
+  - exec
+  - failure-fix
+taskId: 16-fix-exec-mutex-lock-crash
+---
+Fixed native onnxruntime-node process teardown crash in exec subcommand on macOS by pinning to version 1.20.1
+
+---
+id: eddcf8ee-38cf-41e7-93a6-ec1af23b53e3
+createdAt: 2026-07-25T20:01:36.935Z
+importance: 3
+tags:
+  - github
+  - metadata
+  - package-json
+taskId: null
+---
+Populate repository topics/tags on GitHub and keywords in package.json to improve search discoverability
+
+---
+id: 09f2fdaf-fc07-491b-b3fc-a5cc6f458bb8
+createdAt: 2026-07-25T20:03:55.361Z
+importance: 3
+tags:
+  - documentation
+taskId: null
+---
+Update README.md with developer-focused value proposition, recent CLI feature additions, and workflow guide
+
+---
+id: f11d25a3-bd6a-4a1a-a1c0-3cf3b5e68ef8
+createdAt: 2026-07-25T20:06:35.037Z
+importance: 3
+tags:
+  - documentation
+  - bugfix
+taskId: null
+---
+Fix Mermaid diagram syntax error in README.md by escaping quotes
+
+---
+id: aae2dbb4-22e5-45af-96e7-1a0a116dcca4
+createdAt: 2026-07-25T20:19:19.051Z
+importance: 3
+tags:
+  - tdd
+  - hybrid-search
+  - fts5
+  - db-schema
+taskId: 01-fts5-schema-migration-triggers
+---
+Implemented ticket 01-fts5-schema-migration-triggers via TDD: v4 SQLite migration adds learnings_fts and history_fts external content tables, AFTER INSERT/DELETE/UPDATE triggers, and backfill of existing records
+
+---
+id: 1cd9c654-b357-48bb-b030-239c0fa886e2
+createdAt: 2026-07-26T03:02:25.698Z
+importance: 3
+tags:
+  - tdd
+  - hybrid-search
+  - fts5
+taskId: 02-fts-query-sanitizer-parser
+---
+Implemented ticket 02-fts-query-sanitizer-parser via TDD: cleanFtsQuery function tokenizes alphanumeric words and builds OR-joined FTS5 wildcard expressions, stripping punctuation and reserved chars
+
+---
+id: b7727e79-220b-419b-9991-8ffc500c8450
+createdAt: 2026-07-26T03:08:23.186Z
+importance: 3
+tags:
+  - tdd
+  - hybrid-search
+  - rrf
+  - fts5
+taskId: 03-hybrid-retrieval-rrf-engine
+---
+Implemented ticket 03-hybrid-retrieval-rrf-engine via TDD: rewrote query() to run FTS5 keyword search (cleanFtsQuery) and vector search in parallel, merge via RRF (k=60), normalize, and combine 75% RRF + 25% importance. Added zero-similarity guard so records with no semantic match don't get a free rank boost.
+
+---
+id: aa967d8d-9abe-42b5-b593-de4adde04c70
+createdAt: 2026-07-26T03:11:00.447Z
+importance: 3
+tags:
+  - tdd
+  - hybrid-search
+  - tests
+taskId: 04-hybrid-search-test-suite
+---
+Implemented ticket 04-hybrid-search-test-suite: 4 integration tests pinning semantic ranking, importance tiebreaking, scope filtering, and cross-table (learnings+history) hybrid query behavior
+
+---
+id: 7bd114f7-92f3-43a6-bed5-87ecb14b4a73
+createdAt: 2026-07-26T03:24:04.157Z
+importance: 3
+tags:
+  - tdd
+  - bge
+  - embeddings
+  - hybrid-search
+taskId: 05-bge-query-instruction-prefix
+---
+Implemented ticket 05-bge-query-instruction-prefix via TDD: added embedQuery method to Embedder interface and TransformersEmbedder, prepending BGE search prefix 'Represent this sentence for searching relevant passages: ', and updated NeuronMemory.query() to use embedQuery
+
+---
+id: 8054e5d0-5b91-4dd5-aa71-caa531844206
+createdAt: 2026-07-26T03:34:59.530Z
+importance: 3
+tags:
+  - hybrid-search
+  - fts5
+  - rrf
+  - embeddings
+  - bge
+  - release
+taskId: v1.3.3-release
+---
+Completed hybrid search milestone and version bump: implemented FTS5 schema migration v4, cleanFtsQuery sanitizer, RRF hybrid search engine (k=60), integration test suite, BGE query instruction prefix (embedQuery), and bumped package to v1.3.3
+
+---
+id: 9b4c69ea-7a6b-441c-b210-bdc40ac763a2
+createdAt: 2026-07-26T03:43:13.820Z
+importance: 3
+tags:
+  - embedder
+  - refactor
+taskId: null
+---
+Removed fallback embedder in embedder.ts so pipeline initialization errors throw directly
+
+---
+id: e4fc9543-d3e4-4291-9769-a6ec1e7e2ddf
+createdAt: 2026-07-26T03:44:52.004Z
+importance: 3
+tags:
+  - models
+  - refactor
+taskId: null
+---
+Separated pure models (memory, maintenance, options) into src/models directory and updated components re-exports
+
+---
+id: faaca6cf-397d-41b1-b1d1-73d60b662726
+createdAt: 2026-07-26T03:45:13.889Z
+importance: 3
+tags:
+  - models
+  - cleanup
+taskId: null
+---
+Removed unit test files for pure models in src/models
+
+---
+id: 2a4c6513-ec82-4c8e-bcf7-b16088795e03
+createdAt: 2026-07-26T03:47:09.200Z
+importance: 3
+tags:
+  - cli
+  - refactor
+taskId: null
+---
+Modularized CLI commands (init, exec, status, learn, history) into separate files in src/commands/
+
+---
+id: bd990979-ca27-4b41-be54-a989492b4436
+createdAt: 2026-07-26T03:47:36.682Z
+importance: 3
+tags:
+  - git
+  - push
+taskId: null
+---
+Committed and pushed CLI, embedder, and models refactoring changes to GitHub
+
+---
+id: adbd4915-b7a0-4857-bc7c-ad200f7a8f21
+createdAt: 2026-07-26T03:49:08.154Z
+importance: 3
+tags:
+  - exec
+  - refactor
+taskId: null
+---
+Removed cleanCommandStr logic in exec.ts to query memory store directly with rawCommandStr
+
+---
+id: 525e70c1-7149-4f8d-b2e4-1f92b0b01b57
+createdAt: 2026-07-26T03:50:37.501Z
+importance: 3
+tags:
+  - exec
+  - search
+taskId: null
+---
+Removed kind filter from memory query in exec.ts to search both history and learnings
+
+---
+id: f11e0f59-93cb-4bdf-9abd-dd1f36800be9
+createdAt: 2026-07-26T03:51:20.625Z
+importance: 3
+tags:
+  - explanation
+  - cli
+taskId: null
+---
+Explained NEURON_MOCK_EMBEDDER environment check and score threshold in exec.ts
+
+---
+id: 485074be-6411-406d-b80a-cdf319418035
+createdAt: 2026-07-26T03:52:16.206Z
+importance: 3
+tags:
+  - exec
+  - refactor
+taskId: null
+---
+Removed NEURON_MOCK_EMBEDDER check from exec.ts and set constant threshold
+
+---
+id: f8799235-7d3c-43cf-aa9d-ee8f4dad7e4b
+createdAt: 2026-07-26T03:54:01.966Z
+importance: 3
+tags:
+  - testing
+  - cli
+taskId: null
+---
+Split monolithic cli.test.ts into command-specific test files under src/commands/
+
+---
+id: a69f24c2-1aca-4b01-ab85-42a7053ad0a4
+createdAt: 2026-07-26T03:56:30.547Z
+importance: 3
+tags:
+  - inquiry
+  - explanation
+taskId: null
+---
+Answered user inquiry regarding neuron feedback and how it influenced memory handle closing in exec.ts
+
+---
+id: da928f03-3129-47f3-9438-2949bea08e9f
+createdAt: 2026-07-26T03:58:36.380Z
+importance: 3
+tags:
+  - architecture
+  - passive-memory
+taskId: null
+---
+Provided architectural recommendations for passive background memory and history logging
+
+---
+id: 18f41fae-dbe8-4c28-bc13-cf1a0a798492
+createdAt: 2026-07-26T03:59:42.647Z
+importance: 3
+tags:
+  - subagent
+  - background-observer
+taskId: null
+---
+Defined and demonstrated background neuron-observer subagent for passive memory logging
+
+---
+id: 8ff1f30a-8597-4730-80f0-4d625cd4ed2f
+createdAt: 2026-07-26T04:00:34.369Z
+importance: 3
+tags:
+  - subagent
+  - cleanup
+taskId: null
+---
+Killed and removed subagents as requested by user
+
+---
+id: 9756c77b-dbca-4396-bd54-cfc66d7ae073
+createdAt: 2026-07-26T04:05:08.237Z
+importance: 3
+tags:
+  - refactor
+  - config
+taskId: null
+---
+Extracted agent harness configurations and detectHarnesses into src/config/harness.ts
+
+---
+id: 68dcbe4d-c33c-4652-a881-2e74cd5a6c4a
+createdAt: 2026-07-26T04:08:22.209Z
+importance: 3
+tags:
+  - config
+  - harnesses
+taskId: null
+---
+Extracted agent harness configurations, markdown file mappings, and skills directories into src/config/harnesses.json
+
+---
+id: d944c7b7-eaa4-47b4-a652-630bce2c6fbd
+createdAt: 2026-07-26T04:10:40.411Z
+importance: 3
+tags:
+  - roadmap
+  - planning
+taskId: null
+---
+Analyzed project architecture and provided strategic next steps for neuron memory store improvements
+
+---
+id: ffdc2f37-8238-4d93-a1cc-28245ba43d28
+createdAt: 2026-07-26T04:13:52.367Z
+importance: 3
+tags:
+  - tickets
+  - todo
+taskId: null
+---
+Logged Web UI dashboard, import/export, git sync, and analytics tasks as markdown tickets in .scratch issue tracker
+
+---
+id: c9c61848-645d-472b-8514-44c1f934b45a
+createdAt: 2026-07-26T04:14:49.051Z
+importance: 3
+tags:
+  - roadmap
+  - ideas
+taskId: null
+---
+Proposed strategic TODO feature ideas for neuron roadmap
+
+---
+id: 8a71b217-ce8a-420f-b801-98415323df67
+createdAt: 2026-07-26T04:16:46.434Z
+importance: 3
+tags:
+  - tickets
+  - roadmap
+taskId: null
+---
+Logged feature issue tickets 20-24 into .scratch issue tracker
+
+---
+id: a6a668b1-659f-488b-ae6b-fbf79b7eaf47
+createdAt: 2026-07-27T00:29:30.061Z
+importance: 3
+tags:
+  - backlog
+  - issue-tracker
+  - md-file-management
+taskId: md-file-management
+---
+Added .md file management and .neuronrc configuration scope to the backlog under .scratch/md-file-management/
+
+---
+id: f8f53cda-d5eb-4e67-a453-03e1d072894a
+createdAt: 2026-07-27T00:33:03.593Z
+importance: 3
+tags:
+  - triage
+  - roadmap
+taskId: null
+---
+Queried and listed next queued up tickets across agent-memory-cli and md-file-management features
+
+---
+id: 6f747c10-be39-4357-b251-2733a96e13d0
+createdAt: 2026-07-27T00:55:22.550Z
+importance: 4
+tags:
+  - ui
+  - tdd
+  - ticket-17
+  - web
+taskId: ticket-17
+---
+Built ticket-17: neuron ui dashboard — TDD'd src/ui/server.ts, src/ui/html.ts, src/commands/ui.ts across 6 green tests covering S3 (GET /), S2a/b/c (/api/status, /api/learnings, /api/history), and S1 (server lifecycle). Wired into cli.ts and commands/index.ts. Full glassmorphism dark-mode dashboard with live hybrid embeddings search, view-all modals, scope/importance badges.
+
+---
+id: 501588d7-2af5-444a-a351-3bb9aec1e641
+createdAt: 2026-07-27T01:02:48.372Z
+importance: 3
+tags:
+  - git
+  - ticket-17
+  - ui
+taskId: ticket-17
+---
+Pushed ticket-17 neuron ui dashboard to GitHub — commit f56f3ad on main
+
+---
+id: 9566f40d-db84-4868-99f6-af233e86d23d
+createdAt: 2026-07-27T01:04:16.169Z
+importance: 3
+tags:
+  - version-bump
+taskId: null
+---
+Bumped package version to 1.3.5 in package.json and package-lock.json
+
+---
+id: 4d58c5bd-8c46-4866-9bf7-26812e98efe1
+createdAt: 2026-07-27T01:06:08.794Z
+importance: 3
+tags:
+  - npm
+  - publish
+taskId: null
+---
+Answered npm publish command typo issue
+
+---
+id: 4ca2db79-e3af-4400-9859-52fe35cc171c
+createdAt: 2026-07-27T01:06:58.659Z
+importance: 3
+tags:
+  - npm
+  - publish
+taskId: null
+---
+Attempted npm publish --access public; failed due to npm 401 Unauthorized / 404 (user not logged in to npm registry).
+
+---
+id: 015bb2c9-35e2-4e31-adbe-060e9c521be2
+createdAt: 2026-07-27T01:10:03.564Z
+importance: 3
+tags:
+  - memory
+  - protocol
+taskId: null
+---
+Updated memory store protocols in AGENTS.md, SKILL.md, and harness configuration to require detailed multi-sentence memory entries (3-4 sentences minimum) instead of 1-sentence summaries.
+
+---
+id: 241b19c5-a423-499e-9b6d-09980b0c2687
+createdAt: 2026-07-27T01:16:39.243Z
+importance: 3
+tags:
+  - memory
+  - skill
+  - neuronrc
+taskId: null
+---
+Updated neuron-memory skill to include instructions for writing .neuronrc.yaml and configuring AGENTS.md and agents.json files with project categories while keeping neuron init for skill copying.
+
+---
+id: b712eed7-0838-49e6-bd14-5af3743f47fc
+createdAt: 2026-07-27T01:29:56.893Z
+importance: 3
+tags:
+  - memory
+  - config
+  - database
+  - cli
+taskId: null
+---
+Implemented neuron.yaml configuration loader, unified memories database table migration v5, neuron memory CLI command suite for N dynamic categories, onExec pull rule evaluation in neuron exec, and updated neuron-memory skill documentation.
+
+---
+id: bcbf0adf-79cf-41a9-a95b-2fa8fa5749f0
+createdAt: 2026-07-27T01:30:54.887Z
+importance: 3
+tags:
+  - readme
+  - config
+  - docs
+taskId: null
+---
+Updated README.md to document neuron.yaml configuration and neuron memory CLI command suite, and removed zero-config phrasing from the main tagline.
+
+---
+id: 0e7cfe8a-19c1-4188-af90-c48ce144bfa9
+createdAt: 2026-07-27T01:31:47.184Z
+importance: 3
+tags:
+  - release
+  - git
+  - github
+taskId: null
+---
+Bumped package version to 2.0.0-rc1, committed changes, tagged git release v2.0.0-rc1, and pushed commits and tags to GitHub.
+
+---
+id: d24bc9d8-4cab-438d-a692-7db9cc5c1e74
+createdAt: 2026-07-27T01:33:33.635Z
+importance: 3
+tags:
+  - readme
+  - docs
+  - config
+taskId: null
+---
+Completely rewrote README.md with updated Killer Features section, new 5-step Quickstart guide, full neuron.yaml configuration specification, and generic neuron memory CLI command suite documentation.
+
+---
+id: 5fba0450-ffb8-44ee-b6ce-2e038132a9c7
+createdAt: 2026-07-27T01:35:29.282Z
+importance: 3
+tags:
+  - readme
+  - skill
+  - agent-first
+taskId: null
+---
+Updated README.md quickstart section and SKILL.md setup protocol to be completely agent-first, where agents interview the user for setup options, create neuron.yaml, and configure AGENTS.md automatically.
+
+---
+id: fb1f2229-3c7c-4702-903d-84a9d882d438
+createdAt: 2026-07-27T01:39:31.979Z
+importance: 3
+tags:
+  - memory
+  - config
+  - setup
+taskId: null
+---
+Configured project memory store via neuron.yaml with learning, history, and decisions categories, established pull rules for default search and shell exec triggers, verified AGENTS.md protocol compliance, and validated neuron exec lookup functionality.
+
+---
+id: 920c38a1-4a8b-4942-aea0-1b18577e1fee
+createdAt: 2026-07-27T01:40:44.912Z
+importance: 3
+tags:
+  - memory
+  - config
+  - agents-md
+taskId: null
+---
+Updated AGENTS.md to explicitly document the memory categories configured in neuron.yaml (learning, history, decisions) and added CLI examples for querying and adding entries to custom categories.
+
+---
+id: 6d1f4a93-5c60-43dc-9a04-6c1d93522ca4
+createdAt: 2026-07-27T01:41:07.114Z
+importance: 3
+tags:
+  - memory
+  - skill
+  - config
+taskId: null
+---
+Updated neuron-memory skill SKILL.md to explicitly mandate aligning AGENTS.md with neuron.yaml during setup, requiring documented categories and custom category CLI query/add command examples.
+
+---
+id: 7da9354d-0821-4ee7-9472-bc590a2d4043
+createdAt: 2026-07-27T01:41:35.760Z
+importance: 3
+tags:
+  - memory
+  - config
+  - explanation
+taskId: null
+---
+Answered user question explaining that neuron.yaml is dynamically loaded and executed by the neuron CLI (specifically during neuron exec and memory queries to evaluate pull rules and categories).
+
+---
+id: b92fbe1d-c2a6-4f5e-83dc-6d6b96a1de14
+createdAt: 2026-07-27T01:45:51.843Z
+importance: 3
+tags:
+  - memory
+  - ui
+  - release
+taskId: ui-n-categories
+---
+Enacted dynamic category dashboard feature (v2.0.0-rc2). Updated src/ui/server.ts with /api/categories and /api/memories endpoints, updated src/ui/html.ts with dynamic category tabs, global search bar, and reusable modal, added domain documentation in CONTEXT.md and ADR 0002, bumped version to 2.0.0-rc2, passed all 61 vitest unit tests, and pushed commit and tag v2.0.0-rc2 to GitHub.
+
+---
+id: 704f1653-8c1e-45ab-9a68-58301cd8c2b1
+createdAt: 2026-07-27T01:46:41.312Z
+importance: 3
+tags:
+  - docs
+  - readme
+  - ui
+taskId: ui-readme
+---
+Updated README.md with a dedicated Local Dashboard UI section and UI screenshot asset in docs/images/dashboard.png, updated package.json files array to include docs/images/, and pushed commits and tag v2.0.0-rc2 to GitHub.
+
+---
+id: 2690c334-f500-4fa9-924a-fb238dba81d3
+createdAt: 2026-07-28T01:29:24.410Z
+importance: 3
+tags:
+  - benchmark
+  - integration
+taskId: null
+---
+Cloned
+
+---
+id: 7bd5942e-d91e-415d-af36-bf9996c8c831
+createdAt: 2026-07-28T01:49:32.389Z
+importance: 3
+tags:
+  - benchmark
+  - gemini
+  - eval
+taskId: null
+---
+Executed
+
+---
+id: 526fb22a-61a4-43ef-8d1f-50ae06ab6ccb
+createdAt: 2026-07-28T01:58:01.991Z
+importance: 3
+tags:
+  - benchmark
+  - omb
+  - full-run
+taskId: null
+---
+Launched full 589-query Agent Memory Benchmark evaluation for Neuron on personamem/32k dataset using Gemini 2.5 Flash Lite under free tier rate limits. The run executes in the background, automatically managing 15 RPM backoff pauses, and will auto-compress and update results-manifest.json upon completion.
+
+---
+id: d99e1c58-0840-410f-b0a6-16ae07cbe7b6
+createdAt: 2026-07-28T02:06:00.427Z
+importance: 3
+tags:
+  - benchmark
+  - omb
+  - full-run
+taskId: null
+---
+Launched full 589-query Agent Memory Benchmark evaluation for Neuron on personamem/32k dataset using Gemini 2.5 Flash Lite under free tier rate limits. The run executes in the background, automatically managing 15 RPM backoff pauses, and will auto-compress and update results-manifest.json upon completion.
+
+---
+id: fce52bd0-8889-4ae1-b8f9-2474de92b088
+createdAt: 2026-07-28T02:06:45.175Z
+importance: 3
+tags:
+  - benchmark
+  - omb
+  - full-run
+taskId: null
+---
+Launched full 589-query Agent Memory Benchmark evaluation for Neuron on personamem/32k dataset using Gemini 2.5 Flash Lite under free tier rate limits. The run executes in the background, automatically managing 15 RPM backoff pauses, and will auto-compress and update results-manifest.json upon completion.
+
+---
+id: 1df096af-db4a-4808-ad5a-a2bb2409a5e8
+createdAt: 2026-07-28T02:06:49.120Z
+importance: 3
+tags:
+  - benchmark
+  - omb
+  - full-run
+taskId: null
+---
+Launched full 589-query Agent Memory Benchmark evaluation for Neuron on personamem/32k dataset using Gemini 2.5 Flash Lite under free tier rate limits. The run executes in the background, automatically managing 15 RPM backoff pauses, and will auto-compress and update results-manifest.json upon completion.
+
+---
+id: 43c72d1b-4a1e-4950-ae40-85479a1fcc41
+createdAt: 2026-07-28T02:10:24.107Z
+importance: 3
+tags:
+  - benchmark
+  - omb
+  - full-run
+taskId: null
+---
+Launched full 589-query Agent Memory Benchmark evaluation for Neuron on personamem/32k dataset using Gemini 2.5 Flash Lite under free tier rate limits. The run executes in the background, automatically managing 15 RPM backoff pauses, and will auto-compress and update results-manifest.json upon completion.
+
+---
+id: 4fb68838-34a4-4776-a508-1b00e5d2e656
+createdAt: 2026-07-28T02:29:53.660Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: ae3031b4-10a6-43c2-b6a6-af6837ef0897
+createdAt: 2026-07-28T02:31:04.064Z
+importance: 3
+tags:
+  - git
+  - gitignore
+  - push
+taskId: null
+---
+Added .env and .env.* patterns to .gitignore to prevent local environment configuration files from being tracked in git. Also added benchmarks/agent-memory-benchmark/ to .gitignore to prevent embedded repository conflicts. Verified the changes by running all unit tests via npm test, ensuring all 61 tests pass cleanly. Committed all staged changes and pushed the latest main branch to GitHub.
+
+---
+id: bfd60a25-c585-41bb-b1b1-365516a91259
+createdAt: 2026-07-28T02:31:33.268Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 2de3c6e1-5272-4ebd-8e72-d5860a02c39e
+createdAt: 2026-07-28T03:19:46.122Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: ff30abe7-0208-4ac3-aa6b-5019cbdf7b91
+createdAt: 2026-07-28T18:04:37.421Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 9c76e787-4f01-4d5f-9c99-bbd91046fe15
+createdAt: 2026-07-28T18:05:05.306Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 594d7b0e-b894-4efd-9d62-67c200a3a20b
+createdAt: 2026-07-28T18:05:40.580Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 51e98b4a-5fed-4807-9913-c5e4d90d851d
+createdAt: 2026-07-28T18:07:55.024Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 95893688-000c-4580-9574-58f4a6064e6c
+createdAt: 2026-07-28T18:17:57.560Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: d0190493-718e-411e-b3bc-2ff436a66831
+createdAt: 2026-07-28T18:29:50.913Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: e71866b5-7576-4eb2-886a-d436a7aa256b
+createdAt: 2026-07-28T18:30:15.770Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 75b5f4f8-86ff-4093-a3ba-7e9e38fec795
+createdAt: 2026-07-28T18:49:49.013Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 08599da1-0c4a-47ee-8cee-44eb58e1c5c4
+createdAt: 2026-07-28T19:50:59.831Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: d2a6212d-8518-4903-8cc2-e4060dd07eb3
+createdAt: 2026-07-28T20:21:50.665Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: a44c9ebd-dd00-4f68-a579-dee1ad3c3bea
+createdAt: 2026-07-28T20:22:25.406Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 455f1266-88e0-4d34-815f-28f210f0dae6
+createdAt: 2026-07-28T20:23:39.587Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 0eef662c-00e1-48ee-acec-4eb18bcfedd8
+createdAt: 2026-07-28T20:24:24.211Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 95ecdd53-ded4-4da0-81ce-3fd5efe65c48
+createdAt: 2026-07-29T04:10:03.030Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 30860d38-5e8d-4604-adf2-f0c62a423643
+createdAt: 2026-07-29T04:10:50.425Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 0145abde-a969-4ee4-9992-6cc6806655ca
+createdAt: 2026-07-29T04:12:41.433Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 51d9cc74-0cb2-42e1-87a0-7043c6a5035b
+createdAt: 2026-07-29T04:17:00.162Z
+importance: 3
+tags:
+  - config
+  - neuronYaml
+  - zod
+taskId: 01-neuronrc-config-schema-parser
+---
+Completed ticket 01-neuronrc-config-schema-parser: Added Zod schema validation for neuron.yaml / neuron.yml files in src/config/neuronYaml.ts. Replaced neuronrc naming completely, added storage.mode ('vector-only' | 'md-only' | 'dual' | 'split') and storage.path ('.neuron') options, and added unit tests in src/config/neuronYaml.test.ts. All 63 unit tests passed cleanly.
+
+---
+id: 5e6eea06-ea1b-4b38-896d-caa2aa979b2d
+createdAt: 2026-07-29T04:17:44.592Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: 8e13c3e7-f3fb-446c-9439-debd6d19b1f3
+createdAt: 2026-07-29T04:20:22.896Z
+importance: 3
+tags:
+  - benchmark
+  - gemini-2.5-flash
+  - overnight
+taskId: null
+---
+Updated benchmark configuration to use gemini-2.5-flash which provides 1,500 RPD daily free quota (resolving the 20 RPD cap on gemini-2.5-flash-lite). Verified model API calls with HTTP 200 OK responses and launched the full 589-query benchmark run in the background via npm run bench:full for overnight execution.
+
+---
+id: e59efdf9-f60b-4d1a-9212-e274a2cc286e
+createdAt: 2026-07-29T04:21:02.998Z
+importance: 3
+tags:
+  - teamwork
+  - md-file-management
+  - delegation
+taskId: null
+---
+Crafted and launched teamwork prompt draft for implementing all remaining tickets in the md-file-management module (tickets 02, 03, 04, 05 covering MdStorageAdapter, DualStorageRouter, mdVectorSync, and neuron sync CLI command). Delegated execution to the teamwork_preview subagent team (conversation ID: 76e03d06-4eac-4091-8c8d-993ce49e28cf).
+
+---
+id: 48aa8bc6-ea42-4f09-9950-6b59e6596e08
+createdAt: 2026-07-29T04:21:21.783Z
+importance: 3
+tags:
+  - teamwork
+  - md-file-management
+  - delegation
+taskId: null
+---
+Crafted and launched teamwork prompt draft for implementing all remaining tickets in the md-file-management module (tickets 02, 03, 04, 05 covering MdStorageAdapter, DualStorageRouter, mdVectorSync, and neuron sync CLI command). Delegated execution to the teamwork_preview subagent team (conversation ID: 76e03d06-4eac-4091-8c8d-993ce49e28cf).
+
+---
+id: 4ce06b9f-a505-4ff3-b7cf-3e2e66c8d0b6
+createdAt: 2026-07-29T04:22:29.319Z
+importance: 3
+tags:
+  - md-sync
+  - explorer
+  - survey
+taskId: "04"
+---
+Explored
+
+---
+id: 9c258536-2287-4dc7-b94d-7dc9451f6fb1
+createdAt: 2026-07-29T04:22:33.589Z
+importance: 3
+tags:
+  - md-file-management
+  - survey
+  - architecture
+taskId: md-file-management-survey
+---
+Completed
+
+---
+id: 3e1eb7fa-b2de-44f3-8530-dae64526ea8f
+createdAt: 2026-07-29T04:22:35.740Z
+importance: 3
+tags:
+  - cli
+  - scaffolding
+  - sync
+  - survey
+taskId: "05"
+---
+Completed
+
+---
+id: e201f102-7bfd-4423-945f-c32ab1ec550f
+createdAt: 2026-07-29T04:22:46.627Z
+importance: 3
+tags:
+  - test-survey
+  - md-file-management
+taskId: explorer_survey_2
+---
+Completed
+
+---
+id: 69999f34-b537-4e70-9eea-41fab6b96ebf
+createdAt: 2026-07-29T04:22:49.979Z
+importance: 3
+tags:
+  - spec-mining
+  - md-file-management
+taskId: md-file-management
+---
+Completed
+
+---
+id: 420083b1-cc41-4dc2-9a34-f6b6714860c3
+createdAt: 2026-07-29T04:22:52.736Z
+importance: 3
+tags:
+  - spec-mining
+  - e2e-strategy
+taskId: md-file-management-survey-3
+---
+Completed
+
+---
+id: f07e7a3f-41ac-479e-a6cd-8de0b7fd5223
+createdAt: 2026-07-29T04:26:01.299Z
+importance: 3
+tags:
+  - md-storage
+  - adapter
+  - testing
+taskId: "02"
+---
+Implemented
+
+---
+id: 16cdd503-b7c9-4fea-9ede-92bc942e5f73
+createdAt: 2026-07-29T04:28:13.869Z
+importance: 3
+tags:
+  - challenger
+  - md-storage
+  - rejection
+taskId: null
+---
+Challenged MdStorageAdapter implementation; rejected due to catastrophic frontmatter parsing breakdown, test fabrication, content mutation, and path traversal security flaw.
+
+---
+id: 7bfa21ae-e45b-4aa9-b1b3-77b07b51fca7
+createdAt: 2026-07-29T04:28:35.483Z
+importance: 3
+tags:
+  - verification
+  - mdStorageAdapter
+  - challenger
+taskId: "02"
+---
+Completed
+
+---
+id: 879a3904-1a44-45a5-a765-da1c17770328
+createdAt: 2026-07-29T04:29:47.226Z
+importance: 3
+tags:
+  - md-storage
+  - remediation
+  - m1-retry
+taskId: ticket-02
+---
+Completed
+
+---
+id: adcad23f-075a-4603-aeec-725ab17a1ba5
+createdAt: 2026-07-29T04:29:59.312Z
+importance: 3
+tags:
+  - testing
+  - integration
+  - e2e
+taskId: md-file-management
+---
+Completed
+
+---
+id: 459647c0-246f-46f3-bf94-0a869fd86189
+createdAt: 2026-07-29T04:30:20.688Z
+importance: 3
+tags:
+  - testing
+  - storage
+  - sync
+taskId: md-file-management
+---
+Completed
+
+---
+id: 336a9cdd-5755-40bc-873e-99b3e2c38741
+createdAt: 2026-07-29T04:30:27.923Z
+importance: 3
+tags:
+  - md-file-management
+  - completion
+  - testing
+taskId: md-file-management-epic
+---
+Completed all Markdown file storage feature tickets (01, 02, 03, 04, 05 in .scratch/md-file-management/issues/). Implemented MdStorageAdapter with atomic swap writes and YAML frontmatter parsing, DualStorageRouter for storage mode routing, mdVectorSync for bidirectional content-hash vector synchronization, and neuron sync CLI command with scaffolding. All 127 unit, integration, challenger, and end-to-end tests passed across 20 test files.
+
+---
+id: 8018b969-0ea1-49dc-93e3-9fa1cca8b3d9
+createdAt: 2026-07-29T04:30:29.625Z
+importance: 3
+tags:
+  - e2e-testing
+  - md-file-management
+taskId: task-e2e
+---
+Designed and built comprehensive 4-Tier E2E test suite for md-file-management (covering R1 MdStorageAdapter, R2 DualStorageRouter, R3 mdVectorSync, R4 CLI neuron sync). Dispatched 5 subagents to survey specifications, design 53 test scenarios across Tiers 1-4, implement test runner suites, and verify 100% test execution pass rate (127/127 tests passed across 20 files). Published TEST_INFRA.md and TEST_READY.md at project root.
+
+---
+id: 1da3f017-cdca-46c1-9ceb-ed6c992daac4
+createdAt: 2026-07-29T04:30:30.556Z
+importance: 3
+tags:
+  - forensic-audit
+  - m1-gate
+taskId: m1-gate
+---
+Completed
+
+---
+id: c099e80a-4371-4333-b787-339f297fc2e7
+createdAt: 2026-07-31T01:35:59.359Z
+importance: 3
+tags:
+  - md-file-management
+  - task-query
+taskId: null
+---
+Queried
+
+---
+id: 7758243f-aa84-4bc2-b91b-7bb7d80cdcc1
+createdAt: 2026-07-31T01:37:15.233Z
+importance: 3
+tags:
+  - backlog
+  - project-status
+taskId: null
+---
+Queried
+
+---
+id: 37d6e5d9-15cc-492a-918a-017e8fa64bf6
+createdAt: 2026-07-31T01:46:08.272Z
+importance: 3
+tags:
+  - benchmark
+  - sanity-check
+  - personamem
+taskId: null
+---
+Accessed and inspected the latest PersonaMem sanity benchmark run output for Neuron (20 queries). Extracted performance metrics (80% accuracy, 16/20 correct, 9.3s ingestion for 195 docs, 78.3ms average retrieval latency) and analyzed the 4 failed queries across topic categories (musicRecommendation and bookRecommendation under suggest_new_ideas).
+
+---
+id: 29723af5-35a5-4fef-a8cc-cf132467edc9
+createdAt: 2026-07-31T01:47:22.395Z
+importance: 3
+tags:
+  - benchmark
+  - personamem
+  - diagnosis
+taskId: null
+---
+Conducted deep failure mode diagnosis of the PersonaMem sanity benchmark run. Inspected full LLM reasoning logs, options, and retrieved memory contexts for all 4 failed queries. Identified LLM over-reasoning on distractor options and persona trait over-fitting in suggest_new_ideas scenarios as the primary root cause.
+
+---
+id: 7625eb56-7192-47a3-b4d9-3bf2575971e0
+createdAt: 2026-07-31T19:03:38.812Z
+importance: 3
+tags:
+  - scan
+  - evaluation
+  - llm-as-judge
+taskId: null
+---
+Executed
+
+---
+id: 7e2c6b87-dcd7-4f94-aa91-3565bee99b67
+createdAt: 2026-07-31T19:06:47.136Z
+importance: 3
+tags:
+  - scan
+  - progress
+  - summarizer
+taskId: null
+---
+Implemented
+
+---
+id: 4090d527-a2d8-4ccc-b5bb-70880539b25b
+createdAt: 2026-07-31T19:07:34.427Z
+importance: 3
+tags:
+  - cache
+  - clean
+  - testing
+taskId: null
+---
+Purged
+
+---
+id: d873c6e0-7afa-4c4f-aec2-1ff9bb871984
+createdAt: 2026-07-31T19:27:23.637Z
+importance: 3
+tags:
+  - release-plan
+  - tickets
+taskId: null
+---
+Queried
+
+---
+id: 0f9bdab2-47c0-43d6-932e-6f91e96c48e3
+createdAt: 2026-07-31T19:28:39.015Z
+importance: 3
+tags:
+  - release-plan
+  - rc-bump
+taskId: null
+---
+Updated
+
+---
+id: 908418b8-f680-4ee5-99e1-bb31eabac361
+createdAt: 2026-07-31T19:36:02.847Z
+importance: 3
+tags:
+  - ticket-02
+  - release-plan
+taskId: "02"
+---
+Completed
+
+---
+id: 80678e0f-90f1-4312-83a5-229b24f15427
+createdAt: 2026-07-31T19:37:27.816Z
+importance: 3
+tags:
+  - documentation
+  - help
+  - skill
+taskId: null
+---
+Updated
+
+---
+id: ad41f1b6-dd4b-411b-8367-1b297e2a7318
+createdAt: 2026-07-31T19:39:29.453Z
+importance: 3
+tags:
+  - init
+  - ui
+  - progress
+taskId: null
+---
+Fixed issue where handleInitCommand displayed 'Scanning:' on the terminal progress bar during ONNX model initialization and downloading. Added a configurable prefix option to ScanProgressBarOptions and ScanProgress so progress bars can display custom task titles. Configured handleInitCommand to pass prefix: 'Initializing' when setting up the progress bar for ONNX model preloading and update to 'Scanning' when performing initial architecture scanning. Added comprehensive unit test coverage in progress.test.ts to verify custom progress bar prefixes.
+
+---
+id: 4bc5777b-6146-4410-8bc9-b57939a59b7a
+createdAt: 2026-07-31T19:41:15.864Z
+importance: 3
+tags:
+  - config
+  - scan
+  - yaml
+taskId: null
+---
+Added
+
+---
+id: 05dede41-ec7f-486d-8198-0156c14cd56b
+createdAt: 2026-07-31T19:41:57.842Z
+importance: 3
+tags:
+  - config
+  - scan
+  - documentation
+taskId: null
+---
+Explained
+
+---
+id: 0b088642-324e-4059-9554-0720953da720
+createdAt: 2026-07-31T19:44:41.419Z
+importance: 3
+tags:
+  - scan
+  - memory
+  - init
+  - diffing
+taskId: null
+---
+Implemented
+
+---
+id: 429a08f3-6109-40b6-bc14-7db720992099
+createdAt: 2026-07-31T19:45:37.014Z
+importance: 3
+tags:
+  - scan
+  - qa
+  - explanation
+taskId: null
+---
+Answered
+
+---
+id: 58645c68-0464-4e96-9da2-3188b10ab016
+createdAt: 2026-07-31T19:46:27.278Z
+importance: 3
+tags:
+  - scan
+  - refactor
+  - cleanup
+taskId: null
+---
+Removed
+
+---
+id: fbb178c4-04e7-4866-9434-5a195e036327
+createdAt: 2026-07-31T19:49:15.353Z
+importance: 3
+tags:
+  - release
+  - git
+taskId: release-v2.1.0-rc2.1
+---
+Updated package.json version to 2.1.0-rc2.1 and verified all 152 unit tests pass. Staged all changes and committed release commit v2.1.0-rc2.1. Created git tag v2.1.0-rc2.1 and successfully pushed main branch and tags to GitHub repository.
+
+---
+id: fcc481f1-50d3-4f91-9aa6-4024a14885b2
+createdAt: 2026-07-31T19:50:23.813Z
+importance: 3
+tags:
+  - package
+  - release
+  - version
+taskId: null
+---
+Updated package.json version string from 2.1.0-rc2.1 to 2.1.0-rc3 per user request. Verified that no other references to the release candidate version string existed in the codebase. Ran the test suite via neuron exec to confirm all 152 unit tests across 27 test files continue to pass cleanly.
+
+---
+id: 3eb1cabd-133f-43af-8d71-0919c9e9c523
+createdAt: 2026-07-31T19:56:54.907Z
+importance: 3
+tags:
+  - skill
+  - neuron-memory
+taskId: null
+---
+Updated
+
+---
+id: e7ef10ac-7c40-4a5f-86c9-382cd5340a3f
+createdAt: 2026-07-31T20:01:00.783Z
+importance: 3
+tags:
+  - skill
+  - architecture-scan
+  - neuron-memory
+taskId: null
+---
+Updated
+
+---
+id: 289cdcdc-7577-4423-b0ee-96a0eefa8466
+createdAt: 2026-07-31T20:07:06.368Z
+importance: 3
+tags:
+  - config
+  - scan
+  - architecture
+  - neuron-memory
+taskId: null
+---
+Updated
+
+---
+id: 781ca207-f991-4c31-abfa-e3c3b982ba46
+createdAt: 2026-07-31T20:19:08.909Z
+importance: 3
+tags:
+  - architecture
+  - drift
+  - diff
+  - ticket-03
+taskId: 03-drift-detection-diffing
+---
+Completed
+
+---
+id: 3419446c-4cbf-4683-930c-c2679f4004bf
+createdAt: 2026-07-31T20:25:32.536Z
+importance: 3
+tags:
+  - scan
+  - drift
+  - auto-rescan
+taskId: 03-drift-detection-diffing
+---
+Enabled
+
+---
+id: c21fc957-482e-40e8-a509-893ebfcab1f4
+createdAt: 2026-07-31T20:28:03.105Z
+importance: 3
+tags:
+  - scan
+  - drift
+  - learn-command
+taskId: 03-drift-detection-diffing
+---
+Updated
+
+---
+id: 39ad4d0a-2f99-4c67-9498-a23ff57734f0
+createdAt: 2026-07-31T20:30:33.509Z
+importance: 3
+tags:
+  - deprecation
+  - cli
+  - memory
+taskId: 03-drift-detection-diffing
+---
+Folded
+
+---
+id: 6065b589-f77c-4d3a-98ed-fa82d40929e4
+createdAt: 2026-07-31T20:33:47.712Z
+importance: 3
+tags:
+  - scan
+  - config
+  - auto-scan
+taskId: 03-drift-detection-diffing
+---
+Updated
+
+---
+id: 7a781419-e0f0-4fcb-8dc6-44e8a631e9dd
+createdAt: 2026-07-31T20:36:29.768Z
+importance: 3
+tags:
+  - summarizer
+  - onnx
+  - cjk-filter
+taskId: 03-drift-detection-diffing
+---
+Added
+
+---
+id: 7c0033f2-11d6-4d06-8bc7-61497df26152
+createdAt: 2026-07-31T20:48:57.308Z
+importance: 3
+tags:
+  - e2e
+  - benchmark
+  - testing
+  - ticket-04
+taskId: 04-deep-testing-suite
+---
+Implemented
+
+---
+id: 32e4942b-71e6-45f1-a10c-55ff72658296
+createdAt: 2026-08-01T02:18:08.239Z
+importance: 3
+tags:
+  - release
+  - 2.1.0
+  - scanner
+  - drift
+taskId: 05-release-verification-2.1.0
+---
+Released @kovartravis/neuron v2.1.0 stable, promoting 2.1.0-rc5 and packaging the architecture-tree feature set: neuron scan blueprint ingestion, 4-bucket drift detection via --diff/--check, the fingerprint drift guard, and the 6-pillar deep E2E benchmark suite. Rewrote README, .claude/skills/neuron-memory/SKILL.md, CLAUDE.md, CONTEXT.md, MASTER_HELP and SCAN_HELP, and wrote a full CHANGELOG 2.1.0 section covering Added/Changed/Fixed/Known Limitations. Corrected the false tree-sitter AST claims across docs since TreeSitterScanner is regex-based and web-tree-sitter was never a dependency, marked ADR 0003 Deferred, and filed tracking ticket 06-real-tree-sitter-ast-engine.md. Also excluded tests from the tsc build (tarball 142 to 82 files) and fixed neuron exec destroying quoted arguments. 179/179 unit tests pass; commit 5f2f093 and tag v2.1.0 pushed to origin/main.
+
+---
+id: 9754dda9-0d4e-4b21-939d-0a659da980cd
+createdAt: 2026-08-01T02:48:22.791Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - planning
+  - release
+taskId: neuron-2.2.0
+---
+Ran /wayfinder to chart the neuron 2.2.0 release map after publishing v2.1.0. Conducted a grilling session covering destination, rc slicing, grammar distribution, missing-grammar behaviour, LLM job selection, recall mechanism, compatibility disclosure, recall rc splitting, and the fate of the 4-step protocol block. Created .scratch/neuron-2.2.0/map.md plus 21 child tickets in issues/, wired the blocking graph, and verified it (frontier is tickets 01 and 10; ticket 10 harness research is AFK and unblocked from day one so it can run parallel with rc1). Superseded .scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md by splitting it into new tickets 01-03 and marked the 2.1.0 map complete. Surfaced one gap the old ticket 06 missed: existing users' 2.1.0 regex-derived drift baselines will manufacture phantom drift across all four buckets when compared against 2.2.0 AST scans, which breaks 'neuron scan --check' in CI for anyone gating on it; this is now ticket 03.
+
+---
+id: a6a98b0b-b19c-4f8e-9f47-a3315ff251e5
+createdAt: 2026-08-01T03:02:31.797Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - tree-sitter
+  - rc1
+taskId: neuron-2.2.0-01
+---
+Resolved wayfinder ticket 01 (Tree-Sitter Grammar Acquisition & Init-Time Caching) on the neuron 2.2.0 map, the first ticket of the 2.2.0-rc1 band. Added web-tree-sitter@0.26.11 as the only new runtime dependency and created src/scanner/grammars.ts implementing GRAMMAR_SPECS for 8 pinned grammars, a manifest-attributed disk cache under env-paths (overridable via NEURON_GRAMMAR_DIR), npm registry tarball fetching with a hand-rolled tar reader, and a GrammarLoader that returns null rather than throwing for unavailable grammars. Wired fetching into neuron init with progress reporting and a stderr warning plus JSON field listing unavailable grammars. Wrote 14 tests covering cache hit, cache miss, multi-grammar single download, unreachable registry, 404, corrupt tarball, missing artifact, version bump invalidation, unattributable wasm, and registry mirror support; full unit suite green at 193 tests across 30 files. Verified end to end against the live registry: all 8 grammars fetch in 1.0s totalling 8.49 MB and load in 1-5ms, tarball holds at 612.6 KB with zero wasm files. Landed ADR 0008 and moved ADR 0003 from Deferred to Partially implemented. Discovered and fed into ticket 02 that TypeScript's shipped tags.scm is unusable for symbol extraction (no function_declaration or method_definition rules) so TypeScript and TSX need hand-written queries, while the other languages can filter the shipped queries to @definition.* captures to drop call sites.
+
+---
+id: e8885ca8-516c-4ba3-bba5-4e2bb211f37d
+createdAt: 2026-08-01T03:36:33.466Z
+importance: 3
+tags:
+  - 2.2.0
+  - tree-sitter
+  - scanner
+  - ast
+  - wayfinder
+taskId: "02"
+---
+Resolved wayfinder ticket 02 (Replace Regex Extraction with Parsed-AST Symbol Queries) on the neuron 2.2.0 map, band 2.2.0-rc1. Created src/scanner/queries.ts holding the hand-written TypeScript/TSX S-expression query plus the node-type-to-kind tables, rewrote src/scanner/treesitter.ts to parse real syntax trees via the GrammarLoader from ticket 01, and wired src/scanner/analyzer.ts to the scanner while deleting its duplicate ScannedSymbol interface and parseSymbolsFromFile regex. Added parseFile returning per-file ParserFidelity (ast/regex/unsupported) and a parserFidelity tally on ScanResult as the input ticket 03 needs; widened the kind union with type/enum/module and added an 'exported' flag. Grew src/scanner/treesitter.test.ts from 4 to 22 tests covering multi-line signatures, nested declarations, decorated Python defs, a pure-call-site file yielding zero symbols, per-language kind correctness for Python/Go/Rust/Java/C++/JavaScript, tsx JSX parsing, and the polyglot-monorepo fixture. Full unit suite is 212 tests across 30 files, all green; the one failing e2e test (concurrency-stress multi-process contention) was verified to fail identically on a clean stash of HEAD and is unrelated flake. Symbol count on this repo fell 3290 to 233 (-92.9%) with 106 exported, cross-checked against grep to confirm no real declarations were lost. Left the blueprint baseline deliberately un-refreshed for ticket 03.
+
+---
+id: 64c53574-1f84-4c0f-99ea-b9ee696cf5e4
+createdAt: 2026-08-01T11:28:36.105Z
+importance: 3
+tags:
+  - 2.2.0
+  - fidelity
+  - drift
+  - scanner
+  - wayfinder
+  - tdd
+taskId: "03"
+---
+Resolved wayfinder ticket 03 (Parser Fidelity Labelling & Baseline Migration) on the neuron 2.2.0 map, band 2.2.0-rc1, after a /grill-with-docs design session that settled four decisions recorded in ADR 0009. Created src/scanner/fidelity.ts holding the SCANNER_GENERATION constant, the FidelityDescriptor type, and the parse/format/compare functions; summarizer.ts now writes a '## Parser Fidelity' section to the blueprint card as a default plus deviating files; diff.ts parses it back, refuses incomparable baselines wholesale via a new needsRebaseline result, and renders a 'Re-baseline Required' report instead of falsely claiming 'In Sync'; scan.ts exits 2 on incomparable versus 1 on drift; autoRescanIfDriftDetected re-baselines silently on mismatch; and analyzer.ts warns loudly on stderr when a grammar-capable language degrades to regex. Built test-first across five pre-agreed seams plus one added for the degradation warning, every slice red before green. Three pre-existing diff tests began failing correctly because they diffed against the legacy fixture that the new rule refuses, and were repointed at a new comparableBaselineMarkdown fixture. Final state 227 unit tests across 33 files plus all 6 E2E pillars green including Pillar 4 drift detection. Verified the whole migration end-to-end on this repo: scan --check exited 2 against the real 2.1.0 card, neuron scan re-baselined it, scan --check then exited 0. Also removed the dead 'neuron scan --force' flag, corrected the now-false SCAN_HELP note claiming extraction is line-oriented rather than AST-based, added four glossary terms to CONTEXT.md, and wrote the 2.1.0 to 2.2.0 CHANGELOG upgrade note.
+
+---
+id: aae7efd0-0631-48b7-a7d7-c187b7fb7d73
+createdAt: 2026-08-01T11:48:04.115Z
+importance: 3
+tags:
+  - 2.2.0
+  - release
+  - rc1
+  - readme
+  - docs
+  - wayfinder
+taskId: "04"
+---
+Cut wayfinder ticket 04 (Cut and Publish 2.2.0-rc1) on the neuron 2.2.0 map, then reworked the README on request. Bumped 2.1.0 to 2.2.0-rc1, wrote the CHANGELOG release section folding in tickets 01/02/03, restored the AST wording that 2.1.0 deliberately walked back across README.md, CONTEXT.md, SCAN_HELP and the packaged neuron-memory skill, and moved ADR 0003 from Partially implemented to Implemented. Corrected the ticket's stated scope of '9 languages' to the accurate 8 grammars covering 10 extensions, with 4 extensions remaining on the regex fallback, which reconciles to the 14 in SUPPORTED_SOURCE_EXTENSIONS. Verification: 227 unit tests across 33 files green, 9 of 10 E2E pillars pass with Pillar 4 reporting baselinePhantomChanges 0, and the packed tarball measured 613.1 KiB across 84 files with zero .wasm confirming grammars did not leak into the files array. Pillar 8 multi-process contention fails at droppedWriteRatio 0.08 against a 0.05 threshold but was previously proven pre-existing by stashing all scanner work and reproducing it on a clean tree. Committed and tagged v2.2.0-rc1 and pushed both, but deliberately did NOT run npm publish because the session was npm 401 and publishing is irreversible; the maintainer runs 'npm publish --tag rc'. Separately split the 250-line README into a selling-points README plus docs/COMMANDS.md, removing the now-false line-oriented-extraction caveat, the deleted --force flag, the stale 'exit 1 on drift' description and the stale '6-pillar' E2E count. Also surfaced that four duplicate blueprint cards exist in the decisions category because ingestScanResults locates the card by semantic query plus find rather than a stable identity; logged as fog on the map rather than deleted.
+
+---
+id: 067d429f-9f70-4888-a158-05ded24ef2c8
+createdAt: 2026-08-01T13:09:11.594Z
+importance: 5
+tags:
+  - benchmark
+  - longmemeval
+  - amb
+  - harness
+  - ticket-22
+  - retrieval
+taskId: null
+---
+LongMemEval benchmark harness restored and validated for neuron (ticket 22, top priority ahead of rc2). The AMB harness (github.com/vectorize-io/agent-memory-benchmark) is cloned shallow at benchmarks/agent-memory-benchmark/ (1.2GB, gitignored), with local-modifications.patch applied and the salvaged scripts/, src/memory_bench/memory/neuron.py and .env copied from ~/Repos/neuron-amb-integration-backup. Setup notes: the CLI entrypoint is 'omb' not 'amb' (README lags a rename); requires Python 3.11-3.13 so use 'uv sync --python 3.12' because uv defaults to 3.14 which has no onnxruntime wheels; uv installs to ~/.local/bin. Verified neuron is a registered provider and longmemeval split 's' has 500 questions across 6 categories (multi-session 133, temporal-reasoning 133, knowledge-update 78, single-session-user 70, single-session-assistant 56, single-session-preference 30). Correctness check passed: longmemeval sets isolation_unit='question' with user_id=question_id on both queries and documents, which maps onto neuron's scope filter, so there is no cross-question leakage even though the provider's prepare() ignores unit_ids and uses one shared sqlite file. Wrote scripts/neuron_retrieval_only.py which measures recall@1/5/10 with ZERO LLM calls (local embeddings only), making it free and deterministic and therefore suitable as a CI regression gate. Key trap found: load_queries(limit=N) returns questions in category order, so a limit-60 sample was 100% single-session-user (the easiest category) and produced a misleading 98.3% recall; always stratify before quoting a number. Measured ingestion at 43ms/doc, retrieval p50 56ms p95 108ms.
+
+---
+id: 104a98aa-5241-407c-8a92-b9ea0956dd23
+createdAt: 2026-08-01T15:53:08.927Z
+importance: 3
+tags:
+  - wayfinder
+  - longmemeval
+  - benchmark
+  - ticket-22
+  - ticket-06
+  - rc2
+taskId: "22"
+---
+Session 2026-08-01: packaged the LongMemEval benchmarking work into two shareable deliverables and then parked its paid half at the maintainer's direction. Delivered (a) docs/benchmarks/longmemeval-retrieval.md, a public report leading with recall@1 83.3%, recall@5 96.2%, recall@10 98.3% across 479/500 scored questions and 23,867 documents with zero cross-unit leakage, plus a per-category table, p50/p95 latency, full method, and an explicit 'What this is not' section stating these are retrieval-only figures NOT comparable to AMB's end-to-end hindsight 94.6% or hybrid-search 74.0%; and (b) benchmarks/longmemeval/, a self-contained harness holding neuron.py (AMB MemoryProvider), neuron_bridge.mjs (stdio JSON bridge, made location-independent via a NEURON_DIST env var), retrieval_eval.py (zero-LLM recall runner), setup.sh and a README documenting the six traps that cost time. Then updated wayfinder ticket 22 to Status parked with the retrieval deliverables checked off, recorded four corrections to its original premises, and wrote an explicit unpark command and ~4 dollar budget into the ticket; lifted the map's Priority-override block so future sessions no longer see 22 outranking the rc2 band, and claimed ticket 06 (write-side enrichment). Ticket 06 was left at the very start of its TDD loop: seams identified (withTimeout, resolveVocabulary, MemoryEnricher.enrich, the memory add CLI path, neuron status counters) and src/components/timeout.test.ts written and RED with no implementation behind it — that untracked file will fail npm test until src/components/timeout.ts exists or the test is removed.
+
+---
+id: 8e650898-e498-4f99-a251-82290875ae82
+createdAt: 2026-08-01T16:57:03.169Z
+importance: 3
+tags:
+  - wayfinder
+  - grilling
+  - enrichment
+  - spec
+taskId: "06"
+---
+Wayfinder session on the neuron 2.2.0 map: picked up ticket 06 (write-side enrichment), which the previous session had claimed without starting, and ran a full grilling session across eight questions before publishing a spec. The grilling reshaped the ticket substantially rather than confirming it — tags left the LLM entirely for centroid cosine after timing showed the 0.5B model costs 3205ms to load per process against the embedder's 177ms, content-hash caching was dropped as cargo-culted from the summarizer, and the --category flag became optional on add only with no default. Published .scratch/write-side-enrichment/spec.md labelled ready-for-agent, rewrote ticket 06's Design and Deliverables to point at it, created ticket 23 (configurable automatic pruning) after the maintainer redirected a clamp-on-importance question into a full pruning redesign, and updated the map with an 'In flight' section plus the rc2 band table. No implementation code was written; ticket 06 remains claimed with implementation outstanding.
+
+---
+id: c5d2c5d1-261e-4e96-b657-d2bb13826789
+createdAt: 2026-08-01T17:26:00.180Z
+importance: 3
+tags:
+  - enrichment
+  - llm
+  - wayfinder
+taskId: 06-write-side-enrichment
+---
+Implemented and resolved wayfinder ticket 06 (write-side enrichment) for neuron 2.2.0-rc2, AFK from the ready-for-agent spec at .scratch/write-side-enrichment/spec.md. Added the llm.enrichment config namespace with cross-reference validation, centroid-cosine tag selection over a closed vocabulary (src/components/enricher.ts), both category strategies, a schema v6 enriched_at column with an unbounded backlog drain that fires before any query, the 'neuron memory enrich' subcommand, the withTimeout primitive the codebase lacked, degradation counters in 'neuron status', and a process-level Qwen singleton so a scan and enrichment share one 3.2s model load. Made --category optional on 'memory add' only. Wrote three new E2E pillars (10 importance and prune safety, 11 category strategy A/B, 12 enrichment retrieval non-regression) and registered them in benchmarks/e2e-runner.js; Pillar 12 met ADR 0010 section 7's bar with delta 0.0 on recall@1, recall@5 and MRR between the enabled and disabled arms. Final state: 252 unit tests green (was 231), 14 of 14 pillars green, blueprint re-baselined with 'neuron scan --check' exiting 0. Updated CLAUDE.md, the packaged neuron-memory skill with an enrichment interview section, CONTEXT.md with six glossary entries, and amended ADR 0010.
+
+---
+id: 092258c7-11e5-4b95-a550-2957e391d514
+createdAt: 2026-08-01T21:22:33.628Z
+importance: 3
+tags:
+  - wayfinder
+  - adr
+  - enrichment
+taskId: "23"
+---
+Grilled ticket 23 (configurable automatic pruning) for the neuron 2.2.0 wayfinder map and wrote the executable handoff at .scratch/configurable-pruning/ab-test-plan.md. Settled ten decisions: pruning is a recall-quality feature for history-shaped noise only (not disk, the DB is 2.9MB); hard DELETE with no undo, no soft-delete column and no reuse of ticket 08's supersession because superseded means lineage while pruned means routine-and-old; per-category config with defaultImportance plus a prune block whose absence means never pruned, which makes the upgrade path safe by construction since no existing neuron.yaml has that block; lazy trigger off neuron memory query behind a last_prune_check_at 24h skip in meta; and usage-based deletion explicitly rejected because it punishes the rare-but-critical failure fix that is never retrieved until it matters. The A/B was scoped to two experiments with a pre-committed ship bar: Experiment 1 compares a recoverability binary against a rescaled 1-5 importance prompt, disqualifying any arm that false-deletes an unrecoverable entry; Experiment 2 is a paired damage-versus-gain comparison over the real store then a synthetic 1500-entry scale probe, and a double null means automatic pruning is removed from 2.2.0 rather than shipped disabled. Ticket 23 is left claimed and unresolved pending the verdict, and a proposed split into tickets 24 and 25 awaits maintainer approval.
+
+---
+id: 6306b075-224a-4277-a42e-6ec794208393
+createdAt: 2026-08-01T21:59:20.362Z
+importance: 3
+tags:
+  - wayfinder
+  - adr
+  - rc2
+taskId: "24"
+---
+Executed wayfinder ticket 24 (pruning A/B) AFK per .scratch/configurable-pruning/ab-test-plan.md end to end. Labelled all 158 history entries plus 25 learning/decisions negative controls (11 ground-truth unrecoverable), scored A1 (recoverability binary) and A2 (recalibrated 1-5 scale) against them using the real shipped Qwen1.5-0.5B model; both arms disqualified under the plan's own bar (A1 false-deleted 2 of 11 unrecoverable entries including one ADR, A2 false-deleted 4 of 11 including three ADRs), which per the plan's section 3 collapses Experiment 2 since there is no safe judgement to prune with, so the real/synthetic retrieval comparison was not executed though its infrastructure (query filter, keyword-overlap relevance labels, paired-comparison runner) was built and validated. A scoring-integrity pass caught and fixed two of my own labelling errors before finalizing, and the qualitative disqualification held either way. Verdict: automatic pruning is removed from 2.2.0; ticket 06's importance:off default stands with no ADR reversal; ticket 25 ships its config-schema and collision-fix scope only. Live store verified byte-identical throughout (2,916,352 bytes, MD5 16c9555c39668438e1de1a10c18119d0) using SQLite's online backup API rather than a raw file copy, since a live neuron ui process held it open under WAL for the entire session; all experiment work ran against scratch copies outside both the repo and the neuron data dir.
+
+---
+id: 77192012-5e0f-4282-a9db-98d68208f9ba
+createdAt: 2026-08-02T00:38:55.584Z
+importance: 3
+tags:
+  - failure-fix
+  - rc2
+  - adr
+taskId: v2.1.2
+---
+Shipped v2.1.2 fixing a silent data-loss defect in the neuron CLI, found while grilling wayfinder ticket 08. Root cause is one family of bug with four symptoms: argv boundaries were discarded. An unquoted argument arrives as several argv entries, and 'memory add' and 'memory update' read only positionals[0] while dropping the rest, 'memory query' truncated the same way so 'memory query tree sitter grammar' silently searched for 'tree' alone, unknown or mistyped flags such as --tag and --importanc fell through to positionals and vanished so their values were silently defaulted, and '--help' was itself unrecognised so 'neuron memory add --help' stored a memory whose content was the literal string '--help'. All four exited 0 and reported success. Verified that published stable 2.1.1, the default install for every user, was affected at all five call sites, introduced in commit 7c6eac5 on 2026-07-26. Fixed by rejecting unrecognised dash-prefixed tokens in parseFlags with a nearest-match suggestion and a '--' end-of-flags escape, adding per-subcommand positional-count guards that refuse rather than truncate, joining query positionals, and recognising --help in parseFlags. Confirmed 'neuron exec' passthrough is unaffected because it splits at '--' before flag parsing and never calls parseFlags. Shipped as a patch off the v2.1.1 tag on branch fix/2.1.2-argv-boundaries, tagged v2.1.2, then cherry-picked onto feat/2.2.0-tree-sitter-grammars. 189 tests pass on the patch branch and 258 on the 2.2.0 branch, including 6 new regression tests covering every symptom. npm publish is outstanding and owned by the maintainer.
+
+---
+id: 0afc0640-462f-45b1-bcb6-7c8c8752b37d
+createdAt: 2026-08-02T04:17:24.667Z
+importance: 3
+tags:
+  - tickets
+  - 2.1.x-hardening
+taskId: null
+---
+Filed nine tickets under .scratch/2.1.x-hardening/ documenting the session's bug-sweep work across v2.1.2 through v2.1.6: five resolved tickets (01 argv-boundary truncation, 02 prune-docs blast radius, 03 delete/update ignoring --category, 04 dual-mode status misreport, 05 sync conflict guessing) each linking its exact commit hash on main, one resolved ticket for the main-orphaned-from-releases incident that changed the working pattern partway through the session (06), and three open/unclaimed tickets for items surfaced but not chased down: giving sync a real last-modified signal (07, the deferred proper fix for 05's stopgap), whether split-mode concurrent writes are race-safe (08, unverified suspicion from mdStorageAdapter's read-modify-write shape), and whether computeMemoryHash is ever compared across different ids (09, speculative). Built a map.md index following this repo's existing feature-directory convention (Destination/Notes/Decisions so far/Not yet specified/Out of scope/Frontier), matching the shape already used by .scratch/md-file-management and the neuron-2.2.0 wayfinder map, though this is a bug-tracking effort rather than a wayfinder-charted feature. Committed and pushed to main only; not forward-ported to the 2.2.0 branch since the tickets are about the 2.1.x hardening line specifically and the underlying code fixes are already cherry-picked there.
+
+---
+id: bf065516-9c27-4edf-a436-77c9ad0f432b
+createdAt: 2026-08-02T12:39:22.492Z
+importance: 3
+tags:
+  - wayfinder
+  - ticket-07
+  - ticket-26
+  - ticket-27
+  - rc2
+  - 2.2.0
+taskId: "07"
+---
+Wayfinder session 2026-08-02 on the neuron 2.2.0 map (branch feat/2.2.0-tree-sitter-grammars, where the map lives — NOT main). Claimed the frontier ticket 07 (salvage expansion) and ran /grill-with-docs on it. Rather than designing the feature, the session ran ticket 07's own scope step 3 first: built a calibration probe reusing Pillar 7's ADVERSARIAL_CASES against the real embedder, which took about a second and killed the feature. Outcome: ticket 07 ruled out of scope with a full Answer; ADR 0010 amended (sections 1 and 2 withdrawn, its false '>= 0.75 for any top hit' premise corrected, section 7's row for 07 struck, ADR left Accepted because sections 3, 5 and 7's method still govern 06); ticket 26 filed to remove model-based importance inference entirely and wired to block 09; ticket 27 filed for the structurally-inert minScore defect, unbanded and on the frontier; ticket 09 rewired from 'blocked by 05, 06, 07, 24' to 'blocked by 05, 06, 24, 26' with its scope corrected in four places where it still promised salvage expansion, four LLM jobs, and a CONTEXT.md edit that is now the opposite of correct. The map's Destination theme 2 was rewritten and the rc2 band row updated. Probe, results and a written report preserved at .scratch/salvage-expansion/ with a vitest config so it re-runs on demand without joining the normal suites. Frontier now reads 10, 26, 27. Process note for future sessions: the naming collision between ADR 0007's Pillar 2 title and the later Pillar 7 sent the ticket's stated bar at a corpus pinned to recall 1.0 — always check a named benchmark's current measured numbers before trusting a ticket's choice of bar.
+
+---
+id: 12145e62-0cf9-4b16-a70c-e858936030f8
+createdAt: 2026-08-02T13:01:31.406Z
+importance: 4
+tags:
+  - enrichment
+  - importance
+  - llm
+taskId: "26"
+---
+Resolved neuron 2.2.0 wayfinder ticket 26 (Remove Model-Based Importance Inference), the last blocker on ticket 09 (Cut and Publish 2.2.0-rc2). Deleted inferImportance, buildImportancePrompt, parseImportance, ImportanceInferenceResult and the importance field of CategoryInferenceResult from src/components/enricher.ts; renamed inferCategoryAndImportance to inferCategory; removed the llm.enrichment.importance key from src/config/neuronYaml.ts. After confirming with the maintainer, also removed the now-unreachable enrichment backlog: drainEnrichment, countPendingEnrichment, drainEnrichmentIfPending, clampImportance, the 'neuron memory enrich' subcommand and enrichment.pending from neuron status, while keeping the enriched_at column and migration v6. Re-pointed E2E Pillar 10 from importance inference to prune safety, where it now quantifies ticket 23's live hazard (9 of 12 entries deleted at the default ceiling, 3 of 6 critical) and asserts that --importance protects; it no longer loads the model so it runs in milliseconds instead of minutes. Corrected CONTEXT.md, docs/COMMANDS.md, ADR 0010, CLAUDE.md, CHANGELOG.md and the packaged neuron-memory skill, which was still documenting an importance config key and a 'neuron memory enrich' command. Verification: tsc clean, 270 tests green (267 unit + 3 enrichment pillars); the one full-suite failure is Pillar 8 multi-process contention at 3/50 rejected writes, confirmed pre-existing by stashing the branch and reproducing on a clean tree.
+
+---
+id: d79d688b-8f48-4571-91f2-aca67fec1d6c
+createdAt: 2026-08-02T13:24:25.709Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "28"
+---
+Charted the 2.2.0-rc5 markdown-first band on the wayfinder map at .scratch/neuron-2.2.0/ from the maintainer's repositioning handoff, adding tickets 28-34 and updating the map destination from three themes to four. Before charting, audited the supplied README draft against the built 2.2.0-rc1 CLI in a scratch project and found four load-bearing claims false, which reshaped the band: md-only is not the default and neuron init writes no neuron.yaml; md-only has no semantic search (measured: exact substring 1 hit, same meaning 0 hits, same words reordered 0 hits); md-only enrichment infers nothing and hard-errors on omitted --category; neuron status reports totalCount 0 with entries on disk. Tickets: 28 grilling on the md-only embedding layer and parity bar (blocks the rest), 29 real semantic search, 30 enrichment plus honest counts, 31 make md-only the actual default, 32 ship the README, 33 docs audit, 34 cut rc5. Ticket 21 (stable) now also blocked by 34. Cleared the 'Enrichment in md-only storage mode' fog patch as graduated into 30; added two new fog patches (plan-vs-architecture-diff, blocked on a spec file that does not exist; and hand-edit semantics for markdown entries). Recorded three non-goals as out-of-scope. Frontier is now 09, 10, 27, 28.
+
+---
+id: bdbea175-cfa8-4269-b90e-c034db8bf775
+createdAt: 2026-08-02T18:55:03.497Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+Worked neuron 2.2.0 wayfinder ticket 28 (What md-only Parity Actually Means) as a grilling session, resolving it and re-scoping the rc5 band. Skipped ticket 09 at the head of the frontier because it is a release cut rather than a grilling, and chose 28 over 27 because it blocked five tickets. Seven decisions were put to the maintainer one at a time, each grounded in a measurement taken during the session rather than in the ticket text: embedder throughput (127 ms warm model load, 2.39 ms per embed), SHA-256 over the whole store (0.006 ms), the live scope distribution (1 distinct value across 264 entries, 0 manual-scope rows, 0 promotion matches, 837 query_logs rows worth 1.36 MB of a 3.1 MB database), and the SQLite-versus-markdown entry counts on this repo (264 versus 15). The maintainer overrode the first proposed answer, correctly observing that a bespoke env-paths embedding cache was dual mode with extra steps, which redirected the whole design toward deleting md-only instead of fixing it. Three findings changed the map rather than just the ticket: ticket 35 was promoted from sibling to hard prerequisite because mdStorageAdapter.ts:326 mints a fresh UUID on every read for an entry missing its id, which under strict mirror plus reconcile-on-every-command becomes a permanent insert-delete churn loop that re-embeds forever; ticket 30 was ruled out of scope because its defects vanish rather than get fixed; and ticket 31 carried a prior maintainer ruling against building an upgrade path that this session superseded, since a bare default flip under strict mirror would delete 249 entries from the maintainer own store. Wrote the spec at .scratch/md-first/spec.md, ADR 0011, new ticket 38 (remove scope), rewrote ticket 29 as the reconcile engine, and rewired blockers on 31, 32 and 34. Frontier is now 09, 10, 27, 35, 37, 38.
+
+---
+id: dbb076f1-50f8-4c37-8241-e0ae32353c7e
+createdAt: 2026-08-02T21:42:24.372Z
+importance: 3
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: ticket-29
+---
+Implemented and resolved neuron 2.2.0 ticket 29 (the Markdown<->Vector Reconcile Engine) in a single AFK session, invoked via /wayfinder work-through-the-map mode naming ticket 29 and /tdd for implementation. Claimed the ticket (its blockers 28, 35 and 38 were already resolved), read the neuron-2.2.0 map, ADR 0011, and the md-first spec for full context, then worked test-first in vertical slices: config-layer mode aliasing, NeuronMemory always keeping its database plus new getMeta/setMeta methods, DualStorageRouter's flipped markdown-first write ordering, the new reconcile engine (bootstrap seed, per-entry content-hash diff, strict-mirror deletion), and the split-mode dispatch fix, each with red tests confirmed failing before implementation. Rewrote several pre-existing tests whose assertions encoded now-superseded behavior (md-only substring search, per-category mtimeMs cache invalidation, and vector-only-orphan salvage-on-next-update) rather than leaving them passing against dead code paths. Measured reconcile latency informally on a 264-entry store for ticket 32's benchit needs. Ran the full unit and e2e suite repeatedly to green (303 tests), diagnosed and ruled out one intermittent concurrency-stress test failure as a pre-existing multi-process migration race unrelated to this ticket's changes. Closed ticket 29 with a detailed Answer section, updated its Deliverables checklist, and appended a Decisions-so-far entry to the neuron-2.2.0 map. Ticket 31 (make md the actual default) is now unblocked as a result.
+
+---
+id: 5ae0a8ee-0b50-4a53-b441-023ac920e87e
+createdAt: 2026-08-03T01:41:14.291Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "09"
+---
+Resolved wayfinder ticket 09 (Cut and Publish 2.2.0-rc2) via /wayfinder work-through-the-map mode. First committed leftover uncommitted work from ticket 29 (markdown-vector reconcile engine) separately, verifying 290 unit tests green before committing, since it belonged to rc5 not rc2. Then executed ticket 09's scope: bumped package.json/package-lock.json to 2.2.0-rc2, wrote a CHANGELOG section covering write-side enrichment (ticket 06 had shipped with zero CHANGELOG entry for the actual feature, only its later importance-removal amendment), stated the 05 gating bar honestly per-job (06 passed non-regression, 07/08 never reached the bar because their premises failed first, 23/24 removed on the A/B verdict), and measured neuron memory query latency (cold ~4.8s first invocation, warm p50 ~223ms/p95 ~229ms over 20 runs) as the budget baseline for rc3's auto-injection. Ran npm test (290/290 green) and npm run test:e2e (12/13 pillars, Pillar 8 multi-process contention pre-existing and unrelated). Tagged and pushed v2.2.0-rc2, leaving npm publish to the maintainer per ticket 04's precedent.
+
+---
+id: dd9278a5-bb98-4686-9091-f9a7115e8b8d
+createdAt: 2026-08-03T11:38:04.445Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "11"
+---
+Worked wayfinder ticket 11 (recall adapter architecture) for neuron 2.2.0 rc3 as a grilling session; it ended UNCLAIMED rather than resolved because two of its eight decision points remain open. Settled six points and wrote them into the ticket: the adapter scope is cut from five harnesses to four on the principle 'ship only what neuron can honestly describe' (17 Antigravity and 18 OpenCode ruled out of scope for undocumented reliability despite having the strongest mechanisms, new ticket 40 created for Cursor which ticket 10 researched but never ticketed); capability modelled as a lifecyclePoint-to-supportRecord map with a first-class 'unknown' value and a derived rather than stored fidelity label; a session-scoped injection ledger so pre-prompt recall injects deltas instead of re-injecting the same entries every turn; a third execution-only lifecycle point 'context-reset' to clear that ledger on compaction with a turn-count TTL fallback; a neuron-enforced character ceiling that never relies on the harnesses' spill-to-file overflow because spill silently converts deterministic recall back into agent-invoked recall; and two neuron init consent policies that both resolve to ASKING the user (which hook target, and whether to overwrite an existing entry) after two classification-based designs were rejected during the grilling for needing a referent that drifts across versions. Point 4's relevance floor acquired a new blocking ticket 39 after a pilot measurement (271 entries, 20 queries, script and report saved under research/) found a viable cosine gate at 0.60 resting on only a 0.061 margin; ticket 39 sweeps three gate quantities on the existing free LongMemEval retrieval harness (500 questions, 23867 docs, zero LLM calls) against a bar committed in advance of zero recall regression, measurable volume reduction and 0 percent false silence. Point 6 (multi-harness resolution) was never reached and is flagged for the resuming session. Two record corrections: ticket 09's cold query latency of 4.8s does not reproduce (three fresh processes measured 0.20-0.22s, which is what a per-turn hook actually pays), and the map's one-line gist of ticket 05 compresses 'a nonsense query's top hit SCORE' into what reads as any top hit's cosine, which caused a wrong turn mid-grilling until ticket 07's entry and a recalled learning confirmed the provenance.
+
+---
+id: 84fd2777-3cf5-41e3-89c2-4374d17eb37f
+createdAt: 2026-08-03T12:15:46.793Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - retrieval
+taskId: "27"
+---
+Worked neuron 2.2.0 wayfinder ticket 27 ('minScore Is Structurally Inert') to resolution on 2026-08-03 via a /grilling session, claiming it as the first unblocked unclaimed ticket on the frontier. Grilled nine decisions with the maintainer and grounded each against the live 274-entry store rather than the ticket's algebra: kept a gate rather than dropping to bare top-k, stripped importance from the fused score (rejecting the tie-break framing as a fiction since RRF ranks are unique per row), kept importance as a prune-only field after enumerating all six of its remaining consumers, adopted a conjunctive lexical+cosine gate after measuring that the two legs fail on disjoint query sets, made zero-results an announced output carrying the rejected-candidate count, moved the gate into the retrieval layer to run on both exec and memory query at the maintainer's override, left minScore untouched since no release ships before ticket 39, and folded the onExec rule-merge defect (Math.max on limit / Math.min on minScore, so overlapping rules always widen) into the implementation ticket. Deliverables: ticket 27 resolved with a ten-section answer; new ticket 41 created (unblocked, rc3) carrying every change justified structurally rather than by a fitted constant; ticket 39's design rewritten because 27 superseded its three-quantity sweep — the hybrid-score arm ceased to exist and the normRrf arm proved bimodal rather than sweepable — leaving it one fitted constant plus the lexical leg's false-silence rate, with its pre-committed bar deliberately untouched; ADR 0012 written; map updated with the decision, the rc3 band row, a rewritten ticket-11 note, a graduated payload-budget fog patch and a new fog patch recording that confidently-wrong retrieval remains unowned. Measured impact recorded throughout: neuron exec -- ls currently injects 5 entries and 4245 characters for a command unrelated to anything in the store.
+
+---
+id: 5bc8e911-6d96-4a03-82e7-a4dfb759214f
+createdAt: 2026-08-03T12:39:45.963Z
+importance: 4
+tags:
+  - failure-fix
+  - adr
+  - md-storage
+taskId: "31"
+---
+Resolved neuron 2.2.0 wayfinder ticket 31 (Make 'md' the Actual Default) on 2026-08-03, the lowest-numbered ticket on the frontier. Flipped both schema defaults in src/config/neuronYaml.ts from vector-only to md, added src/config/scaffold.ts so 'neuron init' writes a neuron.yaml when a project has none (never touching an existing one, including an ancestor directory's), reported the governing config in init's JSON output, reconciled the packaged neuron-memory skill's storage-mode vocabulary (md-only/dual are gone; md is default; the interview is now a refinement step because init already produced a working project), and corrected docs/COMMANDS.md plus a CHANGELOG entry. Scope item 5 — 'check neuron scan's default category still resolves' — turned out to hide a silent data-loss bug in bootstrapSeed, which seeded only declared categories and left undeclared ones (scan's 'architecture') to be deleted by the strict mirror the moment a user declared them; measured 1 of 2 entries destroyed on the CLI, fixed by seeding the union of requested and stored categories. Also added NeuronMemoryOptions.storageMode to pin fabricated-projectRoot fixtures, and made a failed markdown write name its reason on stderr instead of returning a bare status 'error'. Tests 290 to 303, full suite green; 12/13 E2E pillars with Pillar 8 the pre-existing 'no column named scope' failure. Deliberately not done: README.md (ticket 32's, which was handed the generated template as its contract) and flipping this repo's own neuron.yaml, which would bootstrap-seed 264 entries into .neuron/*.md and is the maintainer's call.
