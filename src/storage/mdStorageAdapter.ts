@@ -111,7 +111,14 @@ export class MdStorageAdapter {
     const existingEntries = await this.readCategory(category);
 
     const memoryId = entry.id || crypto.randomUUID();
-    const createdAt = entry.createdAt || new Date().toISOString();
+    const existingIndex = existingEntries.findIndex(m => m.id === memoryId);
+    // An upsert onto an id that already exists is a replace, not a rebirth —
+    // createdAt must survive it the same way updateEntry already preserves
+    // it, or every repeat write (e.g. a re-run `neuron scan`) looks like a
+    // brand new entry in a diff even when nothing else changed (ticket 37).
+    const createdAt = entry.createdAt
+      || (existingIndex >= 0 ? existingEntries[existingIndex].createdAt : undefined)
+      || new Date().toISOString();
 
     const fullMemory: Memory = {
       id: memoryId,
@@ -124,7 +131,6 @@ export class MdStorageAdapter {
       createdAt,
     };
 
-    const existingIndex = existingEntries.findIndex(m => m.id === memoryId);
     if (existingIndex >= 0) {
       existingEntries[existingIndex] = fullMemory;
     } else {

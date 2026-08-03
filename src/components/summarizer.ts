@@ -201,10 +201,9 @@ export class SmolLM2Summarizer {
       components: Array<{ file: string; purpose: string; exports: string[]; fidelity?: string }>;
     }>;
     dependencyGraph?: Record<string, string[]>;
-  }, options?: { category?: string }): Promise<{ summary: string; markdown: string }> {
+  }): Promise<{ summary: string; markdown: string }> {
     const projectName = scanData.manifest.name || scanData.project;
     const techStackStr = scanData.manifest.techStack.join(', ') || 'TypeScript';
-    const category = options?.category || 'architecture';
 
     const overviewSummary = `${projectName} is a ${techStackStr} software system structured into ${scanData.modules.length} primary architectural modules.`;
 
@@ -216,14 +215,7 @@ export class SmolLM2Summarizer {
       ...(scanData.manifest.devDependencies || [])
     ].sort();
 
-    let md = `---
-category: ${category}
-title: "Repository Architectural Blueprint: ${projectName}"
-tags: [architecture, topology, scan, deep]
-mtime: ${new Date().toISOString()}
----
-
-# 🏛️ Repository Architectural Blueprint: ${projectName}
+    let md = `# 🏛️ Repository Architectural Blueprint: ${projectName}
 
 ## 🚀 System Purpose & Tech Stack
 ${overviewSummary}

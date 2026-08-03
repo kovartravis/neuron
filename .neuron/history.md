@@ -2198,3 +2198,15 @@ tags:
 taskId: "31"
 ---
 Resolved neuron 2.2.0 wayfinder ticket 31 (Make 'md' the Actual Default) on 2026-08-03, the lowest-numbered ticket on the frontier. Flipped both schema defaults in src/config/neuronYaml.ts from vector-only to md, added src/config/scaffold.ts so 'neuron init' writes a neuron.yaml when a project has none (never touching an existing one, including an ancestor directory's), reported the governing config in init's JSON output, reconciled the packaged neuron-memory skill's storage-mode vocabulary (md-only/dual are gone; md is default; the interview is now a refinement step because init already produced a working project), and corrected docs/COMMANDS.md plus a CHANGELOG entry. Scope item 5 — 'check neuron scan's default category still resolves' — turned out to hide a silent data-loss bug in bootstrapSeed, which seeded only declared categories and left undeclared ones (scan's 'architecture') to be deleted by the strict mirror the moment a user declared them; measured 1 of 2 entries destroyed on the CLI, fixed by seeding the union of requested and stored categories. Also added NeuronMemoryOptions.storageMode to pin fabricated-projectRoot fixtures, and made a failed markdown write name its reason on stderr instead of returning a bare status 'error'. Tests 290 to 303, full suite green; 12/13 E2E pillars with Pillar 8 the pre-existing 'no column named scope' failure. Deliberately not done: README.md (ticket 32's, which was handed the generated template as its contract) and flipping this repo's own neuron.yaml, which would bootstrap-seed 264 entries into .neuron/*.md and is the maintainer's call.
+
+---
+id: bb334b32-f4a6-49a0-bfd8-b87f17ecde1e
+createdAt: 2026-08-03T17:13:34.204Z
+importance: 4
+tags:
+  - drift
+  - md-storage
+  - adr
+taskId: "37"
+---
+Resolved ticket 37 (Architecture Card as a Deterministic Artifact) via TDD, AFK. Removed the non-deterministic mtime and the entire redundant nested frontmatter block from synthesizeArchitecture's card template; replaced ingestScanResults' semantic-search card lookup with a deterministic id derived from a sha256 hash of the category, passed directly to the upsert (no query at all); fixed a related MdStorageAdapter.writeEntry bug where createdAt was re-minted on every upsert instead of being preserved on update. Verified end-to-end against this repo's own store: 6 pre-existing duplicate/corrupt blueprint cards in .neuron/decisions.md reconciled down to 1, repeated real 'neuron scan' runs now produce a byte-identical file and a clean git status, and 3 consecutive dry-run/real-ingest calls all resolve to the same card id. 8 new/updated tests added across summarizer, ingest, mdStorageAdapter and a new scan.determinism.test.ts; full suite at 305/309 passing, the 4 failures confirmed pre-existing and unrelated (see the test-isolation learning entry just recorded).

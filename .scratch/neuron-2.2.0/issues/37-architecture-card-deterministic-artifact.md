@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: 2.2.0-rc5
 
@@ -96,11 +96,86 @@ whatever is chosen must be exact-match identity, never a similarity search.
 
 ## Deliverables
 
-- [ ] Card byte-stable across runs on unchanged source
-- [ ] Deterministic card identity, resolved by exact match not similarity
-- [ ] Existing duplicate cards reconciled
-- [ ] `SCAN_HELP`'s in-place promise true or rewritten
-- [ ] Interaction with `36`'s category schema resolved
+- [x] Card byte-stable across runs on unchanged source
+- [x] Deterministic card identity, resolved by exact match not similarity
+- [x] Existing duplicate cards reconciled
+- [x] `SCAN_HELP`'s in-place promise true or rewritten
+- [ ] Interaction with `36`'s category schema resolved — deferred, `36` lands second
+
+## Answer
+
+**Resolved 2026-08-03, via TDD, AFK.**
+
+Both blockers were real, and a third — undiagnosed at filing — turned out to be
+load-bearing for both of them.
+
+1. **Byte-stability.** `synthesizeArchitecture` (`src/components/summarizer.ts`)
+   didn't just carry a stray `mtime`: its *entire* embedded
+   `---\ncategory:...\ntitle:...\ntags:...\nmtime:...\n---` block was dead
+   weight — nothing in the codebase reads `category`/`title`/`tags` from
+   inside the card's own content (`title` duplicates the H1 heading
+   immediately below it; the real tags live in the storage-level frontmatter
+   the caller already sets). Deleted the whole block rather than patching
+   `mtime` alone.
+2. **Deterministic identity.** That deletion mattered for a second reason,
+   found while writing the identity test: the embedded block is shaped
+   exactly like YAML frontmatter, and `MdStorageAdapter.parseMarkdownDetailed`
+   finds frontmatter with one global regex over the *whole category file*,
+   not per-entry — so the card's own nested block was mistaken for a second
+   entry's frontmatter the moment any other entry shared the file, hard-
+   erroring "Malformed YAML frontmatter" (ticket `35`'s intentional
+   hard-fail posture, working exactly as designed against corrupted input).
+   `ingestScanResults`' semantic-search lookup (`memory.query` + `.find()`
+   over a top-10 window) is replaced with a derived id —
+   `sha256('neuron:architecture-blueprint:' + category)`, formatted as a
+   UUID-shaped string, passed straight to the upsert. No query at all: both
+   storage backends (`transactVector`, `MdStorageAdapter.writeEntry`) already
+   do exact-id-match upsert, confirmed by reading them before writing the fix.
+3. **A third bug, found chasing byte-stability to zero.** Even after 1 and 2,
+   repeat real scans on this repo still weren't byte-identical.
+   `MdStorageAdapter.writeEntry` minted a fresh `createdAt` on *every* call,
+   even when replacing an existing id — unlike `updateEntry` and the SQLite
+   upsert path, which both correctly leave `createdAt` alone on update. Fixed
+   by looking up the existing entry's `createdAt` via the already-computed
+   `existingIndex` before falling back to `new Date()`. Without this, `git
+   status` was never clean after a no-op scan, which is the ticket's own
+   verification bar.
+4. **Reconciliation.** This repo's own `.neuron/decisions.md` held 6
+   scan-tagged entries under the old lookup (4 with content, 2 empty —
+   almost certainly artifacts of the same nested-frontmatter corruption).
+   Deleted all 6 and let a fresh `neuron scan` recreate exactly one canonical
+   card under the new scheme, rather than migrating an old id forward — none
+   of the 6 were individually addressable, and 2 were already corrupt.
+5. **`SCAN_HELP`.** No text changed. "Updates that card in place rather than
+   adding a duplicate" is now true, verified in
+   `src/commands/scan.determinism.test.ts` rather than asserted by inspection.
+6. **Interaction with `36`** is unaddressed, per this ticket's own Scope item
+   5 ("whichever lands second owns making them agree") — `36` is still
+   unclaimed on the map, so `37` is landing first.
+
+**Verification:** `git status` is clean after a repeat real `neuron scan`
+against this repo; three consecutive scans resolve to the same card id;
+`--dry-run --format md` and `--format json` are each byte-identical across two
+runs. 8 tests added/updated across `summarizer.test.ts`, `ingest.test.ts`,
+`mdStorageAdapter.test.ts`, and a new `scan.determinism.test.ts`. Full suite:
+305/309 green — the 4 failures are a pre-existing, unrelated test-isolation
+gap (see **Fallout** below and new ticket `42`), confirmed via `git stash`
+comparison against pre-`37` code, where the identical failures and identical
+real-store pollution reproduce unchanged.
+
+### Fallout — a live bug found, not fixed here
+
+Running `npm test` in this repo **pollutes the maintainer's real
+`.neuron/{learning,history}.md`**: several CLI-invoking test files
+(`learn.test.ts`, `history.test.ts`, `cli.test.ts`, and others) override
+`NEURON_DB_PATH` to isolate SQLite but never isolate the markdown storage path
+or `chdir` into a tmp project — so under `storage.mode: md` (default since
+ticket `31`), they read and write the real store. Confirmed test-created
+entries (`"Always test first"`, `"Vitest test runner requires
+--runInBand"`) landing in the real `.neuron/learning.md` after a run, and
+reverted them by hand each time. This is out of scope for `37` (it's
+test-infrastructure hygiene, not the architecture card), so it's split out as
+[42 — Isolate CLI Tests From the Real `.neuron` Store](42-isolate-cli-tests-from-real-store.md).
 
 ## Comments
 

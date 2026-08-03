@@ -150,6 +150,32 @@ Body content.
     expect(allEntries[1].content).toContain('Second entry content');
   });
 
+  it('R1-T1-03b: writeEntry on an existing id preserves the original createdAt instead of minting a new one (ticket 37)', async () => {
+    const adapter = new MdStorageAdapter({ storagePath: testDir });
+
+    const first = await adapter.writeEntry('decisions', {
+      id: 'blueprint-1',
+      content: 'First version of the card',
+      tags: ['architecture'],
+      importance: 5,
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 5));
+
+    const second = await adapter.writeEntry('decisions', {
+      id: 'blueprint-1',
+      content: 'Second version of the card',
+      tags: ['architecture'],
+      importance: 5,
+    });
+
+    expect(second.createdAt).toBe(first.createdAt);
+
+    const reRead = await adapter.readCategory('decisions');
+    expect(reRead).toHaveLength(1);
+    expect(reRead[0].createdAt).toBe(first.createdAt);
+  });
+
   it('R1-T1-04: updateEntry updates an existing memory entry by ID in category markdown file', async () => {
     const adapter = new MdStorageAdapter({ storagePath: testDir });
 

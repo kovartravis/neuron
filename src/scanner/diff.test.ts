@@ -196,9 +196,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('reports zero drift when diffing a scan against its own generated card', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(wideScan, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(wideScan);
 
       const diff = calculateArchitecturalDiff(wideScan, markdown);
 
@@ -212,9 +210,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('records every component in the card, not just the first few', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(wideScan, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(wideScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       expect(parsed.exports).toHaveLength(12);
@@ -223,9 +219,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('round-trips the dependency contract so dependency shifts are detectable', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(wideScan, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(wideScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       expect(parsed.hasDependencySection).toBe(true);
@@ -314,9 +308,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
       };
 
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(mixedScan, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(mixedScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       expect(parsed.fidelity.default).toBe('ast/2');
@@ -327,9 +319,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('round-trips fidelity so a scan does not drift against its own card', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       const diff = calculateArchitecturalDiff(sampleCurrentScan, markdown);
@@ -390,9 +380,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
       };
 
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(goDegraded, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(goDegraded);
 
       const diff = calculateArchitecturalDiff(rustDegraded, markdown);
       expect(diff.needsRebaseline).toBe(true);
@@ -414,9 +402,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
     it('still reports real drift when both sides share a fidelity', async () => {
       // The refusal must not swallow genuine drift at matching fidelity.
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan, {
-        category: 'architecture',
-      });
+      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan);
 
       const withNewExport: ScanResult = {
         ...sampleCurrentScan,

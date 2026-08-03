@@ -1,6 +1,25 @@
+import { createHash } from 'node:crypto';
 import { NeuronMemory } from '../index.js';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
 import { scanProjectTopology, ScanResult } from './analyzer.js';
+
+/**
+ * A stable id for "the" blueprint card in a category, derived rather than
+ * looked up. Re-running `neuron scan` must always resolve to the same row —
+ * a semantic search over the category can rank the card out of its result
+ * window once enough other entries share the category (ticket 37), so
+ * there is deliberately no query here at all: same category in, same id out.
+ */
+function blueprintCardId(category: string): string {
+  const hash = createHash('sha256').update(`neuron:architecture-blueprint:${category}`).digest('hex');
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    hash.slice(12, 16),
+    hash.slice(16, 20),
+    hash.slice(20, 32),
+  ].join('-');
+}
 
 export interface IngestOptions {
   projectDir?: string;
@@ -23,30 +42,12 @@ export async function ingestScanResults(
 
   const scanData = options.scanData ?? (await scanProjectTopology(projectDir, { depth }));
   const summarizer = new SmolLM2Summarizer();
-  const { summary, markdown } = await summarizer.synthesizeArchitecture(scanData, { category });
-
-  let existingId: string | undefined = undefined;
-  try {
-    const existingScanEntries = await memory.query({
-      categories: [category],
-      text: 'Repository Architectural Blueprint',
-      limit: 10,
-    });
-    const match = existingScanEntries.find(e =>
-      e.content?.includes('# 🏛️ Repository Architectural Blueprint:') ||
-      e.tags?.includes('scan')
-    );
-    if (match) {
-      existingId = match.id;
-    }
-  } catch (e) {
-    // If query fails, proceed with new entry creation
-  }
+  const { summary, markdown } = await summarizer.synthesizeArchitecture(scanData);
 
   const res = await memory.transact([
     {
       op: 'upsert',
-      id: existingId,
+      id: blueprintCardId(category),
       category,
       content: markdown,
       tags: ['architecture', 'topology', 'scan', 'deep'],

@@ -396,6 +396,26 @@ every ticket resolved, every rc cut, stable published.
   alongside `28` and `35`, both already resolved.
   279 tests, full suite green.
 
+- [37 — The Architecture Card as a Deterministic Artifact](issues/37-architecture-card-deterministic-artifact.md)
+  — Byte-stability needed more than dropping `mtime`: the card's whole embedded
+  `---category/title/tags/mtime---` block was dead weight (nothing reads it;
+  `title` duplicates the H1 heading right below it) and, worse, its
+  frontmatter shape corrupted `MdStorageAdapter`'s whole-category-file parser
+  the moment another entry shared the file — deleted rather than patched.
+  `ingestScanResults`' semantic-search card lookup is replaced with a derived
+  id (`sha256` of the category, no query at all); both storage backends
+  already do exact-id-match upsert. A third bug surfaced chasing byte-stability
+  to zero: `MdStorageAdapter.writeEntry` re-minted `createdAt` on every upsert
+  instead of preserving it, unlike `updateEntry` and the SQLite path — fixed.
+  This repo's own 6 duplicate/corrupt cards reconciled to 1 by deletion, letting
+  a fresh `neuron scan` recreate the canonical card. Interaction with `36`'s
+  category schema is explicitly deferred — `36` lands second and owns making
+  them agree. **Fallout**: found (not fixed) a live bug where `npm test`
+  pollutes this repo's real `.neuron/{learning,history}.md`, pre-existing since
+  `31`, confirmed via `git stash` against pre-`37` code — split out as
+  [42 — Isolate CLI Tests From the Real `.neuron` Store](issues/42-isolate-cli-tests-from-real-store.md).
+  8 tests added, 305/309 green (4 pre-existing failures are `42`'s).
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no

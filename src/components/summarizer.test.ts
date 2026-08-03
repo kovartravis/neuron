@@ -51,5 +51,26 @@ describe('SmolLM2Summarizer & Content Cache', () => {
     expect(card.markdown).toContain('Dual storage routing');
     expect(card.summary.length).toBeGreaterThan(20);
   });
+
+  it('produces byte-identical markdown across two runs on unchanged input (ticket 37)', async () => {
+    const mockScanData = {
+      project: 'neuron',
+      manifest: { name: '@kovartravis/neuron', techStack: ['nodejs', 'typescript'] },
+      modules: [
+        {
+          name: 'storage',
+          path: 'src/storage',
+          purpose: 'Dual storage routing and vector sync engine.',
+          components: [{ file: 'src/storage/dualStorageRouter.ts', purpose: 'Routes storage reads/writes.', exports: ['DualStorageRouter'] }]
+        }
+      ]
+    };
+
+    const first = await summarizer.synthesizeArchitecture(mockScanData);
+    await new Promise(resolve => setTimeout(resolve, 5));
+    const second = await summarizer.synthesizeArchitecture(mockScanData);
+
+    expect(second.markdown).toBe(first.markdown);
+  });
 });
 

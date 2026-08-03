@@ -1057,3 +1057,39 @@ tags:
 taskId: null
 ---
 When a schema default changes the STORAGE ROUTING of a system (neuron ticket 31, flipping storage.mode from vector-only to md on 2026-08-03), the tests that break are not the tests of the thing you changed — they are fixtures that were silently relying on the old default, and 22 of them broke here in two distinct ways worth recognising by shape. First, NeuronMemory.inMemory() and 15 index.test.ts cases construct a store with a FABRICATED projectRoot ('/in-memory/<name>', '/test/project'), so the new md default aimed markdown writes at a directory that cannot exist and every transact returned status 'error' instead of 'created'. Second, mdFileManagement.integration.test.ts and mdFileManagement.e2e.test.ts pass a whole NeuronMemory as DualStorageRouter's vectorDb collaborator, but production passes it a vector-only DELEGATE ({transact: transactVector, ...}); once the default was md, that inner NeuronMemory started routing to markdown too, putting two writers on the same .neuron directory and turning 'created' into 'updated'. The fix in both cases is to make the fixture state its mode explicitly rather than inherit it — a new NeuronMemoryOptions.storageMode override, set to 'vector-only' — because that is what production actually does, not a workaround for the flip. The general rule: before changing a default, grep the test suite for constructions that supply a fabricated filesystem path, because a default that was inert against a fake path stops being inert the moment it starts touching the filesystem.
+
+---
+id: 024cca81-1129-415c-aa8b-ea4f556d9467
+createdAt: 2026-08-03T17:13:07.916Z
+importance: 5
+tags:
+  - md-storage
+  - failure-fix
+  - adr
+taskId: null
+---
+Fix for architecture-card content corrupting its own category's markdown file: synthesizeArchitecture() (src/components/summarizer.ts) used to emit a nested '---\ncategory:...\ntitle:...\ntags:...\nmtime:...\n---' YAML-shaped block as the FIRST LINES of the card's own content field. MdStorageAdapter.parseMarkdownDetailed's frontmatter finder (src/storage/mdStorageAdapter.ts) runs a single global regex for '---...---' blocks across the WHOLE category file rather than scoping to real entry boundaries, so this embedded block was mistaken for a second entry's frontmatter as soon as any other entry shared the category file, hard-erroring with 'Malformed YAML frontmatter' (ticket 35's intentional hard-fail-on-unparseable-YAML posture) on every subsequent read. Root cause was confirmed by grep: nothing in the codebase reads category/title/tags/mtime from inside the card's content (title duplicates the H1 heading immediately below it, tags duplicate the real storage-level tags array). Fix: deleted the entire nested frontmatter block from the template rather than patching the parser, since the block carried zero information nothing else already had. Edge case: this repo's own .neuron/decisions.md already held 6 real duplicate cards written by the old code, 2 of them with empty content likely from this exact corruption; those were deleted and let a fresh 'neuron scan' recreate the single canonical card.
+
+---
+id: a50e7252-f05e-4d2f-aa04-07c94358803f
+createdAt: 2026-08-03T17:13:08.222Z
+importance: 5
+tags:
+  - failure-fix
+  - drift
+  - md-storage
+taskId: null
+---
+Fix for architecture blueprint card creating a new entry on every 'neuron scan' re-run: ingestScanResults (src/scanner/ingest.ts) used to find 'the' existing card via memory.query({categories, text: 'Repository Architectural Blueprint', limit: 10}) plus a .find() over the top-10 semantically-ranked results — a similarity search, not an exact-match lookup, so the card could rank outside its own category's top-10 once enough other entries accumulated, silently falling back to inserting a brand new duplicate. Verified the production impact directly: this repo's own decisions category had accumulated 6 scan-tagged entries this way. Root cause was a mismatched identity strategy, not a ranking-tuning problem — confirmed both storage backends (transactVector in src/index.ts and MdStorageAdapter.writeEntry) already do correct exact-id-match upsert (replace if id exists, insert if not), so the fix was to stop querying entirely and instead derive a stable id via sha256 hash of a fixed namespace plus the category string, passed directly as the upsert's id. A second, related bug surfaced while testing this: MdStorageAdapter.writeEntry minted a fresh createdAt on every call even when replacing an existing id (entry.createdAt || new Date().toISOString(), with no lookup of the prior value), unlike updateEntry and the SQLite upsert path which both correctly preserve the original createdAt on update — fixed by looking up the existing entry's createdAt via the already-computed existingIndex before falling back to a new timestamp. Both fixes were necessary together to make repeated 'neuron scan' runs produce a byte-identical file and a clean 'git status'.
+
+---
+id: 03dbc3f0-7468-4091-8fd9-80ff698d329b
+createdAt: 2026-08-03T17:13:33.915Z
+importance: 5
+tags:
+  - failure-fix
+  - adr
+  - rc2
+taskId: null
+---
+Discovered while running the full test suite during ticket 37: neuron's own CLI-invoking test files (learn.test.ts, history.test.ts, cli.test.ts, and others using execSync against dist/cli.js) only override NEURON_DB_PATH to isolate the SQLite side, but never override the markdown storage path or chdir to a tmp project — so under storage.mode: md (the default since ticket 31), every one of these tests reads and writes the REAL project .neuron/{learning,history,decisions}.md files instead of an isolated fixture. Running 'npm test' in this repo actively pollutes the maintainer's real memory store (confirmed: entries like 'Always test first' and 'Vitest test runner requires --runInBand' landed in the real .neuron/learning.md after a test run) and simultaneously makes several assertions flaky/failing because they count real entries that were never supposed to be there (e.g. 'expected 1 but got 5'). Verified this is pre-existing and unrelated to ticket 37's changes via git stash comparison against pre-37 code, where the identical failures and identical pollution reproduce. The fix belongs to whichever ticket owns test-infrastructure hygiene: these tests need to either chdir into an isolated tmp project directory (the pattern scan.fidelity.test.ts and scan.determinism.test.ts already use) or pass an explicit storagePath override, matching how NEURON_DB_PATH already isolates the SQLite side.
