@@ -226,6 +226,29 @@ every ticket resolved, every rc cut, stable published.
   [Spec](../md-first/spec.md);
   [ADR 0011](../../docs/adr/0011-markdown-as-store-of-record.md).
 
+- [29 — The Markdown↔Vector Reconcile Engine](issues/29-md-only-semantic-search.md)
+  — Built the mechanism `28` specified: markdown-first write ordering (vector
+  embed only attempted after the markdown write succeeds; a vector-side
+  failure now warns to stderr instead of a swallowed `catch {}`), and a
+  reconcile pass on every `md`/`split`-mode command, gated on
+  `meta.md_seeded_at`. Unseeded → bootstrap-export vector to markdown once.
+  Seeded → per-entry content-hash diff (reusing `mdVectorSync.ts`'s
+  `computeMemoryHash`, not reimplemented): changed or missing-in-vector
+  entries re-embed with markdown always winning (no conflict to report,
+  unlike the two-way `neuron sync` command, which survives unchanged as the
+  explicit forced rebuild); entries absent from markdown are deleted from the
+  vector index, no tripwire. Measured on a 264-entry store: **~6.5ms
+  steady-state, ~7ms with one changed entry** — recorded for `32`. The
+  `split` dispatch no-op is fixed **by elimination**: once `md-only`'s
+  substring matcher is gone, its query-side `mdCats`/`vecCats` branch had no
+  remaining behavioral effect, so `query()` now just delegates unconditionally
+  after reconciling; per-category vocabulary gets the identical `dual`→`md`
+  rename as the top level. Two pre-existing tests encoding the old
+  "vector-only orphan survives until a later update/delete salvages it" model
+  were rewritten — strict-mirror reconcile now purges that orphan
+  automatically on the next command, so `not_found` on it is correct rather
+  than a regression. 303 tests green.
+
 - [35 — Frontmatter Round-Trip Integrity](issues/35-frontmatter-roundtrip-integrity.md)
   — Both reproductions fixed by a single **repair-the-incomplete,
   refuse-the-ambiguous** rule in `MdStorageAdapter`, per ADR 0011 Consequence 4.

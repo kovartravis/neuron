@@ -665,44 +665,44 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     expect(results[0].content).toBe('beta learning');
   });
 
-  describe('NeuronMemory Native Markdown Delegation (Ticket 06)', () => {
-    it('should delegate transact and query natively to Markdown storage when storage.mode is md-only', async () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t06-test-'));
+  describe('NeuronMemory markdown-first storage (Ticket 29, formerly "Ticket 06 md-only delegation")', () => {
+    it('writes markdown as the record of truth and retrieves through the same hybrid path as vector-only in md mode', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t29-md-test-'));
       const configPath = path.join(tempDir, 'neuron.yaml');
       fs.writeFileSync(
         configPath,
-        `version: "1.0"\nstorage:\n  mode: md-only\n  path: .neuron\n`,
+        `version: "1.0"\nstorage:\n  mode: md\n  path: .neuron\n`,
         'utf8'
       );
 
       const memory = new NeuronMemory({
         dbPath: path.join(tempDir, 'test.sqlite'),
         projectRoot: tempDir,
-        projectName: 't06-project',
+        projectName: 't29-project',
         embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
       });
 
-      // Transact in md-only mode
       await memory.transact([
         {
           op: 'upsert',
           category: 'learning',
-          id: 't06-native-1',
+          id: 't29-native-1',
           content: 'Native markdown storage delegation learning',
           tags: ['native', 'md'],
         },
       ]);
 
-      // Verify file was written to disk in .neuron/learning.md
+      // Markdown is the record of truth: the file is written on disk.
       const mdFile = path.join(tempDir, '.neuron', 'learning.md');
       expect(fs.existsSync(mdFile)).toBe(true);
       const contentOnDisk = fs.readFileSync(mdFile, 'utf8');
       expect(contentOnDisk).toContain('Native markdown storage delegation learning');
 
-      // Query in md-only mode
+      // Retrieval is the same hybrid RRF path as vector-only — no separate
+      // markdown-side substring matcher (ADR 0011 §6).
       const queryResults = await memory.query({ text: 'Native markdown', categories: ['learning'] });
       expect(queryResults).toHaveLength(1);
-      expect(queryResults[0].id).toBe('t06-native-1');
+      expect(queryResults[0].id).toBe('t29-native-1');
       expect(queryResults[0].content).toContain('Native markdown storage delegation learning');
 
       memory.close();
@@ -710,43 +710,43 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     });
   });
 
-  describe('Ticket 08: Bypassing SQLite File Creation in md-only Mode', () => {
-    it('should not create any .sqlite database files on disk when storage.mode is md-only', async () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t08-test-'));
+  describe('Ticket 29: the database is present in md mode, as a rebuildable index', () => {
+    // md-only's whole premise — no database at all — was deleted by ticket 28:
+    // every one of its defects traced to `this.db = null`. `md` mode (the
+    // renamed `dual`) keeps the database; it demotes it to a rebuildable
+    // index rather than removing it, which is what makes hybrid retrieval,
+    // enrichment and honest counts all work unchanged.
+    it('creates a .sqlite database file on disk when storage.mode is md', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t29-db-test-'));
       const configPath = path.join(tempDir, 'neuron.yaml');
       fs.writeFileSync(
         configPath,
-        `version: "1.0"\nstorage:\n  mode: md-only\n  path: .neuron\n`,
+        `version: "1.0"\nstorage:\n  mode: md\n  path: .neuron\n`,
         'utf8'
       );
 
-      const targetSqlitePath = path.join(tempDir, 'should-not-exist.sqlite');
+      const targetSqlitePath = path.join(tempDir, 'should-exist.sqlite');
 
       const memory = new NeuronMemory({
         dbPath: targetSqlitePath,
         projectRoot: tempDir,
-        projectName: 't08-project',
+        projectName: 't29-project',
         embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
       });
 
-      await memory.transact([
-        {
-          op: 'upsert',
-          category: 'learning',
-          id: 't08-1',
-          content: 'No sqlite file created test',
-          tags: ['t08'],
-        },
-      ]);
-
-      const res = await memory.query({ text: 'sqlite file', categories: ['learning'] });
-      expect(res).toHaveLength(1);
-
-      // Verify NO .sqlite file was created at targetSqlitePath
-      expect(fs.existsSync(targetSqlitePath)).toBe(false);
+      expect(memory.getDb()).not.toBeNull();
+      expect(fs.existsSync(targetSqlitePath)).toBe(true);
 
       memory.close();
       fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it('round-trips a value through getMeta/setMeta', () => {
+      const memory = NeuronMemory.inMemory('t29-meta-project');
+      expect(memory.getMeta('md_seeded_at')).toBeNull();
+      memory.setMeta('md_seeded_at', '2026-08-02T00:00:00.000Z');
+      expect(memory.getMeta('md_seeded_at')).toBe('2026-08-02T00:00:00.000Z');
+      memory.close();
     });
   });
 });

@@ -31,7 +31,7 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     }
   });
 
-  const makeConfig = (mode: 'vector-only' | 'md-only' | 'dual' | 'split'): NeuronConfig => ({
+  const makeConfig = (mode: 'vector-only' | 'md-only' | 'dual' | 'md' | 'split'): NeuronConfig => ({
     version: '1.0',
     storage: { mode, path: storagePath },
     categories: { learning: {}, history: {}, decisions: {} },
@@ -60,7 +60,10 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories).toHaveLength(0);
   });
 
-  it('R2-T1-02: routes add mutation to MdStorageAdapter only in md-only mode', async () => {
+  it('R2-T1-02: an unrecognized legacy "md-only" mode string falls back to vector-only rather than routing to markdown (ticket 29: md-only was deleted, not repaired)', async () => {
+    // A raw router-level config bypasses the neuron.yaml alias/warning layer
+    // (config/neuronYaml.ts), so a stale 'md-only' string reaching the router
+    // directly is just another unrecognized mode, same bucket as R2-T2-02.
     const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md-only'));
 
     const results = await router.transact([
@@ -71,16 +74,15 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(results[0].id).toBe('md-1');
     expect(results[0].status).toBe('created');
 
-    const mdMemories = await mdAdapter.readCategory('learning');
-    expect(mdMemories).toHaveLength(1);
-    expect(mdMemories[0].id).toBe('md-1');
-
     const dbQuery = await memoryDb.query({ category: 'learning' });
-    expect(dbQuery).toHaveLength(0);
+    expect(dbQuery).toHaveLength(1);
+
+    const mdMemories = await mdAdapter.readCategory('learning');
+    expect(mdMemories).toHaveLength(0);
   });
 
-  it('R2-T1-03: routes add mutation to both backends in dual mode', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+  it('R2-T1-03: routes add mutation to both backends in md mode (the renamed "dual")', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     const results = await router.transact([
       { op: 'upsert', category: 'learning', id: 'dual-1', content: 'Dual mode content', tags: ['d1'] },
@@ -117,8 +119,29 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories[0].content).toContain('Updated split content');
   });
 
-  it('R2-T1-05: routes delete mutation to both backends in dual mode', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+  it('Ticket 29 item 7: split mode\'s per-category vocabulary gets the same treatment as the top-level modes — "vector" stays vector-only, and a category with no explicit storage (or "md") writes both, matching the top-level "dual" → "md" rename', async () => {
+    const config = makeConfig('split');
+    config.categories = {
+      ...config.categories,
+      learning: { storage: 'vector' },
+      history: {}, // no explicit storage: defaults to the write-both behaviour
+    };
+    const router = new DualStorageRouter(memoryDb, mdAdapter, config);
+
+    await router.transact([
+      { op: 'upsert', category: 'learning', id: 'split-vec-1', content: 'vector-only category' },
+      { op: 'upsert', category: 'history', id: 'split-md-1', content: 'default category writes both' },
+    ]);
+
+    expect((await mdAdapter.readCategory('learning'))).toHaveLength(0);
+    expect((await memoryDb.query({ category: 'learning' })).some(m => m.id === 'split-vec-1')).toBe(true);
+
+    expect((await mdAdapter.readCategory('history')).some(m => m.id === 'split-md-1')).toBe(true);
+    expect((await memoryDb.query({ category: 'history' })).some(m => m.id === 'split-md-1')).toBe(true);
+  });
+
+  it('R2-T1-05: routes delete mutation to both backends in md mode', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     await router.transact([
       { op: 'upsert', category: 'learning', id: 'del-dual-1', content: 'Content to delete' },
@@ -140,8 +163,8 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
 
   // --- Tier 2 Boundary Tests (R2-T2-01 to R2-T2-05) ---
 
-  it('R2-T2-01: handles disk write error gracefully in dual mode with non-blocking reporting', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+  it('R2-T2-01: handles disk write error gracefully in md mode with non-blocking reporting', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     const writeSpy = vi.spyOn(mdAdapter, 'writeEntry').mockImplementationOnce(() => {
       throw new Error('EACCES: permission denied');
@@ -176,7 +199,7 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
   });
 
   it('R2-T2-03: handles rapid concurrent mutation calls without file lock contention', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     const promises = Array.from({ length: 10 }).map((_, i) =>
       router.transact([
@@ -191,8 +214,8 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('R2-T2-04: handles search/query fallback when operating in md-only mode', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md-only'));
+  it('R2-T2-04: queries md mode through the same hybrid RRF path as vector-only, with no separate markdown-side retrieval (ADR 0011 §6 — retrieval parity by construction)', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     await router.transact([
       { op: 'upsert', category: 'learning', id: 'q-1', content: 'Search target query phrase', tags: ['search'] },
@@ -200,12 +223,11 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     ]);
 
     const results = await router.query({ text: 'target', category: 'learning' });
-    expect(results).toHaveLength(1);
-    expect(results[0].id).toBe('q-1');
+    expect(results.some(m => m.id === 'q-1')).toBe(true);
   });
 
   it('R2-T2-05: handles update and delete for non-existent entry ID gracefully', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     const updateRes = await router.transact([
       { op: 'update', category: 'learning', id: 'non-existent-uuid', content: 'Does not exist' },
@@ -218,77 +240,52 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(deleteRes[0].status).toBe('not_found');
   });
 
-  describe('Ticket 07: In-Memory Markdown Vector Search & mtimeMs Invalidation', () => {
-    it('should rank md-only query results by vector embedding similarity and invalidate cache on mtimeMs change', async () => {
-      const vecHigh = new Float32Array(384);
-      vecHigh[0] = 1.0;
-      const vecLow = new Float32Array(384);
-      vecLow[1] = 1.0;
-      const vecQuery = new Float32Array(384);
-      vecQuery[0] = 0.9;
-      vecQuery[1] = 0.1;
-
-      const mockEmbedder = {
-        embed: async (text: string) => (text.includes('High') ? vecHigh : vecLow),
-        embedQuery: async (_text: string) => vecQuery,
-      };
-
-      const customDb = new NeuronMemory({
-        dbPath: ':memory:',
-        projectRoot: testDir,
-        projectName: 't07-project',
-        embedder: mockEmbedder,
-      });
-
-      const router = new DualStorageRouter(customDb, mdAdapter, makeConfig('md-only'));
-
-      await router.transact([
-        { op: 'upsert', category: 'learning', id: 't07-low', content: 'Low similarity entry', tags: ['t1'] },
-        { op: 'upsert', category: 'learning', id: 't07-high', content: 'High similarity entry', tags: ['t2'] },
-      ]);
-
-      const results1 = await router.query({ text: 'High query search', category: 'learning' });
-      expect(results1).toHaveLength(2);
-      expect(results1[0].id).toBe('t07-high');
-      expect(results1[0].score).toBeGreaterThan(results1[1].score!);
-
-      // Modify .neuron/learning.md on disk externally and bump mtime
-      const learningMd = path.join(storagePath, 'learning.md');
-      const updatedMdContent = fs.readFileSync(learningMd, 'utf8').replace('Low similarity entry', 'High relevance updated entry');
-      fs.writeFileSync(learningMd, updatedMdContent, 'utf8');
-
-      const futureTime = new Date(Date.now() + 5000);
-      fs.utimesSync(learningMd, futureTime, futureTime);
-
-      const results2 = await router.query({ text: 'High query search', category: 'learning' });
-      const updatedEntry = results2.find(m => m.id === 't07-low');
-      expect(updatedEntry?.content).toContain('High relevance updated entry');
-
-      customDb.close();
-    });
-  });
+  // The mdEmbedCache / per-category mtimeMs invalidation this described is
+  // deleted along with md-only (ticket 29 item 3 explicitly rejects
+  // per-category mtimeMs keying in favour of per-entry content hashing). Its
+  // hand-edit-propagates-on-the-next-command scenario is re-covered by the
+  // reconcile engine's own tests below, against content hashing instead.
 
   /**
-   * `update`/`delete` in dual mode used to report only the markdown side's
-   * outcome — `vecResult` was computed and never consulted, unlike `upsert`,
-   * which does trust it. When the two stores disagreed (a prior write that
-   * landed on only one side, a manual .md edit not yet `sync`'d), a real
-   * vector-side change was reported as `not_found`: a false negative on data
-   * that did change. Fixed to report success if either store changed.
+   * `update`/`delete` in md mode reports success if EITHER store actually
+   * changed within the same command — `vecResult` is consulted, not just the
+   * md outcome, so a real vector-side change is never reported as
+   * `not_found` just because the markdown-side write hiccupped in the same
+   * call. This used to also cover a second scenario — a markdown-only
+   * deletion made *between* commands, leaving a vector-only orphan for a
+   * later update/delete to salvage — but ticket 29's strict-mirror reconcile
+   * (below) now purges that orphan automatically on the very next command,
+   * before the mutation is even processed, so "not_found" on it is correct
+   * now rather than a bug.
    */
-  describe('dual-mode status reflects both stores, not markdown alone', () => {
-    it('delete reports "deleted" when only the vector row exists (md copy already gone)', async () => {
-      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+  describe('md-mode transact reports success if either store changed within a single command', () => {
+    it('update reports "updated" when the markdown-side write fails within the same call but the vector write succeeds', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
       await router.transact([
-        { op: 'upsert', category: 'learning', id: 'diverge-del-1', content: 'Vector-only survivor' },
+        { op: 'upsert', category: 'learning', id: 'inflight-upd-1', content: 'original content' },
       ]);
-      // Simulate drift: something removed the .md copy without touching the DB.
-      await mdAdapter.deleteEntry('learning', 'diverge-del-1');
-      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
+      vi.spyOn(mdAdapter, 'updateEntry').mockRejectedValueOnce(new Error('disk busy'));
 
       const result = await router.transact([
-        { op: 'delete', category: 'learning', id: 'diverge-del-1' },
+        { op: 'update', category: 'learning', id: 'inflight-upd-1', content: 'updated for real' },
+      ]);
+
+      expect(result[0].status).toBe('updated');
+      const dbQuery = await memoryDb.query({ category: 'learning' });
+      expect(dbQuery.find(m => m.id === 'inflight-upd-1')?.content).toBe('updated for real');
+    });
+
+    it('delete reports "deleted" when the markdown-side delete fails within the same call but the vector delete succeeds', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'inflight-del-1', content: 'to delete' },
+      ]);
+      vi.spyOn(mdAdapter, 'deleteEntry').mockRejectedValueOnce(new Error('disk busy'));
+
+      const result = await router.transact([
+        { op: 'delete', category: 'learning', id: 'inflight-del-1' },
       ]);
 
       expect(result[0].status).toBe('deleted');
@@ -296,26 +293,8 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
       expect(dbQuery).toHaveLength(0);
     });
 
-    it('update reports "updated" when only the vector row exists (md copy already gone)', async () => {
-      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
-
-      await router.transact([
-        { op: 'upsert', category: 'learning', id: 'diverge-upd-1', content: 'original content' },
-      ]);
-      await mdAdapter.deleteEntry('learning', 'diverge-upd-1');
-      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
-
-      const result = await router.transact([
-        { op: 'update', category: 'learning', id: 'diverge-upd-1', content: 'updated for real' },
-      ]);
-
-      expect(result[0].status).toBe('updated');
-      const dbQuery = await memoryDb.query({ category: 'learning' });
-      expect(dbQuery.find(m => m.id === 'diverge-upd-1')?.content).toBe('updated for real');
-    });
-
     it('reports not_found when neither store has the id', async () => {
-      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('dual'));
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
       const delResult = await router.transact([
         { op: 'delete', category: 'learning', id: 'never-existed' },
@@ -326,6 +305,152 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
         { op: 'update', category: 'learning', id: 'never-existed', content: 'x' },
       ]);
       expect(updResult[0].status).toBe('not_found');
+    });
+  });
+
+  describe('Ticket 29: strict-mirror reconcile supersedes the old vector-orphan salvage behavior', () => {
+    it('purges a vector-side orphan on the next command once its markdown entry is gone, so a later update/delete on that id correctly reports not_found', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'orphan-1', content: 'will be orphaned' },
+      ]);
+      // Simulate drift: something removed the .md copy directly, bypassing
+      // the router (a hand-edit), without touching the vector index.
+      await mdAdapter.deleteEntry('learning', 'orphan-1');
+      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
+      expect((await memoryDb.query({ category: 'learning' })).some(m => m.id === 'orphan-1')).toBe(true);
+
+      // Any command reconciles first, which strict-mirrors the deletion.
+      await router.query({ category: 'learning' });
+      expect((await memoryDb.query({ category: 'learning' })).some(m => m.id === 'orphan-1')).toBe(false);
+
+      const result = await router.transact([
+        { op: 'delete', category: 'learning', id: 'orphan-1' },
+      ]);
+      expect(result[0].status).toBe('not_found');
+    });
+  });
+
+  describe('Ticket 29: hand-edit round trip and re-embed churn (content hashing, not per-category mtimeMs)', () => {
+    it('a hand-edit to the .md file is reflected on the next command, no sync step required', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'hand-edit-1', content: 'original body' },
+      ]);
+
+      // Hand-edit the markdown file directly, bypassing the router entirely.
+      await mdAdapter.updateEntry('learning', { id: 'hand-edit-1', content: 'edited body via hand-edit' });
+
+      const results = await router.query({ category: 'learning' });
+      expect(results.find(m => m.id === 'hand-edit-1')?.content).toBe('edited body via hand-edit');
+    });
+
+    it('an entry edited once re-embeds exactly once — asserts the embed count, not just the eventual result, since a churn loop can still produce correct output', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'churn-1', content: 'v1' },
+      ]);
+
+      const vecTransactSpy = vi.spyOn(memoryDb, 'transact');
+      vecTransactSpy.mockClear();
+
+      await mdAdapter.updateEntry('learning', { id: 'churn-1', content: 'v2' });
+
+      await router.query({ category: 'learning' });
+      const callsAfterChange = vecTransactSpy.mock.calls.length;
+      expect(callsAfterChange).toBe(1);
+
+      // No further markdown change — the hash matches, so this must not
+      // re-embed again (the churn loop ADR 0011 Consequence 4 guards against).
+      await router.query({ category: 'learning' });
+      expect(vecTransactSpy.mock.calls.length).toBe(callsAfterChange);
+
+      vecTransactSpy.mockRestore();
+    });
+  });
+
+  describe('Ticket 29: bootstrap seed (ADR 0011 Consequence 3)', () => {
+    it('exports a populated vector store into markdown on the first md-mode command, and records meta.md_seeded_at', async () => {
+      // Populate the vector store directly, as if this were an existing
+      // vector-only or dual-mode project upgrading to md mode.
+      await memoryDb.transact([
+        { op: 'upsert', category: 'learning', id: 'seed-1', content: 'Pre-existing vector entry', tags: ['pre'] },
+      ]);
+      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
+      expect(memoryDb.getMeta('md_seeded_at')).toBeNull();
+
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      await router.query({ category: 'learning' });
+
+      const mdMemories = await mdAdapter.readCategory('learning');
+      expect(mdMemories.some(m => m.id === 'seed-1')).toBe(true);
+      expect(memoryDb.getMeta('md_seeded_at')).not.toBeNull();
+    });
+
+    it('does not re-seed on a later command, even if markdown is empty again — the marker gates it, not data presence', async () => {
+      await memoryDb.transact([
+        { op: 'upsert', category: 'learning', id: 'seed-2', content: 'Another pre-existing entry' },
+      ]);
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+
+      await router.query({ category: 'learning' }); // triggers bootstrap
+      expect((await mdAdapter.readCategory('learning')).some(m => m.id === 'seed-2')).toBe(true);
+
+      // A human empties the category file after seeding — strict mirror
+      // should now apply, not another bootstrap export.
+      await mdAdapter.deleteEntry('learning', 'seed-2');
+      expect(await mdAdapter.readCategory('learning')).toHaveLength(0);
+
+      await router.query({ category: 'learning' });
+
+      const dbQuery = await memoryDb.query({ category: 'learning' });
+      expect(dbQuery.some(m => m.id === 'seed-2')).toBe(false);
+    });
+  });
+
+  describe('Ticket 29: markdown-first write ordering in md mode (ADR 0011 Consequence 2)', () => {
+    it('writes markdown before the vector embed on upsert', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      const mdSpy = vi.spyOn(mdAdapter, 'writeEntry');
+      const vecSpy = vi.spyOn(memoryDb, 'transact');
+
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'order-1', content: 'ordering probe' },
+      ]);
+
+      expect(mdSpy).toHaveBeenCalled();
+      expect(vecSpy).toHaveBeenCalled();
+      expect(mdSpy.mock.invocationCallOrder[0]).toBeLessThan(vecSpy.mock.invocationCallOrder[0]);
+    });
+
+    it('never attempts the vector write when the markdown write fails on upsert', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      vi.spyOn(mdAdapter, 'writeEntry').mockRejectedValueOnce(new Error('disk full'));
+      const vecSpy = vi.spyOn(memoryDb, 'transact');
+
+      const results = await router.transact([
+        { op: 'upsert', category: 'learning', id: 'order-2', content: 'should not embed' },
+      ]);
+
+      expect(vecSpy).not.toHaveBeenCalled();
+      expect(results[0].status).toBe('error');
+    });
+
+    it('surfaces a vector write failure as an observable stderr warning rather than a bare swallowed catch, and still reports the markdown-side success', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      vi.spyOn(memoryDb, 'transact').mockRejectedValueOnce(new Error('embedder unavailable'));
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+      const results = await router.transact([
+        { op: 'upsert', category: 'learning', id: 'order-3', content: 'md wins even if vector fails' },
+      ]);
+
+      expect(results[0].status).toBe('created');
+      const mdMemories = await mdAdapter.readCategory('learning');
+      expect(mdMemories.find(m => m.id === 'order-3')).toBeDefined();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('vector index write failed'));
+      warnSpy.mockRestore();
     });
   });
 });

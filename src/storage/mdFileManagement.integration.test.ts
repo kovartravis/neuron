@@ -40,7 +40,7 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
     testConfig = {
       ...DEFAULT_CONFIG,
       storage: {
-        mode: 'dual',
+        mode: 'md',
         path: mdStoragePath,
       },
       categories: {
@@ -161,7 +161,7 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
     // 2. Switch config mode to dual
     const dualConfig: NeuronConfig = {
       ...testConfig,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
     };
 
     // 3. Trigger backfill sync

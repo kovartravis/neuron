@@ -5,20 +5,61 @@ import { z } from 'zod';
 
 // --- Zod Schemas ---
 
-export const StorageModeEnum = z.enum(['vector-only', 'md-only', 'dual', 'split']);
+export const StorageModeEnum = z.enum(['vector-only', 'md', 'split']);
 export type StorageMode = z.infer<typeof StorageModeEnum>;
 
+/**
+ * `md-only` and `dual` are pre-2.2.0-rc5 spellings, both deleted by ticket 28:
+ * `md-only` because every one of its defects traced to `this.db = null`, and
+ * `dual` because it was renamed to `md` — same mechanism, correct name now
+ * that `md-only` no longer exists to be confused with. Both alias to `md`
+ * with a stderr warning rather than hard-failing, because a config that
+ * errors on upgrade turns a rename into an outage (ADR 0011 §7).
+ */
+const STORAGE_MODE_ALIASES: Record<string, StorageMode> = {
+  'md-only': 'md',
+  dual: 'md',
+};
+
+const RawStorageModeSchema = z.preprocess((val) => {
+  if (typeof val === 'string' && val in STORAGE_MODE_ALIASES) {
+    const canonical = STORAGE_MODE_ALIASES[val];
+    process.stderr.write(
+      `[neuron warning] storage.mode: "${val}" is deprecated — use "${canonical}" instead. Continuing as "${canonical}".\n`
+    );
+    return canonical;
+  }
+  return val;
+}, StorageModeEnum);
+
 export const StorageConfigSchema = z.object({
-  mode: StorageModeEnum.default('vector-only'),
+  mode: RawStorageModeSchema.default('vector-only'),
   path: z.string().default('.neuron'),
 });
 
 export type StorageConfig = z.infer<typeof StorageConfigSchema>;
 
+/**
+ * Per-category storage vocabulary gets the same rename treatment as the
+ * top-level modes (ticket 29 item 7): `dual` (write both, markdown authoritative)
+ * aliases to `md`, and `md` itself now means what `dual` used to — there is no
+ * more "pure markdown, no vector row ever" option, matching the top-level
+ * dissolution of `md-only`.
+ */
+const RawCategoryStorageSchema = z.preprocess((val) => {
+  if (val === 'dual') {
+    process.stderr.write(
+      `[neuron warning] categories.*.storage: "dual" is deprecated — use "md" instead. Continuing as "md".\n`
+    );
+    return 'md';
+  }
+  return val;
+}, z.enum(['vector', 'md']));
+
 export const CategoryConfigSchema = z.object({
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  storage: z.enum(['vector', 'md', 'dual']).optional(),
+  storage: RawCategoryStorageSchema.optional(),
 });
 
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
 import {
@@ -36,8 +36,8 @@ describe('neuron.yaml Config Loader & Zod Parser', () => {
     expect(config.pullRules.default?.categories).toEqual(['learning']);
   });
 
-  it('should parse valid storage mode options (vector-only, md-only, dual, split)', () => {
-    const modes = ['vector-only', 'md-only', 'dual', 'split'] as const;
+  it('should parse valid canonical storage mode options (vector-only, md, split)', () => {
+    const modes = ['vector-only', 'md', 'split'] as const;
     for (const mode of modes) {
       const yamlStr = `
 version: "1.0"
@@ -51,6 +51,28 @@ categories:
       const parsed = parseNeuronYaml(yamlStr);
       expect(parsed.storage.mode).toBe(mode);
       expect(parsed.storage.path).toBe('.neuron');
+    }
+  });
+
+  describe('md-only and dual storage mode aliasing (ticket 29)', () => {
+    // md-only was deleted (28: md-only's every defect traced to `this.db =
+    // null`; dual already reaches markdown-first storage without any of
+    // them) and dual was renamed md (same mechanism, correct name). Both
+    // spellings alias to 'md' rather than hard-failing, because a config
+    // that errors on upgrade turns a rename into an outage.
+    for (const alias of ['md-only', 'dual'] as const) {
+      it(`normalizes storage.mode: ${alias} to "md" and warns on stderr`, () => {
+        const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+        const config = validateNeuronYaml({
+          storage: { mode: alias, path: '.neuron' },
+          categories: { learning: {} },
+        });
+        expect(config.storage.mode).toBe('md');
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`storage.mode: "${alias}" is deprecated`)
+        );
+        warnSpy.mockRestore();
+      });
     }
   });
 
@@ -73,7 +95,7 @@ categories:
 version: "1.0"
 
 storage:
-  mode: "dual"
+  mode: "md"
   path: ".neuron"
 
 categories:
@@ -113,7 +135,7 @@ pullRules:
     fs.writeFileSync(path.join(projDir, 'neuron.yaml'), yamlContent);
 
     const config = loadNeuronYaml(projDir);
-    expect(config.storage.mode).toBe('dual');
+    expect(config.storage.mode).toBe('md');
     expect(config.storage.path).toBe('.neuron');
     expect(config.categories.learning).toBeDefined();
     expect(config.categories.decisions).toBeDefined();

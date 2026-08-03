@@ -96,16 +96,18 @@ export class NeuronMemory {
       : path.resolve(options.projectRoot, configPath);
     const mdAdapter = new MdStorageAdapter({ storagePath });
 
-    if (config.storage?.mode === 'md-only') {
-      this.db = null;
-    } else {
-      this.db = openDatabase(options.dbPath);
-      this.initialize();
-    }
+    // Every storage mode keeps the database now: `md-only` (which set
+    // `this.db = null`) was deleted by ticket 28 — every one of its defects
+    // traced to that one line. `md` mode demotes SQLite to a rebuildable
+    // index rather than removing it.
+    this.db = openDatabase(options.dbPath);
+    this.initialize();
 
     const vectorDbDelegate = {
       transact: (mutations: MemoryMutation[]) => this.transactVector(mutations),
       query: (q: MemoryQuery) => this.queryVector(q),
+      getMeta: (key: string) => this.getMeta(key),
+      setMeta: (key: string, value: string) => this.setMeta(key, value),
     } as any;
 
     this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config);
@@ -156,6 +158,17 @@ export class NeuronMemory {
   public getDb(): any { return this.db; }
   public getProjectId(): string { return this.projectId; }
   public getEmbedder(): Embedder { return this.embedder; }
+
+  public getMeta(key: string): string | null {
+    if (!this.db) return null;
+    const row = this.db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;
+    return row ? row.value : null;
+  }
+
+  public setMeta(key: string, value: string): void {
+    if (!this.db) return;
+    this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value);
+  }
 
   private initialize(): void {
     try {
@@ -895,7 +908,7 @@ export class NeuronMemory {
     return {
       project: this.projectName,
       projectRoot: this.projectRoot,
-      db: this.db ? 'ready' : 'md-only',
+      db: 'ready',
       model: modelReady,
       modelName: 'Xenova/bge-small-en-v1.5',
       totalCount,

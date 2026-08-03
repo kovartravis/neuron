@@ -32,7 +32,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
   it('T4-01: Developer Git collaboration workflow (commit md files, pull & sync)', async () => {
     const configA: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: '.neuron' },
+      storage: { mode: 'md', path: '.neuron' },
       categories: { learning: { description: 'Learnings' } },
     };
 
@@ -107,7 +107,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
   it('T4-02: Offline knowledge base editing & CLI resynchronization', async () => {
     const config: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: '.neuron' },
+      storage: { mode: 'md', path: '.neuron' },
       categories: { decisions: { description: 'Architectural Decisions' } },
     };
 
@@ -183,7 +183,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     // 2. Developer upgrades config to dual mode
     const dualConfig: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
       categories: {
         learning: { description: 'Learnings' },
         history: { description: 'History' },
@@ -230,7 +230,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
 
     const config: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
     };
 
     // Pre-populate valid state
@@ -280,7 +280,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
 
     const config: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
       categories: {
         learning: { description: 'Learnings' },
         history: { description: 'History' },

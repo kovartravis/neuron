@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 28, 35, 38
 Band: 2.2.0-rc5
 
@@ -91,13 +91,13 @@ decision to make here.
 
 ## Deliverables
 
-- [ ] `md-only` deleted; `dual` renamed `md`; both aliased with warnings
-- [ ] Markdown written before vector, bare `catch {}` removed
-- [ ] Per-entry content hashing, re-embedding only what changed
-- [ ] Strict mirror on deletion, with tests both sides of the bootstrap marker
-- [ ] `meta.md_seeded_at` seeding path
-- [ ] `split` dispatch no-op fixed and vocabulary renamed
-- [ ] Reconcile latency recorded for `32`
+- [x] `md-only` deleted; `dual` renamed `md`; both aliased with warnings
+- [x] Markdown written before vector, bare `catch {}` removed
+- [x] Per-entry content hashing, re-embedding only what changed
+- [x] Strict mirror on deletion, with tests both sides of the bootstrap marker
+- [x] `meta.md_seeded_at` seeding path
+- [x] `split` dispatch no-op fixed and vocabulary renamed
+- [x] Reconcile latency recorded for `32`
 
 ## Comments
 
@@ -110,3 +110,73 @@ decision to make here.
   re-embedding forever. Deterministic entry identity is a prerequisite, not a
   parallel concern. Blockers also gained **`38`** (remove `scope`), sequenced
   first so reconcile is not built to mirror a field that is disappearing.
+- 2026-08-02: Resolved, test-first, AFK. Built the reconcile engine per scope:
+
+## Answer
+
+**`md-only` deleted, `dual` renamed `md`.** `StorageModeEnum` is now
+`vector-only | md | split`; `md-only` and `dual` alias to `md` at config-parse
+time with a stderr warning (`neuronYaml.ts`), so a raw string reaching
+`DualStorageRouter` directly is just another unrecognized mode (falls back to
+`vector-only`, same bucket as any invalid string). `NeuronMemory` no longer
+sets `this.db = null` for any mode — every mode keeps the database now, since
+there is no more "no database" mode to serve.
+
+**Write ordering flipped.** `transactMdMutation` writes markdown first; on
+`upsert` the vector embed is only attempted once the markdown write has
+succeeded, and a vector-side failure is reported to stderr
+(`[neuron warning] vector index write failed...`) rather than swallowed in a
+bare `catch {}` — the next reconcile pass repairs it. `update`/`delete` keep
+report-success-if-either-store-changed semantics (deliberately preserved, see
+`mdVectorSync.ts`'s divergence handling) since those target an entry that may
+have already drifted to one side.
+
+**Reconcile engine** (`DualStorageRouter.reconcile`, private, invoked at the
+top of `transact`/`query` for `md` and `split` modes): gated on
+`meta.md_seeded_at`. Unseeded → bootstrap-export every configured category
+from vector to markdown, then set the marker (a no-op export on a fresh
+store, so the marker gates on presence, not data). Seeded → per category,
+diff markdown against the vector index by `computeMemoryHash` (reused from
+`mdVectorSync.ts`, not reimplemented): missing-or-changed in vector →
+re-embed from markdown (markdown always wins, no conflict to report, unlike
+the two-way `neuron sync` command which survives unchanged as the explicit
+forced rebuild); present in vector but absent from markdown → deleted, no
+tripwire. Measured on a 264-entry store with the mock embedder: **~6.5ms
+steady-state, ~7ms with exactly one changed entry** — recorded here for `32`.
+Per-entry hashing (not `mdEmbedCache`'s deleted per-category `mtimeMs`
+keying) means one changed entry re-embeds once, asserted by spy-counting
+`vectorDb.transact` calls across two consecutive queries, not just checking
+the eventual result — the failure mode this guards (an insert/delete churn
+loop) still produces a correct final answer, so the count is the real
+assertion.
+
+**`split` dispatch no-op fixed by elimination, not patched.** Query-side
+dispatch used to (mis-)branch categories into an `mdCats`/`vecCats` split that
+had no actual behavioral effect once `md-only`'s substring matcher is gone —
+both buckets read through the same `vectorDb.query()` hybrid path, so
+`DualStorageRouter.query()` now just delegates unconditionally (after
+reconciling, for `md`/`split`). Per-category vocabulary (`vector`/`md`/`dual`)
+gets the identical rename treatment as the top level: `dual` aliases to `md`
+with a warning, and `md` at the category level now means
+markdown-first-with-vector-index (what `dual` used to mean) — there is no
+more "pure markdown, no vector row ever" option at either level.
+
+**Tests:** two pre-existing `dualStorageRouter.test.ts` tests
+("vector-only-survivor" delete/update) encoded the *old* model, where an
+entry orphaned by an out-of-band markdown deletion sat in the vector index
+until a later update/delete happened to salvage it. That model is exactly
+what strict-mirror reconcile supersedes — the orphan is now purged on the
+very next command, before the mutation is even processed — so those two
+tests were rewritten: one new test proves the purge-then-not_found behavior
+directly, and the "report success if either store changed" tests were
+rebuilt against genuine same-command divergence (a mocked disk error) instead
+of a since-superseded cross-command scenario. The `md-only`-mode substring
+search tests (router-level and `NeuronMemory`-level) were rewritten against
+the real hybrid RRF path per ADR 0011 §6 ("retrieval parity by construction",
+not a caveat). 303 tests green (unit + E2E); the one intermittent failure
+seen mid-session (`concurrency-stress.test.ts` Pillar 8, three different
+symptoms across three runs — table-mismatch, contention-ratio, and
+duplicate-column-on-migration) is a pre-existing multi-process migration race
+in code this ticket never touched, confirmed by it already failing on the
+unmodified baseline before any change in this session; it passed clean on
+the final full run and is not a regression from this ticket.
