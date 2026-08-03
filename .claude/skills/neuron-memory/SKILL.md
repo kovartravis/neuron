@@ -223,8 +223,10 @@ Whenever a command execution, test run, or tool invocation fails:
 1. Investigate the failure and identify the verified root cause and fix.
 2. Immediately after resolving the issue (and before moving to the next task), record the learning to prevent future agents from repeating the mistake. **Do NOT write 1-sentence summaries.** Memory entries MUST be detailed, multi-sentence explanations (at least 3-4 sentences) capturing context, root cause, exact fix, and code/command examples:
    ```bash
-   neuron memory add --category learning "Fix for <error/issue>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --tags failure-fix,<topic> --importance 4
+   neuron memory add --category learning "Fix for <error/issue>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --importance 4
    ```
+   Tags are left to inference (§0a) — a failure-fix's category and content already
+   carry `failure-fix`-style signal for the centroid to select from.
 
 ## 4. End of Run (Memory Recording)
 
@@ -232,17 +234,18 @@ Before finishing your turn and ending the session:
 
 1. **Log Action History**: Record the action you took using the history log:
    ```bash
-   neuron memory add --category history "<summary of what was built or fixed>" --tags <related-topics> [--task-id <id>]
+   neuron memory add --category history "<summary of what was built or fixed>" [--task-id <id>]
    ```
-   - **`--tags`**: Use comma-separated tags from a standard vocabulary where possible (e.g., `tdd`, `db-schema`, `refactoring`, `debugging`, `git`).
+   - **`--tags`**: leave it to inference (§0a) — pass it explicitly only to mint a
+     genuinely new tag, which is a deliberate act, not the default.
    - **`--task-id`**: Link the history to the ticket or issue being resolved. Use the ticket/issue number (e.g., `01-db-schema-postgres` for local issues, or `#42` for GitHub/GitLab). Do NOT use process/task IDs like `task-144`.
 2. **Record New Learnings**: If you established new rules, resolved configurations, or made architectural decisions, record them explicitly as detailed multi-sentence entries (3-4 sentences minimum):
    ```bash
-   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>" --tags <topic>
+   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>"
    ```
 3. **Record Architectural Decisions**: If you changed module boundaries or made a design choice worth preserving, write it to the `decisions` category:
    ```bash
-   neuron memory add --category decisions "<decision, rationale, and alternatives considered>" --tags adr,<topic>
+   neuron memory add --category decisions "<decision, rationale, and alternatives considered>"
    ```
 4. **Refresh the Blueprint** if the session changed the codebase structure — see Section 8.
 
@@ -428,7 +431,7 @@ it will confidently describe modules that no longer exist.
    contract. Pair it with the `decisions` entry explaining *why*:
    ```bash
    neuron scan
-   neuron memory add --category decisions "<why the boundary changed>" --tags adr,architecture
+   neuron memory add --category decisions "<why the boundary changed>"
    ```
 
 ### Scanner accuracy

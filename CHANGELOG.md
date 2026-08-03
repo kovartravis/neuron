@@ -4,6 +4,111 @@ All notable changes to `@kovartravis/neuron` will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.0-rc2] - 2026-08-02
+
+This band set out to expand the shipped Qwen1.5-0.5B model's job list and
+measured its way to the opposite conclusion: **the model still has exactly the
+one default-on job it had in 2.1.0** — code summarization during `neuron scan`.
+Three candidate jobs were tried and none shipped: salvage query expansion and
+LLM-assisted dedupe were both killed by their own pre-committed measurement bar
+before reaching review, and automatic pruning's judgement arms both
+false-deleted ground-truth-unrecoverable entries in testing and were removed.
+What did ship moved work *off* the model instead — tags and category inference
+now run on the embedder already loaded on the write path, not the LLM.
+
+**Known pre-existing failure, unrelated to this band:** Pillar 8
+(multi-process contention) fails at `3/50` rejected writes against a `<5%`
+bar. Reproduced on a clean tree with this band's changes stashed; it is SQLite
+write-lock contention, not enrichment.
+
+This build also carries two entries from the markdown-first band (rc5),
+which reached trunk first: `scope` removal and frontmatter round-trip fixes.
+They are documented below rather than held back, since what ships in this
+`rc` tag is whatever is on trunk when it is cut, not only the tickets
+originally planned for it.
+
+### Added — write-side enrichment (tags & category)
+
+`neuron memory add` (and `update`) can now infer metadata the caller leaves
+unset, instead of requiring every field up front.
+
+- **Tags are *selected*, never generated**: cosine similarity against
+  per-tag centroids (the mean embedding of entries already carrying that tag)
+  over a closed vocabulary — every tag declared in `neuron.yaml`, plus every
+  store tag carried by at least 3 entries. The floor of 3 is a requirement of
+  the centroid method, not a tuning knob: a singleton tag's centroid is
+  identical to its one entry.
+- **Category defaults to the same centroid strategy**
+  (`categoryStrategy: centroid`), which beat an LLM-based alternative 9 times
+  out of 9 in benchmarking (the model won once). `categoryStrategy: model`
+  remains available but is not the default.
+- **`--category` is conditionally required**: mandatory whenever enrichment is
+  disabled (`llm.enrichment.enabled: false`) or category inference is off
+  (`llm.enrichment.category: off`); optional otherwise. A cold store with no
+  centroids yet is the one case where inference still hard-errors and asks for
+  `--category` explicitly.
+- **A shared timeout primitive** (`src/components/timeout.ts`) bounds every
+  enrichment call; a timeout degrades to leaving the field unset rather than
+  blocking the write.
+- **Degradation is counted, not silent**: `neuron status` reports
+  `enrichment.degraded`, broken down by reason (`timeout`,
+  `model_unavailable`, `embedder_unavailable`, `category_not_declared`,
+  `no_declared_categories`, `model_disabled`, `empty_generation`) — a nonzero
+  counter is how a silently-falling-back inference otherwise goes unnoticed.
+- Both inferred fields reuse the embedder already loaded on the write path
+  (~4ms), not a separate model load.
+
+**Gated on strict non-regression** (ADR 0010 §7): Pillar 12 measured **delta
+0.0** on `recallAt1`/`recallAt5`/`mrr` between the enrichment-on and
+enrichment-off arms.
+
+Ticket [06](.scratch/neuron-2.2.0/issues/06-write-side-enrichment.md); guardrail
+design in [ADR 0010](docs/adr/0010-llm-job-guardrails.md).
+
+### Not shipped — salvage expansion, dedupe, automatic pruning
+
+Three jobs this band evaluated for the model's list did not clear the bar
+ticket [05](.scratch/neuron-2.2.0/issues/05-llm-quality-latency-guardrails.md)
+set, and none of the three shipped:
+
+- **Query expansion for weak retrieval** — the weakness floor the design
+  depended on is *inverted* on the failures it was meant to catch: the mean
+  top-1 cosine on queries retrieval got wrong (0.7779) is *higher* than on
+  queries it got right (0.7518). Every measured failure is confidently wrong,
+  not weak, so no rewritten query could have fixed it. Ruled out before
+  implementation. [Ticket 07](.scratch/neuron-2.2.0/issues/07-query-expansion.md).
+- **LLM-assisted consolidation & dedupe** — pairwise cosine over 239 store
+  entries found exactly one genuine same-category duplicate, findable by
+  content hash with no model. The band that would catch more is full of
+  semantic *opposites* sitting at cosine 0.92, which needs reliable negation
+  detection neither the 0.5B model nor the embedder has. Ruled out before
+  design. [Ticket 08](.scratch/neuron-2.2.0/issues/08-consolidation-dedupe.md).
+- **Automatic pruning** — both candidate judgement methods (a recoverability
+  binary and a recalibrated 1–5 importance scale) false-deleted
+  ground-truth-unrecoverable entries in pre-committed testing (2 of 11 and 4
+  of 11 respectively), including a `decisions`-category ADR that reads like
+  ordinary prose. **Removed from 2.2.0.**
+  [Ticket 23](.scratch/neuron-2.2.0/issues/23-configurable-automatic-pruning.md),
+  [ticket 24](.scratch/neuron-2.2.0/issues/24-pruning-ab-test.md).
+
+**The prune hazard this would have addressed is still live and unfixed**:
+`neuron memory prune`'s default importance ceiling (`3`) is also the default
+value every entry gets when written without `--importance`, so a bare
+`neuron memory prune` deletes nearly everything older than its `--days`
+window. Deferred rather than fixed —
+[ticket 25](.scratch/neuron-2.2.0/issues/25-prune-config-and-collision-fix.md) —
+by deliberate maintainer decision. Pass `--importance 4` or `5` on anything
+that must survive a prune.
+
+### Changed — query-path latency baseline
+
+Measured `neuron memory query` end to end, each invocation its own process:
+first invocation in a shell session (cold OS/model file cache) **~4.8s**;
+steady state on repeated invocations (warm cache), **p50 ~223ms, p95 ~229ms**
+over 20 runs (min 221ms, max 232ms). Write-side enrichment runs on `add`, not
+`query`, so this band did not change the number — it is recorded here as the
+baseline budget rc3's auto-injection hooks have to fit inside.
+
 ### Removed — `scope`
 
 `scope` was designed for a multi-tenant ambition that was never pursued.

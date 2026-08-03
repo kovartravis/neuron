@@ -27,15 +27,15 @@ neuron exec -- <command>
 ## 3. FAILURE-FIX RECORDING (Mandatory Step 3)
 Whenever a command, build, or test fails and you fix it, you MUST immediately record the resolution before moving on. Entries MUST be comprehensive, multi-sentence explanations (at least 3-4 sentences) covering context, root cause, exact resolution, and any edge cases—do NOT write brief 1-sentence summaries:
 ```bash
-neuron memory add --category learning "Fix for <error>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --tags failure-fix,<topic> --importance 4
+neuron memory add --category learning "Fix for <error>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --importance 4
 ```
 
 ## 4. SESSION CONCLUSION (Mandatory Step 4)
 NEVER finish your turn or declare a task complete without logging the history entry and recording any new learnings or decisions as detailed multi-sentence entries (3-4 sentences minimum):
 ```bash
-neuron memory add --category history "<detailed summary of work completed>" --tags <topic> --task-id <ticket-id>
+neuron memory add --category history "<detailed summary of work completed>" --task-id <ticket-id>
 # For architectural decisions / ADRs:
-neuron memory add --category decisions "<ADR / design choice rationale and details>" --tags adr,<topic>
+neuron memory add --category decisions "<ADR / design choice rationale and details>"
 ```
 
 ### On the metadata flags

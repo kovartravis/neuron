@@ -199,6 +199,25 @@ every ticket resolved, every rc cut, stable published.
   `--importance`**, while all three guarded entries survive. 270 tests green.
   [ADR 0010 amendment](../../docs/adr/0010-llm-job-guardrails.md).
 
+- [09 — Cut and Publish 2.2.0-rc2](issues/09-cut-rc2.md) — **`v2.2.0-rc2` cut,
+  tagged and pushed; npm publish left to the maintainer**, matching `04`'s
+  precedent. The ticket's original gating question was void by the time it was
+  worked: none of the three LLM jobs it was written to gate shipped (`07`/`08`
+  ruled out before reaching the bar, `23`/`24` removed on the A/B verdict), and
+  `06` shipped with the model off the write path entirely — the model's
+  default-on job list is unchanged from 2.1.0. Query-path latency baseline
+  recorded for rc3: cold ~4.8s, warm p50 ~223ms/p95 ~229ms. Found and fixed two
+  real gaps while executing: `CLAUDE.md` and the packaged skill's mandatory
+  protocol steps still hardcoded `--tags` on every example, directly
+  contradicting their own "prefer omitting `--tags`" guidance; and ticket `06`'s
+  actual shipped feature (centroid tag/category inference) had no CHANGELOG
+  entry at all, only its later importance-removal amendment did. **This build
+  also carries rc5's `scope` removal and frontmatter fixes** (`35`, `38`),
+  which reached trunk first — documented under rc2 rather than held back,
+  since what an `rc` tag ships is whatever is on trunk when it's cut. 290 unit
+  tests green; 12/13 E2E pillars (Pillar 8 multi-process contention is a
+  pre-existing, unrelated failure).
+
 - [28 — What `md-only` Parity Actually Means](issues/28-md-only-parity-design.md)
   — **`md-only` is deleted, not fixed.** The question was wrong: `md-only`
   reached markdown-first storage by *removing* SQLite, while `dual` already
