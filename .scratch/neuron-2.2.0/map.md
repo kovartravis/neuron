@@ -296,6 +296,34 @@ every ticket resolved, every rc cut, stable published.
   full suite 355/359 (4 pre-existing `42` pollution failures, confirmed
   unrelated). Hands `13` a harness-agnostic layer to build Codex against.
 
+- [13 — Codex Adapter (Fallback Reference)](issues/13-codex-adapter.md) —
+  **Codex turned out deterministic, not the fallback extreme the ticket's own
+  framing assumed** (that framing predates `10`'s finding). A direct fetch of
+  Codex's hooks docs during this ticket found event names, stdin fields
+  (`session_id` on every event including `PreCompact`/`PostCompact`,
+  `prompt` on `UserPromptSubmit`), and the stdout `hookSpecificOutput`
+  envelope **byte-identical to Claude Code's** — resolving ADR 0014 §3's
+  session-ledger risk for Codex the same way `12` resolved it for Claude
+  Code, and letting `src/commands/hook.ts`'s `runHook()` stay fully
+  harness-agnostic (only the harness allowlist widened). The one real
+  difference is contained inside `codex.ts`: Codex's schema documents a
+  single `command` string, not Claude Code's `command`+`args[]` split — an
+  adapter detail, not an interface change, so `11`/ADR 0014 needed no
+  revision. Two Codex-specific judgment calls: `payloadCapChars` reports a
+  flagged 3-chars/token conversion of the documented 2500-token cap (no
+  directly-quoted character figure exists), and `'project-local'` collapses
+  into the same `.codex/hooks.json` `'project-committed'` writes (Codex
+  documents no third, gitignored scope), with a one-time stderr warning.
+  The `AGENTS.md`-fallback and instruction-round-trip deliverables are moot
+  by the same deterministic finding — nothing built there. Multi-harness
+  coexistence verified directly: a project with both `.claude/` and
+  `.codex/` gets both adapters wired independently, neither touching the
+  other's file. 29 new tests (14 adapter, 7 CLI end-to-end via
+  `dist/cli.js hook codex <point>`, 3 init-wiring incl. two-marker
+  multi-harness and `--harness` filtering), all green; full suite 380/384,
+  the 4 failures all pre-existing `42` pollution in files this ticket never
+  touched. Unblocks `14` and `15`.
+
 - [28 — What `md-only` Parity Actually Means](issues/28-md-only-parity-design.md)
   — **`md-only` is deleted, not fixed.** The question was wrong: `md-only`
   reached markdown-first storage by *removing* SQLite, while `dual` already

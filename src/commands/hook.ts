@@ -27,6 +27,14 @@ const HOOK_TIMEOUT_MS: Record<LifecyclePoint, number> = {
 
 const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset'];
 
+/**
+ * Both harnesses share the same stdin fields (`session_id`, `prompt`) and
+ * stdout contract (`hookSpecificOutput.additionalContext`), confirmed for
+ * Codex via a direct fetch of its hooks docs during ticket 13 — so `runHook`
+ * below needs no per-harness branching beyond this allowlist.
+ */
+const VALID_HARNESSES = ['claude-code', 'codex'];
+
 function readStdin(): Promise<string> {
   return new Promise(resolve => {
     if (process.stdin.isTTY) {
@@ -60,7 +68,7 @@ export async function handleHookCommand(args: string[]): Promise<void> {
   const point = args[2] as LifecyclePoint;
   const projectDir = process.cwd();
 
-  if (harness !== 'claude-code' || !VALID_POINTS.includes(point)) {
+  if (!VALID_HARNESSES.includes(harness) || !VALID_POINTS.includes(point)) {
     return;
   }
 

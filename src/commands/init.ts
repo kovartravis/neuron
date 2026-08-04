@@ -14,6 +14,7 @@ import { computeProjectFingerprint, writeReconciledFingerprint } from '../scanne
 import { NeuronMemory } from '../index.js';
 import {
   ClaudeCodeAdapter,
+  CodexAdapter,
   HarnessAdapter,
   HookTarget,
   OverwritePolicy,
@@ -23,9 +24,9 @@ import {
 
 export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
 
-/** Every harness with a real adapter. Grows as tickets 13/16/40 land. */
+/** Every harness with a real adapter. Grows as tickets 16/40 land. */
 function getAdapters(harnessFilter?: string[]): HarnessAdapter[] {
-  const all: HarnessAdapter[] = [new ClaudeCodeAdapter()];
+  const all: HarnessAdapter[] = [new ClaudeCodeAdapter(), new CodexAdapter()];
   if (!harnessFilter || harnessFilter.length === 0) return all;
   return all.filter(a => harnessFilter.includes(a.id));
 }

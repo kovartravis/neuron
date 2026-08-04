@@ -119,6 +119,88 @@ describe('CLI Command: hook', () => {
     expect(result.status).toBe(0);
   });
 
+  // --- Ticket 13: Codex adapter — same runHook() codepath, confirmed identical
+  // stdin fields and stdout envelope, so coverage mirrors claude-code's above. ---
+  describe('codex', () => {
+    it('exits 0 and prints nothing on session-start against an empty store', () => {
+      const result = run(['hook', 'codex', 'session-start'], JSON.stringify({ session_id: 's1' }));
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('injects the architecture card via SessionStart hookSpecificOutput when one exists', () => {
+      execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+      const result = run(['hook', 'codex', 'session-start'], JSON.stringify({ session_id: 's1' }));
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.hookSpecificOutput.hookEventName).toBe('SessionStart');
+      expect(parsed.hookSpecificOutput.additionalContext).toContain('Repository Architectural Blueprint');
+    });
+
+    it('injects relevant results via UserPromptSubmit for pre-prompt', () => {
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const result = run(
+        ['hook', 'codex', 'pre-prompt'],
+        JSON.stringify({ session_id: 's1', prompt: 'how should I access the database here' })
+      );
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.hookSpecificOutput.hookEventName).toBe('UserPromptSubmit');
+      expect(parsed.hookSpecificOutput.additionalContext).toContain('Repository Pattern');
+    });
+
+    it('deduplicates pre-prompt injection within the same session via the ledger', () => {
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const stdin = JSON.stringify({ session_id: 'codex-dedupe-session', prompt: 'database access pattern' });
+
+      const first = run(['hook', 'codex', 'pre-prompt'], stdin);
+      expect(first.stdout.toString().trim()).not.toBe('');
+
+      const second = run(['hook', 'codex', 'pre-prompt'], stdin);
+      expect(second.status).toBe(0);
+      expect(second.stdout.toString().trim()).toBe('');
+    });
+
+    it('context-reset clears the ledger so a previously-injected entry reappears', () => {
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const stdin = JSON.stringify({ session_id: 'codex-reset-session', prompt: 'database access pattern' });
+
+      expect(run(['hook', 'codex', 'pre-prompt'], stdin).stdout.toString().trim()).not.toBe('');
+      expect(run(['hook', 'codex', 'pre-prompt'], stdin).stdout.toString().trim()).toBe('');
+
+      const resetResult = run(['hook', 'codex', 'context-reset'], JSON.stringify({ session_id: 'codex-reset-session' }));
+      expect(resetResult.status).toBe(0);
+
+      expect(run(['hook', 'codex', 'pre-prompt'], stdin).stdout.toString().trim()).not.toBe('');
+    });
+
+    it('degrades silently (exit 0, empty stdout) on malformed stdin rather than crashing', () => {
+      const result = run(['hook', 'codex', 'pre-prompt'], 'not json at all {{{');
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('degrades silently when the prompt field is missing entirely', () => {
+      const result = run(['hook', 'codex', 'pre-prompt'], JSON.stringify({ session_id: 's1' }));
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('keeps its own session ledger independent of a claude-code session with the same id, avoiding double-injection races across harnesses', () => {
+      // Not a claim that ledgers are namespaced per harness (they are not, per
+      // ledger.ts) — this documents the current behaviour: two harnesses
+      // sharing one neuron-generated session_id would in fact share a ledger.
+      // In practice each harness mints its own session ids, so this is
+      // recorded as a known, accepted limitation rather than a bug to fix here.
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const sharedId = 'shared-session-id';
+      const stdin = JSON.stringify({ session_id: sharedId, prompt: 'database access pattern' });
+
+      expect(run(['hook', 'claude-code', 'pre-prompt'], stdin).stdout.toString().trim()).not.toBe('');
+      expect(run(['hook', 'codex', 'pre-prompt'], stdin).stdout.toString().trim()).toBe('');
+    });
+  });
+
   function execAdd(content: string, category: string) {
     spawnSync(
       'node',

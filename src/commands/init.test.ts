@@ -216,6 +216,70 @@ describe('CLI Command: init', () => {
       fs.rmSync(initTempDir, { recursive: true });
     });
 
+    it('installs Codex hooks non-interactively, defaulting to project-committed', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-codex-default-test');
+      fs.mkdirSync(path.join(initTempDir, '.codex'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.installed).toHaveLength(1);
+      expect(result.hooks.installed[0]).toMatchObject({
+        harness: 'codex',
+        target: 'project-committed',
+        points: { 'session-start': 'written', 'pre-prompt': 'written', 'context-reset': 'written' },
+      });
+
+      const hooksPath = path.join(initTempDir, '.codex', 'hooks.json');
+      expect(fs.existsSync(hooksPath)).toBe(true);
+      const hooksFile = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
+      expect(hooksFile.hooks.UserPromptSubmit[0].hooks[0].command).toBe('neuron hook codex pre-prompt');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('wires every detected harness when a project has both .claude/ and .codex/ markers', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-multi-harness-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.mkdirSync(path.join(initTempDir, '.codex'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.installed).toHaveLength(2);
+      const harnesses = result.hooks.installed.map((r: any) => r.harness).sort();
+      expect(harnesses).toEqual(['claude-code', 'codex']);
+      expect(fs.existsSync(path.join(initTempDir, '.claude', 'settings.json'))).toBe(true);
+      expect(fs.existsSync(path.join(initTempDir, '.codex', 'hooks.json'))).toBe(true);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--harness codex on a project with both markers wires only Codex', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-multi-harness-filter-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.mkdirSync(path.join(initTempDir, '.codex'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --harness codex`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.installed).toHaveLength(1);
+      expect(result.hooks.installed[0].harness).toBe('codex');
+      expect(fs.existsSync(path.join(initTempDir, '.claude', 'settings.json'))).toBe(false);
+      expect(fs.existsSync(path.join(initTempDir, '.codex', 'hooks.json'))).toBe(true);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
     it('does not install hooks when no supported harness is detected', () => {
       const cliPath = path.join(process.cwd(), 'dist/cli.js');
       const initTempDir = path.join(tempDbDir, 'hooks-no-harness-test');
