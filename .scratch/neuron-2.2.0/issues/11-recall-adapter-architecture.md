@@ -1,6 +1,6 @@
 Type: grilling
-Status: unclaimed
-Blocked by: 09, 10, 39
+Status: resolved
+Blocked by: none
 Band: 2.2.0-rc3
 
 # 11 — Recall Adapter Architecture
@@ -52,16 +52,28 @@ whether a given harness enforces recall.
 
 ## Deliverables
 
-- [ ] ADR recording the adapter interface and capability model
-- [ ] Payload budget: token ceiling, relevance floor, truncation strategy
-- [ ] Consent/opt-in policy for writing harness config, plus an uninstall path
-- [ ] Multi-harness resolution rule
-- [ ] Idempotency + config-merge safety requirements for `12`–`13` and `16`–`18`
+- [x] ADR recording the adapter interface and capability model
+- [x] Payload budget: token ceiling, relevance floor, truncation strategy
+- [x] Consent/opt-in policy for writing harness config, plus an uninstall path
+- [x] Multi-harness resolution rule
+- [x] Idempotency + config-merge safety requirements for `12`–`13` and `16`–`18`
 
 ## Settled — grilling session 2026-08-03
 
-Six of the eight decision points are resolved. **Point 4 is blocked on `39`** and
-**point 6 was not reached.** The ticket stays open for both.
+Seven of the eight decision points are resolved. **Point 6 was not reached** —
+the ticket stays open for it alone.
+
+**Point 4 resolved 2026-08-03 by `39`: the relevance floor is *none*.** Full
+500-question LongMemEval run found no (cosine floor, band) pair clears the
+pre-committed bar — every floor from 0.50 to 0.70 regresses recall on real
+conversational text, because on-topic and negative-control top-1 cosine
+overlap too far to cut cleanly (a *thinner* margin than technical prose, the
+opposite of what the pilot's own hedge worried about). The lexical leg's
+false-silence rate, the other open risk, measured 0% across all 500 questions
+and every category. So the payload budget's floor and truncation strategy are
+now **both** settled by argument alone: the character ceiling (point 5) is the
+sole volume control, and there is no relevance-based rejection beneath it in
+this release. Detail: [ADR 0012's amendment](../../docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-39-2026-08-03--the-cosine-floor-and-the-config-surface).
 
 ### 1. Scope cut to what can be described — points 1, and the premise of the rest
 
@@ -232,6 +244,48 @@ query's top hit **score*** — RRF, not cosine, and a different population. It c
 a wrong turn during this grilling before the source was checked. **No
 contradiction**; `39` carries a one-word fix to the gist.
 
+## Answer
+
+**Point 6 (multi-harness resolution), grilled 2026-08-03, closing the ticket.**
+
+`neuron init` wires hooks into **every detected harness**, not a chosen one —
+matching the precedent `detectHarnesses` (`src/config/harness.ts:15-19`)
+already set for skill-copying, which filters to all matches rather than the
+first. A repo with both `.claude/` and `.codex/` more often means different
+contributors use different harnesses than one person using both at once;
+picking "the one" would silently leave a teammate's harness un-instrumented
+with no signal why. Point 7/8's per-target consent and overwrite-ask already
+give a finer-grained per-harness opt-out than an all-or-nothing choice here
+would.
+
+Four sub-decisions fall out of "wire all":
+
+1. **The `AGENTS.md` instruction-only fallback is layered, not additive.** It
+   is written only when **no** deterministic/best-effort harness matched at
+   all — never alongside a deterministic hook. Writing it unconditionally
+   would restate step 1 of the `CLAUDE.md` protocol (self-invoked recall) on a
+   harness where the settled "protocol split" already deletes that step,
+   undermining the hook it sits next to.
+2. **The hook-target prompt (point 7) is asked once per `init` run**, not
+   once per harness, and the answer (user-global / project-committed /
+   project-local) applies uniformly to every harness being wired. It reflects
+   how this contributor wants to work across their toolchain, not a
+   per-harness preference — asking it per-harness would turn a
+   three-harness repo's `init` into a wall of near-identical prompts.
+3. **The overwrite-ask (point 8) still fires per hook file**, unaffected by
+   the above — whether a conflicting entry exists is a fact about that one
+   file, not a preference that can be answered once and reused.
+4. **New flag: `--harness <list>`** (e.g. `--harness claude,codex`) narrows
+   wiring to a subset of *detected* harnesses. It only filters what
+   `detectHarnesses` already found — it cannot force-wire a harness whose
+   marker directory doesn't exist, since bootstrapping a harness from
+   scratch is a different feature than choosing among the ones already
+   present. Sits alongside the existing `--yes` / `--no-hooks` /
+   `--overwrite-hooks` / `--keep-hooks` flags from points 5 and 8.
+
+Full decision record for all eight points:
+[ADR 0014 — Recall Adapter Architecture](../../docs/adr/0014-recall-adapter-architecture.md).
+
 ## Comments
 
 - 2026-07-31: Decision ticket — resolve with `/grilling` and `/domain-modeling`
@@ -242,3 +296,6 @@ contradiction**; `39` carries a one-word fix to the gist.
   resolution) was never reached** — a repo with both `.claude/` and `AGENTS.md`
   still has no rule. Resume there; it is independent of `39` and could be
   grilled before the benchmark lands.
+- 2026-08-03: Point 4 resolved by `39` (no cosine floor ships). Point 6
+  grilled and resolved (above) — all eight decision points now settled.
+  Ticket closed. Unblocks `12` (Claude Code adapter) and `13` (Codex adapter).
