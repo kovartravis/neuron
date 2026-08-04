@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: 20, 34
+Blocked by: 15, 34
 Band: 2.2.0
 
 # 21 — Release 2.2.0 Stable
@@ -20,11 +20,16 @@ rather than assuming the docs kept pace across four rcs.
 
 ## Scope
 
-1. Promote `2.2.0-rc4` to `2.2.0` stable; publish to `latest`.
+1. Promote `2.2.0-rc5` to `2.2.0` stable; publish to `latest`. (`rc4` was
+   dropped from this map's path on 2026-08-04 — see map.md's Destination
+   callout — so this promotes directly from the markdown-first band.)
 2. Consolidate the CHANGELOG into a single 2.2.0 section — Added / Changed /
    Fixed / **Known Limitations**. The limitations section is not optional:
    - languages still at regex fidelity (the 6 beyond ticket `02`'s 9)
-   - harnesses at `best-effort` or `instruction-only` recall
+   - **deterministic recall ships for Claude Code and Codex CLI only** —
+     Copilot CLI and Cursor land `best-effort` per ticket `10`'s research and
+     continue in [neuron-harness-expansion](../neuron-harness-expansion/map.md),
+     not this release; say so as a roadmap item, not an apology
    - any LLM job disabled or held back at ticket `09`
 3. **Documentation audit against the code**, not against the rc notes:
    - `README.md` — AST claims scoped to supported languages; compatibility matrix
@@ -35,7 +40,7 @@ rather than assuming the docs kept pace across four rcs.
    - ADRs 0003, 0008 and everything landed by `05`, `11`
 4. Verify the upgrade path end to end from a real 2.1.0 install: baseline
    migration (`03`), protocol block rewrite (`14`), and harness config writes
-   (`12`, `13`, `16`–`18`) all landing on a user who did not read the notes.
+   (`12`, `13`) all landing on a user who did not read the notes.
 5. Confirm the tarball is still ~621 KB — no grammars, no models, no fixtures leaked.
 6. Run `npm test` and `npm run test:e2e`; all 6 pillars green.
 7. Tag `v2.2.0` and publish.

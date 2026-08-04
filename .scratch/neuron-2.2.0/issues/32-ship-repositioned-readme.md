@@ -46,12 +46,18 @@ it was taken against a `2.2.0-rc1` build and the band will have moved things.
    0.375. Publishing it as a tuning knob documents a dead control. Either land
    `27` first, or drop `minScore` from the example. **Do not publish it as-is.**
 6. **"Cross-agent — works with Claude, Cursor, Antigravity, and Codex."**
-   Cursor is not in the rc3/rc4 adapter plan, which covers Claude Code, Codex,
-   Copilot CLI, Antigravity CLI and OpenCode. Either add Cursor to `19`'s
-   compatibility matrix as a real supported target, or correct the list. Note the
-   claim is *currently* carried by `CLAUDE.md`/`AGENTS.md` instruction blocks
-   rather than adapters, which is a weaker form of "works with" than the sentence
-   implies.
+   **Resolved 2026-08-04 by the destination narrowing**: this release ships
+   deterministic hook-based recall for exactly two harnesses, **Claude Code and
+   Codex CLI** — say that plainly rather than "cross-agent." Cursor, Copilot CLI,
+   Antigravity and OpenCode are not in this cut (`16`/`40` closed out of scope,
+   `17`/`18` ruled out on the merits); name Copilot CLI and Cursor as a stated
+   roadmap item pointing at
+   [neuron-harness-expansion](../neuron-harness-expansion/map.md) rather than
+   silently dropping them from the pitch. Do not claim any harness receives
+   recall via `CLAUDE.md`/`AGENTS.md` instruction blocks now that `14` deletes
+   step 1 on deterministic harnesses — that was always a weaker form of "works
+   with" than the draft's sentence implied, and after `14` it's simply gone
+   there.
 7. **"no knowledge graph, no binary, no database to inspect."** If `28` puts an
    embedding cache in the `env-paths` data dir, this sentence needs to survive
    contact with a user who finds it. `28` owes a stated position; this ticket
@@ -130,7 +136,7 @@ Check whether `36` made the guarantee mode-dependent. If it holds only in
 - [ ] `README.md` replaced
 - [ ] Every claim re-verified against the built CLI post-`31`
 - [ ] `minScore` resolved (landed or removed from the example)
-- [ ] Cross-agent list corrected or `19`'s matrix extended
+- [ ] Cross-agent claim corrected to name Claude Code and Codex CLI specifically, with best-effort harnesses stated as roadmap, not silently dropped
 - [ ] "No database" wording survives `28`'s cache decision
 - [ ] Architecture section neither overclaims nor undersells rc1
 

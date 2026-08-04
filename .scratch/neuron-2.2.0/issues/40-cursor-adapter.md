@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: out of scope — 2026-08-04, destination narrowed to the 3-pillar 2.2.0 cut (Claude Code + Codex deterministic recall, md-first, deterministic scanning); continues as ticket 02 in ../neuron-harness-expansion/map.md, do not implement here
 Blocked by: 15
 Band: 2.2.0-rc4
 

@@ -3,12 +3,43 @@
 ## Destination
 
 `@kovartravis/neuron` **v2.2.0** published stable to npm, reached progressively
-through five release candidates. The release covers four themes: real
-WebAssembly Tree-Sitter AST parsing, embedder-based write-side enrichment with a
-measured boundary on what a 0.5B model can be trusted with, harness-native
-recall across five coding agents with an `AGENTS.md` fallback for everything
-else, and — added 2026-08-02 — **deterministic, schema-enforced plain-markdown
-memory as the product's primary claim**.
+through release candidates, carrying three shippable, marketable pillars:
+**(1)** deterministic, hook-based recall for **Claude Code and Codex CLI** — no
+agent cooperation required, verified end to end with the instruction removed;
+**(2)** **markdown as the store of record**, with the vector store demoted to a
+rebuildable index and writes schema-enforced so an agent using the CLI cannot
+produce a malformed entry; **(3)** **deterministic, byte-stable architecture
+scanning** via real Tree-Sitter AST parsing, producing a card that only changes
+when the codebase does.
+
+> **Narrowed on 2026-08-04, close to a weekly usage limit, to ship a focused
+> major release rather than let the map sprawl toward a fifth.** The three
+> pillars above were already ~90% landed (tickets `01`–`13`, `23`, `24`, `26`–`29`,
+> `31`, `35`–`39` all resolved) — what remained open was mostly the `rc4`
+> best-effort-harness band (`16`, `19`, `40`) plus its cut (`20`), which was
+> never load-bearing for any of the three pillars: `10`'s own research already
+> found Copilot CLI and Cursor land `best-effort`, a real but harder-to-market
+> claim than "deterministic," and rc5 (the markdown-first band) has **no
+> technical dependency on rc3/rc4** per the note below — it was only sequenced
+> last because that's where the band was added.
+>
+> `16`, `40`, `20`, and `19`'s full compatibility-matrix scope are **closed
+> out of scope here** and continue as a fresh effort at
+> [neuron-harness-expansion](../neuron-harness-expansion/map.md) — recall for
+> Copilot CLI and Cursor, and the fuller disclosure UX that becomes worth
+> building once there is a *less-than-deterministic* harness to explain. `19`'s
+> minimal duty — truthfully reporting Claude Code/Codex fidelity in `neuron
+> init` and a two-row README note — is small enough now to fold into `15`
+> rather than carry its own ticket. See **Out of scope** below for the
+> per-ticket pointers, and this map's remaining path is now
+> `rc3 → rc5 → stable` — `rc4`'s slot is reserved for the follow-on effort,
+> not renumbered away.
+
+The release covers four themes: real WebAssembly Tree-Sitter AST parsing,
+embedder-based write-side enrichment with a measured boundary on what a 0.5B
+model can be trusted with, harness-native recall — narrowed above to Claude
+Code and Codex CLI for this cut — and — added 2026-08-02 — **deterministic,
+schema-enforced plain-markdown memory as the product's primary claim**.
 
 > **Theme 4 was added on 2026-08-02, mid-route, and it is a repositioning.**
 > The trigger was competitive: `codebase-memory-mcp` (tree-sitter + hybrid LSP,
@@ -86,9 +117,9 @@ every ticket resolved, every rc cut, stable published.
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
 | `2.2.0-rc2` | `05`, `06`, `09`, `24`, `26` | Centroid write-side enrichment, a timeout primitive, degradation counters — **and no new model jobs at all**: `07` and `08` are out of scope, `23`/`24` removed automatic pruning, `25` is deferred, `06` shipped with the model off the write path, and `26` removes the last model call from it |
 | `2.2.0-rc3` | `10`–`15`, `39`, `41` | Recall adapter layer + the 2 `deterministic` adapters (Claude Code, Codex CLI) + the `instruction-only` fallback + the relevance gate (`27` designed it; `41` ships the structural half, `39` the one fitted constant) |
-| `2.2.0-rc4` | `16`, `40`, `19`, `20` | The 2 **documented** `best-effort` adapters (Copilot CLI, Cursor) + disclosure. Was 3 adapters: `17`/`18` are out of scope |
+| ~~`2.2.0-rc4`~~ | ~~`16`, `40`, `19`, `20`~~ | **Moved 2026-08-04** to [neuron-harness-expansion](../neuron-harness-expansion/map.md) — not load-bearing for any of the three pillars. `17`/`18` stay out of scope regardless (ruled out on the merits, not on sequencing) |
 | `2.2.0-rc5` | `28`–`38`, `43`–`46` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
-| `2.2.0` | `21` | Stable release |
+| `2.2.0` | `21` | Stable release — now blocked by `15` (rc3 cut) and `34` (rc5 cut) only, not `20` |
 
 > **`27` settled the floor's *shape*** (2026-08-02, ahead of `11` reaching point
 > 4). It fixed point 4 as a two-leg conjunction and **rewrote `39`'s design**: the
@@ -609,44 +640,17 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 
 <!-- in-scope fog: real, but not yet sharp enough to ticket -->
 
-- **Plan-vs-architecture-diff (`diffAgainstArchitecture`).** Requested in the
-  2026-08-02 repositioning handoff as a generic per-category flag in
-  `neuron.yaml`, letting a category's entries (e.g. `plans`) be compared against
-  the architecture diff by a two-stage pipeline — embedding similarity for
-  matching, the 0.5B model only for phrasing already-confirmed matches, never for
-  the match decision itself. **Cannot be ticketed: the handoff cites a full spec
-  at `neuron-plan-vs-drift-handoff.md` that does not exist in this repo or
-  anywhere reachable.** The handoff is explicit that the feature must be scoped
-  *exactly* as that spec has it — no new package, no PM-software creep, no
-  hardcoded category-name logic — so writing a replacement spec from the
-  one-paragraph summary would be inventing the thing it says not to invent.
-  Graduates the moment the spec is supplied. Note the two-stage shape is
-  consistent with everything this map measured: embedder decides, model only
-  phrases.
-
-- **Capturing a maintainer decision, not just an agent action.** Surfaced on
-  2026-08-01 when a session re-claimed the deferred ticket `25`. Protocol step 4
-  records what the *agent did*; nothing records what the *maintainer decided*,
-  so a verbal "don't do 25" left no trace in `neuron`, in the map, or in the
-  ticket — while three artifacts kept asserting the opposite. Retrieval worked
-  perfectly and returned the wrong answer, which means **rc3's deterministic
-  hooks do not fix this**: hooks own the read side, and this is a write-side
-  capture gap. What is unformed is whose job the write is (a protocol step the
-  agent must obey is the same reliability failure, relocated) and how a
-  reversal *supersedes* a stale high-confidence entry rather than merely
-  competing with it. That supersession question came up independently in ticket
-  `08`, which is now **out of scope** — so if supersession is worth building, it
-  graduates from *this* fog patch as its own ticket, and inherits nothing from
-  dedupe except ADR 0010 §6's "mark superseded, never delete" posture.
-- **A write-time content-integrity floor.** 61 of 239 entries (26%) hold a
-  single token — `Fix`, `Updated`, `When` — because unquoted shell arguments
-  word-split and `neuron memory add` keeps only `positionals[0]`. The rows are
-  otherwise well-formed (correct category, distinct meaningful tags, real
-  importance), so nothing flags them and they still occupy an embedding slot.
-  Whether the fix is a length floor, a whitespace check, a confirmation prompt,
-  or an argument-count guard is unformed — but a quarter of this store's recall
-  surface is destroyed content, which bears on every retrieval measurement the
-  map has taken.
+> **Trimmed 2026-08-04** alongside the destination narrowing. Nine fog patches
+> not owed by any of the three pillars moved to
+> [neuron-harness-expansion](../neuron-harness-expansion/map.md)'s own **Not
+> yet specified** rather than staying parked here unresolved: the
+> plan-vs-architecture-diff feature, capturing a maintainer decision,
+> a write-time content-integrity floor, bootstrapping category centroids on a
+> cold store, the tag-vocabulary full-table-read cost, whether `neuron exec`'s
+> pre-command lookup should become a hook, confidently-wrong retrieval, the
+> grammar-delivery threat model, and cross-harness testing strategy. What's
+> left below either blocks on an in-scope ticket (`14`) or directly qualifies
+> one of the three pillars' marketing claims.
 
 - **An undeclared category is written but never mirrored.** Left behind by
   `31`'s fix. Nothing validates `--category` against `neuron.yaml`, so a store
@@ -663,50 +667,6 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   config? Note the two answers have opposite ergonomics — the first makes
   `neuron scan` fail on a config that doesn't declare its own `scan.category`.
 
-- **Bootstrapping category centroids on a cold store.** **Sharpened by `31`,
-  which made it the out-of-box experience rather than an edge case**: `init` now
-  produces a working project, so the very first `neuron memory add` a user runs
-  is against an empty store — and without `--category` it hard-errors
-  (*"category inference found no category close enough"*), verified on the CLI
-  against a freshly generated config. The recommended posture passes
-  `--category`, so this may still be acceptable; what changed is that the cliff
-  is now the first thing a new user can hit, not something reachable only by
-  skipping setup. Unchanged by `28`, which
-  checked: a fresh `md` project has exactly the cliff a fresh `vector` project
-  has, no better and no worse, because both read centroids from the same
-  database. It is not a storage-mode problem. Originally surfaced by `06`:
-  centroid category inference beat the model 9/9 to 1/9, but it needs entries to
-  form centroids from, so a brand-new project cannot infer a category until a
-  few entries are filed explicitly. Whether that cliff is worth removing — and
-  how, given the spec's rejection of embedding short label strings — is
-  unformed. It may simply be acceptable: the recommended posture passes
-  `--category` anyway.
-- **Tag vocabulary is a full-table read per process.** `06` reads every tagged
-  row's embedding to build centroids on the first inferring write. Fine at 224
-  entries; it wants a cached centroid table or an index long before it is a real
-  problem. Not ticketed because the trigger — what store size actually hurts —
-  has not been measured.
-- **Should `neuron exec`'s pre-command lookup also become a hook?** Step 2 of the
-  protocol still asks the agent to wrap commands. `10` confirms every one of the
-  six harnesses exposes *some* `PreToolUse`-equivalent (Claude Code's is
-  blocking on exit 2; the other five range from permission-decision-only to
-  undocumented failure behaviour), so the prerequisite fact is now known — but
-  *whether* to build on it is a design call for `11`'s adapter architecture, not
-  a separable decision, so it is not spun into its own ticket here.
-- **Confidently-wrong retrieval is unowned.** Ticket `07` measured raw cosine
-  *inverted* on it — top-1 cosine on queries retrieval got **wrong** (mean 0.7779,
-  max 0.9516) is *higher* than on queries it got **right** (mean 0.7518, min
-  0.6548) — and killed salvage expansion on exactly that finding, since no
-  rewritten query fixes a ranking that is confidently inverted. `27`'s gate does
-  **not** address it either, and says so: a relevance gate rejects the
-  *irrelevant*, not the *wrong*, and both its legs measure forms of confidence.
-  So every measurement this map has taken agrees the failure mode exists and
-  nothing on the route touches it. Unformed because the prior question is
-  unanswered: is a confidently-wrong top hit *detectable at all* from retrieval
-  signals, or does catching it require the thing `08` was ruled out for —
-  adjudicating semantic opposites, the weakest capability of both the embedder and
-  the 0.5B model? If undetectable, the honest response may be a **disclosure**
-  rather than a fix.
 - **Restructuring the packaged `neuron-memory` skill.** Once step 1 leaves
   `CLAUDE.md`, the shipped skill at `.claude/skills/neuron-memory/SKILL.md`
   describes a protocol that no longer matches. Scope of the rewrite is unclear
@@ -731,19 +691,32 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   easier to accept: this is a *supporting-feature accuracy fix*, sequenced behind
   markdown-memory work, but it should land before `scan --diff` fidelity is
   advertised with confidence anywhere.
-- **Threat model for grammar delivery.** Ticket `01` fetches `.wasm` from the npm
-  registry over TLS with pinned versions, but does not verify the registry's
-  `dist.integrity` checksum — it bypasses npm, so npm's own verification does not
-  apply. A compromised mirror could serve a bad grammar. Not ticketed because the
-  prior question is unformed: what threat model does a local-only dev tool owe its
-  users? Answer that and the hardening follows, or is consciously declined.
-- **Cross-harness testing strategy.** Five adapters need verification against
-  five real harnesses. Whether that is CI-automatable or stays manual is unknown
-  until `10` reports.
 
 ## Out of scope
 
 <!-- ruled beyond this destination; closed, never graduates -->
+
+- **[16 — GitHub Copilot CLI Adapter](issues/16-copilot-adapter.md)** and
+  **[40 — Cursor Adapter](issues/40-cursor-adapter.md)** — closed
+  **2026-08-04** when the destination narrowed to a fast, focused 3-pillar
+  cut (deterministic Claude Code/Codex recall, md-first, deterministic
+  scanning). Neither was load-bearing for any of the three: `10` already
+  found both land `best-effort`, a real but harder-to-market claim. Continue
+  as tickets `01`/`02` in
+  [neuron-harness-expansion](../neuron-harness-expansion/map.md) — a fresh
+  effort, not a resumption, per this destination redraw.
+- **[19 — Compatibility Disclosure: `neuron init` Reporting & README
+  Matrix](issues/19-init-reporting-readme-matrix.md)** — closed **2026-08-04**
+  at its original full scope (matrix + fallback row + remediation UX for
+  non-deterministic harnesses), which only earns its cost once a
+  less-than-deterministic harness ships. Continues as ticket `03` in
+  [neuron-harness-expansion](../neuron-harness-expansion/map.md). Its minimal
+  duty at this narrower scope — truthful `neuron init` reporting and a
+  two-row README note for Claude Code/Codex — folds into `15` instead.
+- **[20 — Cut and Publish 2.2.0-rc4](issues/20-cut-rc4.md)** — closed
+  **2026-08-04**: `rc4` is dropped from this map's path entirely (see the
+  Destination callout and the Release bands table). Continues as ticket `04`
+  in [neuron-harness-expansion](../neuron-harness-expansion/map.md).
 
 - **`@neuron/core` — a separate package, SDK, or pluggable-provider system.**
   Considered and explicitly deprioritised in the 2026-08-02 repositioning

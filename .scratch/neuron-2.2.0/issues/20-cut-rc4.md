@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: out of scope — 2026-08-04, rc4 dropped from this map's path (see map.md's Destination callout); continues as ticket 04 in ../neuron-harness-expansion/map.md, do not implement here
 Blocked by: 16, 40, 19
 Band: 2.2.0-rc4
 

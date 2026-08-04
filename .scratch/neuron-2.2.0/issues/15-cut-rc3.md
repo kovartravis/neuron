@@ -26,9 +26,17 @@ in front of users' existing agent configs?
    turn; if the tax is material, say the number.
 6. Verify the config-safety cases before publishing: pre-existing user hooks
    preserved, install idempotent, uninstall clean, projects with both `.claude/`
-   and `AGENTS.md` not double-injecting.
-7. Run `npm test` and `npm run test:e2e`.
-8. Tag and publish under the `rc` dist-tag.
+   and `.codex/` not double-injecting.
+7. **Minimal disclosure (absorbed from the now-closed ticket `19` at this
+   narrower scope, 2026-08-04):** `neuron init` reports, per detected harness,
+   what it found / wired / the fidelity that yields, driven by each adapter's
+   `verify()` rather than inferred from config-file contents. Add a two-row
+   note to the README (Claude Code, Codex CLI — both `deterministic`) rather
+   than a full compatibility matrix; the fuller matrix/remediation UX earns
+   its cost once a `best-effort` harness ships (see
+   [neuron-harness-expansion](../neuron-harness-expansion/map.md)).
+8. Run `npm test` and `npm run test:e2e`.
+9. Tag and publish under the `rc` dist-tag.
 
 ## Deliverables
 
@@ -38,4 +46,5 @@ in front of users' existing agent configs?
 - [ ] Deterministic-recall demonstration included in the notes
 - [ ] Per-turn latency reported against the rc2 budget
 - [ ] Config-safety cases verified
+- [ ] `neuron init` reports per-harness fidelity via `verify()`; README carries a two-row Claude Code/Codex disclosure note
 - [ ] Unit + E2E suites green
