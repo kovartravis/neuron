@@ -1093,3 +1093,1022 @@ tags:
 taskId: null
 ---
 Discovered while running the full test suite during ticket 37: neuron's own CLI-invoking test files (learn.test.ts, history.test.ts, cli.test.ts, and others using execSync against dist/cli.js) only override NEURON_DB_PATH to isolate the SQLite side, but never override the markdown storage path or chdir to a tmp project — so under storage.mode: md (the default since ticket 31), every one of these tests reads and writes the REAL project .neuron/{learning,history,decisions}.md files instead of an isolated fixture. Running 'npm test' in this repo actively pollutes the maintainer's real memory store (confirmed: entries like 'Always test first' and 'Vitest test runner requires --runInBand' landed in the real .neuron/learning.md after a test run) and simultaneously makes several assertions flaky/failing because they count real entries that were never supposed to be there (e.g. 'expected 1 but got 5'). Verified this is pre-existing and unrelated to ticket 37's changes via git stash comparison against pre-37 code, where the identical failures and identical pollution reproduce. The fix belongs to whichever ticket owns test-infrastructure hygiene: these tests need to either chdir into an isolated tmp project directory (the pattern scan.fidelity.test.ts and scan.determinism.test.ts already use) or pass an explicit storagePath override, matching how NEURON_DB_PATH already isolates the SQLite side.
+
+---
+id: cbcb1924-663d-4c94-a402-7d1c9f99682e
+createdAt: 2026-08-03T21:20:09.009Z
+importance: 5
+tags:
+  - longmemeval
+  - ticket-22
+  - rc2
+taskId: null
+---
+Fix for silently-broken benchmark isolation after ticket 38's scope removal: neuron's LongMemEval/AMB benchmark harness (benchmarks/longmemeval/neuron_bridge.mjs and its deployed copy in agent-memory-benchmark/scripts/) isolated per-question documents by passing scope: doc.user_id on ingest and scopes: [user_id] on query, matching LongMemEval's isolation_unit='question' design where user_id=question_id. Ticket 38 dropped the scope column and is_manual_scope from the memories table entirely as part of removing the dead multi-tenant scope feature, but MemoryQuery and MemoryMutation in src/models/memory.ts never had a scopes/scope field to begin with even before that, and NeuronMemory.queryVector only ever filtered by project_id and category. So passing scope/scopes to transact()/query() was already a silent no-op at the TypeScript layer even before the SQLite column was dropped, and the bridge's plain-JS objects meant no compiler or runtime check ever caught it. The symptom would have been every LongMemEval query searching across all 23,867 documents from all 500 questions instead of its own question's partition, corrupting recall and cross-unit-leak measurements without an obvious error, since the query still returns plausible-looking results. Root cause is a documented dependency on a feature (benchmarks/longmemeval/README.md's own gotchas section says 'Isolation is by scope, not by database') that a later ticket silently removed elsewhere in the same codebase, with nothing wiring the two together. The exact resolution: change the bridge's ingest handler to set category: bench_${user_id} instead of scope, and the retrieve handler to filter categories: [bench_${user_id}] instead of scopes, since category is the only partition key query() still filters on. Also pin storageMode: 'vector-only' explicitly in the NeuronMemory constructor call, because the schema default became 'md' in ticket 31, which would otherwise trigger per-write markdown files plus a reconcile pass for a throwaway benchmark ingest of tens of thousands of documents. Verified the fix by rerunning the published-baseline control arm after the change and confirming it reproduced (recall@1 83.5%, @5 96.2%, @10 98.3%, 0 cross-unit leaks) rather than assuming the fix was correct. The general lesson: any adapter or benchmark harness that references a neuron field name directly (scope, is_manual_scope, or similar) rather than importing NeuronMemory's own types is invisible to a schema-removal ticket's own test suite, because the breakage lives entirely outside src/ and nothing in npm test exercises it — grep external benchmark/adapter directories for removed field names whenever a schema field is dropped, not just src/ and its own tests.
+
+---
+id: 89f5e704-d986-4ec0-987b-165a6f3a0da9
+createdAt: 2026-08-04T01:51:31.303Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: 4180ab35-e9ab-404d-8b07-f3df5390988a
+createdAt: 2026-08-04T01:51:31.789Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: 588a7f45-6807-49d9-8f3b-437247cf6971
+createdAt: 2026-08-04T01:51:32.336Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: 7f431ee2-a4dc-43c2-977e-771920a2e49f
+createdAt: 2026-08-04T01:51:32.541Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 3b1c1102-3ed3-4628-af82-ba28bb49abb5
+createdAt: 2026-08-04T01:51:32.598Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: 9c67e3f1-abf7-4e83-94f2-46ce2029c3eb
+createdAt: 2026-08-04T01:51:32.916Z
+importance: 3
+tags: []
+taskId: null
+---
+tree sitter grammar caching at init time
+
+---
+id: fbe1af8a-985d-4e18-903a-20e083f97f0d
+createdAt: 2026-08-04T01:51:33.025Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: cda9c847-8d27-44ec-a38e-5a4134b25113
+createdAt: 2026-08-04T01:51:33.219Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Alpha rule
+
+---
+id: c735ac18-fb5f-400b-89aa-ab4c8cf9d82e
+createdAt: 2026-08-04T01:51:33.515Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: 2f1c3787-8cac-41e8-93e1-9f8d5c1836c7
+createdAt: 2026-08-04T01:51:33.764Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 66286621-ecf7-4227-983a-aee8fe01a65e
+createdAt: 2026-08-04T01:51:33.961Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: 30e6b496-1b37-4373-95b1-c32afccd8d95
+createdAt: 2026-08-04T01:51:36.614Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 41621025-f0f4-452c-b422-fe65ef188e47
+createdAt: 2026-08-04T01:51:37.117Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: b2e83f10-8768-4670-a273-8a3d3af4449c
+createdAt: 2026-08-04T01:56:41.474Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: 6c460911-8e9d-4b8f-89a0-87a2b153a68b
+createdAt: 2026-08-04T01:56:41.866Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: 29c6beca-08bf-4b9e-a06f-5c2a317f2881
+createdAt: 2026-08-04T01:56:42.289Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: d1a891c4-a55d-46e6-bf5f-915623b096a9
+createdAt: 2026-08-04T01:56:42.556Z
+importance: 5
+tags:
+  - updated
+taskId: null
+---
+Updated learning content
+
+---
+id: ccab6c00-2436-41f0-b57c-53188758a5b5
+createdAt: 2026-08-04T01:56:42.649Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: 97179608-dad2-4efd-b757-e789516f92f9
+createdAt: 2026-08-04T01:56:42.777Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: c3abe896-a074-4ef3-ad5b-7e47a1569f07
+createdAt: 2026-08-04T01:56:43.135Z
+importance: 3
+tags: []
+taskId: null
+---
+tree sitter grammar caching at init time
+
+---
+id: 10177546-e852-4d5d-97d8-85c98a6935b3
+createdAt: 2026-08-04T01:56:43.169Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: cad5b17e-44af-449a-82ff-209242b3bfaa
+createdAt: 2026-08-04T01:56:43.261Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Alpha rule
+
+---
+id: 8fbd22cf-c7fa-493b-a9c0-e63879b4be3d
+createdAt: 2026-08-04T01:56:43.570Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: eb16dc63-191a-46f6-9594-9a8340f72a1c
+createdAt: 2026-08-04T01:56:43.986Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: e73514c4-b095-4917-bf4d-b444dacf419f
+createdAt: 2026-08-04T01:56:44.234Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: 1acd09aa-5a2c-4a14-879d-3245bcca6567
+createdAt: 2026-08-04T01:56:46.385Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 0d9c14a7-87d2-449e-a5ba-c90c8fa16c63
+createdAt: 2026-08-04T01:56:46.847Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: c3597196-9966-43d9-b11a-6ad81b4349ef
+createdAt: 2026-08-04T02:13:11.301Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: 728c007e-eb88-4cc9-b64e-42faf7355972
+createdAt: 2026-08-04T02:13:11.690Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: c283315d-4696-4d11-b31d-2b7c41bd7b99
+createdAt: 2026-08-04T02:13:11.995Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: 5bb796be-b141-4cd8-9e4e-8c7ad3b0822f
+createdAt: 2026-08-04T02:13:12.082Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 5302bbeb-1339-44c5-a354-58d34dab7bd1
+createdAt: 2026-08-04T02:13:12.223Z
+importance: 5
+tags:
+  - updated
+taskId: null
+---
+Updated learning content
+
+---
+id: 71660338-d65b-4870-934b-1b434f253935
+createdAt: 2026-08-04T02:13:12.405Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: f478c782-c4ce-47ab-a35f-aeb8bf23a8de
+createdAt: 2026-08-04T02:13:12.959Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: a236861d-b1d7-499d-9cfe-593cdb0694c2
+createdAt: 2026-08-04T02:13:13.231Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: 397a1d86-9b2b-40d1-86d3-d4db7bf4f411
+createdAt: 2026-08-04T02:13:13.278Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 3936c30d-8bdf-49e9-bb6b-1f513b1a507f
+createdAt: 2026-08-04T02:13:13.460Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: 4e62c2cc-c6d9-41c7-be76-4e1a512bc2ec
+createdAt: 2026-08-04T02:13:15.552Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 239d1158-e14b-4f04-9dfd-67de30242c79
+createdAt: 2026-08-04T02:13:16.244Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: c250e145-0f52-4abe-812d-67ec79c728c6
+createdAt: 2026-08-04T02:14:34.539Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: b42e8c93-9938-4022-b738-b705e207d038
+createdAt: 2026-08-04T02:14:34.912Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: c43d925e-a584-455a-8ec3-46e62343771f
+createdAt: 2026-08-04T02:14:35.378Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: 3252f6e5-5fdd-4237-8de1-70b8cb317003
+createdAt: 2026-08-04T02:14:35.549Z
+importance: 5
+tags:
+  - updated
+taskId: null
+---
+Updated learning content
+
+---
+id: b58db4f5-28f1-4f11-aba1-e362587c9ba5
+createdAt: 2026-08-04T02:14:35.761Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: c3c73be7-f84c-4631-82c6-774ae3760ab3
+createdAt: 2026-08-04T02:14:35.795Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: f41e4f7e-3bee-4add-a1a1-4b90c108b0ad
+createdAt: 2026-08-04T02:14:36.130Z
+importance: 3
+tags: []
+taskId: null
+---
+tree sitter grammar caching at init time
+
+---
+id: f7ad4ab0-ad0b-443c-813b-face1bc80fa8
+createdAt: 2026-08-04T02:14:36.314Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Alpha rule
+
+---
+id: 52e93f53-417a-438b-854d-63d0533d92c4
+createdAt: 2026-08-04T02:14:36.414Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: f0d3e558-6df0-4c78-b9eb-6228b5bd69d4
+createdAt: 2026-08-04T02:14:36.727Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: cf525ea9-4d86-433b-82a7-e49b9b730642
+createdAt: 2026-08-04T02:14:37.013Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 60144b26-7fba-46b2-9128-4b4ea5d71b2d
+createdAt: 2026-08-04T02:14:37.233Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: 327892ee-26c3-4f2e-bdda-b731e9f37e7d
+createdAt: 2026-08-04T02:14:39.628Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 8e0502bc-3ec1-4b10-9f96-7888b7c4c024
+createdAt: 2026-08-04T02:14:40.119Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: 52d14096-7646-4ba2-b6a9-dc13ad36922b
+createdAt: 2026-08-04T02:23:06.104Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: 877c3734-4216-44fb-9dbc-9206b9dc9f3d
+createdAt: 2026-08-04T02:23:06.878Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: 9bf485b2-cd0d-444e-9fb8-924ae90467a5
+createdAt: 2026-08-04T02:23:07.403Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: 7747f284-f075-407e-aba7-d5a5caf6d401
+createdAt: 2026-08-04T02:23:07.558Z
+importance: 5
+tags:
+  - updated
+taskId: null
+---
+Updated learning content
+
+---
+id: 240892b1-e328-4796-909f-a94eac892df8
+createdAt: 2026-08-04T02:23:07.726Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: 7fb2e713-b7fa-4b67-9201-e1b2a2e59ae4
+createdAt: 2026-08-04T02:23:07.947Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 8c624948-f42b-4bec-a98d-4b82c3703f16
+createdAt: 2026-08-04T02:23:08.444Z
+importance: 3
+tags: []
+taskId: null
+---
+tree sitter grammar caching at init time
+
+---
+id: bd8b2840-18bd-4da3-91ab-0cf857faef6f
+createdAt: 2026-08-04T02:23:08.581Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Alpha rule
+
+---
+id: fab4ef1c-ef61-414b-aa7e-299b8bbc7248
+createdAt: 2026-08-04T02:23:08.993Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: a8ed7dbe-1d1a-49c3-93db-11b44153ca8d
+createdAt: 2026-08-04T02:23:09.424Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 20b1c2de-6985-4952-8768-0e23b6717dd5
+createdAt: 2026-08-04T02:23:09.639Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: 5e44fe04-1777-463a-bd68-d4c0eb133f42
+createdAt: 2026-08-04T02:23:12.102Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 4224e7ed-5f53-436b-86e8-04126a5a9fbf
+createdAt: 2026-08-04T02:23:12.633Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: 3985631f-229c-44af-9da6-d763db8b30a6
+createdAt: 2026-08-04T02:52:01.877Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: 71041306-3eda-47ec-bcde-18a0c8597cdf
+createdAt: 2026-08-04T02:52:02.271Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: af3db6d3-237e-4e97-95d2-3ad4c7304eb3
+createdAt: 2026-08-04T02:52:02.761Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: 04a6140d-9dc8-4679-b980-5783e428019c
+createdAt: 2026-08-04T02:52:02.869Z
+importance: 5
+tags:
+  - updated
+taskId: null
+---
+Updated learning content
+
+---
+id: 8db81b8e-389b-47df-9f00-5b5a6c858db5
+createdAt: 2026-08-04T02:52:03.246Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: 1ca5a17b-9c4f-4512-a474-911f88264259
+createdAt: 2026-08-04T02:52:03.684Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: dff9abfb-dc11-4c4d-a33f-27a8692ba881
+createdAt: 2026-08-04T02:52:03.965Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Alpha rule
+
+---
+id: 147f0e11-5d20-418e-a461-51a43b83560e
+createdAt: 2026-08-04T02:52:04.216Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 40100dc2-0da6-405e-8432-3e0a22793178
+createdAt: 2026-08-04T02:52:04.330Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: 08bef5c6-5d29-4c4c-b8c0-c36987167e2b
+createdAt: 2026-08-04T02:52:04.453Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: a59c4760-6827-46c5-83a2-5e65f10e9575
+createdAt: 2026-08-04T02:52:06.915Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: c273bfd7-4d6e-42b8-bd6f-cdc6bd0285d4
+createdAt: 2026-08-04T02:52:07.595Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: 5af9d15b-a76c-4762-970c-cd00e434f4fb
+createdAt: 2026-08-04T02:53:41.658Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: c80203d0-8cbb-4262-8fb7-41aef0306401
+createdAt: 2026-08-04T02:53:42.077Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: 254922c2-a8a8-4ad8-a250-d9745a5943ed
+createdAt: 2026-08-04T02:53:42.335Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: c4566634-0108-448d-bf0b-d67e27eb6e83
+createdAt: 2026-08-04T02:53:42.590Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+createdAt: 2026-08-04T02:53:42.641Z
+importance: 5
+tags:
+  - updated
+taskId: null
+---
+Updated learning content
+
+---
+id: d517d05a-cb85-42fa-9a4c-80dae687d462
+createdAt: 2026-08-04T02:53:42.950Z
+importance: 3
+tags: []
+taskId: null
+---
+tree sitter grammar caching at init time
+
+---
+id: b21ee8f5-0690-42c9-a185-80d8f679b6bc
+createdAt: 2026-08-04T02:53:43.452Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: 9e7ae4d4-6d59-4f3c-9e8f-aa04a6ffa450
+createdAt: 2026-08-04T02:53:43.777Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: f996cc78-292e-4192-b8a9-6e69ded08f9d
+createdAt: 2026-08-04T02:53:43.823Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 37167c87-21ca-4ac3-9a4a-51253d30db45
+createdAt: 2026-08-04T02:53:44.030Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: b1f4567b-ede6-4f4f-ad7e-2f0f05e0c56b
+createdAt: 2026-08-04T02:53:46.121Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: 2831f4af-11ea-42b2-afe8-6725ed5d8f16
+createdAt: 2026-08-04T02:53:46.848Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: 7ff68e51-1719-4033-8090-233f5bbf252b
+createdAt: 2026-08-04T02:55:42.775Z
+importance: 4
+tags:
+  - vitest
+  - test
+taskId: null
+---
+Vitest test runner requires --runInBand
+
+---
+id: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+createdAt: 2026-08-04T02:55:43.220Z
+importance: 3
+tags:
+  - test
+  - tdd
+taskId: null
+---
+Always test first
+
+---
+id: a8df395e-86d4-43be-9d76-58ca07aae097
+createdAt: 2026-08-04T02:55:43.455Z
+importance: 5
+tags:
+  - design
+taskId: null
+---
+Important design rule
+
+---
+id: 21a2c6da-49ed-46cf-a04f-a69176c73741
+createdAt: 2026-08-04T02:55:43.850Z
+importance: 3
+tags:
+  - initial
+taskId: null
+---
+Original learning content
+
+---
+id: eedc797c-29f3-4150-add8-3da38a88edfa
+createdAt: 2026-08-04T02:55:43.971Z
+importance: 4
+tags:
+  - failure-fix
+  - build
+taskId: null
+---
+Fix for build error: pass --no-cache to avoid stale artifacts
+
+---
+id: e80e0fdf-d21b-4f45-8ea5-79c8d500d129
+createdAt: 2026-08-04T02:55:44.252Z
+importance: 3
+tags: []
+taskId: null
+---
+tree sitter grammar caching at init time
+
+---
+id: 2906736a-ffcb-4c97-8646-c4c8f8a699fe
+createdAt: 2026-08-04T02:55:44.411Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Alpha rule
+
+---
+id: e776ea27-c607-4d35-8d70-7bc608f5163b
+createdAt: 2026-08-04T02:55:44.587Z
+importance: 5
+tags:
+  - db
+taskId: null
+---
+Prefer WAL journal mode when many agents write concurrently
+
+---
+id: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+createdAt: 2026-08-04T02:55:44.811Z
+importance: 3
+tags: []
+taskId: null
+---
+Scope Beta rule
+
+---
+id: 5477de38-65ed-4441-b19b-ede3de52ad9c
+createdAt: 2026-08-04T02:55:45.028Z
+importance: 3
+tags: []
+taskId: null
+---
+--dash-leading content
+
+---
+id: 84feb750-c706-4cb7-a736-096340b3311c
+createdAt: 2026-08-04T02:55:45.236Z
+importance: 3
+tags: []
+taskId: null
+---
+a learning entry
+
+---
+id: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+createdAt: 2026-08-04T02:55:47.499Z
+importance: 3
+tags: []
+taskId: null
+---
+original content
+
+---
+id: d84f0e03-d9f9-486a-9d50-cac09ffdbcf9
+createdAt: 2026-08-04T02:55:48.344Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
+
+---
+id: f471ae28-5594-4663-bdba-050707c22144
+createdAt: 2026-08-04T02:58:14.365Z
+importance: 5
+tags:
+  - md-storage
+  - failure-fix
+  - adr
+taskId: null
+---
+Never git stash/checkout/reset .neuron/*.md in this repo without checking what's in it first. Context: while implementing wayfinder ticket 14 (protocol block rewrite), I ran 'git stash' to test against pre-change code, which swept up pre-existing uncommitted .neuron/*.md edits from an earlier session along with my own code changes, then a test run (ticket 42's known CLI-store-pollution bug) wrote further changes on top, causing 'git stash pop' to conflict and abort. Root cause: the real SQLite database lives outside the repo entirely (env-paths app-data dir, keyed by a sha256 hash of the project root — see src/index.ts NeuronMemory.open), completely unaffected by git operations on the repo; only the .neuron/*.md mirror files are tracked in git. But this repo runs storage.mode: md, where markdown is authoritative and strict-mirror reconcile treats an entry missing from markdown as a deletion instruction once meta.md_seeded_at is set (ADR 0011, ticket 29) — so resetting markdown to an older git commit and then running any real 'neuron' command against the live store could have permanently deleted vector-store rows for every entry added since that commit, not just reverted a text file. Resolution: I discarded the test-pollution diff with 'git checkout -- .neuron/*.md' (safe, since it was created by re-running tests against reverted code) and confirmed via 'git stash pop' that no destructive reconcile had run in between, then double-checked specific known entries (e.g. wayfinder history for tickets 11/12/28/36) were still present in the mirror after recovery. Edge case: this risk only applies to md/split storage modes with md_seeded_at already set; a vector-only project or a store that has never been seeded is safe because bootstrap-seed only ever exports (adds), never deletes. Going forward, treat any git operation that reverts .neuron/*.md in a md-mode project as equivalent to a destructive database operation and check git status/diff on those files before and after, not just on the code.

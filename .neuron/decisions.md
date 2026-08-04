@@ -475,3 +475,107 @@ tags:
 taskId: null
 ---
 Ticket 37 (Architecture Card as a Deterministic Artifact): the blueprint card's identity is now a derived id, not a lookup. ingestScanResults computes id = sha256('neuron:architecture-blueprint:' + category) formatted as a UUID-shaped string, and passes it directly to the upsert mutation — no memory.query() call at all. This was chosen over keeping any form of similarity search because the ticket's own diagnosis (surfaced by 6 real accumulated duplicates in this repo's decisions category) was that ANY ranked/similarity-based lookup is structurally the wrong tool for 'is this the same singleton card': a stable identity has to be computed, not searched for, the same lesson ticket 27 reached for minScore. The card's embedded nested '---category/title/tags/mtime---' frontmatter block (redundant with the H1 heading and the real storage-level tags) was deleted rather than patched, since it both caused the only remaining byte-instability (mtime) and, independently, corrupted MdStorageAdapter's whole-category-file parser whenever the card shared a file with other entries. Reconciliation of this repo's own 6 pre-existing duplicate cards (4 with content, 2 empty) was: delete all 6 and let a fresh 'neuron scan' recreate exactly one canonical card under the new scheme, rather than migrating old ids forward, since 2 of the 6 were already corrupt artifacts and none were meant to be addressable individually.
+
+---
+id: e7851f44-9fb8-4055-baaa-e446070a9633
+createdAt: 2026-08-03T19:29:55.808Z
+importance: 5
+tags:
+  - adr
+  - enrichment
+  - rc2
+taskId: null
+---
+Decision (2026-08-03, neuron ticket 36, ADR 0013): configurable per-category frontmatter schema resolved by grilling. 'Deterministic' is scoped to shape+byte determinism by default, with an opt-in strict mode (disables tag and category inference) for teams that also want value determinism. Three field tiers stand: structural (id, createdAt, never optional), semantic-reserved (importance, tags, taskId -- scope dropped, dead per ticket 38), and user-defined (opaque, validated, where the product value is). Type system floor is string and enum only, no number/date. Required-but-missing reuses ticket 06's --category precedent exactly: hard-error naming the field and category unless a neuron.yaml default: is configured, no second policy. Config-declared fields become CLI flags (maintainer-decided 2026-08-02); enforcement lives in transact(), the one choke point shared by parseFlags and scanner/ingest.ts's direct writes, so neuron scan's architecture card is subject to its category's schema too, and neuron.yaml load now refuses a scan.category that declares a required field with no default. Pre-existing entries against a newly-declared schema are read and reported, never refused on read -- a missing free-text value has no safe synthesizable default and isn't ambiguous, it's just absent; violations surface via neuron status --check/--repair (folded validation tooling, not a new neuron doctor command). Repair applies configured defaults and offers centroid inference for enum fields only, and deliberately never fabricates a value for a free-text identity field like reviewedBy or ticket, since this exact failure shape (model/embedder inventing an ungrounded fact) was already measured and rejected three times across tickets 06, 08 and 35. vector-only mode gets identical enforcement via an additive-only SQLite auto-migration on the memories table (ALTER TABLE ADD COLUMN, never DROP) rather than being mode-gated out. Implementation graduated as tickets 43 (schema+CLI flags), 44 (SQLite migration), 45 (strict mode + neuron-memory skill docs), 46 (status --check/--repair); ticket 34 (cut rc5) and ticket 32 (repositioned README) now block on these instead of the resolved grilling ticket.
+
+---
+id: 1ce9b590-f710-4d91-ac44-52bd63620f99
+createdAt: 2026-08-03T21:19:31.872Z
+importance: 5
+tags:
+  - retrieval
+  - rc2
+  - benchmark
+taskId: "39"
+---
+Ticket 39 (Relevance Floor Validation) resolved 2026-08-03: no cosine floor ships in neuron 2.2.0. Full LongMemEval-S run — 500 questions, 23,867 documents, zero LLM calls, chosen specifically because it is not this project's own prose — measured against the pre-committed bar from ADR 0012/ticket 27 (zero recall regression at @1/@5/@10, measurable volume reduction, 0% false silence, all three required). Swept absolute cosine floors 0.50 to 0.70 in 0.02 steps, conditioned on the lexical leg (normRrf > 0.5, ticket 41's predicate). Every floor failed: even the gentlest, 0.50, already regressed recall by 3.3%/4.0%/4.2% at @1/@5/@10 (20 false-silence instances, i.e. queries where gold was in the top-10 and the floor discarded it) for only a 4.4% volume reduction, and the frontier only worsened from there (0.60 regressed 27.1%/35.3%/37.0%). Run 3 explains the mechanism: on-topic top-1 cosine (median 0.627, p10 0.520, p90 0.742) and negative-control top-1 cosine (median 0.533, p10 0.464, p90 0.618) overlap substantially on real conversational text — a materially thinner separation than ticket 27's own conditioned margin on this project's dense technical prose (0.123) — so conversational text is the harder corpus for a cosine floor, the opposite of what the pilot's hedge worried about. The other open risk resolved cleanly: the lexical leg's false-silence rate measured 0 of 500 overall and 0 in every one of the six question-type categories individually, including multi-session (n=133) and temporal-reasoning (n=133), closing ADR 0012 Consequence 6 — the lexical leg ships in ticket 41 as a hard conjunct with no demotion needed. A real blocker was found and fixed before any measurement could be trusted: ticket 38's removal of the scope column (already on trunk) had silently broken this benchmark's per-question isolation, since MemoryQuery/MemoryMutation never had scopes filtering and scope/scopes became silent no-ops — every query would have searched all 23,867 documents instead of its own question's partition. Fixed by isolating on category instead in benchmarks/longmemeval/neuron_bridge.mjs (and its deployed copy), and control-arm recall reproduced the published baseline after the fix (@1 83.5%, @5 96.2%, @10 98.3%, 0 cross-unit leaks). Also added similarity and ftsMatched as new optional fields on every Memory result (src/index.ts, src/models/memory.ts) since ticket 41 has not shipped and the fused score hides both legs of the gate — there was no other way to read raw cosine or FTS-match state from outside. Config surface landed with the number in hand, per ticket 27 section 8's deferral: minScore on pullRules.default and pullRules.onExec[] is now formally deprecated (still parses, no hard fail, emits a one-time stderr warning naming ADR 0012); no cosineFloor config key was added since there is no validated number to default it to, which is the same call ticket 26 already made once for model-based importance inference rather than shipping an inert path; a new relevance.gate.enabled boolean (default true) is the switch for ticket 41's lexical-only gate. This unblocks ticket 11 point 4: the payload budget's relevance floor is settled as none, and the character ceiling remains the sole volume control. Full frontier, per-category breakdown and raw JSON at benchmarks/agent-memory-benchmark/outputs/relevance_gate_longmemeval.json, produced by the new benchmarks/longmemeval/relevance_gate_eval.py. ADR 0012 amended in place with the full result rather than a new ADR file, matching this project's established amendment convention.
+
+---
+id: 57e7bd65-4e04-4b8f-97d5-8be6c4fc35b6
+createdAt: 2026-08-04T01:31:50.113Z
+importance: 5
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: "11"
+---
+Resolved ticket 11 (Recall Adapter Architecture) point 6, multi-harness resolution, closing the ticket after seven of eight points were already settled 2026-08-03 pending only this one. Grilled with the maintainer: neuron init wires hooks into EVERY detected harness rather than prompting to pick one, matching the existing detectHarnesses precedent in src/config/harness.ts:15-19 which already filters to all matches (not first-match) for skill-copying today. Four sub-decisions follow: the instruction-only AGENTS.md fallback layers in only when no deterministic/best-effort harness matched at all, never alongside a deterministic hook, because writing it unconditionally would restate protocol step 1 on a harness where the settled protocol split already deletes that step; the hook-target consent prompt (user-global/project-committed/project-local) is asked once per init run and applied to every harness being wired, not re-asked per harness, since it reflects toolchain-wide intent rather than a per-harness preference; the overwrite-ask from point 8 still fires per hook file since that is a fact about disk state, not a reusable preference; and a new --harness allowlist flag (e.g. --harness claude,codex) narrows wiring to a subset of already-detected harnesses only, unable to force-wire an undetected one since that is a different feature (harness bootstrapping). Wrote ADR 0014 to hold the full eight-point decision record since the ticket's own deliverables listed an ADR that had never actually been created despite six points being settled a session earlier; every other architecture-level ticket on this map (01, 03, 05, 27, 28, 36) already has a matching ADR, so this closes that gap rather than leaving a stub. Ticket 11 is now fully resolved, unblocking ticket 12 (Claude Code adapter) and ticket 13 (Codex adapter), whose own verification step already anticipated this exact multi-harness rule and needs no further edits.
+
+---
+id: 9c3d9339-2364-4f81-99c7-3d314ac52a67
+createdAt: 2026-08-04T01:51:30.298Z
+importance: 4
+tags:
+  - adr
+  - db
+taskId: null
+---
+Use SQLite WAL mode for concurrency
+
+---
+id: 93a85d89-aea6-496e-b1be-d0e70181055f
+createdAt: 2026-08-04T01:58:50.367Z
+importance: 5
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Ticket 12 (Claude Code Adapter) shipped the reference implementation of ADR 0014's recall adapter interface as a new src/harnesses/ module. types.ts codes the lifecyclePoint->supportRecord capability map with 'unknown' as a first-class value and deriveFidelity() as a pure display-only projection, matching ADR 0014 section 2 exactly. payload.ts implements the character-ceiling-only budget from ADR 0014 section 4 (SESSION_START_CHAR_BUDGET=6000, PRE_PROMPT_CHAR_BUDGET=1500, both chosen below Claude Code's documented 10,000-char cap and a conservative reading of Codex's ~2,500-token cap since the module is explicitly shared with ticket 13), dropping whole entries and bin-packing smaller ones behind a miss rather than stopping at the first one that doesn't fit. ledger.ts and hookState.ts implement the session-scoped delta dedup ledger (ADR 0014 section 3) and the firing-evidence file verify() reads, both stored under env-paths' cache dir rather than .neuron/ since they are ephemeral runtime state, not memory content, per ADR 0011. The install/uninstall design in claudeCode.ts resolves ADR 0014 section 7's 'does not classify, it asks' rule concretely: neuron only ever reads or mutates a matcher-group it created itself (single hook entry, its own command signature), so a user's own hooks sharing the same event array are structurally untouchable rather than merely conventionally respected. verify() reports registration by reading settings.json and firing evidence from a state file the hook writes on every invocation before doing any work that could fail -- manufactured evidence, since no harness researched in ticket 10 documents an external way to confirm a hook actually fired.
+
+---
+id: 42af1aa9-6eb2-47bd-bb05-81984f1363a5
+createdAt: 2026-08-04T02:13:10.265Z
+importance: 4
+tags:
+  - adr
+  - db
+taskId: null
+---
+Use SQLite WAL mode for concurrency
+
+---
+id: 8531a5fb-0ab8-4625-a676-c4091d9bce31
+createdAt: 2026-08-04T02:16:00.290Z
+importance: 4
+tags:
+  - 2.2.0
+  - rc2
+  - wayfinder
+taskId: null
+---
+Codex CLI's hook mechanism is documented at learn.chatgpt.com/docs/hooks (the developers.openai.com/codex/hooks redirect target) as functionally identical to Claude Code's for neuron's recall purposes: same event names (SessionStart, UserPromptSubmit, PreCompact), same stdin fields (session_id present on every event, prompt on UserPromptSubmit), and the same hookSpecificOutput.additionalContext stdout envelope. This was verified live during ticket 13 (Codex Adapter) rather than assumed from ticket 10's lower-confidence research, and it means neuron's hook entrypoint (src/commands/hook.ts) requires no per-harness branching for stdin parsing, querying, payload budgeting, ledger dedup, or output emission -- the harness-specific code is confined entirely to each adapter's install/uninstall/verify (reading and writing that harness's own config file). Two Codex-specific adapter decisions were made where the docs didn't fully specify behavior: the hooks.json schema uses a single command string rather than Claude Code's command+args array split, and Codex documents no third gitignored project-local config scope distinct from its single project-committed .codex/hooks.json, so neuron's 'project-local' target collapses into the same file as 'project-committed' there, with a one-time stderr warning explaining the collapse rather than silently losing the distinction. Neither decision required revising ADR 0014's HarnessAdapter interface, since both are internal to the Codex adapter and the interface's actual contract (capability truthfulness, install/uninstall/verify semantics) never depended on either detail.
+
+---
+id: 68745bef-77e0-4d1b-8439-6805a4b69fb7
+createdAt: 2026-08-04T02:52:00.886Z
+importance: 4
+tags:
+  - adr
+  - db
+taskId: null
+---
+Use SQLite WAL mode for concurrency
+
+---
+id: 25959b56-2e3b-43f3-b490-b0600e7f81e6
+createdAt: 2026-08-04T02:53:40.686Z
+importance: 4
+tags:
+  - adr
+  - db
+taskId: null
+---
+Use SQLite WAL mode for concurrency

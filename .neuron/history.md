@@ -2210,3 +2210,621 @@ tags:
 taskId: "37"
 ---
 Resolved ticket 37 (Architecture Card as a Deterministic Artifact) via TDD, AFK. Removed the non-deterministic mtime and the entire redundant nested frontmatter block from synthesizeArchitecture's card template; replaced ingestScanResults' semantic-search card lookup with a deterministic id derived from a sha256 hash of the category, passed directly to the upsert (no query at all); fixed a related MdStorageAdapter.writeEntry bug where createdAt was re-minted on every upsert instead of being preserved on update. Verified end-to-end against this repo's own store: 6 pre-existing duplicate/corrupt blueprint cards in .neuron/decisions.md reconciled down to 1, repeated real 'neuron scan' runs now produce a byte-identical file and a clean git status, and 3 consecutive dry-run/real-ingest calls all resolve to the same card id. 8 new/updated tests added across summarizer, ingest, mdStorageAdapter and a new scan.determinism.test.ts; full suite at 305/309 passing, the 4 failures confirmed pre-existing and unrelated (see the test-isolation learning entry just recorded).
+
+---
+id: e9c50f12-af20-453d-80f1-704a707ec508
+createdAt: 2026-08-03T19:30:05.170Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "36"
+---
+Wayfinder pickup session on the neuron-2.2.0 map: claimed the frontier's first unblocked ticket, 36 (Configurable Frontmatter Schema), and ran a full /grilling session with the maintainer through all seven of its open design questions plus two that surfaced mid-session (SQLite vector-only parity via auto-migration, and the neuron doctor validation-surface question, which the maintainer wants folded into neuron status --check/--repair with only enum-field centroid inference allowed, never free-text fabrication). Resolved ticket 36, wrote ADR 0013 documenting the decision, and graduated four implementation tickets (43-46) rather than pre-slicing further. Rewired ticket 34 (cut rc5) and ticket 32 (repositioned README) to block on the new implementation tickets instead of the now-resolved grilling ticket, and appended the resolution as a Decisions-so-far entry on map.md. Left ticket 36's file with a full Answer section; the next wayfinder session should pick up the new frontier, which now includes 43 as the first unblocked implementation ticket.
+
+---
+id: 9cb38f56-faa0-4ae2-88d4-7fa192b7094c
+createdAt: 2026-08-03T21:20:09.349Z
+importance: 4
+tags:
+  - retrieval
+  - rc2
+  - longmemeval
+taskId: "39"
+---
+Resolved neuron 2.2.0 ticket 39 (Relevance Floor Validation), unblocking ticket 11 point 4. Ran the full LongMemEval-S benchmark (500 questions, 23,867 documents, zero LLM calls) against ADR 0012's pre-committed three-condition bar for a cosine relevance floor and found no candidate floor from 0.50 to 0.70 clears it, so the maintainer's default ships with no cosine floor; the lexical leg's false-silence rate measured a clean 0% across all 500 questions and all six question-type categories, closing ADR 0012 Consequence 6 so ticket 41 can ship it as a hard conjunct without demotion. Found and fixed a real prerequisite blocker before trusting any measurement: ticket 38's already-on-trunk scope removal had silently broken the LongMemEval benchmark harness's per-question isolation, so every query would have searched all 23,867 documents instead of its own question's partition; fixed by isolating on category instead in the bridge script, and confirmed the fix by reproducing the published baseline recall numbers exactly. Added similarity and ftsMatched debug fields to NeuronMemory's query results (src/index.ts, src/models/memory.ts) so the gate's two raw legs could be measured from outside, since ticket 41 has not shipped and the fused score hides both. Landed the config surface ticket 27 section 8 deferred here: deprecated pullRules minScore with a stderr warning, added a new relevance.gate.enabled boolean switch for ticket 41's lexical-only gate, and deliberately did not add a cosineFloor config key since no validated number exists to default it to. Updated ADR 0012 in place with a full amendment, and updated tickets 11 and 39 plus map.md's Decisions-so-far. 18 new unit tests added (config schema + query instrumentation), full suite green apart from the 4 pre-existing store-isolation failures ticket 42 already tracks.
+
+---
+id: f9909523-94a7-4f69-84c7-31434773280f
+createdAt: 2026-08-04T01:32:01.959Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "11"
+---
+Wayfinder session for the neuron 2.2.0 map: claimed the frontier ticket, 11 (Recall Adapter Architecture), which was unclaimed with only one of eight decision points outstanding (point 6, multi-harness resolution) after a prior 2026-08-03 grilling session settled the other seven. Verified the remaining open state against the neuron memory store first (query returned the prior grilling's decision record and confirmed no newer contradicting entry existed), then ran a /grilling session with the maintainer covering five sub-questions: whether to wire every detected harness or prompt to choose one (every detected harness, matching the existing detectHarnesses skill-copy precedent), whether the AGENTS.md instruction-only fallback layers alongside a deterministic hook or only when nothing else matched (only when nothing else matched), whether the hook-target consent prompt fires once per init run or once per harness (once, applied to all), whether a harness-subset selection flag was worth adding now (yes, --harness), and whether that flag can force-wire an undetected harness or only filter detected ones (filter detected only). Wrote ADR 0014 (Recall Adapter Architecture) to carry the full eight-point decision record, since the ticket's own deliverables named an ADR that had never been written despite most of the ticket already being settled — matching this map's own convention of pairing every architecture-level grilling ticket with an ADR (0008, 0009, 0010, 0011, 0012, 0013 all precede it). Closed ticket 11: appended the Answer section and ADR link to the ticket file, checked off all five deliverables, added a Decisions-so-far entry to map.md, and replaced the map's stale 'partially grilled, not resolved' callout with the now-superseded-by-27 floor-shape note it had been layered under. This unblocks ticket 12 (Claude Code adapter) and ticket 13 (Codex adapter), the next frontier tickets, both of which already reference the ticket 11 decisions their scope depends on.
+
+---
+id: 5c8c8e04-81a0-4600-88ae-ed948ed20410
+createdAt: 2026-08-04T01:51:32.669Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: 21747de2-f9ec-4fc6-bb51-18680670923c
+createdAt: 2026-08-04T01:51:33.679Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: 99b6a424-39fa-44da-bec8-8fc528f584c7
+createdAt: 2026-08-04T01:51:34.358Z
+importance: 1
+tags: []
+taskId: null
+---
+Old entry
+
+---
+id: 2a59584f-8ca3-4f15-92ee-37eb6a2fffa1
+createdAt: 2026-08-04T01:51:34.441Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 5aad5d1e-f792-460f-a9ed-c692612d69f2
+createdAt: 2026-08-04T01:51:34.796Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: 56a0e253-d40b-4bfc-858f-5a5f1f2b5b46
+createdAt: 2026-08-04T01:51:34.954Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: c73b4444-49cc-4963-a2b1-6901270943fb
+createdAt: 2026-08-04T01:51:35.103Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: 0364d91e-5847-44d7-91e2-ac1d0f51d0bc
+createdAt: 2026-08-04T01:51:35.718Z
+importance: 1
+tags: []
+taskId: null
+---
+New entry
+
+---
+id: 7a3267ac-b83b-4826-8afd-afc43f656f36
+createdAt: 2026-08-04T01:56:42.715Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: 50899155-fe20-4339-9053-cca2a07dbcda
+createdAt: 2026-08-04T01:56:43.411Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: 4d32afb3-db9a-4008-b627-c1c921f1844f
+createdAt: 2026-08-04T01:56:44.026Z
+importance: 1
+tags: []
+taskId: null
+---
+Old entry
+
+---
+id: b8ed1044-318b-47f8-9006-6e1f94d0a85a
+createdAt: 2026-08-04T01:56:44.396Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: 09b267f3-a61c-4feb-9b3a-faee511df946
+createdAt: 2026-08-04T01:56:44.575Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: e365ab75-cd79-4cbf-94da-16f55de7111d
+createdAt: 2026-08-04T01:56:44.679Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: 183323b9-dfb2-4ffd-a9a7-ef31d707532f
+createdAt: 2026-08-04T01:56:45.008Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 1cf2bd8c-395d-4a29-90c4-8c0bb0154b96
+createdAt: 2026-08-04T01:56:45.152Z
+importance: 1
+tags: []
+taskId: null
+---
+New entry
+
+---
+id: ff34700c-7b16-4628-8eb0-1dff2c42af60
+createdAt: 2026-08-04T01:58:50.699Z
+importance: 5
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "12"
+---
+Resolved wayfinder ticket 12 (Claude Code Adapter) end to end: built src/harnesses/{types,payload,ledger,hookState,cacheDir,claudeCode}.ts, the neuron hook claude-code <point> CLI entrypoint in src/commands/hook.ts wired into cli.ts, and full install/uninstall/verify wiring into neuron init (new flags --hook-target, --overwrite-hooks/--keep-hooks, --harness, --no-hooks, --uninstall-hooks). Verified all four of the ticket's verification bullets directly: fetched Claude Code's actual hook JSON schema and confirmed session_id is present on every event, resolving ADR 0014 section 3's previously-unverified risk; demonstrated deterministic recall on a scratch project with zero CLAUDE.md/AGENTS.md present by piping a bare UserPromptSubmit payload into the hook and getting the relevant memory back; measured real-embedder latency at 0.366s cold and ~0.2s warm, matching ADR 0014's own prior measurement and comfortably inside Claude Code's 30s timeout; and tested the non-clobbering merge and uninstall against a synthetic pre-existing user hook. Added 45 new tests across 5 files, full suite 355/359 green -- the 4 failures are a pre-existing, already-tracked test-isolation bug (ticket 42: CLI tests missing a package.json boundary let findProjectRoot walk into this repo's real .neuron store), confirmed independent of this ticket by reproducing it before any of these changes; the new init.test.ts cases that would have added to it were given the same package.json guard the file's own existing tests already use. Updated the wayfinder map's Decisions-so-far and marked ticket 12 resolved, unblocking nothing further by itself but handing ticket 13 (Codex adapter) a working harness-agnostic payload/ledger/hookState/types layer to build against.
+
+---
+id: 5615d9bf-aec6-4689-a980-7b961ff37526
+createdAt: 2026-08-04T02:13:12.306Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: e3aa318f-adb3-43ee-bbea-8ea6463c13ec
+createdAt: 2026-08-04T02:13:13.247Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: f2c1f59a-dcb5-48f1-9da4-fb377d0a8e85
+createdAt: 2026-08-04T02:13:13.719Z
+importance: 1
+tags: []
+taskId: null
+---
+Old entry
+
+---
+id: 375fe403-853f-40df-b27f-5fdfdad514ff
+createdAt: 2026-08-04T02:13:13.757Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: af934054-adcf-4804-baf0-c5d2242dacb0
+createdAt: 2026-08-04T02:13:14.156Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: e670230f-4be6-4024-9150-d9858aa7905e
+createdAt: 2026-08-04T02:13:14.308Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: e0e4fc92-bb4a-4980-aa40-5dc32b2103d4
+createdAt: 2026-08-04T02:13:14.499Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: b91aed90-7050-4366-aa1c-2cffde42fa79
+createdAt: 2026-08-04T02:13:14.885Z
+importance: 1
+tags: []
+taskId: null
+---
+New entry
+
+---
+id: cc95ef8b-bf93-4121-b851-a1ba92542440
+createdAt: 2026-08-04T02:14:35.802Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: 17dff89f-a196-4247-8211-7e09102bbef2
+createdAt: 2026-08-04T02:14:36.918Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: 272a8b8f-831d-4135-b16b-232bc84ffa9e
+createdAt: 2026-08-04T02:14:37.388Z
+importance: 1
+tags: []
+taskId: null
+---
+Old entry
+
+---
+id: 42e589ac-3fd0-4d2e-ae6b-4be5b7d725f4
+createdAt: 2026-08-04T02:14:37.694Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 1cbafc40-8e04-49d1-8cd4-aa66107270fc
+createdAt: 2026-08-04T02:14:37.801Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: 18571a4f-9704-434f-bf8a-650e1d3325f9
+createdAt: 2026-08-04T02:14:38.128Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 65bb77ff-fa9d-4ada-86c3-83e4db93b0d2
+createdAt: 2026-08-04T02:14:38.205Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: a2a9174a-53e2-4385-9e3a-0d97ce29f750
+createdAt: 2026-08-04T02:14:38.581Z
+importance: 1
+tags: []
+taskId: null
+---
+New entry
+
+---
+id: 171484f9-05d1-4421-896c-1b437256efaa
+createdAt: 2026-08-04T02:15:55.449Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "13"
+---
+Resolved wayfinder ticket 13 (Codex Adapter) end to end: built src/harnesses/codex.ts against ticket 12's shared types/payload/ledger/hookState layer with zero changes needed to that layer, confirming it is genuinely harness-agnostic. Fetched Codex's actual hooks docs (learn.chatgpt.com/docs/hooks, the developers.openai.com/codex/hooks redirect target) and found event names, stdin fields (session_id on every event including PreCompact/PostCompact, prompt on UserPromptSubmit), and the stdout hookSpecificOutput envelope byte-identical to Claude Code's -- resolving ADR 0014 section 3's session-ledger risk for Codex the same way ticket 12 resolved it for Claude Code, and letting src/commands/hook.ts stay fully harness-agnostic (only the harness allowlist widened from a hardcoded string to a two-item list). The one real difference is contained inside the adapter: Codex's schema documents a single command string rather than Claude Code's command+args split, so 11's HarnessAdapter interface needed no revision. Verified multi-harness coexistence directly (a project with both .claude/ and .codex/ gets both adapters wired independently) and end-to-end deterministic recall via dist/cli.js hook codex <point>; 29 new tests all green, full suite 380/384 with the 4 failures being ticket 42's already-tracked pre-existing package.json-boundary pollution in files this ticket never touched. Unblocks ticket 14 (protocol block rewrite) and ticket 15 (cut rc3).
+
+---
+id: 703b9d01-6f3e-4858-80d4-5b54151eacdc
+createdAt: 2026-08-04T02:23:07.920Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: 74899737-ece0-4edc-a1be-35778e9ac6d8
+createdAt: 2026-08-04T02:23:09.384Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: ec717c56-b675-4856-88dc-c09b54c500ec
+createdAt: 2026-08-04T02:23:10.075Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 45d2c219-29c6-41d2-82b2-7f1a183fa30e
+createdAt: 2026-08-04T02:23:10.385Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: adbeac9b-07e6-4054-a371-c07c8d414841
+createdAt: 2026-08-04T02:23:10.624Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 2e35187f-04ab-42ec-8339-5fae036923d4
+createdAt: 2026-08-04T02:23:10.787Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: 1a647f1d-e036-47b0-89d5-c1378c9e801d
+createdAt: 2026-08-04T02:52:03.340Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: 5d517af7-0f34-4118-83b5-7c99ed47f6be
+createdAt: 2026-08-04T02:52:04.238Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: 68438e7b-8814-4d03-839a-65aade509571
+createdAt: 2026-08-04T02:52:04.831Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: f154a623-e513-4160-bf17-e8709c45050d
+createdAt: 2026-08-04T02:52:05.306Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: 2b1cd8f5-dc13-41e9-9e1b-16ddc024b5c9
+createdAt: 2026-08-04T02:52:05.492Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: c8a3f9d5-f650-4416-b16f-b3e34cfbebbe
+createdAt: 2026-08-04T02:52:05.801Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: be05fc7a-5579-46a3-bde0-80a9f9dddef0
+createdAt: 2026-08-04T02:53:42.735Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: 2da0ee55-05f6-4464-9400-4d8a3ba8bebd
+createdAt: 2026-08-04T02:53:43.947Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: 9b70a95f-0f75-49e7-88c1-9cfc03315f17
+createdAt: 2026-08-04T02:53:44.418Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: e1b22b9e-47f0-4619-8040-a9d6e3d53519
+createdAt: 2026-08-04T02:53:44.642Z
+importance: 1
+tags: []
+taskId: null
+---
+Old entry
+
+---
+id: 61630f98-5148-433b-807b-ebff94ee12a9
+createdAt: 2026-08-04T02:53:45.065Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: 98bb251d-e9ae-4ddf-a019-048b1eab9859
+createdAt: 2026-08-04T02:53:45.471Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: ca1f174b-63af-4833-93be-870d8ba13a74
+createdAt: 2026-08-04T02:53:45.750Z
+importance: 1
+tags: []
+taskId: null
+---
+New entry
+
+---
+id: 35a09410-98da-47e0-9e23-19e78d8aab1d
+createdAt: 2026-08-04T02:55:43.865Z
+importance: 4
+tags:
+  - CI
+taskId: null
+---
+Crucial pipeline update
+
+---
+id: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+createdAt: 2026-08-04T02:55:44.975Z
+importance: 3
+tags:
+  - cli
+  - test
+taskId: task-123
+---
+Wrote test for CLI
+
+---
+id: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+createdAt: 2026-08-04T02:55:45.499Z
+importance: 1
+tags: []
+taskId: null
+---
+Old entry
+
+---
+id: 62970f03-5271-4306-be99-996aa1198566
+createdAt: 2026-08-04T02:55:45.673Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+createdAt: 2026-08-04T02:55:45.925Z
+importance: 3
+tags: []
+taskId: null
+---
+Old default entry
+
+---
+id: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+createdAt: 2026-08-04T02:55:46.125Z
+importance: 3
+tags: []
+taskId: null
+---
+a history entry
+
+---
+id: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+createdAt: 2026-08-04T02:55:46.231Z
+importance: 4
+tags: []
+taskId: null
+---
+Old important entry
+
+---
+id: 8760ab92-d71b-45c7-b8c2-b91b459c2201
+createdAt: 2026-08-04T02:59:27.311Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "14"
+---
+Resolved wayfinder ticket 14 (Protocol Block Rewrite: Hooks Own Read, Agent Owns Write) on the neuron-2.2.0 map. Built src/config/protocolBlock.ts from scratch since no CLAUDE.md/AGENTS.md writer existed anywhere in neuron init despite harnesses.json's unused mdFile field -- this repo's own prior CLAUDE.md protocol block had been hand-authored, not generated. One generator (generateProtocolBlock) produces two marker-wrapped variants read live from neuron.yaml: 'deterministic' drops the old mandatory step 1 (manual recall query) entirely and renumbers Command Execution/Failure-Fix Recording/Session Conclusion to 1-3, 'fallback' keeps Recall as step 1 for any harness with nothing else performing recall; both drop the old MANDATORY/VERY-FIRST-tool-call framing since nothing enforces those steps beyond the agent's own diligence. Wired into init.ts via resolveHarnessFidelity, which reads ground truth (adapter.capability() + adapter.verify(projectDir)) rather than this run's flags, so a hook installed by an earlier init still yields the short block under --no-hooks, and harness names sharing one mdFile (agents/github/codex all point at AGENTS.md) get the short block the moment any of them has a working hook, per ADR 0014 section 8.1. upsertProtocolBlock finds the neuron:protocol marker pair and touches only that region, reusing the existing --overwrite-hooks/--keep-hooks/interactive-ask machinery from hook installation rather than inventing a parallel flag pair, and leaves an identical block untouched so re-running init is idempotent. Migrated this repo's own CLAUDE.md to the short variant and added a narrow capability-aware callout to the packaged neuron-memory skill's section 1 (not the full read-side restructure, which the map still has fogged pending ticket 14's completion signal). Found and fixed a real bug while wiring this in: copySkill's own .agents/skills fallback creates .agents/ as a side effect when no harness is detected, which a naive filesystem re-scan for detected harnesses afterward would mistake for a detected 'agents' harness -- fixed by snapshotting detectedHarnessNames once before copySkill or installHooks touch the filesystem. 15 new unit tests (protocolBlock.test.ts) plus 6 new CLI-level tests (init.test.ts), all green; the same 4 pre-existing files fail identically to a run against the unmodified pre-ticket-14 code, confirming they are ticket 42's known CLI/real-store pollution bug and not a regression. Updated the map's Decisions-so-far and marked ticket 14 resolved; this unblocks ticket 15 (cut and publish 2.2.0-rc3), now the next frontier ticket.
