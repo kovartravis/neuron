@@ -1,5 +1,5 @@
 Type: grilling
-Status: unclaimed
+Status: resolved
 Blocked by: 35
 Band: 2.2.0-rc5
 
@@ -158,3 +158,100 @@ it as an extension point.
   coercions have to stop fabricating field values before a schema can mean
   anything. Enforcing a shape on write while the read path invents values on the
   way back out would be a guarantee in name only.
+
+## Answer
+
+Grilled with the maintainer on 2026-08-03. Answers to the seven design
+questions, in the ticket's own order:
+
+**1. Scope of "deterministic."** Bundles three properties — shape (enforceable),
+byte (enforceable, `35` started it), value (not achievable while centroid
+inference exists). The pitch claims shape + byte only. **A `strict` mode ships**,
+opt-in per-project in `neuron.yaml`, disabling both tag inference and category
+inference (`06`'s `categoryStrategy`/`tags` fields) so a project can additionally
+claim value determinism if it forgoes inference's convenience. The packaged
+`.claude/skills/neuron-memory/SKILL.md` must document the shape/byte/value
+distinction and `strict` mode's tradeoff (loses auto-tag/category convenience,
+gains the literal "deterministic" claim) — folded into ticket `45`.
+
+**2. Field tiers.** The three tiers stand as scoped — structural (`id`,
+`createdAt`), semantic reserved (`importance`, `tags`, `taskId` — `scope` drops
+off the list, dead per `38`), user-defined (opaque, product-value tier).
+`taskId` stays semantic reserved rather than moving to user-defined.
+
+**3. Type system floor.** **String and enum only** — no number/date. Enum
+reuses the existing edit-distance suggester (`unknownFlag` in `utils.ts`) for
+typo'd values. `importance`'s 1–5 integer range stays a hardcoded special case
+outside this type system (it's semantic-reserved, not user-defined).
+
+**Required-but-missing policy.** Same shape as `06`'s `--category` precedent:
+hard error naming the field and category, unless the category config declares a
+literal `default:` for that field, in which case the CLI fills it silently. No
+second policy.
+
+**CLI-flag mechanism (config-declared fields become flags — already decided by
+the maintainer 2026-08-02).** `KNOWN_FLAGS` becomes config-derived; a declared
+field's kebab-case flag name is checked at config-load time for collision
+against the reserved built-in flag set, refusing the config with a clear error
+rather than discovering the shadow at write time; `--help` text generates
+dynamically per project. **Validation timing resolved as a side effect of the
+storage question below: `transact()` is the single enforcement choke point**,
+because `ingestScanResults` (`src/scanner/ingest.ts`) writes the architecture
+card via `memory.transact()` directly, bypassing `parseFlags` entirely —
+`parseFlags` only needs to recognise declared flags well enough to avoid
+`unknownFlag`, collecting raw values through to `transact()`, where required-ness
+and enum-membership are actually enforced, once, for every writer.
+
+**4. Pre-existing entries against a newly-declared schema.** **Read and
+report, never refuse to read.** A missing-field violation on an existing entry
+doesn't destroy data and doesn't get invented (no safe default exists for a
+free-text identity field) — it isn't ticket `35`'s repair-or-refuse binary,
+because it's neither synthesizable nor ambiguous, just absent. Reporting lands
+in `neuron status --check` (see below). The hard-error-unless-default policy
+only bites on new writes (create/update), never on read.
+
+**5. Does the schema apply to `vector-only`?** **Yes, identically — via an
+additive-only SQLite auto-migration**, not a mode gate. The unified `memories`
+table (`src/index.ts:321`) is fixed-column with no metadata/JSON slot today; a
+declared user-defined field becomes one nullable `TEXT` column via
+`ALTER TABLE memories ADD COLUMN <snake_case_name> TEXT`, both for `string` and
+`enum` types — enum membership is *not* a SQL `CHECK` constraint, since that
+would need a table rebuild every time a team edits its allowed values; it's
+enforced in application code at `transact()`, the same single choke point that
+covers the markdown path, so the validator is written once. The migration is
+additive-only and idempotent: it diffs declared fields against
+`PRAGMA table_info(memories)` at store-open time and only ever adds columns,
+**never drops one** when a field is removed from config — an unreviewed
+automatic path must not be capable of destroying data on a config typo/edit;
+that matches the project's existing posture (`enriched_at` kept post-`26`,
+`--scope`/`--scopes` kept-but-ignored post-`38`). Column identifiers are
+validated against a strict allowlist pattern before use in DDL.
+
+**6. Does this reopen validation tooling (`neuron doctor`)?** **Yes, folded
+into `neuron status --check`/`--repair`, not a new top-level command** — keeps
+the map's no-new-commands non-goal intact. Repair is deterministic wherever
+possible: applies a configured `default:` fallback, and offers **centroid-based
+inference for enum-typed fields only** (content-to-label signal exists,
+matching the tag/category precedent that beat the model 9/9 in `06`). It
+**never fabricates a value for a free-text identity field** (`reviewedBy`,
+`ticket`) — there is no content signal that could produce a person's name or a
+ticket number, and this map has already measured that exact failure shape three
+times (`06`'s importance noise, `08`'s ruled-out dedupe, `35`'s own reader-side
+fabrication bug this ticket exists to not repeat one layer up). Those fields
+are listed as missing and left for a human or an agent told to go find the real
+answer, never guessed.
+
+**7. Does `neuron scan`'s architecture card have to satisfy its category's
+schema?** **Yes — direct consequence of `transact()` being the single
+enforcement point.** Corollary that must be a load-time config check: if the
+category `scan.category` points at declares a required field with no
+`default:`, `neuron scan` cannot supply one (it never calls `parseFlags`) and
+would break itself on every run. `neuron.yaml` load refuses that configuration
+with an error naming the conflict, rather than letting it surface as a
+mysterious `neuron scan` failure later.
+
+**Implementation graduated as** [43](43-declarable-field-schema-cli-flags.md),
+[44](44-sqlite-additive-field-migration.md),
+[45](45-strict-mode-and-skill-docs.md),
+[46](46-status-check-repair.md) — not pre-sliced further here.
+[ADR 0013](../../docs/adr/0013-configurable-frontmatter-schema.md).
