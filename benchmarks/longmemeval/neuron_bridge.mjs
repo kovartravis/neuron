@@ -42,10 +42,14 @@ rl.on('line', async (line) => {
           try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch (_) {}
         }
       }
+      // storageMode pinned to 'vector-only': the schema default became 'md'
+      // in ticket 31, which would run per-write markdown files + reconcile
+      // for a throwaway benchmark ingest of tens of thousands of documents.
       neuron = new NeuronMemory({
         dbPath: dbPath || ':memory:',
         projectRoot: process.cwd(),
-        projectName: 'benchmark'
+        projectName: 'benchmark',
+        storageMode: 'vector-only'
       });
       console.log(JSON.stringify({ id, status: 'ok' }));
     } else if (action === 'ingest') {
@@ -56,12 +60,15 @@ rl.on('line', async (line) => {
       const BATCH_SIZE = 50;
       for (let i = 0; i < documents.length; i += BATCH_SIZE) {
         const batch = documents.slice(i, i + BATCH_SIZE);
+        // Isolation is per-category, not per-scope: ticket 38 dropped the
+        // `scope` column entirely, so `scope`/`scopes` are silently ignored
+        // by NeuronMemory now. A document's user_id becomes its category,
+        // which is the only partition key query() still filters on.
         const mutations = batch.map(doc => ({
           op: 'upsert',
           id: doc.id,
-          category: 'benchmark',
-          content: doc.content,
-          scope: doc.user_id || 'default'
+          category: `bench_${doc.user_id || 'default'}`,
+          content: doc.content
         }));
         await neuron.transact(mutations);
       }
@@ -71,18 +78,22 @@ rl.on('line', async (line) => {
       if (!neuron) {
         throw new Error('Neuron memory not initialized. Call prepare first.');
       }
-      const scopes = user_id ? [user_id] : undefined;
+      const categories = user_id ? [`bench_${user_id}`] : undefined;
       const results = await neuron.query({
         text: query,
-        categories: ['benchmark'],
-        limit: k,
-        scopes
+        categories,
+        limit: k
       });
       const docs = results.map(r => ({
         id: r.id,
         content: r.content,
-        user_id: r.scope,
-        score: r.score
+        user_id: user_id ?? null,
+        score: r.score,
+        // Ticket 39: raw legs of ADR 0012's gate, exposed by NeuronMemory
+        // for gate calibration since the gate itself (ticket 41) hasn't
+        // shipped in production code yet.
+        similarity: r.similarity,
+        ftsMatched: r.ftsMatched
       }));
       console.log(JSON.stringify({ id, status: 'ok', documents: docs }));
     } else if (action === 'cleanup') {

@@ -1,14 +1,15 @@
 # ADR 0012 — Relevance Gate and Score Decontamination
 
-- **Status:** Accepted (2026-08-03)
+- **Status:** Accepted (2026-08-03); cosine-floor question resolved 2026-08-03
+  (ticket 39 — see Amendment below)
 - **Amends:** [ADR 0001 — Hybrid Search RRF](0001-hybrid-search-rrf.md) — the
   fused score's composition changes
 - **Relates to:** [ADR 0010 — LLM Job Guardrails](0010-llm-job-guardrails.md) §2,
   whose account of `minScore` this ADR corrects for the second time
 - **Ticket:** [27 — `minScore` Is Structurally Inert](../../.scratch/neuron-2.2.0/issues/27-minscore-is-inert.md)
 - **Implemented by:** [41](../../.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate.md)
-  (structural) and [39](../../.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md)
-  (the one fitted constant)
+  (structural — pending) and [39](../../.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md)
+  (the one fitted constant — resolved: no floor ships, config surface landed)
 
 ## Context
 
@@ -209,3 +210,90 @@ asserted a measurement in advance.
    weak filter understates the defect — it is not weak, it is structurally
    incapable of firing, and the repair is to the quantity rather than the
    threshold.
+
+## Amendment (ticket 39, 2026-08-03) — the cosine floor and the config surface
+
+Ticket 39 ran the validation this ADR deferred: §6's fitted constant, and
+Consequence 6's open risk on the lexical leg's false-silence rate. Both were
+measured on LongMemEval — 500 questions, 23,867 documents, paraphrased
+conversational content with gold evidence guaranteed present per question,
+**zero LLM calls** — chosen specifically because it is not this project's own
+prose, which is what made the pilot's 0.061 margin (`research/relevance-floor-baseline.md`)
+unusable as a shipping number.
+
+Isolation needed a fix first: ticket 38 (already on trunk) dropped the `scope`
+column this benchmark's per-question isolation depended on, so `scope`/`scopes`
+had become silent no-ops — every query would have searched all 23,867 documents
+instead of its own question's partition. Fixed by isolating on `category`
+instead (`benchmarks/longmemeval/neuron_bridge.mjs`), and by exposing the
+gate's two raw legs (`similarity`, `ftsMatched`) on every `Memory` result
+(`src/index.ts`, `src/models/memory.ts`) — needed because ticket 41 has not
+shipped, so there was no other way to read raw cosine or FTS-match state from
+outside. Control arm reproduced the published baseline after the fix
+(recall@1 83.5% / @5 96.2% / @10 98.3%, 0 cross-unit leaks), which is the
+harness-validity check the ticket itself required before trusting anything
+downstream of it.
+
+### Run 2 — the lexical leg's false-silence rate: 0.00%
+
+**0 of 500 queries** had a top hit with zero FTS match, overall and in every
+one of the six question-type categories individually — including the two
+hardest-to-paraphrase categories, `multi-session` (n=133) and
+`temporal-reasoning` (n=133), which is precisely the population `27`'s own
+5-paraphrase probe (against this project's own store) could not stress. **This
+closes Consequence 6.** The lexical leg does not need demotion; it ships in
+`41` as a hard conjunct exactly as designed.
+
+### Run 1 — the cosine floor: no candidate clears the bar
+
+Swept 0.50→0.70 in 0.02 steps, conditioned on the (universally-passing)
+lexical leg, against the bar committed in ticket 39 before any number was
+seen (zero recall regression at @1/@5/@10, measurable volume reduction, 0%
+false silence — all three required). **Every floor fails.** Even the
+gentlest, 0.50, already regresses recall by 3.3% / 4.0% / 4.2% at @1/@5/@10
+and produces 20 false-silence instances (queries where gold was in the
+top-10 and the floor discarded it) against a 4.4% volume reduction. The
+frontier only worsens from there — at 0.60 the regression is already
+27.1%/35.3%/37.0%. **No (floor, band) pair satisfies the bar. Per the bar's
+own pre-committed rule, this is a real result: ship no cosine floor.**
+
+### Run 3 — why: the corpus argument cuts the harder way
+
+On-topic r1 (same-partition top hit): median **0.627** (p10 0.520, p90
+0.742). Negative-control r1 (cross-partition, same query): median **0.533**
+(p10 0.464, p90 0.618). These overlap substantially — the negative-control
+p90 sits inside the on-topic p10–p90 band — a materially thinner separation
+than `27`'s own conditioned margin on this project's dense technical prose
+(0.123, cosines 0.607–0.812). Ticket 39 flagged this as the open question
+("a floor calibrated on conversational text may not carry to technical
+prose... the report must say which way it cuts"); the measured direction is
+that **conversational text is the harder corpus for a cosine floor**, not the
+easier one. That is the mechanism behind Run 1's null result, not a
+contradicting data point.
+
+### Config surface — settled once, with the number in hand
+
+- **`minScore` is formally deprecated.** `pullRules.default.minScore` and
+  `pullRules.onExec[].minScore` still parse — no hard fail on an existing
+  `neuron.yaml` — but now emit a one-time stderr warning naming `ADR 0012` and
+  pointing at the replacement. Reinterpreting the key as the cosine floor
+  remains rejected, per Consequence 4: there is no floor to reinterpret it as.
+- **No `cosineFloor` key was added.** There is no validated number to default
+  it to, and a config key with no safe value is the same failure ticket 26
+  already reversed once for model-based importance inference. This is that
+  call made in advance rather than after a user hits it.
+- **`relevance.gate.enabled`** (boolean, default `true`) is the new switch —
+  one gate, one behaviour, on both `neuron exec` and `neuron memory query`,
+  matching Decision 5. It governs the lexical-leg predicate `41` ships; there
+  is no cosine leg for it to also govern.
+- **Rejection counts belong in `neuron status`** alongside the `05`/`06`
+  degradation counters, so the (structural) lexical gate's impact stays
+  visible without a fitted number to tune. Left to `41`, which wires the gate
+  into the retrieval layer and therefore owns what it counts.
+
+### Consequence to ticket 11
+
+Point 4's payload budget is settled: the relevance floor is **none**. The
+character ceiling (Decision 5 of `11`) is the sole volume control; nothing
+here changes the token ceiling or truncation strategy, both already settled
+by argument. Point 4 is no longer a blocker.

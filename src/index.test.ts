@@ -546,6 +546,48 @@ describe('NeuronMemory hybrid search (RRF)', () => {
 
     expect(results[0].content).toBe('pin onnxruntime to 1.20.1 to avoid crash');
   });
+
+  it('should expose raw cosine similarity and the lexical-leg match, ungated (ticket 39)', async () => {
+    // Ticket 39 needs the two legs of ADR 0012's gate — raw cosine and FTS
+    // presence — measurable from outside, since the gate itself (ticket 41)
+    // hasn't shipped yet. This asserts queryVector exposes them undistorted
+    // by the RRF/importance fusion `score` already blends.
+    const matchVec = new Float32Array(384);
+    matchVec[0] = 1.0;
+
+    const otherVec = new Float32Array(384);
+    otherVec[1] = 1.0;
+
+    const queryVec = new Float32Array(384);
+    queryVec[0] = 0.8;
+    queryVec[1] = 0.6;
+
+    const mockEmbedder = {
+      embed: async (text: string) => (text.includes('gate') ? matchVec : otherVec),
+      embedQuery: async () => queryVec
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector-only',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('relevance gate keyword hit', ['gate'], { importance: 3 });
+    await memory.addLearning('unrelated content, no keyword overlap', ['other'], { importance: 3 });
+
+    const results = await memory.query({ text: 'gate', kind: 'learning' });
+
+    const hit = results.find(r => r.content === 'relevance gate keyword hit')!;
+    const miss = results.find(r => r.content === 'unrelated content, no keyword overlap')!;
+
+    expect(hit.ftsMatched).toBe(true);
+    expect(miss.ftsMatched).toBe(false);
+    expect(hit.similarity).toBeCloseTo(0.8, 5);
+    expect(miss.similarity).toBeCloseTo(0.6, 5);
+  });
 });
 
   it('should surface semantically relevant records even when no query keywords appear in the content', async () => {

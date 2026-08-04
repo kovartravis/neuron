@@ -275,4 +275,49 @@ pullRules:
       ).toThrow(/llm\.enrichment\.tags/);
     });
   });
+
+  describe('relevance.gate (ADR 0012, ticket 39)', () => {
+    it('defaults the gate to enabled with no cosine floor key', () => {
+      const config = validateNeuronYaml({ categories: { learning: {} } });
+      expect(config.relevance.gate.enabled).toBe(true);
+      // No cosineFloor key exists: ticket 39 measured one on LongMemEval and
+      // found no (floor, band) pair clears the bar, so there is no number to
+      // default it to. Zod's object schema has no such key to strip, so this
+      // just documents the absence rather than testing a negative.
+      expect(config.relevance.gate).not.toHaveProperty('cosineFloor');
+    });
+
+    it('accepts an explicit override to disable the gate', () => {
+      const config = validateNeuronYaml({
+        categories: { learning: {} },
+        relevance: { gate: { enabled: false } },
+      });
+      expect(config.relevance.gate.enabled).toBe(false);
+    });
+
+    it('still parses a config carrying the deprecated minScore, unchanged and warning', () => {
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      const config = validateNeuronYaml({
+        categories: { learning: {} },
+        pullRules: {
+          default: { categories: ['learning'], minScore: 0.4 },
+          onExec: [{ commandPattern: '^npm test', categories: ['learning'], minScore: 0.5 }],
+        },
+      });
+      expect(config.pullRules.default?.minScore).toBe(0.4);
+      expect(config.pullRules.onExec?.[0].minScore).toBe(0.5);
+      const warnings = warnSpy.mock.calls.map(c => String(c[0]));
+      expect(warnings.some(w => w.includes('pullRules.default.minScore is deprecated'))).toBe(true);
+      expect(warnings.some(w => w.includes('pullRules.onExec[].minScore is deprecated'))).toBe(true);
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn when minScore is absent from the raw config', () => {
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      validateNeuronYaml({ categories: { learning: {} } });
+      const warnings = warnSpy.mock.calls.map(c => String(c[0]));
+      expect(warnings.some(w => w.includes('minScore'))).toBe(false);
+      warnSpy.mockRestore();
+    });
+  });
 });

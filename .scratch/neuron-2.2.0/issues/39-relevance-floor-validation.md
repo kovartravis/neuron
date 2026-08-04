@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved (2026-08-03)
 Blocked by: none
 Band: 2.2.0-rc3
 
@@ -212,6 +212,66 @@ what it measures. The floor's job is rejecting the *irrelevant*, not the
 *wrong* — and nothing in this ticket addresses confidently-wrong retrieval, which
 remains unowned.
 
+## Answer (2026-08-03)
+
+Ran on LongMemEval-S, full split: 500 questions, 23,867 documents, zero LLM
+calls. Isolation needed a prerequisite fix — ticket 38 dropped `scope`, which
+this benchmark's per-question isolation depended on, so `scope`/`scopes` had
+become silent no-ops (every query would have searched all 23,867 documents,
+not just its own question's partition). Fixed by isolating on `category`
+instead (`benchmarks/longmemeval/neuron_bridge.mjs`, and its deployed copy).
+Also added the raw-leg instrumentation this ticket needs but had no way to
+read (`similarity`, `ftsMatched` on every `Memory` result — `src/index.ts`,
+`src/models/memory.ts`), since ticket 41 hasn't shipped and the fused `score`
+hides both legs. Control arm reproduced the published baseline after the fix
+(recall@1 83.5% / @5 96.2% / @10 98.3%, 0 cross-unit leaks) — the harness
+validity check this ticket's own wording required before trusting anything
+downstream.
+
+**Run 2 (false-silence rate): 0.00%.** 0 of 500 queries had a top hit with
+zero FTS match — overall, and in every one of the six question-type
+categories individually, including `multi-session` (n=133) and
+`temporal-reasoning` (n=133), the hardest to paraphrase. The lexical leg does
+not need demotion; ADR 0012 Consequence 6 is closed.
+
+**Run 1 (cosine floor): no candidate clears the bar.** Swept 0.50→0.70 in
+0.02 steps, conditioned on the lexical leg, against the pre-committed bar
+(zero recall regression, measurable volume reduction, 0% false silence — all
+three required). Every floor fails all three simultaneously. Even 0.50, the
+gentlest, already regresses recall by 3.3%/4.0%/4.2% at @1/@5/@10 (20
+false-silence instances) for a 4.4% volume reduction; 0.60 regresses
+27.1%/35.3%/37.0%. **Per the bar's own pre-committed rule: ship no cosine
+floor.** This is a real result, not a failure to find one.
+
+**Run 3 (distribution shape): the corpus argument cuts against a floor
+transferring.** On-topic r1 median 0.627 (p10 0.520, p90 0.742);
+negative-control r1 median 0.533 (p10 0.464, p90 0.618) — the negative-control
+p90 sits inside the on-topic p10–p90 band. Materially thinner separation than
+`27`'s conditioned margin on this project's own dense technical prose (0.123,
+cosines 0.607–0.812). Conversational text is the *harder* corpus for a cosine
+floor, not the easier one — this is the mechanism behind Run 1's null, not a
+contradicting data point.
+
+**Config surface, landed:** `minScore` deprecated (still parses, one-time
+stderr warning naming ADR 0012, no hard fail on an existing `neuron.yaml`).
+No `cosineFloor` key added — there is no validated number to default it to,
+and an inert config key is the same failure ticket 26 already reversed once.
+New `relevance.gate.enabled` boolean (default `true`, `src/config/neuronYaml.ts`)
+is the switch for the lexical-only gate ticket 41 ships. Full detail and the
+"one-word fix" verification (already correct in the map, no edit needed) in
+[ADR 0012's amendment](../../../docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-39-2026-08-03--the-cosine-floor-and-the-config-surface).
+
+**Ticket `11` point 4 is unblocked**: the payload budget's relevance floor is
+*none*; the character ceiling remains the sole volume control.
+
+Full per-floor frontier, per-category false-silence breakdown, and raw JSON:
+`benchmarks/agent-memory-benchmark/outputs/relevance_gate_longmemeval.json`
+(run script: `benchmarks/longmemeval/relevance_gate_eval.py`).
+
+309 unit tests green (274 unaffected + 18 new for the config surface + a
+raw-leg instrumentation test, minus the 4 pre-existing store-isolation
+failures ticket 42 tracks, confirmed unrelated).
+
 ## Comments
 
 - 2026-08-03: Created during `11`'s grilling, at the maintainer's direction, when
@@ -224,3 +284,5 @@ remains unowned.
   number was seen, and `27` saw numbers. Ticket `27`'s own evidence is 15 probes
   against this project's own store and is explicitly *not* a substitute for this
   run.
+- 2026-08-03: Resolved. Full 500-question run: 0% lexical false-silence, no
+  cosine floor clears the bar, config surface landed. See Answer above.

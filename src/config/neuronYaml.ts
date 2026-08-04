@@ -80,6 +80,12 @@ export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
 export const PullRuleDefaultSchema = z.object({
   categories: z.array(z.string()).min(1, 'pullRules.default.categories must be a non-empty array'),
   limit: z.number().optional(),
+  /**
+   * @deprecated Structurally inert (ADR 0012, ticket 39): it gates on the
+   * fused `score`, which cannot reject a top hit at any relevance. Still
+   * parsed for backward compatibility — warns, never errors — but no code
+   * path uses it to filter. `relevance.gate.enabled` is the real switch.
+   */
   minScore: z.number().optional(),
 });
 
@@ -89,6 +95,7 @@ export const PullRuleOnExecSchema = z.object({
   commandPattern: z.string().min(1, 'commandPattern must be a non-empty string'),
   categories: z.array(z.string()).min(1, 'categories must be a non-empty array'),
   limit: z.number().optional(),
+  /** @deprecated See `PullRuleDefaultSchema.minScore`. */
   minScore: z.number().optional(),
 });
 
@@ -164,6 +171,37 @@ export type LlmConfig = z.infer<typeof LlmConfigSchema>;
 
 export const DEFAULT_LLM: LlmConfig = LlmConfigSchema.parse({});
 
+/**
+ * ADR 0012 / ticket 27's relevance gate. `enabled` is the single retrieval-layer
+ * on/off switch — one gate, one behaviour, on both `neuron exec` and
+ * `neuron memory query` (a per-path split was proposed and declined). It
+ * governs only the **lexical leg** (`normRrf > 0.5`, a topicality predicate),
+ * shipped structurally by ticket 41.
+ *
+ * There is deliberately no `cosineFloor` key. Ticket 39 measured it on
+ * LongMemEval (500 questions, ~24k documents, zero LLM calls) and found no
+ * (floor, band) pair clears the pre-committed bar — every floor from 0.50 to
+ * 0.70 regresses recall on real conversational text, because on-topic and
+ * negative-control top-1 cosine overlap too far to cut cleanly (median 0.627
+ * vs 0.533; the negative-control p90 sits inside the on-topic p10-p90 range).
+ * Shipping an inert or harmful key is the failure ticket 26 already reversed
+ * once for `importance` inference; this field is the same call made in
+ * advance. Revisit only with new evidence, not a guessed number.
+ */
+export const RelevanceGateConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+});
+
+export type RelevanceGateConfig = z.infer<typeof RelevanceGateConfigSchema>;
+
+export const RelevanceConfigSchema = z.object({
+  gate: RelevanceGateConfigSchema.default({ enabled: true }),
+});
+
+export type RelevanceConfig = z.infer<typeof RelevanceConfigSchema>;
+
+export const DEFAULT_RELEVANCE: RelevanceConfig = RelevanceConfigSchema.parse({});
+
 export const NeuronConfigSchema = z.object({
   version: z.string().default('1.0'),
   storage: StorageConfigSchema.default({ mode: 'md', path: '.neuron' }),
@@ -179,6 +217,7 @@ export const NeuronConfigSchema = z.object({
     onExec: [],
   }),
   llm: LlmConfigSchema.default(DEFAULT_LLM),
+  relevance: RelevanceConfigSchema.default(DEFAULT_RELEVANCE),
 });
 
 export type NeuronConfig = z.infer<typeof NeuronConfigSchema>;
@@ -235,6 +274,23 @@ export function validateNeuronYaml(raw: unknown): NeuronConfig {
   // Must have at least one category
   if (Object.keys(config.categories).length === 0) {
     throw new Error('neuron.yaml: at least one category must be defined');
+  }
+
+  // `minScore` is deprecated (ADR 0012, ticket 39): it gates on the fused
+  // `score`, which cannot reject a top hit at any relevance. Warn once per
+  // explicitly-set occurrence in the raw config — never on the schema's own
+  // fallback default below, which isn't user intent. Still parsed, still
+  // ignored by the real gate: `relevance.gate.enabled` is the switch.
+  const rawPullRules = (raw as { pullRules?: { default?: { minScore?: unknown }; onExec?: Array<{ minScore?: unknown }> } }).pullRules;
+  if (rawPullRules?.default?.minScore !== undefined) {
+    process.stderr.write(
+      '[neuron warning] pullRules.default.minScore is deprecated — it cannot reject a top hit at any relevance (ADR 0012). Use relevance.gate.enabled instead.\n'
+    );
+  }
+  if (rawPullRules?.onExec?.some(r => r?.minScore !== undefined)) {
+    process.stderr.write(
+      '[neuron warning] pullRules.onExec[].minScore is deprecated — it cannot reject a top hit at any relevance (ADR 0012). Use relevance.gate.enabled instead.\n'
+    );
   }
 
   // Validate referenced categories in pullRules.default

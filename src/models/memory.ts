@@ -23,6 +23,10 @@ export interface Memory {
   taskId?: string | null;
   createdAt: string;
   score?: number;
+  /** Raw cosine similarity against the query embedding, before RRF fusion. Ticket 39 gate calibration; not persisted. */
+  similarity?: number;
+  /** Whether the FTS5 lexical leg matched this entry at all. Ticket 39 gate calibration; not persisted. */
+  ftsMatched?: boolean;
 }
 
 /**

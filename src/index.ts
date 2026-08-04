@@ -525,7 +525,7 @@ export class NeuronMemory {
       }
 
       // --- RRF fusion + Importance ---
-      for (const { row } of withSim) {
+      for (const { row, similarity } of withSim) {
         const sr = semanticRank.get(row.id) ?? Infinity;
         const fr = ftsRank.get(row.id) ?? Infinity;
         const rrfScore = (sr === Infinity ? 0 : 1 / (RRF_K + sr))
@@ -540,6 +540,8 @@ export class NeuronMemory {
           kind: row.category, // backward compat
           content: row.content,
           score,
+          similarity,
+          ftsMatched: fr !== Infinity,
           tags: JSON.parse(row.tags),
           importance: row.importance,
           taskId: row.task_id ?? null,
