@@ -10,24 +10,58 @@ Every command also responds to `--help`.
 ## `neuron init`
 
 Bootstraps a project: writes a `neuron.yaml` if the project has none, detects
-`CLAUDE.md` or `AGENTS.md` (creating `AGENTS.md` if neither exists), appends or
-updates the memory-store instructions block in place, pre-downloads the local
-ONNX models with a progress bar, fetches Tree-Sitter grammars, and runs the
+every harness present (`CLAUDE.md`/`.claude/`, `AGENTS.md`, `.codex/`,
+`.github/`, `.cursor/` — writing `AGENTS.md` if none exist), installs
+deterministic recall hooks for every harness with an adapter (Claude Code,
+Codex CLI), writes the capability-aware memory-store instructions block into
+each detected harness's instructions file, pre-downloads the local ONNX
+models with a progress bar, fetches Tree-Sitter grammars, and runs the
 initial scan if configured.
 
 | Flag | Description |
 |---|---|
-| `--file`, `-f` | Target instructions file instead of auto-detecting |
+| `--yes` | Non-interactive: accept defaults for every prompt (hook target defaults to `project-committed`) |
+| `--no-hooks` | Skip installing recall hooks entirely; harnesses still get the fallback instructions block |
+| `--hook-target <target>` | Where to install hooks: `user-global`, `project-committed`, or `project-local`. Asked once per run, applied to every harness being wired |
+| `--overwrite-hooks` | Replace a neuron-authored hook entry that differs from what this run would write, without asking |
+| `--keep-hooks` | Keep a differing neuron-authored hook entry as-is, without asking (the non-interactive default) |
+| `--harness <list>` | Comma-separated harness ids (e.g. `claude,codex`) to narrow wiring to a subset of *detected* harnesses; cannot force-wire an undetected one |
+| `--uninstall-hooks` | Remove every hook entry neuron installed, for the harnesses selected by `--harness` (or all adapters if omitted); does nothing else |
+
+`--overwrite-hooks` and `--keep-hooks` are mutually exclusive. A conflicting
+neuron-authored hook entry is never touched without one of these flags or an
+interactive answer — a user's own, non-neuron hooks are never read or
+modified, even when they share the same event array. The same
+overwrite/keep policy also governs the generated protocol block: an existing
+managed region that differs from what this run would write is asked about,
+never silently replaced.
 
 The generated `neuron.yaml` sets `storage.mode: md` and declares `learning`,
 `history`, `decisions` and `architecture`. An **existing** config — including one
 in an ancestor directory that already governs this project — is never touched,
 rewritten or merged into; `init` is re-run routinely to refresh skills, models
 and grammars, and anything it edits it would edit again over your changes. The
-JSON output reports which config governs the project under `config`.
+JSON output reports which config governs the project under `config`, per-harness
+hook install results under `hooks.installed`, and the fidelity each harness's
+instructions file ended up with (derived from `verify()`, not inferred) under
+`protocol.written`.
 
 Model and grammar downloads are best-effort — a failure leaves that capability
 degraded rather than failing the whole bootstrap.
+
+---
+
+## `neuron hook <harness> <point>`
+
+The entrypoint `neuron init` wires into a harness's own hook configuration —
+not typically run by hand. `<harness>` is `claude-code` or `codex`; `<point>`
+is `session-start` (seeds the architecture blueprint card once), `pre-prompt`
+(queries the store with the submitted prompt and injects results), or
+`context-reset` (clears the per-session dedup ledger on compaction). Reads a
+harness-shaped JSON payload from stdin, writes `{"hookSpecificOutput": ...}`
+to stdout on a hit, and **always exits `0`** — a malformed payload, a query
+error, a timeout, or an unreachable store all degrade to printing nothing
+rather than blocking the harness's prompt.
 
 ---
 

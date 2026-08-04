@@ -6,7 +6,15 @@ Glossary and domain language for the `neuron` memory store project.
 
 ### init
 
-The process of bootstrapping a project to support agentic memory store workflows. It searches for an existing `CLAUDE.md` or `AGENTS.md` (defaulting to creating `AGENTS.md` if neither is present, overridable via `--file`/`-f`) and appends or updates the `## Memory Store` instructions block in-place.
+The process of bootstrapping a project to support agentic memory store workflows. It detects every present harness (`.claude/`, `.codex/`, `.github/`, `.cursor/`, or bare `AGENTS.md`, defaulting to creating `AGENTS.md` if none is present), installs deterministic recall hooks for every harness with an adapter (see **harness adapter**), and appends or updates the capability-aware `## Memory Store Protocol` block in each detected harness's instructions file in-place.
+
+### harness adapter (`src/harnesses/`)
+
+The interface (`HarnessAdapter`: `detect`/`capability`/`install`/`uninstall`/`verify`) between neuron and a coding agent's harness, letting `neuron init` wire a deterministic recall hook rather than relying on an instruction the agent may or may not follow. Capability is a `lifecyclePoint → supportRecord` map, not a single label — the `deterministic`/`best-effort`/`instruction-only` fidelity shown to users is derived from that map for display and never stored. Shipped for Claude Code and Codex CLI in 2.2.0-rc3; see [ADR 0014](docs/adr/0014-recall-adapter-architecture.md).
+
+### protocol block (`src/config/protocolBlock.ts`)
+
+The generator behind the `## Memory Store Protocol` region `neuron init` writes into a harness's instructions file. Produces one of two variants depending on whether the target harness currently has a working deterministic hook (per the adjacent **harness adapter**'s `verify()`): the `deterministic` variant deletes the old "query the store first" step, the `fallback` variant keeps it. Marker-wrapped (`<!-- neuron:protocol:start/end -->`) so re-running `init` can find and update only its own region.
 
 ### neuron-memory
 

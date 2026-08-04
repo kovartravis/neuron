@@ -586,6 +586,28 @@ every ticket resolved, every rc cut, stable published.
   [42 — Isolate CLI Tests From the Real `.neuron` Store](issues/42-isolate-cli-tests-from-real-store.md).
   8 tests added, 305/309 green (4 pre-existing failures are `42`'s).
 
+- [15 — Cut and Publish 2.2.0-rc3](issues/15-cut-rc3.md) — `v2.2.0-rc3` cut,
+  tagged and pushed; **npm publish is outstanding and owned by the
+  maintainer**, matching `04`/`09`'s precedent. Ships the release's headline
+  claim, demonstrated live on a scratch project: deterministic recall with
+  the query-first instruction fully removed from `CLAUDE.md`. Per `09`'s own
+  warning to check trunk rather than the nominal band, this cut also carries
+  rc5's `31`, `37` and `39` (already on trunk) — but **not** `41` (verified:
+  `src/index.ts` still blends `importance` into `score`), which stays
+  unclaimed and ships whenever it's next worked. Config-safety verified
+  directly: idempotent re-install, a hand-added user hook and an unrelated
+  JSON key survive byte-for-byte, `--uninstall-hooks` removes exactly
+  neuron's 3 entries, both `.claude/`+`.codex/` wire independently with no
+  double-injection. Latency confirmed against the rc2 budget: ~0.2s warm
+  per hook invocation, matching `12`'s own measurement. Found and fixed
+  three stale-docs gaps: `docs/COMMANDS.md`'s `neuron init` table still
+  documented a dead `--file`/`-f` flag and omitted all seven hook flags;
+  `CONTEXT.md`'s `init` entry had the same staleness and no entry existed
+  for the new harness-adapter/protocol-block modules; README's
+  "not locked to one agent" bullet predated the hook work. 400/405 unit
+  tests, 12/13 E2E pillars — both pre-existing gaps (`42`'s real-store test
+  pollution, Pillar 8 write contention), no regressions.
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no

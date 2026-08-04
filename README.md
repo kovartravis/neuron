@@ -37,8 +37,10 @@ memory service. Neuron's distinct part is the half those don't touch:
   captured whole and call sites are never mistaken for declarations.
 - 🔒 **100% offline & private** — local ONNX embeddings, no API keys, no cloud
   calls. Your code never leaves your machine, including during the scan.
-- 🔌 **Not locked to one agent** — configures itself against `CLAUDE.md` or
-  `AGENTS.md`, so the same memory store serves whichever agent you're using.
+- 🔌 **Not locked to one agent** — the same memory store serves whichever
+  agent you're using. On Claude Code and Codex CLI, recall is a hook the
+  harness runs itself; elsewhere it falls back to a `CLAUDE.md`/`AGENTS.md`
+  instruction.
 - 🖥️ **Local dashboard** — browse memory and inspect drift without leaving your
   machine.
 
@@ -67,6 +69,20 @@ Then tell your agent:
 > "Set up neuron memory for this project."
 
 It runs the setup interview and configures the project for you.
+
+### Recall is enforced, not requested
+
+On a supported harness, `neuron init` wires a hook that queries memory and
+injects results before the model sees the prompt — no instruction for the
+agent to follow, no dependence on it choosing to look.
+
+| Harness | Recall |
+|---|---|
+| Claude Code | Deterministic (hook-based) |
+| OpenAI Codex CLI | Deterministic (hook-based) |
+
+Any other harness falls back to an instruction in `CLAUDE.md`/`AGENTS.md`
+asking the agent to query the store itself.
 
 ## 🏛️ Architecture scanning
 

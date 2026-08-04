@@ -114,7 +114,7 @@
 <div class="wrap">
   <header>
     <h1>Neuron Benchmark Report</h1>
-    <div class="sub">2026-08-03T12:35:02.093Z · tier <strong>sanity</strong></div>
+    <div class="sub">2026-08-04T03:13:12.798Z · tier <strong>sanity</strong></div>
   </header>
 
   
@@ -131,7 +131,7 @@
     </div>
     <div class="card tile">
       <div class="label">Duration</div>
-      <div class="value">0.44<span style="font-size:.9rem;color:var(--ink2)"> min</span></div>
+      <div class="value">0.99<span style="font-size:.9rem;color:var(--ink2)"> min</span></div>
       <div class="note">meets 5-min floor</div>
     </div>
     <div class="card tile">
@@ -145,7 +145,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 7: Adversarial Retrieval Quality</div>
-        <div class="metrics">n=8 · p50 10ms · p95 28ms · p99 34ms</div>
+        <div class="metrics">n=8 · p50 176ms · p95 8.68s · p99 11.99s</div>
         
       </div>
     </div>
@@ -153,7 +153,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 9: Retrieval Scale Curve</div>
-        <div class="metrics">n=1 · p50 9ms · p95 9ms · p99 9ms</div>
+        <div class="metrics">n=1 · p50 149ms · p95 149ms · p99 149ms</div>
         
       </div>
     </div>
@@ -161,7 +161,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 6: Real Pipeline Integrity</div>
-        <div class="metrics">n=3 · p50 2.67s · p95 3.28s · p99 3.34s</div>
+        <div class="metrics">n=3 · p50 12.77s · p95 16.50s · p99 16.83s</div>
         
       </div>
     </div>
@@ -169,7 +169,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 1: Polyglot AST Traversal at Scale</div>
-        <div class="metrics">n=3 · p50 119ms · p95 252ms · p99 264ms</div>
+        <div class="metrics">n=3 · p50 297ms · p95 634ms · p99 664ms</div>
         
       </div>
     </div>
@@ -177,7 +177,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 2: Adversarial Semantic Recall &amp; Distractor Resistance</div>
-        <div class="metrics">n=30 · p50 10ms · p95 11ms · p99 11ms</div>
+        <div class="metrics">n=30 · p50 16ms · p95 24ms · p99 29ms</div>
         
       </div>
     </div>
@@ -185,7 +185,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 3: High-Concurrency Multi-Agent Stress</div>
-        <div class="metrics">n=1 · p50 852ms · p95 852ms · p99 852ms</div>
+        <div class="metrics">n=1 · p50 1.28s · p95 1.28s · p99 1.28s</div>
         
       </div>
     </div>
@@ -193,7 +193,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 4: Architectural Drift Detection &amp; Latency SLA</div>
-        <div class="metrics">n=3 · p50 117ms · p95 185ms · p99 191ms</div>
+        <div class="metrics">n=3 · p50 186ms · p95 270ms · p99 277ms</div>
         
       </div>
     </div>
@@ -201,7 +201,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 5: Storage Corruption &amp; Self-Healing</div>
-        <div class="metrics">n=20 · p50 10ms · p95 10ms · p99 11ms</div>
+        <div class="metrics">n=20 · p50 15ms · p95 25ms · p99 52ms</div>
         
       </div>
     </div>
@@ -209,8 +209,8 @@
       <div style="min-width:5.5rem"><span class="status fail">✖ FAILED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 8: Multi-Process Contention &amp; Crash Recovery</div>
-        <div class="metrics">n=1 · p50 916ms · p95 916ms · p99 916ms</div>
-        <div class="metrics" style="color:var(--critical)">↳ AssertionError: 3/50 writes were rejected under contention: expected 0.06 to be less than 0.05</div>
+        <div class="metrics">n=1 · p50 1.11s · p95 1.11s · p99 1.11s</div>
+        <div class="metrics" style="color:var(--critical)">↳ AssertionError: 1 committed writes were not readable afterwards: expected [ &#39;w0-r10&#39; ] to deeply equal []</div>
       </div>
     </div>
     <div class="pillar">
@@ -233,7 +233,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 11: Category Strategy A/B</div>
-        <div class="metrics">n=18 · p50 247ms · p95 2.01s · p99 4.90s</div>
+        <div class="metrics">n=18 · p50 611ms · p95 8.64s · p99 23.49s</div>
         
       </div>
     </div>
@@ -241,7 +241,7 @@
       <div style="min-width:5.5rem"><span class="status pass">✔ PASSED</span></div>
       <div style="flex:1;min-width:0">
         <div class="name">Pillar 12: Enrichment Retrieval Non-Regression</div>
-        <div class="metrics">n=16 · p50 5ms · p95 8ms · p99 8ms</div>
+        <div class="metrics">n=16 · p50 6ms · p95 9ms · p99 9ms</div>
         
       </div>
     </div></div>
@@ -249,16 +249,16 @@
   <h2>Adversarial retrieval</h2>
   <div class="card">
     <div class="tiles" style="margin-bottom:1.25rem">
-      <div class="tile"><div class="label">recall@1</div><div class="value">0.375</div><div class="note">8 cases</div></div>
+      <div class="tile"><div class="label">recall@1</div><div class="value">0.125</div><div class="note">8 cases</div></div>
       <div class="tile"><div class="label">recall@5</div><div class="value">0.625</div></div>
-      <div class="tile"><div class="label">MRR</div><div class="value">0.469</div></div>
+      <div class="tile"><div class="label">MRR</div><div class="value">0.327</div></div>
       <div class="tile"><div class="label">corpus</div><div class="value">308</div><div class="note">8 evaluations</div></div>
     </div>
     <div style="font-size:.8125rem;color:var(--ink2);margin-bottom:.5rem">recall@1 by adversary family — lower is a weakness</div><svg viewBox="0 0 620 128" width="100%" height="128" role="img" aria-label="recall at 1 by family">
     <line class="axis" x1="118" y1="4" x2="118" y2="124"/>
       <text x="108" y="19" text-anchor="end">lexical-decoy</text>
       <rect class="bar" x="118" y="8" width="224" height="15" rx="4">
-        <title>lexical-decoy: 0.5 (MRR 0.625)</title>
+        <title>lexical-decoy: 0.5 (MRR 0.6)</title>
       </rect>
       <text class="val" x="350" y="20">0.5</text>
       <text x="108" y="49" text-anchor="end">paraphrase</text>
@@ -267,17 +267,17 @@
       </rect>
       <text class="val" x="128" y="50">0</text>
       <text x="108" y="79" text-anchor="end">contradiction</text>
-      <rect class="bar" x="118" y="68" width="448" height="15" rx="4">
-        <title>contradiction: 1 (MRR 1)</title>
+      <rect class="bar" x="118" y="68" width="2" height="15" rx="4">
+        <title>contradiction: 0 (MRR 0.5)</title>
       </rect>
-      <text class="val" x="574" y="80">1</text>
+      <text class="val" x="128" y="80">0</text>
       <text x="108" y="109" text-anchor="end">multi-hop</text>
       <rect class="bar" x="118" y="98" width="2" height="15" rx="4">
-        <title>multi-hop: 0 (MRR 0.167)</title>
+        <title>multi-hop: 0 (MRR 0.125)</title>
       </rect>
       <text class="val" x="128" y="110">0</text></svg>
     <div class="metrics" style="margin-top:.75rem;font-size:.8125rem;color:var(--ink2)">superseded-outranks-current violations: <strong>0</strong></div>
-    <div style="margin-top:1rem;font-size:.8125rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Missed at rank 1</div><ul class="fail-list"><li><code>decoy-retry-budget</code> <span class="muted">(lexical-decoy)</span> — gold at rank 4<br><span class="muted">top hit: When a retry budget is exhausted the retry handler logs a retry limit warning for the paym…</span></li><li><code>para-token-expiry</code> <span class="muted">(paraphrase)</span> — gold at rank &gt;10<br><span class="muted">top hit: Users can be logged out manually by revoking their session from the admin console at any t…</span></li><li><code>para-memory-growth</code> <span class="muted">(paraphrase)</span> — gold at rank 6<br><span class="muted">top hit: Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during …</span></li><li><code>hop-cold-start</code> <span class="muted">(multi-hop)</span> — gold at rank 3<br><span class="muted">top hit: Sluggish commands are often caused by an oversized memory store that needs pruning…</span></li><li><code>hop-ci-only-failure</code> <span class="muted">(multi-hop)</span> — gold at rank &gt;10<br><span class="muted">top hit: Pipeline failures are usually caused by missing environment secrets that are present local…</span></li></ul>
+    <div style="margin-top:1rem;font-size:.8125rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Missed at rank 1</div><ul class="fail-list"><li><code>decoy-retry-budget</code> <span class="muted">(lexical-decoy)</span> — gold at rank 5<br><span class="muted">top hit: Discovered that Google AI Studio enforces a strict 20 requests per day (RPD) hard cap on f…</span></li><li><code>para-token-expiry</code> <span class="muted">(paraphrase)</span> — gold at rank &gt;10<br><span class="muted">top hit: Users can be logged out manually by revoking their session from the admin console at any t…</span></li><li><code>para-memory-growth</code> <span class="muted">(paraphrase)</span> — gold at rank 6<br><span class="muted">top hit: Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during …</span></li><li><code>contra-storage-default</code> <span class="muted">(contradiction)</span> — gold at rank 2<br><span class="muted">top hit: Updated neuron-memory skill SKILL.md (v2.0.0-rc3) to document the full md-file-management …</span></li><li><code>contra-scan-category</code> <span class="muted">(contradiction)</span> — gold at rank 2<br><span class="muted">top hit: Fix for architecture-card content corrupting its own category&#39;s markdown file: synthesizeA…</span></li><li><code>hop-cold-start</code> <span class="muted">(multi-hop)</span> — gold at rank 4<br><span class="muted">top hit: Sluggish commands are often caused by an oversized memory store that needs pruning…</span></li><li><code>hop-ci-only-failure</code> <span class="muted">(multi-hop)</span> — gold at rank &gt;10<br><span class="muted">top hit: Pipeline failures are usually caused by missing environment secrets that are present local…</span></li></ul>
   </div>
   
   <h2>Retrieval scale curve</h2>
@@ -286,15 +286,15 @@
     <svg viewBox="0 0 620 200" width="100%" height="200" role="img" aria-label="query latency versus corpus size">
     <line class="grid" x1="52" y1="166" x2="604" y2="166"/>
             <text x="44" y="170" text-anchor="end">0ms</text><line class="grid" x1="52" y1="89" x2="604" y2="89"/>
-            <text x="44" y="93" text-anchor="end">5ms</text><line class="grid" x1="52" y1="12" x2="604" y2="12"/>
-            <text x="44" y="16" text-anchor="end">10ms</text>
+            <text x="44" y="93" text-anchor="end">86ms</text><line class="grid" x1="52" y1="12" x2="604" y2="12"/>
+            <text x="44" y="16" text-anchor="end">172ms</text>
     <line class="axis" x1="52" y1="166" x2="604" y2="166"/>
-    <path class="line" d="M328.0,32.1"/><circle class="dot" cx="328.0" cy="32.1" r="4.5"><title>500 memories: 9ms</title></circle>
+    <path class="line" d="M328.0,32.1"/><circle class="dot" cx="328.0" cy="32.1" r="4.5"><title>500 memories: 149ms</title></circle>
      <text x="328.0" y="182" text-anchor="middle">500</text></svg>
     <div class="scroll" style="margin-top:1rem">
       <table>
         <thead><tr><th>Corpus</th><th class="num">p50</th><th class="num">p95</th><th class="num">recall@1</th></tr></thead>
-        <tbody><tr><td>500</td><td class="num">9ms</td><td class="num">10ms</td><td class="num">0.375</td></tr></tbody>
+        <tbody><tr><td>500</td><td class="num">149ms</td><td class="num">365ms</td><td class="num">0.125</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -303,14 +303,14 @@
   <div class="card">
     <div class="tiles">
       <div class="tile"><div class="label">processes</div><div class="value">3</div><div class="note">25/worker</div></div>
-      <div class="tile"><div class="label">committed</div><div class="value">47</div><div class="note">of 50 attempted</div></div>
-      <div class="tile"><div class="label">dropped</div><div class="value">3</div><div class="note">6.0% rejected on locks</div></div>
-      <div class="tile"><div class="label">throughput</div><div class="value">51</div><div class="note">writes/sec</div></div>
+      <div class="tile"><div class="label">committed</div><div class="value">50</div><div class="note">of 50 attempted</div></div>
+      <div class="tile"><div class="label">dropped</div><div class="value">0</div><div class="note">0.0% rejected on locks</div></div>
+      <div class="tile"><div class="label">throughput</div><div class="value">45</div><div class="note">writes/sec</div></div>
     </div>
     <div class="metrics" style="margin-top:1rem;display:flex;gap:1.25rem;flex-wrap:wrap">
-      <span class="status pass">✔ silent data loss: 0</span>
+      <span class="status fail">✖ silent data loss: 1</span>
       <span class="status pass">✔ init crashes: 0</span>
-      <span class="status warn">! lock errors: 3</span>
+      <span class="status pass">✔ lock errors: 0</span>
     </div>
     <div class="scroll" style="margin-top:1rem"><table>
       <thead><tr><th>Crash round</th><th class="num">Seeded</th><th class="num">Survivors</th><th>Readable + writable after SIGKILL</th></tr></thead>
@@ -323,6 +323,13 @@
     <table>
       <thead><tr><th>When</th><th>Tier</th><th class="num">Pass</th><th class="num">Min</th><th class="num">adv recall@1</th><th class="num">dropped writes</th></tr></thead>
       <tbody><tr>
+        <td>2026-08-04 03:13</td>
+        <td>sanity</td>
+        <td class="num">12/13</td>
+        <td class="num">0.99</td>
+        <td class="num">0.125</td>
+        <td class="num">0.0%</td>
+      </tr><tr>
         <td>2026-08-03 12:35</td>
         <td>sanity</td>
         <td class="num">12/13</td>

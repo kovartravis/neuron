@@ -2,7 +2,150 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
-## [Unreleased]
+## [2.2.0-rc3] - 2026-08-04
+
+This is the release's headline: **recall is now enforced by the harness, not
+requested by an instruction.** `neuron init` wires a hook into Claude Code and
+OpenAI Codex CLI that queries the memory store and injects results before the
+model ever sees the prompt — the agent's cooperation is no longer required.
+Both harnesses were researched and verified to support this deterministically
+(ADR 0014); everything else this band evaluated (Copilot CLI, Cursor,
+Antigravity CLI, OpenCode) is out of scope for 2.2.0 — see
+[the map](.scratch/neuron-2.2.0/map.md#out-of-scope) for why.
+
+**Upgrading changes what's on disk in two new ways** — read this before you
+run `neuron init` on an existing project:
+
+1. **It now writes into your harness's own config** — `.claude/settings.json`
+   and/or `.codex/hooks.json` — not just `CLAUDE.md`/`AGENTS.md`. `init` asks
+   where to install (user-global / project-committed / project-local) before
+   touching anything, and asks again before overwriting any existing
+   neuron-authored hook entry it finds. It never reads or modifies a hook it
+   didn't write, even one sharing the same event array. Non-interactive runs
+   (CI, `--yes`) default to **keep and warn**, never silently replacing
+   anything; `--hook-target`, `--overwrite-hooks`/`--keep-hooks`, `--harness
+   <list>`, `--no-hooks`, and `--uninstall-hooks` give scripted control over
+   all of it.
+2. **The protocol block loses its first step, on a harness that just earned
+   it.** On a project where the deterministic hook is actually wired and
+   firing, the generated `CLAUDE.md`/`AGENTS.md` block no longer tells the
+   agent to query the store itself — the hook already did. A harness with no
+   adapter (or one whose hook isn't currently registered) keeps the
+   query-first instruction unchanged. Existing hand-customised blocks are
+   never silently rewritten: `init` detects a differing managed region and
+   asks before replacing it, matching the hooks' own overwrite policy.
+
+**Known pre-existing failures, unrelated to this band:** Pillar 8
+(multi-process contention) drops 1 of 50 writes against a `<5%` bar —
+reproduced on a clean tree before this band's changes, SQLite write-lock
+contention rather than anything the adapters touch. Four unit test files
+(`cli.test.ts`, `history.test.ts`, `learn.test.ts`, `memory.test.ts`) fail
+when run against this repo's own populated `.neuron/` store rather than an
+isolated fixture — tracked as
+[ticket 42](.scratch/neuron-2.2.0/issues/42-isolate-cli-tests-from-real-store.md),
+inherited from the `md`-default flip in `31`, not introduced here.
+
+### Added — deterministic recall hooks for Claude Code and Codex CLI
+
+- **`neuron hook <harness> <point>`** is the new entrypoint both adapters
+  install: `session-start` seeds the architectural blueprint card once per
+  session, `pre-prompt` queries the store with the user's prompt and injects
+  results before every turn, and `context-reset` clears the per-session
+  dedup ledger on compaction (`PreCompact`/`PostCompact`) so a 50-turn
+  session doesn't re-inject the same entries 50 times.
+- **Injection is deduplicated by a session-scoped ledger, keyed on the
+  harness's own `session_id`** (confirmed present on every hook event for
+  both harnesses by fetching their schemas directly) — only the delta since
+  the last turn is injected. Where compaction can't clear it, a turn-count
+  TTL degrades toward *repeating* an entry rather than *silently dropping*
+  it.
+- **A hard character ceiling, not a relevance floor** — full LongMemEval
+  measurement (ticket `39`, 500 questions) found no cosine cutoff that
+  doesn't regress recall on conversational text, so the payload budget is
+  volume-only: 6,000 characters at session start, 1,500 per pre-prompt turn,
+  both strictly below either harness's own documented cap. Entries are
+  dropped whole, never truncated mid-content, and a dropped entry stays
+  unledgered so it's eligible again next turn.
+- **Fails toward silence, never toward blocking the prompt.** A malformed
+  hook payload, a query error, a timeout, or an unreachable database all
+  degrade to "inject nothing, exit 0" — a hook that hangs or errors can
+  degrade recall but can never wedge the harness. Measured latency: ~0.2s
+  warm per turn (real embedder, not mocked), comfortably inside Claude
+  Code's 30s `UserPromptSubmit` timeout.
+- **`verify()` reports whether a hook actually *fired*, not just whether it's
+  registered** — no harness researched documents an external way to confirm
+  this, so the hook itself writes firing evidence (a timestamp) before doing
+  any work that could fail.
+- A project with both `.claude/` and `.codex/` gets both adapters wired
+  independently, each writing only its own config file.
+
+Tickets [11](.scratch/neuron-2.2.0/issues/11-recall-adapter-architecture.md),
+[12](.scratch/neuron-2.2.0/issues/12-claude-code-adapter.md),
+[13](.scratch/neuron-2.2.0/issues/13-codex-adapter.md);
+[ADR 0014](docs/adr/0014-recall-adapter-architecture.md).
+
+### Changed — the protocol block is capability-aware
+
+`neuron init` now generates one of two variants depending on whether the
+target harness has a currently-registered, currently-firing deterministic
+hook (checked live via `verify()`, not inferred from config-file contents or
+this run's flags):
+
+- **Deterministic** (Claude Code, Codex CLI once wired): the old step 1
+  ("your VERY FIRST tool call MUST be to query the memory store") is deleted;
+  Command Execution / Failure-Fix Recording / Session Conclusion renumber to
+  steps 1–3.
+- **Fallback** (any harness without a working hook): step 1 is unchanged.
+
+Categories and architecture-scan settings are now read live from
+`neuron.yaml` into the generated block instead of being hand-typed, so the
+block can no longer silently drift from the config it describes. This
+repo's own `CLAUDE.md` and the packaged `neuron-memory` skill both carry the
+short variant as of this release.
+
+Ticket [14](.scratch/neuron-2.2.0/issues/14-protocol-block-rewrite.md).
+
+### Added — `neuron init` reports per-harness fidelity
+
+The JSON output's `hooks.installed` (what was found and wired, per harness)
+and `protocol.written` (the fidelity each harness's instruction file ended
+up with, derived from `verify()`) together give an honest, machine-readable
+account of what recall guarantee a project actually has after `init` runs —
+no harness is ever reported as more reliable than it verifiably is.
+
+### Changed — `minScore` is deprecated; no relevance floor ships
+
+`pullRules.default.minScore` and `pullRules.onExec[].minScore` blend
+relevance with `importance` in a way that structurally cannot reject a top
+hit at any similarity (measured: a nonsense query's top hit still scores
+0.44–0.56). Both keys still parse — no hard failure on an existing config —
+but now print a one-time `stderr` warning naming `ADR 0012` and pointing at
+`relevance.gate.enabled`, the new switch (default `true`) for the
+structural, cosine-free relevance gate landing in a follow-up ticket. A full
+500-question LongMemEval sweep (0.50–0.70) found **every** cosine floor
+regresses recall on real conversational text — even the gentlest costs
+3.3–4.2% recall for a 4.4% volume reduction — so `minScore` is not
+reinterpreted as that floor; there is no floor to reinterpret it as.
+
+Ticket [39](.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md);
+[ADR 0012 amendment](docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-39-2026-08-03--the-cosine-floor-and-the-config-surface).
+
+### Fixed — the architecture card is now a deterministic artifact
+
+Re-running `neuron scan` on an unchanged tree used to still be able to
+produce a byte-different card, and on a store with enough other entries in
+the same category, a semantic-search lookup for "the" existing blueprint
+card could miss it entirely and write a duplicate. Both are fixed by the
+same change: the card's id is now derived (`sha256` of the category name),
+never looked up, so the same category always resolves to the same row. The
+embedded `---category/title/tags/mtime---` frontmatter block inside the
+card's own markdown — dead weight nothing read, and a shape that could
+corrupt the file parser the moment another entry shared its category file —
+is deleted rather than patched. A related bug surfaced while chasing this to
+zero: the markdown storage adapter was re-minting `createdAt` on every
+upsert instead of preserving it, unlike every other write path — fixed.
+
+Ticket [37](.scratch/neuron-2.2.0/issues/37-architecture-card-deterministic-artifact.md).
 
 ### Changed — markdown is the default, and `neuron init` says so on disk
 

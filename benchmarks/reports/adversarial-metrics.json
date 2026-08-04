@@ -1,33 +1,33 @@
 {
-  "timestamp": "2026-08-03T12:34:41.416Z",
+  "timestamp": "2026-08-04T03:13:02.724Z",
   "tier": "sanity",
-  "suiteDurationMs": 5132,
+  "suiteDurationMs": 48464,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 10.41,
-      "p95Ms": 28.25,
-      "p99Ms": 33.78,
-      "minMs": 7.84,
-      "maxMs": 35.17,
-      "meanMs": 14.23,
-      "totalMs": 113.85,
-      "throughputPerSec": 70.27,
+      "p50Ms": 176.28,
+      "p95Ms": 8680.65,
+      "p99Ms": 11993.96,
+      "minMs": 57.76,
+      "maxMs": 12822.28,
+      "meanMs": 1830.31,
+      "totalMs": 14642.49,
+      "throughputPerSec": 0.55,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
         "evaluations": 8,
-        "recallAt1": 0.375,
+        "recallAt1": 0.125,
         "recallAt5": 0.625,
-        "mrr": 0.469,
+        "mrr": 0.327,
         "supersededViolations": 0,
         "byFamily": {
           "lexical-decoy": {
             "cases": 2,
             "recallAt1": 0.5,
             "recallAt5": 1,
-            "mrr": 0.625
+            "mrr": 0.6
           },
           "paraphrase": {
             "cases": 2,
@@ -37,23 +37,23 @@
           },
           "contradiction": {
             "cases": 2,
-            "recallAt1": 1,
+            "recallAt1": 0,
             "recallAt5": 1,
-            "mrr": 1
+            "mrr": 0.5
           },
           "multi-hop": {
             "cases": 2,
             "recallAt1": 0,
             "recallAt5": 0.5,
-            "mrr": 0.167
+            "mrr": 0.125
           }
         },
         "missedAtRank1": [
           {
             "id": "decoy-retry-budget",
             "family": "lexical-decoy",
-            "rank": 4,
-            "topResult": "When a retry budget is exhausted the retry handler logs a retry limit warning for the paym"
+            "rank": 5,
+            "topResult": "Discovered that Google AI Studio enforces a strict 20 requests per day (RPD) hard cap on f"
           },
           {
             "id": "para-token-expiry",
@@ -68,9 +68,21 @@
             "topResult": "Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during "
           },
           {
+            "id": "contra-storage-default",
+            "family": "contradiction",
+            "rank": 2,
+            "topResult": "Updated neuron-memory skill SKILL.md (v2.0.0-rc3) to document the full md-file-management "
+          },
+          {
+            "id": "contra-scan-category",
+            "family": "contradiction",
+            "rank": 2,
+            "topResult": "Fix for architecture-card content corrupting its own category's markdown file: synthesizeA"
+          },
+          {
             "id": "hop-cold-start",
             "family": "multi-hop",
-            "rank": 3,
+            "rank": 4,
             "topResult": "Sluggish commands are often caused by an oversized memory store that needs pruning"
           },
           {
@@ -85,21 +97,21 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 8.93,
-      "p95Ms": 8.93,
-      "p99Ms": 8.93,
-      "minMs": 8.93,
-      "maxMs": 8.93,
-      "meanMs": 8.93,
-      "totalMs": 8.93,
-      "throughputPerSec": 112.04,
+      "p50Ms": 149.33,
+      "p95Ms": 149.33,
+      "p99Ms": 149.33,
+      "minMs": 149.33,
+      "maxMs": 149.33,
+      "meanMs": 149.33,
+      "totalMs": 149.33,
+      "throughputPerSec": 6.7,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 8.925,
-            "p95Ms": 9.815,
-            "recallAt1": 0.375
+            "p50Ms": 149.327,
+            "p95Ms": 364.739,
+            "recallAt1": 0.125
           }
         ]
       }
