@@ -12,6 +12,7 @@ import {
   handleSyncCommand,
   handleFeedbackCommand,
   handleScanCommand,
+  handleHookCommand,
   MASTER_HELP
 } from './commands/index.js';
 import { NeuronMemory } from './index.js';
@@ -35,6 +36,13 @@ async function main() {
 
   if (mainCommand === 'scan') {
     return await handleScanCommand(args);
+  }
+
+  if (mainCommand === 'hook') {
+    // Invoked by a harness, never by hand: never let an uncaught error here
+    // propagate to the generic catch-all below, which would exit non-zero
+    // and, on Claude Code's UserPromptSubmit, block the user's prompt.
+    return await handleHookCommand(args);
   }
 
 

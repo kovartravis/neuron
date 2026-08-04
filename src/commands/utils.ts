@@ -70,6 +70,8 @@ const KNOWN_FLAGS = [
   '--task-id', '--limit', '--file', '-f', '--importance', '--scope',
   '--scopes', '--days', '--category', '--categories', '--depth', '--dry-run',
   '--force', '--type', '--title', '--help', '-h',
+  '--yes', '--no-hooks', '--overwrite-hooks', '--keep-hooks', '--hook-target',
+  '--uninstall-hooks', '--harness',
 ];
 
 /** Cheap edit distance, only ever called on the error path. */
@@ -124,6 +126,13 @@ export function parseFlags(args: string[]): {
     noProgress?: boolean;
     diff?: boolean;
     check?: boolean;
+    yes?: boolean;
+    noHooks?: boolean;
+    overwriteHooks?: boolean;
+    keepHooks?: boolean;
+    hookTarget?: string;
+    uninstallHooks?: boolean;
+    harness?: string[];
   };
 } {
   const positionals: string[] = [];
@@ -146,6 +155,13 @@ export function parseFlags(args: string[]): {
   let noProgress: boolean | undefined;
   let diff: boolean | undefined;
   let check: boolean | undefined;
+  let yes: boolean | undefined;
+  let noHooks: boolean | undefined;
+  let overwriteHooks: boolean | undefined;
+  let keepHooks: boolean | undefined;
+  let hookTarget: string | undefined;
+  let uninstallHooks: boolean | undefined;
+  let harness: string[] | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -220,6 +236,23 @@ export function parseFlags(args: string[]): {
       type = args[++i];
     } else if (arg === '--title') {
       title = args[++i];
+    } else if (arg === '--yes') {
+      yes = true;
+    } else if (arg === '--no-hooks') {
+      noHooks = true;
+    } else if (arg === '--overwrite-hooks') {
+      overwriteHooks = true;
+    } else if (arg === '--keep-hooks') {
+      keepHooks = true;
+    } else if (arg === '--hook-target') {
+      hookTarget = args[++i];
+    } else if (arg === '--uninstall-hooks') {
+      uninstallHooks = true;
+    } else if (arg === '--harness') {
+      const val = args[++i];
+      if (val) {
+        harness = val.split(',').map(s => s.trim()).filter(Boolean);
+      }
     } else if (arg.startsWith('-') && arg.length > 1) {
       // Previously fell through to `positionals`, where it was silently
       // discarded by every caller. A mistyped flag must not look like success.
@@ -243,6 +276,16 @@ export function parseFlags(args: string[]): {
     }
   }
 
+  if (hookTarget !== undefined && !['user-global', 'project-committed', 'project-local'].includes(hookTarget)) {
+    console.error("Error: --hook-target must be one of 'user-global', 'project-committed', 'project-local'");
+    process.exit(1);
+  }
+
+  if (overwriteHooks && keepHooks) {
+    console.error('Error: --overwrite-hooks and --keep-hooks are mutually exclusive');
+    process.exit(1);
+  }
+
   return {
     positionals,
     options: {
@@ -264,7 +307,14 @@ export function parseFlags(args: string[]): {
       force,
       noProgress,
       diff,
-      check
+      check,
+      yes,
+      noHooks,
+      overwriteHooks,
+      keepHooks,
+      hookTarget,
+      uninstallHooks,
+      harness
     }
   };
 }

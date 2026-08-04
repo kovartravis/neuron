@@ -186,4 +186,144 @@ describe('CLI Command: init', () => {
 
     fs.rmSync(initTempDir, { recursive: true });
   });
+
+  // --- Ticket 12: Claude Code recall hooks ---
+
+  describe('hook wiring', () => {
+    it('installs Claude Code hooks non-interactively, defaulting to project-committed', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-default-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.skipped).toBe(false);
+      expect(result.hooks.installed).toHaveLength(1);
+      expect(result.hooks.installed[0]).toMatchObject({
+        harness: 'claude-code',
+        target: 'project-committed',
+        points: { 'session-start': 'written', 'pre-prompt': 'written', 'context-reset': 'written' },
+      });
+
+      const settingsPath = path.join(initTempDir, '.claude', 'settings.json');
+      expect(fs.existsSync(settingsPath)).toBe(true);
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe('neuron');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('does not install hooks when no supported harness is detected', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-no-harness-test');
+      fs.mkdirSync(initTempDir, { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.skipped).toBe(false);
+      expect(result.hooks.installed).toEqual([]);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--no-hooks skips hook installation even when a harness is detected', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-skip-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --no-hooks`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.skipped).toBe(true);
+      expect(result.hooks.installed).toEqual([]);
+      expect(fs.existsSync(path.join(initTempDir, '.claude', 'settings.json'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--hook-target project-local writes to settings.local.json instead', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-local-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --hook-target project-local`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.installed[0].target).toBe('project-local');
+      expect(fs.existsSync(path.join(initTempDir, '.claude', 'settings.local.json'))).toBe(true);
+      expect(fs.existsSync(path.join(initTempDir, '.claude', 'settings.json'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('re-running init leaves hook entries unchanged rather than duplicating them', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-idempotent-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.installed[0].points).toEqual({
+        'session-start': 'unchanged',
+        'pre-prompt': 'unchanged',
+        'context-reset': 'unchanged',
+      });
+
+      const settings = JSON.parse(fs.readFileSync(path.join(initTempDir, '.claude', 'settings.json'), 'utf8'));
+      expect(settings.hooks.SessionStart).toHaveLength(1);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--uninstall-hooks removes a previously installed hook and skips the rest of init', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-uninstall-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+
+      const stdout = execSync(`node ${cliPath} init --uninstall-hooks`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.status).toBe('hooks-uninstalled');
+      expect(result.results[0].removed[0].removedCount).toBe(3);
+
+      const settings = JSON.parse(fs.readFileSync(path.join(initTempDir, '.claude', 'settings.json'), 'utf8'));
+      expect(settings.hooks).toBeUndefined();
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--harness filters which adapters are wired', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'hooks-harness-filter-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --harness codex`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.hooks.installed).toEqual([]);
+      expect(fs.existsSync(path.join(initTempDir, '.claude', 'settings.json'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+  });
 });

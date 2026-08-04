@@ -87,28 +87,17 @@ every ticket resolved, every rc cut, stable published.
 | `2.2.0-rc2` | `05`, `06`, `09`, `24`, `26` | Centroid write-side enrichment, a timeout primitive, degradation counters — **and no new model jobs at all**: `07` and `08` are out of scope, `23`/`24` removed automatic pruning, `25` is deferred, `06` shipped with the model off the write path, and `26` removes the last model call from it |
 | `2.2.0-rc3` | `10`–`15`, `39`, `41` | Recall adapter layer + the 2 `deterministic` adapters (Claude Code, Codex CLI) + the `instruction-only` fallback + the relevance gate (`27` designed it; `41` ships the structural half, `39` the one fitted constant) |
 | `2.2.0-rc4` | `16`, `40`, `19`, `20` | The 2 **documented** `best-effort` adapters (Copilot CLI, Cursor) + disclosure. Was 3 adapters: `17`/`18` are out of scope |
-| `2.2.0-rc5` | `28`–`38` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
+| `2.2.0-rc5` | `28`–`38`, `43`–`46` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
 | `2.2.0` | `21` | Stable release |
 
-> **`11` is partially grilled, not resolved** (2026-08-03). Six of its eight
-> decision points are settled and written into the ticket — scope, capability
-> model, the injection ledger, the `context-reset` point, the payload ceiling, and
-> the two `neuron init` consent policies. **Point 4's relevance floor acquired a
-> blocker**, [39 — Relevance Floor Validation](issues/39-relevance-floor-validation.md),
-> because the pilot's viable cutoff rests on a 0.061 margin from 20 queries against
-> this repo's own store. **Point 6 (multi-harness resolution) was never reached.**
-> Neither `12` nor `13` depends on `39`, so rc3's adapters are not waiting on a
-> benchmark run.
->
-> **The floor's *shape* is no longer open** (2026-08-03). `27` settled it as a
-> two-leg conjunction and **rewrote `39`'s design**: the old three-quantity sweep
-> is dead — the hybrid-`score` arm ceased to exist once importance left the score,
-> and the `normRrf` arm is bimodal rather than sweepable. `39` now measures one
-> fitted constant (the cosine floor, conditioned on the lexical leg) and one
-> unvalidated claim (the lexical leg's false-silence rate, which can sink the
-> design). Its **bar is untouched** — committed before any number was seen, and
-> `27` has since seen numbers. `27` also supplies point 3's ledger with the floor
-> it requires, and puts the gate in the retrieval layer so `12`/`13` inherit it
+> **`27` settled the floor's *shape*** (2026-08-02, ahead of `11` reaching point
+> 4). It fixed point 4 as a two-leg conjunction and **rewrote `39`'s design**: the
+> old three-quantity sweep is dead — the hybrid-`score` arm ceased to exist once
+> importance left the score, and the `normRrf` arm is bimodal rather than
+> sweepable. `39` measured one fitted constant (the cosine floor, conditioned on
+> the lexical leg) and one previously-unvalidated claim (the lexical leg's
+> false-silence rate). `27` also supplies point 3's ledger with the floor it
+> requires, and puts the gate in the retrieval layer so `12`/`13` inherit it
 > rather than reimplementing it.
 
 > **rc5 has no technical dependency on rc3/rc4** and can be pulled forward if the
@@ -259,6 +248,54 @@ every ticket resolved, every rc cut, stable published.
   tests green; 12/13 E2E pillars (Pillar 8 multi-process contention is a
   pre-existing, unrelated failure).
 
+- [11 — Recall Adapter Architecture](issues/11-recall-adapter-architecture.md) —
+  **rc3 ships `deterministic` only** (Claude Code + Codex CLI) plus an
+  `instruction-only` fallback now scoped to *unlisted* harnesses, since `10`
+  found all six researched harnesses have a real mechanism. Capability is a
+  **`lifecyclePoint → supportRecord` map**, not a single enum — the
+  `deterministic`/`best-effort` label is derived for display, never stored, and
+  `unknown` is a first-class value distinct from "no" (Copilot and Cursor share
+  a cell but aren't equivalent). Pre-prompt injection is deduplicated by a
+  **session-scoped ledger** (delta-only, guarding against the PersonaMem
+  over-reasoning result), cleared by a third execution-only lifecycle point,
+  `context-reset`, on compaction — falling back to a turn-count TTL where
+  unavailable, so degradation fails toward *repetition*, not *silence*. Neuron
+  enforces its own **character ceiling strictly below the smallest harness
+  cap** and never relies on spill-to-file, because spill converts deterministic
+  recall back into agent-invoked recall exactly when the payload is largest.
+  `neuron init` **prompts for the hook target** (user-global /
+  project-committed / project-local) and **asks before overwriting** an
+  existing hook entry rather than classifying it — byte-identity and
+  managed-field classification were both rejected for having no fixed referent
+  across versions. **Multi-harness resolution** (point 6, resolved
+  2026-08-03): `init` wires **every detected harness**, matching the existing
+  `detectHarnesses` skill-copy precedent; the `AGENTS.md` fallback layers in
+  only when *no* deterministic/best-effort harness matched; the hook-target
+  prompt is asked once per `init` run and applied to all; the overwrite-ask
+  stays per-file; and a new `--harness <list>` flag narrows wiring to a subset
+  of *detected* harnesses only (cannot force-wire an undetected one). `17`
+  (Antigravity) and `18` (OpenCode) ruled out of scope — their reliability
+  cannot be *stated*, which is the abstraction lying this ticket exists to
+  prevent. Unblocks `12` and `13`.
+  [ADR 0014](../../docs/adr/0014-recall-adapter-architecture.md).
+
+- [12 — Claude Code Adapter (Deterministic Reference)](issues/12-claude-code-adapter.md)
+  — Shipped as reusable `src/harnesses/` infrastructure (`types`, `payload`,
+  `ledger`, `hookState`) plus `claudeCode.ts` and the `neuron hook
+  claude-code <point>` entrypoint, wired into `neuron init`
+  (`--hook-target`/`--overwrite-hooks`/`--keep-hooks`/`--harness`/
+  `--no-hooks`/`--uninstall-hooks`). Install/uninstall only ever touch a
+  matcher-group neuron created itself — a user's own hooks are never read or
+  mutated, even sharing the same event array. **Resolved ADR 0014 §3's one
+  open risk**: fetched Claude Code's hook JSON schema directly — `session_id`
+  is present on every event, so the session-ledger dedup design holds.
+  Measured latency (real embedder): 0.366s cold, ~0.2s warm — matches the
+  ADR's own correction almost exactly, comfortably inside the 30s harness
+  timeout. Demonstrated deterministic recall with no `CLAUDE.md`/`AGENTS.md`
+  present at all. The interface needed no revision. 45 new tests, all green;
+  full suite 355/359 (4 pre-existing `42` pollution failures, confirmed
+  unrelated). Hands `13` a harness-agnostic layer to build Codex against.
+
 - [28 — What `md-only` Parity Actually Means](issues/28-md-only-parity-design.md)
   — **`md-only` is deleted, not fixed.** The question was wrong: `md-only`
   reached markdown-first storage by *removing* SQLite, while `dual` already
@@ -356,6 +393,31 @@ every ticket resolved, every rc cut, stable published.
   becomes a default**. Measured: `neuron exec -- ls` injects 5 entries / 4,245
   characters today, 0 under `41`.
   [ADR 0012](../../docs/adr/0012-relevance-gate-and-score-decontamination.md).
+- [39 — Relevance Floor Validation](issues/39-relevance-floor-validation.md)
+  — **No cosine floor ships.** Full LongMemEval-S run (500 questions, 23,867
+  documents, zero LLM calls) against the pre-committed bar from `27`: swept
+  0.50→0.70 conditioned on the lexical leg, and **every floor fails** — even
+  the gentlest (0.50) regresses recall 3.3%/4.0%/4.2% at @1/@5/@10 for a 4.4%
+  volume reduction. The corpus argument explains why: on-topic r1 (median
+  0.627) and negative-control r1 (median 0.533) overlap substantially, a
+  **thinner** margin than `27`'s own dense-technical-prose measurement
+  (0.123) — conversational text is the *harder* case for a cosine floor, the
+  opposite of the pilot's hedge. The lexical leg's other open risk resolved
+  cleanly: **0 of 500** queries had a top-hit false silence, in every category
+  including the hardest to paraphrase (`multi-session`, `temporal-reasoning`),
+  closing ADR 0012 Consequence 6 — it ships in `41` as designed, no demotion.
+  Found and fixed a real blocker first: `38`'s `scope` removal (already on
+  trunk) had silently broken this benchmark's per-question isolation, since
+  `scope`/`scopes` are no-ops now — fixed by isolating on `category` instead,
+  and control-arm recall reproduced the published baseline after the fix (0
+  cross-unit leaks). Also added `similarity`/`ftsMatched` to every `Memory`
+  result (`src/index.ts`) since `41` hasn't shipped and there was no other way
+  to read the gate's raw legs. Config surface landed: `minScore` deprecated
+  (parses, warns, ADR 0012), no `cosineFloor` key (no number to default it
+  to — the same call `26` already made once for a measured non-signal),
+  new `relevance.gate.enabled` switch for `41`'s lexical-only gate. Unblocks
+  `11` point 4: the payload budget's floor is *none*, the character ceiling is
+  the sole volume control. [ADR 0012 amendment](../../docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-39-2026-08-03--the-cosine-floor-and-the-config-surface).
 
 - [31 — Make `md` the Actual Default](issues/31-md-only-as-default.md)
   — Two schema lines flipped to `md`, and `neuron init` now writes the
@@ -396,6 +458,35 @@ every ticket resolved, every rc cut, stable published.
   alongside `28` and `35`, both already resolved.
   279 tests, full suite green.
 
+- [36 — Configurable Frontmatter Schema: What "Deterministic" Guarantees](issues/36-configurable-frontmatter-schema.md)
+  — "Deterministic" is scoped to **shape + byte determinism by default**; value
+  determinism (same command, same values, forever) is not achievable while
+  centroid inference exists, so it's gated behind an opt-in **`strict` mode**
+  that disables both tag and category inference. Three field tiers stand
+  (structural / semantic-reserved / user-defined); the type system floor is
+  **string and enum only**. Required-but-missing gets the same
+  hard-error-unless-`default:` policy `06` already set for `--category` — no
+  second policy. Config-declared fields become CLI flags (maintainer-decided
+  2026-08-02); enforcement lives in `transact()`, the one choke point that
+  covers both `parseFlags` and `ingestScanResults`' direct writes, which is
+  also why `neuron scan`'s architecture card is subject to its category's
+  schema and why a category `scan.category` points at must have `default:`s
+  on every required field. Pre-existing entries against a newly-declared
+  schema are **read and reported, never refused** — a missing value isn't
+  synthesizable (no safe default for `reviewedBy`) and isn't ambiguous (`35`'s
+  binary doesn't fit), so it just gets reported. **`vector-only` gets identical
+  enforcement via an additive-only SQLite auto-migration** (`ALTER TABLE
+  memories ADD COLUMN`, never `DROP`), not a mode gate. Reopens validation
+  tooling, folded into **`neuron status --check`/`--repair`** rather than a new
+  `neuron doctor` command — repair applies configured defaults and offers
+  centroid inference for enum fields only, and **deliberately never fabricates
+  a value for a free-text identity field**, the same failure shape this map
+  has already measured three times (`06`, `08`, `35`). Implementation
+  graduated as [43](issues/43-declarable-field-schema-cli-flags.md) (schema +
+  CLI flags), [44](issues/44-sqlite-additive-field-migration.md) (SQLite
+  parity), [45](issues/45-strict-mode-and-skill-docs.md) (`strict` mode +
+  skill docs), [46](issues/46-status-check-repair.md) (`--check`/`--repair`).
+  [ADR 0013](../../docs/adr/0013-configurable-frontmatter-schema.md).
 - [37 — The Architecture Card as a Deterministic Artifact](issues/37-architecture-card-deterministic-artifact.md)
   — Byte-stability needed more than dropping `mtime`: the card's whole embedded
   `---category/title/tags/mtime---` block was dead weight (nothing reads it;
@@ -596,7 +687,10 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   the read-side protocol rewrite that depends on `14`. `26` corrected the skill's
   factually-wrong half — it was documenting an `importance` config key and a
   `neuron memory enrich` command that no longer exist — but that was a
-  correction, not the restructure; this patch stays fogged.
+  correction, not the restructure; this patch stays fogged. `45` adds a third
+  narrow, correct addition — the shape/byte/value determinism distinction and
+  `strict` mode's tradeoff, from `36` — same shape as `26`: a content
+  addition, not the read-side protocol restructure that still waits on `14`.
 - **Grammars for the remaining 6 languages.** Ticket `02` covers the 8 languages
   the old ticket 06 required. Ruby, PHP, Swift, C# and the rest stay at regex
   fidelity — whether they graduate in 2.2.0 or later is open. Sharpened by `02`:
