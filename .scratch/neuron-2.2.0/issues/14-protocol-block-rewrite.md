@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 12, 13
 Band: 2.2.0-rc3
 
@@ -56,9 +56,75 @@ enforced. After this ticket, what it mandates is what the agent alone can do.
 
 ## Deliverables
 
-- [ ] Capability-aware protocol block generator
-- [ ] `neuron init` writer updated for both variants
-- [ ] This repo's `CLAUDE.md` migrated to the short variant
-- [ ] Packaged `neuron-memory` skill updated
-- [ ] Upgrade path verified for customised existing blocks
-- [ ] End-to-end recall confirmed on both a short-block and a full-block harness
+- [x] Capability-aware protocol block generator
+- [x] `neuron init` writer updated for both variants
+- [x] This repo's `CLAUDE.md` migrated to the short variant
+- [x] Packaged `neuron-memory` skill updated
+- [x] Upgrade path verified for customised existing blocks
+- [x] End-to-end recall confirmed on both a short-block and a full-block harness
+
+## Answer
+
+Built from scratch, not just edited: there was no existing `CLAUDE.md`/`AGENTS.md`
+writer anywhere in `neuron init` to modify — `harnesses.json`'s `mdFile` field
+was already declared but unused, and this repo's own `CLAUDE.md` protocol block
+was hand-authored, not generated. So the deliverable is a new module,
+`src/config/protocolBlock.ts`, plus its wiring into `init.ts`.
+
+**One generator, two variants.** `generateProtocolBlock({ fidelity, config })`
+produces a marker-wrapped (`<!-- neuron:protocol:start/end -->`) markdown block.
+`fidelity: 'deterministic'` drops the old step 1 entirely and renumbers
+Command Execution / Failure-Fix Recording / Session Conclusion down to 1–3;
+`fidelity: 'fallback'` keeps Recall as step 1 (unnumbered "MANDATORY"/"VERY
+FIRST tool call MUST be" framing removed throughout, per the ticket's own
+rationale that nothing enforces those steps beyond the agent's own diligence).
+Categories and the architecture-scan line are read live from `neuron.yaml`
+rather than hand-typed, so the block can't drift from the config the way the
+hand-authored original had (its "Architecture scan settings" line happened to
+be accurate for this repo's own config by luck, not by construction).
+
+**Fidelity is resolved from ground truth, not from this run's flags.**
+`resolveHarnessFidelity` in `init.ts` calls each adapter's `capability()` +
+`verify(projectDir)` — a harness only earns `'deterministic'` if it has an
+adapter, `deriveFidelity` says `'deterministic'`, *and* every injecting
+lifecycle point is actually registered on disk right now. That means a hook
+installed by an earlier `init` still yields the short block even if this
+invocation passed `--no-hooks`, and `--no-hooks` on a project with no prior
+hook correctly falls back to the full block (verified in
+`init.test.ts`). Several harness names can share one `mdFile` (`agents`/
+`github`/`codex` all point at `AGENTS.md`) — per ADR 0014 §8.1, that file gets
+the short block the moment *any* harness targeting it has a working hook, so a
+`.agents/` + `.codex/` project's `AGENTS.md` goes short once Codex is wired
+(also verified).
+
+**Upgrades ask, matching the hooks' own posture (ADR 0014 §7).**
+`upsertProtocolBlock` finds the marker pair and replaces only that region — a
+brand-new insertion into a file with no prior block never asks (nothing to
+conflict with), but replacing a *differing* existing managed region reuses the
+same `--overwrite-hooks`/`--keep-hooks`/interactive-prompt machinery
+`installHooks` already has, rather than inventing a parallel flag pair. An
+identical existing block is left untouched (`action: 'unchanged'`), so
+`init` is idempotent and doesn't rewrite the file every run.
+
+**Scope items resolved as no-ops:** item 6 (drop the "try a broader keyword"
+workaround) doesn't apply — ticket `07` never shipped, it's out of scope, so
+the workaround line stays in the fallback variant. The packaged skill (item
+5) got a narrow, scoped addition rather than the full read-side restructure
+the map's "Not yet specified" section already flagged as still-fogged: a
+callout at the top of `## 1. Beginning of Run` saying to skip manual querying
+entirely on a harness with a wired deterministic hook, same shape as tickets
+`26`/`45`'s prior narrow corrections to that file.
+
+**Found and fixed one bug while wiring this in**: `copySkill`'s own
+`.agents/skills` fallback (when no harness is detected) creates `.agents/` as
+a side effect, and a naive re-scan of the filesystem for "detected harnesses"
+after that ran would then mistake its own side effect for a detected `agents`
+harness. Fixed by snapshotting `detectedHarnessNames` once, before `copySkill`
+or `installHooks` touch the filesystem, and threading that snapshot into
+`writeProtocolBlocks` instead of re-scanning — covered by
+`'writes nothing when no harness is detected'` in `init.test.ts`.
+
+15 new unit tests (`protocolBlock.test.ts`) plus 6 new CLI-level tests
+(`init.test.ts`), all green; full suite otherwise unaffected (the 4 failing
+files are ticket `42`'s pre-existing CLI/real-store pollution bug, reproduced
+identically on the pre-ticket-14 code before any of these changes landed).

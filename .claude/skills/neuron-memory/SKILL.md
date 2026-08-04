@@ -204,6 +204,15 @@ is how a broken local model otherwise goes unnoticed for months.
 
 ## 1. Beginning of Run (Context Loading)
 
+> [!IMPORTANT]
+> **Skip this section entirely on a harness with a deterministic recall hook
+> wired** (as of 2.2.0: Claude Code, Codex CLI — see `neuron init`'s
+> `hooks.installed` output). There, `neuron hook <harness> pre-prompt` already
+> injects matching memory into context before every turn, so a manual query
+> here would just repeat what the harness already delivered. The steps below
+> are the fallback for a harness with no such hook: query manually, because
+> nothing else will.
+
 At the very start of a session, before running any other commands or modifying files, load relevant past context:
 
 1. Formulate a query matching your assigned task or current goal.

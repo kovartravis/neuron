@@ -390,4 +390,124 @@ describe('CLI Command: init', () => {
       fs.rmSync(initTempDir, { recursive: true });
     });
   });
+
+  // --- Ticket 14: capability-aware protocol block ---
+
+  describe('protocol block wiring', () => {
+    it('writes the short, no-recall-step block into CLAUDE.md once the Claude Code hook is actually wired', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'protocol-claude-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const claudeMdPath = path.join(initTempDir, 'CLAUDE.md');
+      expect(result.protocol.written).toContainEqual(
+        expect.objectContaining({ targetPath: claudeMdPath, fidelity: 'deterministic', action: 'created' })
+      );
+      const content = fs.readFileSync(claudeMdPath, 'utf8');
+      expect(content).not.toContain('## 1. Recall');
+      expect(content).toContain('## 1. Command Execution');
+      expect(content).toContain('<!-- neuron:protocol:start -->');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('keeps the manual recall step for a harness with no adapter', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'protocol-cursor-test');
+      fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const cursorMdPath = path.join(initTempDir, 'CURSOR.md');
+      expect(result.protocol.written).toContainEqual(
+        expect.objectContaining({ targetPath: cursorMdPath, fidelity: 'fallback', action: 'created' })
+      );
+      const content = fs.readFileSync(cursorMdPath, 'utf8');
+      expect(content).toContain('## 1. Recall');
+      expect(content).toContain('neuron memory query');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('does not wire a deterministic block when --no-hooks left nothing actually registered', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'protocol-no-hooks-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --no-hooks`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const claudeMdPath = path.join(initTempDir, 'CLAUDE.md');
+      expect(result.protocol.written).toContainEqual(
+        expect.objectContaining({ targetPath: claudeMdPath, fidelity: 'fallback', action: 'created' })
+      );
+      const content = fs.readFileSync(claudeMdPath, 'utf8');
+      expect(content).toContain('## 1. Recall');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('writes nothing when no harness is detected', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'protocol-no-harness-test');
+      fs.mkdirSync(initTempDir, { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.protocol.written).toEqual([]);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('re-running init leaves an unchanged protocol block alone rather than rewriting it', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'protocol-idempotent-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const claudeMdPath = path.join(initTempDir, 'CLAUDE.md');
+      expect(result.protocol.written).toContainEqual(
+        expect.objectContaining({ targetPath: claudeMdPath, fidelity: 'deterministic', action: 'unchanged' })
+      );
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('a harness sharing AGENTS.md with Codex inherits the deterministic block once the Codex hook is wired', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'protocol-shared-agents-md-test');
+      fs.mkdirSync(path.join(initTempDir, '.agents'), { recursive: true });
+      fs.mkdirSync(path.join(initTempDir, '.codex'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const agentsMdPath = path.join(initTempDir, 'AGENTS.md');
+      expect(result.protocol.written).toContainEqual(
+        expect.objectContaining({ targetPath: agentsMdPath, fidelity: 'deterministic', action: 'created' })
+      );
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+  });
 });

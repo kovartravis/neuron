@@ -355,6 +355,26 @@ every ticket resolved, every rc cut, stable published.
   the 4 failures all pre-existing `42` pollution in files this ticket never
   touched. Unblocks `14` and `15`.
 
+- [14 — Protocol Block Rewrite: Hooks Own Read, Agent Owns Write](issues/14-protocol-block-rewrite.md)
+  — Built `src/config/protocolBlock.ts` from scratch (no prior `CLAUDE.md`/
+  `AGENTS.md` writer existed despite `harnesses.json`'s unused `mdFile` field).
+  One generator, two marker-wrapped variants: `deterministic` drops the old
+  step 1 and renumbers 1–3, `fallback` keeps Recall as step 1 — both read
+  categories and scan settings live from `neuron.yaml` instead of being
+  hand-typed. Fidelity is resolved from **ground truth** (`capability()` +
+  `verify()`), not this run's flags, and several harness names sharing one
+  `mdFile` (`agents`/`github`/`codex` → `AGENTS.md`) get the short block the
+  moment *any* of them has a working hook (ADR 0014 §8.1). Upgrades reuse the
+  hooks' own `--overwrite-hooks`/`--keep-hooks`/ask machinery rather than a
+  parallel flag pair. This repo's own `CLAUDE.md` and the packaged
+  `neuron-memory` skill (a narrow addition, not the full restructure still
+  fogged below) both migrated. Found and fixed a real bug while wiring it in:
+  `copySkill`'s own `.agents/skills` fallback creates `.agents/` as a side
+  effect, which a naive harness re-scan afterward would mistake for a
+  detected harness — fixed by snapshotting detection once, before any
+  filesystem side effects. 15 new unit tests, 6 new CLI tests, all green;
+  same 4 pre-existing `42`-pollution files fail identically to before.
+
 - [28 — What `md-only` Parity Actually Means](issues/28-md-only-parity-design.md)
   — **`md-only` is deleted, not fixed.** The question was wrong: `md-only`
   reached markdown-first storage by *removing* SQLite, while `dual` already
