@@ -26,7 +26,7 @@ The identifier used to link logged history entries back to specification artifac
 
 ### pre-command lookup (`neuron exec`)
 
-The mechanism that queries the memory store for relevant learnings before running a shell command. It outputs matching rules to `stderr` above a relevance threshold and executes the target command with inherited `stdio`.
+The mechanism that queries the memory store for relevant learnings before running a shell command. Results pass through the conjunctive relevance gate (ADR 0012) before printing to `stderr`; a rejected-everything result still prints a count rather than staying silent. It executes the target command with inherited `stdio`.
 
 ### failure-triggered learning capture
 
@@ -167,3 +167,9 @@ The bounded wait every model call is wrapped in. Before it, the only timeout in 
 ### shared text generator (`src/components/generator.ts`)
 
 The process-level singleton holding `Xenova/Qwen1.5-0.5B-Chat`. Loading costs ~3.2s against ~183ms per inference, so the load is 87% of a single-inference invocation and every CLI command is its own process. The singleton exists so a `neuron scan` that has already paid for the model hands it to enrichment for free.
+
+### declared field / field schema (`categories.<name>.fields` in `neuron.yaml`, ADR 0013)
+
+A category's own `string`/`enum` frontmatter fields, declared in `neuron.yaml` and enforced in `NeuronMemory.transact()` — the single choke point every writer (the CLI, `neuron scan`'s `ingestScanResults`) goes through. Distinct from the three fields every entry already carries: **structural** (`id`, `createdAt`, never optional), **semantic reserved** (`importance`, `tags`, `taskId` — neuron reads these for behavior), and this third **user-defined** tier, opaque to neuron and validated on write.
+
+A declared field becomes its own CLI flag (`ticket` → `--ticket`), not a generic `--field k=v` escape hatch — `neuron memory --help` lists a project's declared fields dynamically. A required field with no `default:` hard-errors on `add`, naming the field and category (the same policy ticket 06 set for `--category`); `update` is a partial patch and never re-demands one. Round-trips through markdown frontmatter today; SQLite column storage for `vector-only`/`split` categories is a known gap until ticket 44 ships — writing a field there validates but warns that it cannot yet be persisted.

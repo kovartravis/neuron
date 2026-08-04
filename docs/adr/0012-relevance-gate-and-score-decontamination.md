@@ -1,14 +1,14 @@
 # ADR 0012 — Relevance Gate and Score Decontamination
 
-- **Status:** Accepted (2026-08-03); cosine-floor question resolved 2026-08-03
-  (ticket 39 — see Amendment below)
+- **Status:** Implemented (2026-08-04) — cosine-floor question resolved
+  2026-08-03 (ticket 39), structural gate shipped 2026-08-04 (ticket 41)
 - **Amends:** [ADR 0001 — Hybrid Search RRF](0001-hybrid-search-rrf.md) — the
   fused score's composition changes
 - **Relates to:** [ADR 0010 — LLM Job Guardrails](0010-llm-job-guardrails.md) §2,
   whose account of `minScore` this ADR corrects for the second time
 - **Ticket:** [27 — `minScore` Is Structurally Inert](../../.scratch/neuron-2.2.0/issues/27-minscore-is-inert.md)
 - **Implemented by:** [41](../../.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate.md)
-  (structural — pending) and [39](../../.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md)
+  (structural — resolved) and [39](../../.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md)
   (the one fitted constant — resolved: no floor ships, config surface landed)
 
 ## Context
@@ -297,3 +297,33 @@ Point 4's payload budget is settled: the relevance floor is **none**. The
 character ceiling (Decision 5 of `11`) is the sole volume control; nothing
 here changes the token ceiling or truncation strategy, both already settled
 by argument. Point 4 is no longer a blocker.
+
+## Amendment (ticket 41, 2026-08-04) — shipped as designed
+
+Every structural item shipped with no deviation from Decisions 1–6:
+
+- `score` is `normRrf`; `importance` is gone from the query path entirely, kept
+  only as a prune-only field (Decision 2 stands unchanged).
+- The lexical leg is implemented as `ftsMatched === false` rather than a
+  literal `normRrf > 0.5` comparison — the two are proven identical in
+  Decision 3, and `ftsMatched` already existed on `Memory` (ticket 39), so
+  reusing it avoids a second, redundant computation of the same predicate.
+- The gate lives in one place, `NeuronMemory.queryGated()` (wrapped by the
+  existing `query()` for every caller that doesn't need the rejected count),
+  which both `neuron exec` and `neuron memory query` call — and, as a
+  consequence of being the retrieval choke point rather than an `exec.ts`-local
+  filter, the recall hooks (`commands/hook.ts`) and the legacy
+  `queryLearnings`/`queryHistory` wrappers are gated identically for free,
+  which the ticket flagged as desirable but did not require.
+- Zero-result announcements ship on both `neuron exec` (stderr) and
+  `neuron memory query` (a `rejected` JSON field).
+- `onExec` merging is last-match-wins; this repo's own `neuron.yaml` had its
+  two `limit` values swapped (catch-all now `8`, the `npm test`/`git commit`
+  override now `5`) so the override's tighter intent actually takes effect
+  under the new merge rather than being silently widened away, per Decision 5.
+- **Rejection counts now surface in `neuron status`** (`relevance.gateEnabled`,
+  `relevance.rejectedTotal`), closing the item this Amendment's Config-surface
+  section assigned to `41`. Cumulative rather than per-query, matching the
+  `05`/`06` degradation-counter precedent (`meta` table, monotonic).
+- `minScore` was left untouched, as Decision 4/Consequence 4 require — no
+  further deprecation or reinterpretation added here.

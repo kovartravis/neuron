@@ -125,10 +125,14 @@ neuron scan --check --json     # gate CI, machine-readable
 
 ## `neuron exec -- <command>`
 
-Runs a command with a pre-execution memory lookup. Matching rules are printed to
-`stderr` above a relevance threshold; the command runs with inherited `stdio` and
-its exit code passes through. When `scan.enabled` is set, a non-blocking drift
-warning prints first.
+Runs a command with a pre-execution memory lookup. Matches are printed to
+`stderr`, filtered through the relevance gate (ADR 0012): a result whose top
+hit has no keyword (FTS) match at all is rejected, regardless of semantic
+similarity. If the gate rejects every candidate, `neuron exec` still prints a
+line naming the command and how many candidates it rejected, so an empty
+result is distinguishable from an empty store. The command runs with
+inherited `stdio` and its exit code passes through. When `scan.enabled` is
+set, a non-blocking drift warning prints first.
 
 ```bash
 neuron exec -- npm test
@@ -177,6 +181,41 @@ Multi-category memory operations.
 neuron memory query "auth flow" --categories learning,decisions
 neuron memory add --category learning "..." --tags failure-fix --importance 4
 ```
+
+### Project-declared fields (ticket 43 / ADR 0013)
+
+A category can declare its own `string`/`enum` frontmatter fields in
+`neuron.yaml` — each one becomes its own CLI flag on `add`/`update`, not a
+generic `--field k=v` escape hatch:
+
+```yaml
+categories:
+  decisions:
+    fields:
+      ticket:
+        type: string
+        required: true
+      confidence:
+        type: enum
+        values: [low, medium, high]
+        default: medium
+```
+
+```bash
+neuron memory add --category decisions --ticket NEU-42 --confidence high "..."
+```
+
+A required field with no `default:` hard-errors, naming the field and
+category, when omitted on `add`. `update` is a partial patch, the same as
+`--tags`/`--importance`/`--task-id`: an omitted field is left untouched
+rather than re-demanded or cleared. `neuron memory --help` lists a project's
+declared fields once `neuron.yaml` declares any.
+
+SQLite column storage for these fields (`vector-only`/`split` categories) is
+not yet implemented — today a declared field only persists when the write
+reaches markdown (`storage.mode: md`, or `split` with that category's
+`storage: md`). Writing to a pure-vector row still validates the value but
+warns on stderr that it cannot be persisted yet.
 
 ---
 
@@ -260,19 +299,30 @@ pullRules:
   default:
     categories: [learning, decisions]
     limit: 5
-    minScore: 0.35
 
   onExec:
     - commandPattern: ".*"
       categories: [learning]
-      limit: 5
+      limit: 8
     - commandPattern: "^(git|npm|gh) "
       categories: [learning, history]
-      limit: 8
+      limit: 5
+
+relevance:
+  gate:
+    enabled: true          # the conjunctive relevance gate (ADR 0012)
 ```
 
 `scan.category` and `scan.depth` supply the defaults for `neuron scan`'s
 `--category` and `--depth`.
+
+`pullRules.default.minScore` / `pullRules.onExec[].minScore` are **deprecated**
+(ADR 0012): they still parse but gate nothing — the quantity they filtered on
+could never reject a top hit at any relevance. Use `relevance.gate.enabled`
+instead. When more than one `onExec` rule matches a command, `limit`/`minScore`
+resolve as **last-match-wins**: list a broad catch-all first and a more
+specific override after it, since the later matching rule's value replaces
+the earlier one outright (categories still union across every matching rule).
 
 ### Environment variables
 

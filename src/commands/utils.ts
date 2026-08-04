@@ -1,6 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { suggestClosest } from '../shared/textMatch.js';
+import { NeuronConfig, RESERVED_FLAG_NAMES, collectDeclaredFieldFlags, type DeclaredFieldFlag } from '../config/neuronYaml.js';
 
 export {
   HARNESSES,
@@ -60,51 +62,29 @@ export function drawBox(lines: string[]): string {
 
 
 /**
- * Every option `parseFlags` understands. Used to reject unrecognised flags and
- * to suggest a correction — a typo'd flag used to be pushed into `positionals`
- * and silently discarded, so `--importanc 5` looked like it worked and wrote
- * the default instead.
+ * Every option `parseFlags` understands with no `neuron.yaml` involved. Used
+ * to reject unrecognised flags and to suggest a correction — a typo'd flag
+ * used to be pushed into `positionals` and silently discarded, so
+ * `--importanc 5` looked like it worked and wrote the default instead.
+ *
+ * Re-exported from `config/neuronYaml.ts`, which is also where
+ * `validateNeuronYaml` checks a declared field's flag against this same list
+ * at config-load time (ticket 43) — one vocabulary, not two that can drift.
  */
-const KNOWN_FLAGS = [
-  '--format', '--json', '--no-progress', '--diff', '--check', '--tags',
-  '--task-id', '--limit', '--file', '-f', '--importance', '--scope',
-  '--scopes', '--days', '--category', '--categories', '--depth', '--dry-run',
-  '--force', '--type', '--title', '--help', '-h',
-  '--yes', '--no-hooks', '--overwrite-hooks', '--keep-hooks', '--hook-target',
-  '--uninstall-hooks', '--harness',
-];
+const KNOWN_FLAGS = RESERVED_FLAG_NAMES;
 
-/** Cheap edit distance, only ever called on the error path. */
-function editDistance(a: string, b: string): number {
-  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-  );
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      d[i][j] = Math.min(
-        d[i - 1][j] + 1,
-        d[i][j - 1] + 1,
-        d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
-      );
-    }
-  }
-  return d[a.length][b.length];
-}
-
-function unknownFlag(arg: string): never {
-  const near = KNOWN_FLAGS
-    .map(f => [f, editDistance(arg, f)] as const)
-    .filter(([, dist]) => dist <= 2)
-    .sort((x, y) => x[1] - y[1])[0];
+function unknownFlag(arg: string, declaredFields: DeclaredFieldFlag[] = []): never {
+  const candidates = [...KNOWN_FLAGS, ...declaredFields.map(f => f.flag)];
+  const near = suggestClosest(arg, candidates);
   console.error(`Error: unknown option '${arg}'`);
   if (near) {
-    console.error(`  Did you mean '${near[0]}'?`);
+    console.error(`  Did you mean '${near}'?`);
   }
   console.error(`  Pass '--' before a value that legitimately begins with a dash.`);
   process.exit(1);
 }
 
-export function parseFlags(args: string[]): {
+export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] = []): {
   positionals: string[];
   options: {
     help?: boolean;
@@ -133,6 +113,8 @@ export function parseFlags(args: string[]): {
     hookTarget?: string;
     uninstallHooks?: boolean;
     harness?: string[];
+    /** Raw values for config-declared fields (ticket 43), keyed by the field's config key (e.g. `reviewedBy`). Interpreted and validated in `NeuronMemory.transact()`. */
+    fields?: Record<string, string>;
   };
 } {
   const positionals: string[] = [];
@@ -162,14 +144,27 @@ export function parseFlags(args: string[]): {
   let hookTarget: string | undefined;
   let uninstallHooks: boolean | undefined;
   let harness: string[] | undefined;
+  const fields: Record<string, string> = {};
+  const fieldFlagIndex = new Map(declaredFields.map(f => [f.flag, f.key]));
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
+    const declaredFieldKey = fieldFlagIndex.get(arg);
     if (arg === '--') {
       // End of flags. Everything after is positional verbatim, which is the
       // escape hatch for content that legitimately begins with a dash.
       positionals.push(...args.slice(i + 1));
       break;
+    } else if (declaredFieldKey !== undefined) {
+      // Config-declared field flag (ticket 43) — checked ahead of the
+      // built-ins below so a project's own field names never fall through to
+      // unknownFlag(). Value validation (required-ness, enum membership)
+      // happens once in NeuronMemory.transact(), the single choke point
+      // every writer (CLI, `neuron scan`) goes through.
+      const val = args[++i];
+      if (val !== undefined) {
+        fields[declaredFieldKey] = val;
+      }
     } else if (arg === '--help' || arg === '-h') {
       help = true;
     } else if (arg === '--format') {
@@ -256,7 +251,7 @@ export function parseFlags(args: string[]): {
     } else if (arg.startsWith('-') && arg.length > 1) {
       // Previously fell through to `positionals`, where it was silently
       // discarded by every caller. A mistyped flag must not look like success.
-      unknownFlag(arg);
+      unknownFlag(arg, declaredFields);
     } else {
       positionals.push(arg);
     }
@@ -314,7 +309,8 @@ export function parseFlags(args: string[]): {
       keepHooks,
       hookTarget,
       uninstallHooks,
-      harness
+      harness,
+      fields: Object.keys(fields).length > 0 ? fields : undefined
     }
   };
 }
@@ -449,6 +445,36 @@ Options:
                                  to 3, so a bare prune deletes nearly all
                                  history older than --days. There is no undo.
   --limit <number>               Limit returned results`;
+
+/**
+ * `MEMORY_HELP` plus a per-category listing of this project's declared
+ * fields (ticket 43) — the self-documenting `--help` ADR 0013 asks for, so
+ * an agent reading `--help` learns a project's schema without it having to
+ * be restated in `CLAUDE.md`/`AGENTS.md`, where it would drift.
+ */
+export function getMemoryHelp(config: NeuronConfig): string {
+  const declared = collectDeclaredFieldFlags(config);
+  if (declared.length === 0) return MEMORY_HELP;
+
+  const byCategory = new Map<string, DeclaredFieldFlag[]>();
+  for (const f of declared) {
+    const list = byCategory.get(f.category) ?? [];
+    list.push(f);
+    byCategory.set(f.category, list);
+  }
+
+  const lines = [`\nProject-declared fields (from neuron.yaml, add/update only):`];
+  for (const [category, flags] of byCategory) {
+    lines.push(`  ${category}:`);
+    for (const f of flags) {
+      const kind = f.def.type === 'enum' ? `enum: ${f.def.values.join('|')}` : 'string';
+      const req = f.def.required && f.def.default === undefined ? ', required' : '';
+      lines.push(`    ${f.flag} <value>${' '.repeat(Math.max(1, 24 - f.flag.length))}${kind}${req}`);
+    }
+  }
+
+  return MEMORY_HELP + '\n' + lines.join('\n');
+}
 
 export const LEARN_HELP = `Usage: neuron learn <subcommand> [arguments] [flags]
 [Deprecated: Use 'neuron memory <subcommand> --category learning' instead]

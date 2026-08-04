@@ -8,6 +8,16 @@ export interface MdStorageAdapterOptions {
   storagePath?: string;
 }
 
+/**
+ * Frontmatter keys with dedicated `Memory` fields — the structural (`id`,
+ * `createdAt`) and semantic-reserved (`importance`, `tags`, `taskId`) tiers
+ * from ADR 0013. `scope` is a residue of a field removed in v2.2.0 (ticket
+ * 38), kept here so it stays silently dropped rather than round-tripping
+ * into `fields`. Everything else found in a frontmatter block is a
+ * user-defined declared field (ticket 43) and is read into `Memory.fields`.
+ */
+const RESERVED_FRONTMATTER_KEYS = new Set(['id', 'createdAt', 'importance', 'tags', 'taskId', 'scope']);
+
 export class MdStorageAdapter {
   readonly storagePath: string;
 
@@ -129,6 +139,7 @@ export class MdStorageAdapter {
       importance: entry.importance !== undefined ? entry.importance : 3,
       taskId: entry.taskId !== undefined ? entry.taskId : null,
       createdAt,
+      fields: entry.fields,
     };
 
     if (existingIndex >= 0) {
@@ -167,6 +178,11 @@ export class MdStorageAdapter {
       importance: entry.importance !== undefined ? entry.importance : current.importance,
       taskId: entry.taskId !== undefined ? entry.taskId : current.taskId,
       createdAt: entry.createdAt !== undefined ? entry.createdAt : current.createdAt,
+      // Per-key merge, not a full replace: an update that only touches one
+      // declared field must not clobber the entry's other declared fields,
+      // matching how tags/importance/taskId are already preserved when a
+      // caller omits them.
+      fields: entry.fields !== undefined ? { ...current.fields, ...entry.fields } : current.fields,
     };
 
     existingEntries[existingIndex] = updatedMemory;
@@ -246,6 +262,15 @@ export class MdStorageAdapter {
 
     if (memory.taskId !== undefined) {
       frontmatterObj.taskId = memory.taskId;
+    }
+
+    // Declared fields (ticket 43) get their own frontmatter keys, sorted so
+    // byte-stability (ticket 37) doesn't depend on CLI flag order or object
+    // key insertion order.
+    if (memory.fields) {
+      for (const key of Object.keys(memory.fields).sort()) {
+        frontmatterObj[key] = memory.fields[key];
+      }
     }
 
     const yamlStr = stringifyYaml(frontmatterObj).trim();
@@ -401,6 +426,18 @@ export class MdStorageAdapter {
         ? (frontmatter.taskId === null ? null : String(frontmatter.taskId))
         : undefined;
 
+      // Any other frontmatter key is a declared field (ticket 43) — or, on a
+      // hand-edited file, a field not yet declared in `neuron.yaml` at all.
+      // Read permissively either way ("read and report, never refuse" — ADR
+      // 0013 answer 4): schema enforcement is a write-time concern living in
+      // `NeuronMemory.transact()`, not the reader's job. Coerced to a string
+      // like `taskId` above, never invented when absent.
+      const fields: Record<string, string> = {};
+      for (const [key, value] of Object.entries(frontmatter)) {
+        if (RESERVED_FRONTMATTER_KEYS.has(key)) continue;
+        fields[key] = value === null || value === undefined ? '' : String(value);
+      }
+
       memories.push({
         id,
         category,
@@ -410,6 +447,7 @@ export class MdStorageAdapter {
         importance,
         taskId,
         createdAt,
+        fields: Object.keys(fields).length > 0 ? fields : undefined,
       });
     }
 

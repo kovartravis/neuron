@@ -1,27 +1,32 @@
 import { NeuronMemory } from '../index.js';
-import { parseFlags, MEMORY_HELP } from './utils.js';
+import { parseFlags, getMemoryHelp } from './utils.js';
 import { autoRescanIfDriftDetected } from '../scanner/diff.js';
+import { collectDeclaredFieldFlags } from '../config/neuronYaml.js';
 
 export async function handleMemoryCommand(
   args: string[],
   memory: NeuronMemory,
   projectName: string
 ): Promise<void> {
+  const config = memory.getConfig();
+  const declaredFields = collectDeclaredFieldFlags(config);
+  const memoryHelp = getMemoryHelp(config);
+
   const subCommand = args[1];
   if (!subCommand) {
-    console.error(MEMORY_HELP);
+    console.error(memoryHelp);
     process.exit(1);
   }
   if (subCommand === '--help' || subCommand === '-h') {
-    console.log(MEMORY_HELP);
+    console.log(memoryHelp);
     process.exit(0);
   }
 
   const rest = args.slice(2);
-  const { positionals, options } = parseFlags(rest);
+  const { positionals, options } = parseFlags(rest, declaredFields);
 
   if (options.help) {
-    console.log(MEMORY_HELP);
+    console.log(memoryHelp);
     process.exit(0);
   }
 
@@ -80,6 +85,7 @@ export async function handleMemoryCommand(
         tags: options.tags,
         importance: options.importance,
         taskId: options.taskId,
+        fields: options.fields,
       },
     ]);
     console.log(JSON.stringify(res[0]));
@@ -94,8 +100,11 @@ export async function handleMemoryCommand(
     }
     await autoRescanIfDriftDetected(memory, process.cwd());
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
-    const results = await memory.query({ text: queryText, categories, limit: options.limit });
-    console.log(JSON.stringify({ results, project: projectName, query: queryText }));
+    // `rejected` (ticket 41 / ADR 0012) lets an empty `results` mean "the
+    // relevance gate rejected N candidates" rather than being indistinguishable
+    // from an empty store.
+    const { results, rejected } = await memory.queryGated({ text: queryText, categories, limit: options.limit });
+    console.log(JSON.stringify({ results, project: projectName, query: queryText, rejected }));
   } else if (subCommand === 'list') {
     // Was `options.category` only, so `--categories a,b` parsed successfully
     // and silently had no filtering effect — `query` already reads both.
@@ -126,6 +135,7 @@ export async function handleMemoryCommand(
         tags: options.tags,
         importance: options.importance,
         taskId: options.taskId,
+        fields: options.fields,
       },
     ]);
     console.log(JSON.stringify(res[0]));

@@ -33,7 +33,8 @@ export * from './config/index.js';
 
 import { DualStorageRouter } from './storage/dualStorageRouter.js';
 import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
-import { loadNeuronYaml, NeuronConfig } from './config/neuronYaml.js';
+import { loadNeuronYaml, NeuronConfig, fieldKeyToFlagName } from './config/neuronYaml.js';
+import { suggestClosest } from './shared/textMatch.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
@@ -167,6 +168,8 @@ export class NeuronMemory {
   public getDb(): any { return this.db; }
   public getProjectId(): string { return this.projectId; }
   public getEmbedder(): Embedder { return this.embedder; }
+  /** The loaded, validated `neuron.yaml` — the CLI layer reads it for dynamic `--help` text and the declared-field CLI flag surface (ticket 43). */
+  public getConfig(): NeuronConfig { return this.config; }
 
   public getMeta(key: string): string | null {
     if (!this.db) return null;
@@ -456,7 +459,34 @@ export class NeuronMemory {
   }
 
   public async query(q: MemoryQuery): Promise<Memory[]> {
-    return this.router.query(q);
+    return (await this.queryGated(q)).results;
+  }
+
+  /**
+   * Ticket 41 / ADR 0012: the one retrieval choke point shared by `neuron exec`,
+   * `neuron memory query` and the recall hooks (`commands/hook.ts`), so the gate
+   * runs identically everywhere instead of being reimplemented per caller. Only
+   * fires on a text query — a bare category listing has no `ftsMatched` to gate
+   * on. The lexical leg rejects a result whose top hit has no FTS match at all;
+   * algebraically that is exactly `ftsMatched === false` (a row with no FTS
+   * match cannot clear `normRrf > 0.5`, since `score` is now `normRrf` itself —
+   * see the comment at its computation in `queryVector`). Structured as a single
+   * conjunct so ticket 39's cosine floor — measured and found to clear no bar on
+   * LongMemEval — can be added as a second conjunct without reshaping this.
+   */
+  public async queryGated(q: MemoryQuery): Promise<{ results: Memory[]; rejected: number }> {
+    const all = await this.router.query(q);
+    if (!q.text || !this.config.relevance.gate.enabled) {
+      return { results: all, rejected: 0 };
+    }
+    const results = all.filter(m => m.ftsMatched === true);
+    const rejected = all.length - results.length;
+    // ADR 0012 Amendment: "rejection counts belong in neuron status alongside
+    // the enrichment degradation counters" — a structural (unfitted) gate has
+    // no threshold to tune, so its cumulative impact is the only visibility
+    // into whether it's rejecting too much or too little.
+    if (rejected > 0) this.recordGateRejections(rejected);
+    return { results, rejected };
   }
 
   public async queryVector(q: MemoryQuery): Promise<Memory[]> {
@@ -530,9 +560,12 @@ export class NeuronMemory {
         const fr = ftsRank.get(row.id) ?? Infinity;
         const rrfScore = (sr === Infinity ? 0 : 1 / (RRF_K + sr))
                        + (fr === Infinity ? 0 : 1 / (RRF_K + fr));
-        const normRrf = rrfScore / RRF_MAX;
-        const normImp = (row.importance - 1) / 4;
-        const score = 0.75 * normRrf + 0.25 * normImp;
+        // `score` is `normRrf` alone (ticket 41 / ADR 0012): importance blended
+        // in used to win the ranking often enough to be a defect on every query
+        // (ticket 27 §1), and it is not demoted to a tie-break either — ranks are
+        // unique per row, so a tie-break job never runs. `importance` remains a
+        // prune-only field (ticket 27 §5, ticket 23's hazard guard).
+        const score = rrfScore / RRF_MAX;
 
         results.push({
           id: row.id,
@@ -584,9 +617,99 @@ export class NeuronMemory {
   public async transact(mutations: MemoryMutation[]): Promise<MutationResult[]> {
     const enriched: MemoryMutation[] = [];
     for (const m of mutations) {
-      enriched.push(m.op === 'upsert' ? await this.enrichUpsert(m) : m);
+      const afterEnrichment = m.op === 'upsert' ? await this.enrichUpsert(m) : m;
+      enriched.push(this.enforceFieldSchema(afterEnrichment));
     }
     return this.router.transact(enriched);
+  }
+
+  // --- Declared field-schema enforcement (ticket 43 / ADR 0013) -------------
+
+  /**
+   * Required-ness and enum-membership for config-declared category fields,
+   * enforced once, here — the single choke point every writer (the CLI via
+   * `parseFlags`, `neuron scan`'s `ingestScanResults` calling `transact()`
+   * directly) goes through, so there is exactly one place this can be
+   * gotten wrong rather than one per caller.
+   *
+   * Runs after `enrichUpsert` so an inferred category is already resolved:
+   * a category's declared fields cannot be checked before its category is
+   * known.
+   */
+  private enforceFieldSchema(m: MemoryMutation): MemoryMutation {
+    if (m.op !== 'upsert' && m.op !== 'update') return m;
+
+    const category = resolveCategory(m);
+    const fieldDefs = this.config.categories[category]?.fields ?? {};
+    const raw = m.fields ?? {};
+
+    for (const key of Object.keys(raw)) {
+      if (!(key in fieldDefs)) {
+        throw new Error(
+          `Error: --${fieldKeyToFlagName(key)} is not a declared field of category "${category}" ` +
+            `(neuron.yaml categories.${category}.fields).`
+        );
+      }
+    }
+
+    const resolved: Record<string, string> = { ...raw };
+
+    if (m.op === 'upsert') {
+      // Required-but-missing and defaults only bite on create. `update` is a
+      // partial patch — the same posture content/tags/importance/taskId
+      // already have — so it never re-demands a field the entry already
+      // satisfied when created, matching ticket 06's `--category` precedent
+      // ("hard error naming the cause, unless a default is configured").
+      for (const [key, def] of Object.entries(fieldDefs)) {
+        if (resolved[key] !== undefined) continue;
+        if (def.default !== undefined) {
+          resolved[key] = def.default;
+        } else if (def.required) {
+          throw new Error(
+            `Error: --${fieldKeyToFlagName(key)} is required for category "${category}" ` +
+              `(neuron.yaml categories.${category}.fields.${key}). ` +
+              `Pass --${fieldKeyToFlagName(key)} <value>, or add a "default:" in neuron.yaml.`
+          );
+        }
+      }
+    }
+
+    for (const [key, value] of Object.entries(resolved)) {
+      const def = fieldDefs[key];
+      if (def.type === 'enum' && !def.values.includes(value)) {
+        const suggestion = suggestClosest(value, def.values);
+        throw new Error(
+          `Error: --${fieldKeyToFlagName(key)} "${value}" is not one of [${def.values.join(', ')}]` +
+            (suggestion ? ` — did you mean "${suggestion}"?` : '')
+        );
+      }
+    }
+
+    this.warnIfFieldsNotPersistable(category, resolved);
+
+    return { ...m, fields: Object.keys(resolved).length > 0 ? resolved : undefined };
+  }
+
+  /**
+   * SQLite column storage for declared fields is ticket 44's job, not this
+   * one's (43 is scoped to schema + CLI enforcement only). Until it lands, a
+   * validated field value written against a category that resolves to a pure
+   * vector row has nowhere durable to go — silently accepting it would be
+   * exactly the "guarantee in name only" failure ADR 0013 exists to avoid,
+   * so it is announced rather than swallowed.
+   */
+  private warnIfFieldsNotPersistable(category: string, fields: Record<string, string>): void {
+    if (Object.keys(fields).length === 0) return;
+    const mode = this.config.storage.mode;
+    const catStorage = this.config.categories[category]?.storage ?? 'md';
+    const persistable = mode === 'md' || (mode === 'split' && catStorage !== 'vector');
+    if (!persistable) {
+      process.stderr.write(
+        `[neuron warning] category "${category}" field value(s) (${Object.keys(fields).join(', ')}) were validated but cannot be persisted yet — ` +
+          `storage mode "${mode}"${mode === 'split' ? ` with categories.${category}.storage: "vector"` : ''} has no column for declared fields until ticket 44 ships. ` +
+          `Set storage.mode: md (or this category's storage: md) to persist them today.\n`
+      );
+    }
   }
 
   // --- Write-side enrichment ------------------------------------------------
@@ -743,6 +866,28 @@ export class NeuronMemory {
     return Object.fromEntries(
       rows.map(r => [r.key.slice(DEGRADATION_KEY_PREFIX.length), parseInt(r.value, 10) || 0])
     );
+  }
+
+  /**
+   * Cumulative candidates the relevance gate has rejected (ticket 41 / ADR
+   * 0012 Amendment). The gate is structural, not fitted, so this total —
+   * not a per-query count alone — is the only signal that it is rejecting
+   * too much or too little in practice.
+   */
+  private recordGateRejections(count: number): void {
+    if (!this.db) return;
+    try {
+      this.db.prepare(`
+        INSERT INTO meta (key, value) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)
+      `).run(RELEVANCE_GATE_REJECTED_KEY, String(count), count);
+    } catch {}
+  }
+
+  private readGateRejectedTotal(): number {
+    if (!this.db) return 0;
+    const row = this.db.prepare(`SELECT value FROM meta WHERE key = ?`).get(RELEVANCE_GATE_REJECTED_KEY) as { value: string } | undefined;
+    return row ? (parseInt(row.value, 10) || 0) : 0;
   }
 
   public async transactVector(mutations: MemoryMutation[]): Promise<MutationResult[]> {
@@ -946,6 +1091,10 @@ export class NeuronMemory {
         category: enrichmentCfg.category,
         tags: enrichmentCfg.tags,
         degraded: this.readDegradationCounters()
+      },
+      relevance: {
+        gateEnabled: this.config.relevance.gate.enabled,
+        rejectedTotal: this.readGateRejectedTotal()
       }
     };
   }
@@ -1025,6 +1174,7 @@ function dotProduct(a: Float32Array, b: Float32Array): number {
 }
 
 const DEGRADATION_KEY_PREFIX = 'enrichment_degraded:';
+const RELEVANCE_GATE_REJECTED_KEY = 'relevance_gate_rejected_total';
 
 /**
  * Category is a non-nullable column that determines storage routing, so no

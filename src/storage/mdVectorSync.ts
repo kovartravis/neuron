@@ -106,6 +106,11 @@ export async function syncMdWithVector(
       const dbMap = new Map<string, Memory>(dbMemories.map(m => [m.id, m]));
 
       const pushMdToVector = async (mdEntry: Memory): Promise<void> => {
+        // `vectorDb.transact` is the real `NeuronMemory.transact()` here, so
+        // it runs the ticket-43 field-schema enforcement — an existing
+        // entry's already-satisfied required fields must travel with it, or
+        // a category with a required field would fail to sync an entry that
+        // was perfectly valid when it was written.
         await vectorDb.transact([{
           op: 'upsert',
           category,
@@ -115,6 +120,7 @@ export async function syncMdWithVector(
           importance: mdEntry.importance ?? 3,
           taskId: mdEntry.taskId ?? undefined,
           createdAt: mdEntry.createdAt,
+          fields: mdEntry.fields,
         }]);
       };
 

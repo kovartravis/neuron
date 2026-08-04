@@ -27,6 +27,13 @@ export interface Memory {
   similarity?: number;
   /** Whether the FTS5 lexical leg matched this entry at all. Ticket 39 gate calibration; not persisted. */
   ftsMatched?: boolean;
+  /**
+   * Config-declared per-category fields (ticket 43 / ADR 0013), keyed by
+   * config key. Round-trips through markdown frontmatter today; SQLite
+   * column storage for `vector-only`/`split` categories ships in ticket 44,
+   * so a value set here is not yet guaranteed to survive a pure-vector row.
+   */
+  fields?: Record<string, string>;
 }
 
 /**
@@ -37,9 +44,9 @@ export interface Memory {
  * — enrichment fills it, or the write fails naming the cause.
  */
 export type MemoryMutation =
-  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null;
+  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null; fields?: Record<string, string>;
       /** @deprecated Use `category` instead. */ kind?: string; }
-  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null;
+  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null; fields?: Record<string, string>;
       /** @deprecated Use `category` instead. */ kind?: string; }
   | { op: 'delete'; category: string; id: string;
       /** @deprecated Use `category` instead. */ kind?: string; };

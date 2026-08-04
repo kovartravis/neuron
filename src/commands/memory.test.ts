@@ -53,6 +53,9 @@ describe('CLI Command: memory', () => {
     const walMatch = queryRes.results.find((r: any) => r.content.includes('Use SQLite WAL mode for concurrency'));
     expect(walMatch).toBeDefined();
     expect(walMatch.category).toBe('decisions');
+    // `rejected` (ticket 41 / ADR 0012) reports the relevance gate's rejected
+    // count, so an empty `results` is distinguishable from an empty store.
+    expect(typeof queryRes.rejected).toBe('number');
 
     // 3. List entries in category "decisions"
     const listStdout = execSync(

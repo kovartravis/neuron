@@ -579,3 +579,27 @@ tags:
 taskId: null
 ---
 Use SQLite WAL mode for concurrency
+
+---
+id: eda63726-7ef2-4416-a71e-06cf1226d1e8
+createdAt: 2026-08-04T12:32:43.803Z
+importance: 4
+tags:
+  - md-storage
+  - adr
+  - rc2
+taskId: "43"
+---
+Ticket 43 (declarable category field schema, ADR 0013) implementation decisions not spelled out in the ADR itself. Update is a partial patch for declared fields, matching --tags/--importance/--task-id: required-but-missing and default-filling only apply to upsert/create, never to update, so an update that touches one field never re-demands or silently overwrites another declared field on the same entry — MdStorageAdapter.updateEntry merges per-key (spread current.fields with entry.fields) rather than replacing the whole fields object, while writeEntry (upsert/replace) takes the fully-resolved set as-is, matching the existing tags/taskId asymmetry between the two write paths. Persistence is scoped to markdown only in this ticket: SQLite column storage for vector-only/split categories is ticket 44's job, so NeuronMemory.transact() validates and resolves field values unconditionally (the CLI guarantee holds regardless of storage mode) but emits a stderr warning rather than throwing when the resolved category cannot yet persist them (storage.mode vector-only, or split with that category's storage: vector) — silently accepting would be a guarantee-in-name-only, and throwing would make declaring fields incompatible with vector-only projects entirely. On read, MdStorageAdapter.parseMarkdownDetailed hoists every non-reserved frontmatter key into Memory.fields generically, without checking it against neuron.yaml — schema enforcement is a write-time concern living solely in transact(), so a hand-edited or not-yet-declared frontmatter key round-trips today and surfaces as a compliance report only once ticket 46 (status --check/--repair) ships.
+
+---
+id: d8d6dc8b-7821-4d95-983b-0134d74bf13c
+createdAt: 2026-08-04T13:08:04.968Z
+importance: 4
+tags:
+  - retrieval
+  - rc2
+  - longmemeval
+taskId: null
+---
+ADR 0012 ticket 41 (Decontaminate the Ranking Score and Land the Lexical Gate) implemented and resolved 2026-08-04, no deviation from the six structural decisions: score in src/index.ts's queryVector is now normRrf alone (the normImp blend term is deleted), importance stays a prune-only field. A new NeuronMemory.queryGated() method is the single retrieval choke point: it filters results to ftsMatched === true (proven algebraically identical to normRrf > 0.5) and returns a rejected count; query() is now a thin wrapper around it, so neuron exec, neuron memory query, the recall hooks in commands/hook.ts, and the legacy queryLearnings/queryHistory wrappers all inherit the gate for free rather than needing separate wiring. exec.ts lost its own matched.filter(score >= minScore) line entirely and now prints a zero-result/rejected-count stderr line; memory.ts's query subcommand adds a rejected JSON field. resolveExecCategories in src/config/neuronYaml.ts now merges onExec limit/minScore as last-match-wins (plain overwrite per matching rule in array order) instead of Math.max/Math.min, and this repo's own neuron.yaml had its two onExec limit values swapped (catch-all .* to 8, the npm-test/git-commit override to 5) so the override's tighter intent actually takes effect. Beyond the ticket's own written scope, ADR 0012's ticket-39 amendment had assigned neuron status visibility for rejection counts to this ticket, so getStatus() gained relevance.gateEnabled and a cumulative relevance.rejectedTotal counter using the same meta-table increment-on-conflict pattern as the existing enrichment degradation counters. Six pre-existing unit tests in src/index.test.ts encoded the removed importance-blend or a pre-gate assumption and were rewritten to the new invariants; full suite is 432/436 green, with the 4 failures being ticket 42's pre-existing real-store test-pollution gap (confirmed unrelated by reproducing identically on the unmodified working tree and by passing when run outside full-suite concurrency). One notable finding recorded in the ticket's Answer: re-running the acceptance criteria's live-store verification (neuron exec -- ls, and ticket 27's original 15 probes) against the current store no longer reproduces the original reject counts, because the store has since absorbed its own decisions/history entries about tickets 27/28/39 which quote ls/kubernetes/pytorch verbatim as illustrative examples, so those queries now get real, correct FTS matches against the project's own writeup of itself -- this is ADR 0012's own 'denser on neuron's internals than any user's store' caveat made concrete, not a defect, and the underlying mechanism was instead verified via controlled-content unit tests that hold the corpus fixed.

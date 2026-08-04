@@ -169,8 +169,10 @@ describe('NeuronMemory DB Migrations', () => {
     expect(res1.status).toBe('created');
     expect(res1.id).toBeDefined();
 
-    const queryResult = await memory.queryLearnings('query for run tests', { limit: 5 });
-    expect(queryResult.query).toBe('query for run tests');
+    // Includes "checkouts" so both entries clear the relevance gate (ticket 41):
+    // a result with no FTS match at all is rejected regardless of semantic similarity.
+    const queryResult = await memory.queryLearnings('query for run tests checkouts', { limit: 5 });
+    expect(queryResult.query).toBe('query for run tests checkouts');
     expect(queryResult.results).toHaveLength(2);
 
     const first = queryResult.results[0];
@@ -318,7 +320,7 @@ describe('NeuronMemory DB Migrations', () => {
     expect(h2.importance).toBe(3);
   });
 
-  it('should apply hybrid scoring across importance and semantic similarity for every stored entry', async () => {
+  it('should rank purely by semantic RRF, with no importance term on the query path (ticket 41)', async () => {
     // 384-dimensional unit vectors
     const queryVec = new Float32Array(384);
     queryVec[0] = 1.0;
@@ -359,27 +361,26 @@ describe('NeuronMemory DB Migrations', () => {
       embedder: mockEmbedder
     });
 
-    // Add learnings:
-    // Item A: Sim = 0.9, Importance = 5 (Norm = 1.0)
-    // Score = 0.75 * 0.9 + 0.25 * 1.0 = 0.925
+    // Add learnings. Deliberately gives the lowest-similarity item the highest
+    // importance and vice versa — under the old importance-blended score this
+    // would have promoted item A above item C despite lower similarity; ticket
+    // 41 removed that term entirely, so rank now follows similarity alone.
+    // Item A: Sim = 0.9, Importance = 5 — would have scored 0.925 under the old blend
     await memory.addLearning('itemA content', ['tag'], { importance: 5 });
-
-    // Item B: Sim = 0.8, Importance = 5 (Norm = 1.0)
-    // Score = 0.75 * 0.8 + 0.25 * 1.0 = 0.85
+    // Item B: Sim = 0.8, Importance = 5 — would have scored 0.85 under the old blend
     await memory.addLearning('itemB content', ['tag'], { importance: 5 });
-
-    // Item C: Sim = 0.95, Importance = 1 (Norm = 0.0)
-    // Score = 0.75 * 0.95 + 0.25 * 0.0 = 0.7125
+    // Item C: Sim = 0.95, Importance = 1 — would have scored 0.7125 (last) under the old blend
     await memory.addLearning('itemC content', ['tag'], { importance: 1 });
 
-    // All three entries are visible to every query — there is no scope
-    // segmentation any more (ticket 38) — and hybrid score orders them:
-    // A (0.925) > B (0.85) > C (0.7125).
-    const res = await memory.queryLearnings('query test', { limit: 5 });
-    expect(res.results).toHaveLength(3);
-    expect(res.results[0].content).toBe('itemA content');
-    expect(res.results[1].content).toBe('itemB content');
-    expect(res.results[2].content).toBe('itemC content');
+    // Queried via `queryVector` directly (bypassing the relevance gate, ticket
+    // 41): none of these contents share an FTS token with "query test", so the
+    // gate itself is not what this test is about — this isolates the ranking
+    // claim from the gate's filtering concern.
+    const results = await memory.queryVector({ text: 'query test', categories: ['learning'], limit: 5 });
+    expect(results).toHaveLength(3);
+    expect(results[0].content).toBe('itemC content'); // sim 0.95, importance 1 — highest similarity wins
+    expect(results[1].content).toBe('itemA content'); // sim 0.9
+    expect(results[2].content).toBe('itemB content'); // sim 0.8, importance 5 — lowest similarity, still last
   });
 
   it('should support pruning history based on age and importance criteria', async () => {
@@ -549,9 +550,11 @@ describe('NeuronMemory hybrid search (RRF)', () => {
 
   it('should expose raw cosine similarity and the lexical-leg match, ungated (ticket 39)', async () => {
     // Ticket 39 needs the two legs of ADR 0012's gate — raw cosine and FTS
-    // presence — measurable from outside, since the gate itself (ticket 41)
-    // hasn't shipped yet. This asserts queryVector exposes them undistorted
-    // by the RRF/importance fusion `score` already blends.
+    // presence — measurable from outside. Calls `queryVector` directly (not
+    // `query`) since the gate itself (ticket 41) now ships and would reject
+    // the zero-FTS-overlap "miss" entry outright; this asserts the pre-gate
+    // computation still exposes both legs undistorted, which is what the
+    // gate in `query`/`queryGated` reads.
     const matchVec = new Float32Array(384);
     matchVec[0] = 1.0;
 
@@ -578,7 +581,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     await memory.addLearning('relevance gate keyword hit', ['gate'], { importance: 3 });
     await memory.addLearning('unrelated content, no keyword overlap', ['other'], { importance: 3 });
 
-    const results = await memory.query({ text: 'gate', kind: 'learning' });
+    const results = await memory.queryVector({ text: 'gate', kind: 'learning' });
 
     const hit = results.find(r => r.content === 'relevance gate keyword hit')!;
     const miss = results.find(r => r.content === 'unrelated content, no keyword overlap')!;
@@ -588,11 +591,61 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     expect(hit.similarity).toBeCloseTo(0.8, 5);
     expect(miss.similarity).toBeCloseTo(0.6, 5);
   });
+
+  it('gates queries through `query`/`queryGated`, rejecting no-FTS-match results and counting them in status (ticket 41 / ADR 0012 Amendment)', async () => {
+    const matchVec = new Float32Array(384);
+    matchVec[0] = 1.0;
+
+    const otherVec = new Float32Array(384);
+    otherVec[1] = 1.0;
+
+    const queryVec = new Float32Array(384);
+    queryVec[0] = 0.8;
+    queryVec[1] = 0.6;
+
+    const mockEmbedder = {
+      embed: async (text: string) => (text.includes('gate') ? matchVec : otherVec),
+      embedQuery: async () => queryVec
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector-only',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('relevance gate keyword hit', ['gate'], { importance: 3 });
+    await memory.addLearning('unrelated content, no keyword overlap', ['other'], { importance: 3 });
+
+    const { results, rejected } = await memory.queryGated({ text: 'gate', kind: 'learning' });
+    expect(results).toHaveLength(1);
+    expect(results[0].content).toBe('relevance gate keyword hit');
+    expect(rejected).toBe(1);
+
+    // Cumulative rejection count surfaces in status (ADR 0012 Amendment:
+    // "rejection counts belong in neuron status").
+    const status = memory.getStatus();
+    expect(status.relevance.gateEnabled).toBe(true);
+    expect(status.relevance.rejectedTotal).toBe(1);
+
+    // A bare `query()` call also gates (same choke point) and accumulates
+    // rather than resets the total.
+    const plain = await memory.query({ text: 'gate', kind: 'learning' });
+    expect(plain).toHaveLength(1);
+    expect(memory.getStatus().relevance.rejectedTotal).toBe(2);
+  });
 });
 
   it('should surface semantically relevant records even when no query keywords appear in the content', async () => {
     // Both learnings use distinct embeddings; no query word appears in either content.
-    // Only the semantic (vector) rank can differentiate them.
+    // Only the semantic (vector) rank can differentiate them. Queried via
+    // `queryVector` directly: the relevance gate (ticket 41) would reject
+    // both of these outright (neither has an FTS match at all), which is a
+    // deliberate, measured tradeoff (ticket 39: 0/500 false silences on real
+    // queries) — this test is about the underlying RRF ranking capability,
+    // not the gate's filtering behavior, so it bypasses the gate to isolate that.
     const vecClose = new Float32Array(384);
     vecClose[0] = 0.95; // high dot-product with query
 
@@ -628,16 +681,19 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     await memory.addLearning('install homebrew before setting up dev tools', ['mac'], { importance: 3 });
     await memory.addLearning('configure webpack for production bundling', ['webpack'], { importance: 3 });
 
-    const results = await memory.query({ text: 'QUERYSYMBOL', kind: 'learning' });
+    const results = await memory.queryVector({ text: 'QUERYSYMBOL', kind: 'learning' });
 
     expect(results[0].content).toBe('install homebrew before setting up dev tools');
   });
 
-  it('should rank the higher-importance record first when FTS and semantic ranks are equivalent', async () => {
-    // Both learnings contain the keyword and share an identical embedding.
-    // Semantic rank and FTS rank are determined by insertion order (rowid).
-    // The low-importance record is inserted first (lower rowid), which would
-    // win on rank alone. Only the 25% importance term can promote the second record.
+  it('should ignore importance entirely when FTS and semantic ranks are equivalent (ticket 41)', async () => {
+    // Both learnings contain the keyword and share an identical embedding, so
+    // semantic rank and FTS rank are determined by insertion order (rowid) —
+    // ranks are assigned uniquely per row (ticket 27 §1), so this is not a
+    // true tie: the first-inserted record ranks #1 in both lists. Before
+    // ticket 41, a 25%-weighted importance term could still promote the
+    // second record over it; now `score` is `normRrf` alone; importance
+    // affects nothing on the query path.
     const sharedVec = new Float32Array(384);
     sharedVec[2] = 1.0;
 
@@ -655,13 +711,14 @@ describe('NeuronMemory hybrid search (RRF)', () => {
 
     // Inserted first → lower rowid → ranks #1 in both semantic and FTS lists
     await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 1 });
-    // Inserted second → higher rowid → ranks #2 in both lists, but importance=5 adds 0.25 points
+    // Inserted second → higher rowid → ranks #2 in both lists. Importance=5
+    // no longer moves it: this is the regression test for the removed term.
     await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 5 });
 
     const results = await memory.query({ text: 'sqlite', kind: 'learning' });
 
-    expect(results[0].importance).toBe(5);
-    expect(results[1].importance).toBe(1);
+    expect(results[0].importance).toBe(1);
+    expect(results[1].importance).toBe(5);
   });
 
   it('should merge learnings and history results into a single ranked list when no kind filter is applied', async () => {
@@ -745,7 +802,11 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     await memory.addLearning('alpha learning', [], { importance: 3 });
     await memory.addLearning('beta learning', [], { importance: 3 });
 
-    const results = await memory.query({ text: 'search query', kind: 'learning' });
+    // Neither content shares an FTS token with "search query", so `query`'s
+    // relevance gate (ticket 41) would reject both; use `queryVector`
+    // directly since this test is about embedQuery-vs-embed selection, not
+    // the gate.
+    const results = await memory.queryVector({ text: 'search query', kind: 'learning' });
 
     // Correct: embedQuery → vecB → beta ranks first
     // Wrong:   embed      → vecA → alpha ranks first

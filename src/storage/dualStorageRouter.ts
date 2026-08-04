@@ -83,6 +83,7 @@ export class DualStorageRouter {
           tags: m.tags || [],
           importance: m.importance,
           taskId: m.taskId,
+          fields: m.fields,
         });
 
         let status = 'created';
@@ -109,6 +110,7 @@ export class DualStorageRouter {
             tags: m.tags,
             importance: m.importance,
             taskId: m.taskId,
+            fields: m.fields,
           });
         } catch {
           mdUpdated = false;

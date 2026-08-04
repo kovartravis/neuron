@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { execSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 
 describe('CLI Command: exec', () => {
   const tempDbDir = path.join(process.cwd(), 'src/__tests__/temp-exec');
@@ -114,5 +115,35 @@ describe('CLI Command: exec', () => {
 
     const res = spawnSync('node', [cliPath, 'exec', '--', 'echo first && echo second'], { env });
     expect(res.stdout.toString().trim().split('\n')).toEqual(['first', 'second']);
+  });
+
+  it('announces zero relevant results with a rejected count when the relevance gate clears the candidate list (ticket 41)', () => {
+    // Isolated tmp project (own cwd + neuron.yaml, storage.mode: vector-only)
+    // rather than this repo's own cwd/store: under the default `md` mode,
+    // NEURON_DB_PATH only isolates SQLite, and reconcile would still pull in
+    // this project's real, populated `.neuron/learning.md` (ticket 42's known
+    // gap), making a "zero candidates" assertion unreliable.
+    const tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-exec-gate-test-')));
+    fs.writeFileSync(
+      path.join(tmpDir, 'neuron.yaml'),
+      'version: "1.0"\nstorage:\n  mode: vector-only\n  path: .neuron\ncategories:\n  learning:\n    description: test\n'
+    );
+
+    try {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const dbPath = path.join(tmpDir, 'test.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      // Mock embedder zeroes every vector, so a candidate survives only via
+      // the lexical leg (an FTS match). This learning shares no token at all
+      // with the command below, so the gate rejects it.
+      execSync(`node ${cliPath} learn add "Prefer WAL journal mode for concurrent writers" --tags db`, { env, cwd: tmpDir });
+
+      const res = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'unrelated-token-xyz'], { env, cwd: tmpDir });
+      expect(res.stderr.toString()).toContain('0 relevant learning(s)');
+      expect(res.stderr.toString()).toContain('candidate(s) below relevance gate');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });

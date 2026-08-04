@@ -69,13 +69,108 @@ const RawCategoryStorageSchema = z.preprocess((val) => {
   return val;
 }, z.enum(['vector', 'md']));
 
+/**
+ * Declarable per-category frontmatter fields (ticket 43, from ADR 0013 /
+ * ticket 36's design). Type system floor is deliberately just `string` and
+ * `enum` — no number/date — per ticket 36's answer to question 1. This is
+ * the "user-defined" tier only: the structural tier (`id`, `createdAt`) and
+ * semantic-reserved tier (`importance`, `tags`, `taskId`) are not
+ * declarable here, they already have dedicated CLI flags and reserved
+ * column/frontmatter slots.
+ *
+ * `default` on an enum field must be one of `values` — checked in
+ * `validateNeuronYaml` rather than here, because Zod's discriminated union
+ * doesn't have a convenient single-schema hook for a cross-field check that
+ * also needs a field name in the error message.
+ */
+const CategoryFieldStringSchema = z.object({
+  type: z.literal('string'),
+  required: z.boolean().default(false),
+  default: z.string().optional(),
+});
+
+const CategoryFieldEnumSchema = z.object({
+  type: z.literal('enum'),
+  required: z.boolean().default(false),
+  default: z.string().optional(),
+  values: z.array(z.string()).min(1, 'enum field must declare at least one value in "values"'),
+});
+
+export const CategoryFieldSchema = z.discriminatedUnion('type', [
+  CategoryFieldStringSchema,
+  CategoryFieldEnumSchema,
+]);
+
+export type CategoryField = z.infer<typeof CategoryFieldSchema>;
+
+/**
+ * A declared field key becomes a CLI flag (`ticket` → `--ticket`,
+ * `reviewedBy` → `--reviewed-by`), so the key must already look like a CLI
+ * flag name once kebab-cased — letters, digits and camelCase word breaks
+ * only. This is checked in `validateNeuronYaml`, where the kebab name is
+ * also cross-checked against `RESERVED_FLAG_NAMES`.
+ */
+const FIELD_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9]*$/;
+
 export const CategoryConfigSchema = z.object({
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
   storage: RawCategoryStorageSchema.optional(),
+  fields: z.record(z.string(), CategoryFieldSchema).optional(),
 });
 
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
+
+/**
+ * Converts a declared field's camelCase config key into its CLI flag name
+ * (`reviewedBy` → `reviewed-by`), matching the hyphenated style every
+ * built-in flag already uses.
+ */
+export function fieldKeyToFlagName(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
+ * The single source of truth for every flag `parseFlags` recognises without
+ * any `neuron.yaml` involved. `commands/utils.ts`'s `KNOWN_FLAGS` is derived
+ * from this list plus whatever fields the loaded config declares, and
+ * `validateNeuronYaml` checks declared field flags against this same list —
+ * one vocabulary, checked from both directions, so a declared field can
+ * never silently shadow a built-in flag.
+ */
+export const RESERVED_FLAG_NAMES = [
+  '--format', '--json', '--no-progress', '--diff', '--check', '--tags',
+  '--task-id', '--limit', '--file', '-f', '--importance', '--scope',
+  '--scopes', '--days', '--category', '--categories', '--depth', '--dry-run',
+  '--force', '--type', '--title', '--help', '-h',
+  '--yes', '--no-hooks', '--overwrite-hooks', '--keep-hooks', '--hook-target',
+  '--uninstall-hooks', '--harness',
+];
+
+export interface DeclaredFieldFlag {
+  /** e.g. `--reviewed-by` */
+  flag: string;
+  /** e.g. `reviewedBy` — the raw config key, and the key `options.fields` is collected under. */
+  key: string;
+  category: string;
+  def: CategoryField;
+}
+
+/**
+ * Every declared field across every category, each paired with the CLI flag
+ * it becomes. Two categories may declare the same field key — they share one
+ * flag, and which category's constraints apply is resolved at write time in
+ * `NeuronMemory.transact()` once `--category` (or inference) picks one.
+ */
+export function collectDeclaredFieldFlags(config: NeuronConfig): DeclaredFieldFlag[] {
+  const out: DeclaredFieldFlag[] = [];
+  for (const [category, catConfig] of Object.entries(config.categories)) {
+    for (const [key, def] of Object.entries(catConfig.fields ?? {})) {
+      out.push({ flag: `--${fieldKeyToFlagName(key)}`, key, category, def });
+    }
+  }
+  return out;
+}
 
 export const PullRuleDefaultSchema = z.object({
   categories: z.array(z.string()).min(1, 'pullRules.default.categories must be a non-empty array'),
@@ -330,7 +425,64 @@ export function validateNeuronYaml(raw: unknown): NeuronConfig {
     );
   }
 
+  validateDeclaredFields(config);
+
   return config;
+}
+
+/**
+ * Ticket 43 / ADR 0013. Three checks, all refusing the config at load time
+ * rather than letting a bad declaration surface as a mysterious write-time
+ * or `neuron scan` failure later:
+ *
+ * 1. A field key must already look like a CLI flag name once kebab-cased.
+ * 2. An enum field's `default` (if any) must be one of its own `values`.
+ * 3. A declared field's flag must not collide with a reserved built-in flag
+ *    — checked here, not discovered as a shadowed flag at write time.
+ * 4. If `scan.category` points at a category declaring a required field with
+ *    no `default`, `neuron scan` (which writes via `transact()` directly and
+ *    never calls `parseFlags`) could never supply it and would break on
+ *    every run.
+ */
+function validateDeclaredFields(config: NeuronConfig): void {
+  const reserved = new Set(RESERVED_FLAG_NAMES);
+
+  for (const [category, catConfig] of Object.entries(config.categories)) {
+    for (const [key, def] of Object.entries(catConfig.fields ?? {})) {
+      if (!FIELD_KEY_PATTERN.test(key)) {
+        throw new Error(
+          `neuron.yaml: categories.${category}.fields.${key}: field keys must be letters/digits (camelCase), got "${key}"`
+        );
+      }
+
+      if (def.type === 'enum' && def.default !== undefined && !def.values.includes(def.default)) {
+        throw new Error(
+          `neuron.yaml: categories.${category}.fields.${key}: default "${def.default}" is not one of the declared values [${def.values.join(', ')}]`
+        );
+      }
+
+      const flag = `--${fieldKeyToFlagName(key)}`;
+      if (reserved.has(flag)) {
+        throw new Error(
+          `neuron.yaml: categories.${category}.fields.${key} would become the flag "${flag}", which collides with a reserved built-in flag. Rename the field.`
+        );
+      }
+    }
+  }
+
+  const scanCategoryName = config.scan?.category;
+  const scanCategory = scanCategoryName ? config.categories[scanCategoryName] : undefined;
+  if (scanCategory) {
+    for (const [key, def] of Object.entries(scanCategory.fields ?? {})) {
+      if (def.required && def.default === undefined) {
+        throw new Error(
+          `neuron.yaml: scan.category "${scanCategoryName}" declares required field "${key}" with no default — ` +
+            `"neuron scan" writes via transact() directly, never through CLI flags, and would fail on every run. ` +
+            `Add a "default:" for "${key}", or point scan.category at a different category.`
+        );
+      }
+    }
+  }
 }
 
 export function parseNeuronYaml(yamlString: string): NeuronConfig {
@@ -364,6 +516,15 @@ export const loadNeuronConfig = loadNeuronYaml;
  * Resolve the categories to query for a `neuron exec -- <command>` invocation.
  * Evaluates command against all onExec patterns, merges matches, and falls
  * back to pullRules.default if no patterns match.
+ *
+ * `limit`/`minScore` merge as **last-match-wins** (ticket 41 / ADR 0012): each
+ * matching rule, in array order, overwrites the previous rule's value outright.
+ * The old `Math.max`(limit)/`Math.min`(minScore) merge could only ever widen —
+ * adding any broad rule silently loosened every narrower one, in a way that
+ * couldn't be debugged by reading the file. Last-match-wins makes a later,
+ * more specific rule's tighter intent actually stick over an earlier, broader
+ * one. Categories still union across every matching rule — narrowing which
+ * categories apply isn't the defect being fixed here.
  */
 export function resolveExecCategories(config: NeuronConfig, command: string): { categories: string[]; limit: number; minScore: number } {
   const matchedCategories = new Set<string>();
@@ -378,8 +539,8 @@ export function resolveExecCategories(config: NeuronConfig, command: string): { 
           for (const cat of rule.categories) {
             matchedCategories.add(cat);
           }
-          if (rule.limit !== undefined) limit = Math.max(limit, rule.limit);
-          if (rule.minScore !== undefined) minScore = Math.min(minScore, rule.minScore);
+          if (rule.limit !== undefined) limit = rule.limit;
+          if (rule.minScore !== undefined) minScore = rule.minScore;
         }
       } catch {
         // Invalid regex — skip the rule

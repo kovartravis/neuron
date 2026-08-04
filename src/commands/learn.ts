@@ -1,6 +1,7 @@
 import { NeuronMemory } from '../index.js';
 import { parseFlags, LEARN_HELP } from './utils.js';
 import { handleMemoryCommand } from './memory.js';
+import { collectDeclaredFieldFlags } from '../config/neuronYaml.js';
 
 export async function handleLearnCommand(
   args: string[],
@@ -20,7 +21,8 @@ export async function handleLearnCommand(
   process.stderr.write(`[neuron warning] 'neuron learn' is deprecated. Use 'neuron memory --category learning' instead.\n`);
 
   const rest = args.slice(2);
-  const { positionals } = parseFlags(rest);
+  const declaredFields = collectDeclaredFieldFlags(memory.getConfig());
+  const { positionals } = parseFlags(rest, declaredFields);
 
   if (subCommand === 'update' && (!positionals[0] || !positionals[1])) {
     console.error('Error: ID and content are required for learn update');

@@ -498,6 +498,27 @@ every ticket resolved, every rc cut, stable published.
   `11` point 4: the payload budget's floor is *none*, the character ceiling is
   the sole volume control. [ADR 0012 amendment](../../docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-39-2026-08-03--the-cosine-floor-and-the-config-surface).
 
+- [41 — Decontaminate the Ranking Score and Land the Lexical Gate](issues/41-decontaminate-score-and-lexical-gate.md)
+  — `score` is now `normRrf` alone (`importance` stays prune-only); the lexical
+  leg (reject a result with no FTS match — proven identical to `normRrf > 0.5`)
+  gates both `neuron exec` and `neuron memory query` from one choke point,
+  `NeuronMemory.queryGated()`, which `query()` now wraps — so the recall hooks
+  and legacy query wrappers inherit the gate for free. Zero-result announces
+  with a rejected count on both surfaces, and cumulatively in `neuron status`
+  (`relevance.rejectedTotal`, an item ADR 0012's amendment assigned here).
+  `onExec` merging is last-match-wins, not widen-only; this repo's own
+  `neuron.yaml` had its two `limit` values swapped so the specific override's
+  tighter intent survives. Re-running the acceptance criteria's live-store
+  checks (`neuron exec -- ls`, `27`'s 15 probes) no longer reproduces the
+  original counts — the store has since absorbed its own decisions/history
+  entries *about* tickets 27/28/39, which quote `ls`/`kubernetes`/`pytorch`
+  verbatim as illustrative examples, so those queries now get real, correct
+  FTS matches against the project's own writeup of itself. Not a defect —
+  ADR 0012's "denser on neuron's internals than any user's store" caveat made
+  concrete — verified instead by controlled-content unit tests, which hold the
+  corpus fixed. 6 pre-existing tests rewritten off the removed importance-blend
+  invariant; 432/436 full suite, the 4 failures pre-existing `42` pollution.
+  [ADR 0012 amendment](../../docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-41-2026-08-04--shipped-as-designed).
 - [31 — Make `md` the Actual Default](issues/31-md-only-as-default.md)
   — Two schema lines flipped to `md`, and `neuron init` now writes the
   `neuron.yaml` that says so; the audit for a third place found none. **The
@@ -607,6 +628,26 @@ every ticket resolved, every rc cut, stable published.
   "not locked to one agent" bullet predated the hook work. 400/405 unit
   tests, 12/13 E2E pillars — both pre-existing gaps (`42`'s real-store test
   pollution, Pillar 8 write contention), no regressions.
+
+- [43 — Declarable Category Field Schema: Tiers, Types, CLI Flag Surface](issues/43-declarable-field-schema-cli-flags.md)
+  — `36`'s design implemented with no deviation: `string`/`enum` category
+  fields declared in `neuron.yaml`, refused at config-load time on four
+  grounds (bad field key, enum default not in `values`, reserved-flag
+  collision, `scan.category` required-without-default), become CLI flags via
+  a config-derived `KNOWN_FLAGS` and dynamic `neuron memory --help`, and are
+  enforced once in `NeuronMemory.transact()` — the choke point both the CLI
+  and `neuron scan`'s direct write share. One scope call beyond the ticket's
+  text: `update` never re-demands or default-fills a field, matching the
+  existing partial-patch posture of `--tags`/`--importance`/`--task-id`.
+  Storage is markdown-only for now (`44` owns the SQLite column side, as
+  scoped) — a field written against a pure-vector row still validates but
+  warns on stderr rather than silently vanishing. Found and fixed a real bug
+  wiring it in: `neuron sync`'s `pushMdToVector` calls `transact()` directly
+  and would have broken sync for any category with a required field by not
+  passing the entry's existing field values through. 40 new/updated tests;
+  full suite 429–430/434, the 4–5 failures confirmed pre-existing `42`
+  pollution (reproduced identically against unmodified code before this
+  session's changes). Unblocks `44`.
 
 ### Settled while charting
 

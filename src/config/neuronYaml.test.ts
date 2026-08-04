@@ -7,6 +7,8 @@ import {
   validateNeuronYaml,
   findNeuronYaml,
   resolveExecCategories,
+  fieldKeyToFlagName,
+  collectDeclaredFieldFlags,
 } from './neuronYaml.js';
 
 describe('neuron.yaml Config Loader & Zod Parser', () => {
@@ -214,6 +216,37 @@ pullRules:
     expect(res3.limit).toBe(5);
   });
 
+  it('merges onExec limit/minScore as last-match-wins, not widen-only (ticket 41)', () => {
+    // A broad catch-all listed first with a generous limit, and a later,
+    // more specific rule with a *tighter* one. The old Math.max/Math.min
+    // merge could only ever widen — this rule ordering is exactly the case
+    // it got wrong, since the specific rule's tighter intent needs to
+    // override the broad rule's looser default, not lose to it.
+    const config = validateNeuronYaml({
+      version: '1.0',
+      storage: { mode: 'vector-only', path: '.neuron' },
+      categories: { learning: {}, history: {}, decisions: {} },
+      pullRules: {
+        default: { categories: ['learning'], limit: 5, minScore: 0.35 },
+        onExec: [
+          { commandPattern: '.*', categories: ['learning'], limit: 8 },
+          { commandPattern: '^(npm test|git commit)', categories: ['learning', 'history', 'decisions'], limit: 5 },
+        ],
+      },
+    });
+
+    // Matches both rules; the later, more specific rule's limit (5) wins
+    // over the earlier, broader rule's limit (8).
+    const specific = resolveExecCategories(config, 'npm test');
+    expect(specific.limit).toBe(5);
+    expect(specific.categories).toEqual(expect.arrayContaining(['learning', 'history', 'decisions']));
+
+    // Matches only the catch-all → its own limit (8) applies unchanged.
+    const fallthrough = resolveExecCategories(config, 'docker build .');
+    expect(fallthrough.limit).toBe(8);
+    expect(fallthrough.categories).toEqual(['learning']);
+  });
+
   describe('llm.enrichment', () => {
     it('defaults to the postures the benchmark evidence chose', () => {
       const config = validateNeuronYaml({ categories: { learning: {} } });
@@ -318,6 +351,129 @@ pullRules:
       const warnings = warnSpy.mock.calls.map(c => String(c[0]));
       expect(warnings.some(w => w.includes('minScore'))).toBe(false);
       warnSpy.mockRestore();
+    });
+  });
+
+  // Ticket 43 / ADR 0013: declarable per-category frontmatter fields.
+  describe('Declarable category fields (ticket 43)', () => {
+    it('accepts a well-formed string and enum field declaration', () => {
+      const config = validateNeuronYaml({
+        categories: {
+          learning: {},
+          decisions: {
+            fields: {
+              ticket: { type: 'string', required: true },
+              confidence: { type: 'enum', values: ['low', 'medium', 'high'], default: 'medium' },
+            },
+          },
+        },
+      });
+      expect(config.categories.decisions.fields?.ticket).toEqual({ type: 'string', required: true });
+      expect(config.categories.decisions.fields?.confidence).toEqual({
+        type: 'enum',
+        required: false,
+        values: ['low', 'medium', 'high'],
+        default: 'medium',
+      });
+    });
+
+    it('rejects an enum field with no declared values', () => {
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {}, decisions: { fields: { confidence: { type: 'enum', values: [] } } } },
+        })
+      ).toThrow();
+    });
+
+    it('rejects an enum field whose default is not one of its own values', () => {
+      expect(() =>
+        validateNeuronYaml({
+          categories: {
+            learning: {},
+            decisions: {
+              fields: { confidence: { type: 'enum', values: ['low', 'high'], default: 'medium' } },
+            },
+          },
+        })
+      ).toThrow(/default "medium" is not one of the declared values/);
+    });
+
+    it('rejects a field key that is not a valid camelCase identifier', () => {
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {}, decisions: { fields: { 'not-valid': { type: 'string' } } } },
+        })
+      ).toThrow(/field keys must be letters\/digits/);
+    });
+
+    it('refuses a declared field whose flag collides with a reserved built-in flag', () => {
+      // `category` field key -> `--category`, already a reserved built-in.
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {}, decisions: { fields: { category: { type: 'string' } } } },
+        })
+      ).toThrow(/collides with a reserved built-in flag/);
+    });
+
+    it('allows the same field key declared independently on two categories', () => {
+      const config = validateNeuronYaml({
+        categories: {
+          decisions: { fields: { ticket: { type: 'string', required: true } } },
+          learning: { fields: { ticket: { type: 'string', required: false } } },
+        },
+      });
+      expect(config.categories.decisions.fields?.ticket.required).toBe(true);
+      expect(config.categories.learning.fields?.ticket.required).toBe(false);
+    });
+
+    it('refuses a config whose scan.category declares a required field with no default', () => {
+      expect(() =>
+        validateNeuronYaml({
+          categories: {
+            learning: {},
+            architecture: { fields: { reviewedBy: { type: 'string', required: true } } },
+          },
+          scan: { enabled: true, category: 'architecture', depth: 3 },
+        })
+      ).toThrow(/scan\.category "architecture" declares required field "reviewedBy" with no default/);
+    });
+
+    it('accepts scan.category declaring a required field that carries a default', () => {
+      const config = validateNeuronYaml({
+        categories: {
+          learning: {},
+          architecture: {
+            fields: { reviewedBy: { type: 'string', required: true, default: 'unreviewed' } },
+          },
+        },
+        scan: { enabled: true, category: 'architecture', depth: 3 },
+      });
+      expect(config.categories.architecture.fields?.reviewedBy.default).toBe('unreviewed');
+    });
+  });
+
+  describe('collectDeclaredFieldFlags / fieldKeyToFlagName (ticket 43)', () => {
+    it('kebab-cases a camelCase field key into its flag name', () => {
+      expect(fieldKeyToFlagName('reviewedBy')).toBe('reviewed-by');
+      expect(fieldKeyToFlagName('ticket')).toBe('ticket');
+    });
+
+    it('collects one entry per declared field, across every category', () => {
+      const config = validateNeuronYaml({
+        categories: {
+          decisions: { fields: { ticket: { type: 'string', required: true } } },
+          learning: { fields: { reviewedBy: { type: 'string' } } },
+        },
+      });
+      const flags = collectDeclaredFieldFlags(config);
+      expect(flags).toHaveLength(2);
+      expect(flags.find(f => f.key === 'ticket')).toMatchObject({ flag: '--ticket', category: 'decisions' });
+      expect(flags.find(f => f.key === 'reviewedBy')).toMatchObject({ flag: '--reviewed-by', category: 'learning' });
+    });
+
+    it('returns an empty array when no category declares fields', () => {
+      const config = validateNeuronYaml({ categories: { learning: {} } });
+      expect(collectDeclaredFieldFlags(config)).toEqual([]);
     });
   });
 });
