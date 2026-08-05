@@ -1,0 +1,55 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "neuron",
+            "args": [
+              "hook",
+              "claude-code",
+              "session-start"
+            ],
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "neuron",
+            "args": [
+              "hook",
+              "claude-code",
+              "pre-prompt"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "neuron",
+            "args": [
+              "hook",
+              "claude-code",
+              "context-reset"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
