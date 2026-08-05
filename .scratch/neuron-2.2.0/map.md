@@ -723,6 +723,24 @@ every ticket resolved, every rc cut, stable published.
   `npm test` runs: 44/44 files, 437/437 tests, zero `.neuron/*.md` diff both
   times.
 
+- [32 — Ship the Repositioned README](issues/32-ship-repositioned-readme.md)
+  — `README.md` replaced, re-audited claim-by-claim against the built CLI in a
+  scratch project rather than source. **Found and fixed a live bug while
+  re-auditing item 5**: `scaffold.ts`'s generated `neuron.yaml` still emitted
+  the `minScore` key `39`/`41` deprecated, so every fresh `neuron init` would
+  warn on its very first command — deleted from the template, 2 tests added,
+  473/473 green. Item 6 (cross-agent claim) now names Claude Code/Codex CLI
+  only, with best-effort harnesses stated as roadmap. Item 7 ("no database")
+  rewritten and strengthened: verified the SQLite file never appears under the
+  project root at all — it lives in a per-machine `env-paths` cache, keyed by
+  a hash of the project root. Architecture section rewritten under the
+  determinism frame (byte-identical repeated scans, updates-in-place, both
+  re-verified live) rather than the draft's apologetic framing. Does **not**
+  claim `neuron status --check`/`--repair` (ticket `46`, still open) or use
+  the draft's stale `neuron sync` mode list (corrected to `md`/`split` against
+  `docs/COMMANDS.md`). CHANGELOG entry deferred to `34`, matching
+  `04`/`09`/`15`'s cut-time precedent.
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no

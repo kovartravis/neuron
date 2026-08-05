@@ -11,7 +11,11 @@ import { findNeuronYaml } from './neuronYaml.js';
  *    generated file is worse than an undocumented one — it looks configured and
  *    does nothing. `llm.enrichment.importance` is the cautionary example: it was
  *    removed by ticket 26, and Zod silently strips it, so a template carrying it
- *    would advertise a setting that cannot take effect.
+ *    would advertise a setting that cannot take effect. `pullRules.default.minScore`
+ *    is the same trap in a louder form: ticket 39 deprecated it (it cannot reject
+ *    a top hit at any relevance, ADR 0012) and every command now warns on stderr
+ *    when it's present — a template carrying it would make a fresh `neuron init`
+ *    noisy on its very first run.
  * 2. **`architecture` is declared even though `scan.enabled` is `false`.**
  *    `scan.category` defaults to `architecture`, so a config that sets up the
  *    scan without declaring the category it writes into leaves those entries
@@ -72,7 +76,6 @@ pullRules:
   default:
     categories: [learning, decisions]
     limit: 5
-    minScore: 0.35
 
   onExec:
     - commandPattern: ".*"

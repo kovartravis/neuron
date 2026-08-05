@@ -2136,3 +2136,15 @@ tags:
 taskId: null
 ---
 Neuron's recall hook has a per-injection character budget but no per-session budget, which is the load-bearing fact for any claim about what it costs a user's context. src/harnesses/payload.ts caps session-start at 6000 chars (~1500 tokens) and pre-prompt at 1500 chars (~375 tokens) per turn, but src/commands/hook.ts fires pre-prompt on every user prompt and filterUnseen only prevents an entry being injected twice within a ledger epoch - so a 40-turn session surfacing novel hits every turn injects roughly 15000 tokens, and clearLedger wipes the ledger on context-reset so every compaction makes the entire store re-eligible. Against this repo's ~1000-entry, 328KB (~82000 token) store the practical per-epoch ceiling is the whole store, not the per-injection budget. Measured at the same time: installing the hook only saves 436 chars (~109 tokens) of standing instructions, because generateProtocolBlock's deterministic variant is 2399 chars against the fallback's 2835 - so the resident-footprint argument is net-negative today and cannot be fixed by measurement alone.
+
+---
+id: f8e5c01e-7228-40f0-979f-308cbd2b9373
+createdAt: 2026-08-05T15:12:15.151Z
+importance: 4
+tags:
+  - failure-fix
+  - adr
+  - scanner
+taskId: null
+---
+Fix for scaffold.ts generating a deprecated config key: NEURON_YAML_TEMPLATE (src/config/scaffold.ts) still emitted pullRules.default.minScore: 0.35 after tickets 39/41 deprecated minScore as structurally inert (ADR 0012) — the deprecation only added a stderr warning path in neuronYaml.ts, it never touched the generator that ships the key into every fresh project. Symptom: any project bootstrapped via 'neuron init' on rc3+ would print '[neuron warning] pullRules.default.minScore is deprecated' on its very first subsequent command, since the raw parsed config has the key set explicitly. Root cause verified by grepping the codebase for minScore call sites and confirming validateNeuronYaml's warning fires only when the raw YAML sets the key, then running the actual generated template through the parser and observing the warning. Fix: delete the 'minScore: 0.35' line from the pullRules.default block in NEURON_YAML_TEMPLATE, extend the template's own doc comment to name minScore alongside the existing llm.enrichment.importance trap it already warned about, and add two regression tests in scaffold.test.ts — one asserting the template string never contains 'minScore', one asserting validateNeuronYaml raises zero stderr writes when parsing the template. This repo's own hand-written neuron.yaml still carries the stale key and was deliberately left alone, since it predates the deprecation and is out of scope for a template-generation fix.

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -66,6 +66,17 @@ describe('neuron.yaml scaffolding (ticket 31)', () => {
 
   it('does not carry llm.enrichment.importance, removed by ticket 26', () => {
     expect(NEURON_YAML_TEMPLATE).not.toContain('importance');
+  });
+
+  it('does not carry the deprecated pullRules minScore key (ticket 39)', () => {
+    expect(NEURON_YAML_TEMPLATE).not.toContain('minScore');
+  });
+
+  it('generates a config that parses with no deprecation warnings', () => {
+    const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    validateNeuronYaml(parseYaml(NEURON_YAML_TEMPLATE));
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   /**

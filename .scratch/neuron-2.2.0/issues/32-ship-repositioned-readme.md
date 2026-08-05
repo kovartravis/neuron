@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 29, 31, 35, 37, 38, 43, 45
 Band: 2.2.0-rc5
 
@@ -133,12 +133,12 @@ Check whether `36` made the guarantee mode-dependent. If it holds only in
 
 ## Deliverables
 
-- [ ] `README.md` replaced
-- [ ] Every claim re-verified against the built CLI post-`31`
-- [ ] `minScore` resolved (landed or removed from the example)
-- [ ] Cross-agent claim corrected to name Claude Code and Codex CLI specifically, with best-effort harnesses stated as roadmap, not silently dropped
-- [ ] "No database" wording survives `28`'s cache decision
-- [ ] Architecture section neither overclaims nor undersells rc1
+- [x] `README.md` replaced
+- [x] Every claim re-verified against the built CLI post-`31`
+- [x] `minScore` resolved (landed or removed from the example)
+- [x] Cross-agent claim corrected to name Claude Code and Codex CLI specifically, with best-effort harnesses stated as roadmap, not silently dropped
+- [x] "No database" wording survives `28`'s cache decision
+- [x] Architecture section neither overclaims nor undersells rc1
 
 ## Comments
 
@@ -169,3 +169,88 @@ Check whether `36` made the guarantee mode-dependent. If it holds only in
   true. The **current** shipped `README.md` still carries the pre-`28` mode
   table naming `md-only` and `dual`; `31` deliberately left it for this ticket
   rather than half-repairing it.
+
+## Answer
+
+`README.md` replaced with a rewrite built from the draft's structure, re-audited
+line by line against the built CLI in a clean scratch project (`npm link`,
+fresh `neuron init`, every command block executed verbatim) — not against
+source, per the ticket's own instruction, because that's the methodology that
+found the original four gaps.
+
+**Found and fixed a real bug while re-auditing item 5.** `27`/`39`/`41` landed
+and confirmed `minScore` is structurally inert and deprecated (warns on
+stderr), but `src/config/scaffold.ts`'s `NEURON_YAML_TEMPLATE` — the file
+`neuron init` actually writes — still emitted `minScore: 0.35`. Every fresh
+project bootstrapped from `2.2.0-rc3` onward would have its very first
+`neuron` command print a deprecation warning it did nothing to cause. Fixed
+by deleting the line (2 tests added: the template no longer contains the key,
+and parsing it triggers no warning). This is the same shape as `26`'s
+`llm.enrichment.importance` trap the template's own doc comment already
+warns against — extended that comment to cover `minScore`. 473/473 tests
+green (471 prior + 2 new), no regressions. This repo's own `neuron.yaml` still
+carries the stale key (predates the deprecation, like its `md`-mode holdout
+noted in `31`) — left alone as out of this ticket's scope, which is the
+generated template, not this repo's dogfood config.
+
+**Items 5–7, resolved:**
+
+- **5 (`minScore`)** — dropped from the example entirely; the published
+  config is the literal `NEURON_YAML_TEMPLATE` output (verified byte-identical
+  against a fresh `neuron init` in the scratch project), which no longer
+  contains it after the fix above.
+- **6 (cross-agent claim)** — replaced with the Claude Code / Codex CLI table
+  already used elsewhere in the README, plus one sentence naming Copilot
+  CLI/Cursor as roadmap rather than silently dropping them. No public link to
+  the internal `.scratch/neuron-2.3.0` map — that's planning material, not
+  something a README should point at.
+- **7 ("no database to inspect")** — rewritten as "SQLite is kept underneath
+  as a rebuildable semantic-search index… It also lives outside your repo
+  entirely, in a per-machine cache directory." Verified directly: a fresh
+  project's SQLite file never appears anywhere under the project root; it
+  lands at `~/Library/Application Support/neuron/db/<sha256-of-project-root>.sqlite`
+  (via `env-paths`, `src/index.ts`'s `NeuronMemory.open`). Stronger and more
+  concrete than the draft's claim, and true.
+
+**The pitch move (shape/byte vs. value determinism) landed as its own section**
+— "The guarantee in practice: declaring required fields" — using the exact
+`ticket`/`reviewedBy` example ADR 0013 names, with real, verbatim CLI
+output (refusal error, then successful write) captured from the scratch
+project rather than invented. Confirmed the guarantee is **not**
+mode-dependent (ADR 0013: `vector-only` gets identical enforcement via the
+additive migration), so no asterisk is owed.
+
+**Architecture section rewritten under the determinism frame** per Scope
+item 4: dropped the draft's apologetic framing, led with "a deterministic way
+to get your architecture into a markdown file that stays up to date," and
+added the two facts `37` earned — byte-identical repeated scans (verified: a
+scan run twice 1.2s apart against an unchanged tree produces a byte-identical
+`.neuron/architecture.md`) and updates-in-place (verified: one card, one
+`id:`, after two scans). Corrected the draft's "not AST-based" undersell:
+symbol extraction is real Tree-Sitter AST parsing, 8 grammars / 10 extensions,
+per `04`'s verified figure — carried the "lightweight" framing as positioning
+only, not a description of the parser.
+
+**Performance wording carries a real number**, per Scope item 5: `29`'s
+measured reconcile overhead (~6.5ms on a 264-entry store) rather than
+re-measuring cold-query latency, since that's the number `29` recorded
+specifically "for `32`." `npm test`'s "~5s" claim in the draft was stale —
+measured `6.98s`–`7.19s` wall time for 473 tests across 45 files on this
+build — updated to "~7s."
+
+**Not claimed:** `neuron status --check`/`--repair` — verified directly that
+today's build silently ignores both flags (ticket `46` is still open on the
+frontier, unblocked but unclaimed). The command table lists only what ships
+today.
+
+**Command reference correction found during verification:** the draft's
+`neuron sync` line said it works for `vector-only`/`split`; `docs/COMMANDS.md`
+and a live `--help` check show it's `md`/`split` (there's no markdown side to
+sync in `vector-only`) and that ordinary commands already reconcile
+automatically — `sync` is the *explicit* forced rebuild. Corrected.
+
+Every other command-reference row, the `.neuron/` tree, the frontmatter
+example, and the `neuron memory`/`neuron scan`/`neuron init` syntax were
+re-verified against real output and match. No `CHANGELOG.md` entry added —
+that belongs to `34` (cut rc5), matching `04`/`09`/`15`'s precedent of writing
+CHANGELOG entries at the cut, not at each contributing ticket.
