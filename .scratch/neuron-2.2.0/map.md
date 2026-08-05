@@ -649,6 +649,28 @@ every ticket resolved, every rc cut, stable published.
   pollution (reproduced identically against unmodified code before this
   session's changes). Unblocks `44`.
 
+- [42 — Isolate CLI Tests From the Real `.neuron` Store](issues/42-isolate-cli-tests-from-real-store.md)
+  — Every `execSync`-based `npm test` CLI test now plants an isolated tmp
+  project (`package.json` only — sufficient to stop `findProjectRoot`/
+  `findNeuronYaml`'s upward walk, schema defaults cover `learning`/`history`/
+  `decisions`) and passes `cwd` to every call, the same pattern `init.test.ts`
+  already used correctly. Fixed: `cli.test.ts`, `exec.test.ts` (5 of 6 tests;
+  the 6th was already isolated), `history.test.ts`, `learn.test.ts`,
+  `memory.test.ts` (3 of 4 blocks). Audit found the class of bug also live in
+  two `test/e2e` files via a different call path (`NeuronMemory.open(workDir)`
+  walking up past an unmarked subdirectory) — one measured at **10,633 real
+  lines** injected into `.neuron/learning.md` in a single run — but `npm test`
+  never runs `test/e2e/*`, so that's out of this ticket's literal scope and
+  split off as [47](issues/47-isolate-e2e-benchmarks-from-real-store.md)
+  rather than silently widening this diff. Also found and fixed a masked
+  regression: `cli.test.ts`'s `--scopes` no-op test only passed before by
+  accident, on real-store noise supplying incidental FTS matches — isolating
+  it exposed that ticket `41`'s lexical gate (landed the same day) correctly
+  rejects the test's own genuinely-unrelated seeded entry, so the test itself
+  was corrected rather than the gate. Verified stable across two consecutive
+  `npm test` runs: 44/44 files, 437/437 tests, zero `.neuron/*.md` diff both
+  times.
+
 ### Settled while charting
 
 These came out of the charting grilling session and are recorded here because no

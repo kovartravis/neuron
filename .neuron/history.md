@@ -2852,3 +2852,15 @@ tags:
 taskId: "41"
 ---
 Wayfinder session on the neuron 2.2.0 map: picked up the frontier ticket 41 (Decontaminate the Ranking Score and Land the Lexical Gate), the lowest-numbered of four unblocked/unclaimed tickets (41, 42, 44, 45). Claimed it, implemented all six in-scope structural changes plus one item ADR 0012's amendment had assigned to this ticket (neuron status rejection-count visibility), added/rewrote tests, updated docs/COMMANDS.md, CONTEXT.md and ADR 0012 with an implementation amendment, then resolved the ticket with a full Answer and updated the map's Decisions-so-far. Did not touch tickets 42/44/45 or start any further work, per the one-ticket-per-session rule. Left uncommitted: this ticket's own code/doc changes plus a prior session's already-resolved-but-uncommitted ticket 43 (declarable field schema) work that was present in the working tree at session start and was not authored by or altered in this session.
+
+---
+id: fc5ab1e2-3115-4887-ae3a-fd223537504d
+createdAt: 2026-08-05T00:25:17.180Z
+importance: 3
+tags:
+  - rc2
+  - 2.2.0
+  - wayfinder
+taskId: "42"
+---
+Resolved wayfinder ticket 42 (Isolate CLI Tests From the Real .neuron Store): audited every execSync-based CLI test file npm test runs and isolated the ones that pollute the real .neuron/*.md store (cli.test.ts, exec.test.ts, history.test.ts, learn.test.ts, memory.test.ts) by planting a package.json in a per-test tmp project dir and passing cwd to every execSync/spawnSync call, matching the pattern init.test.ts already used correctly. Also found and fixed a masked regression in cli.test.ts's --scopes no-op test, which only passed before because real-store noise supplied incidental FTS matches — isolating it exposed that ticket 41's lexical relevance gate correctly rejects the test's own genuinely-unrelated seeded entry, so the test's seed content was corrected to share the query token, matching the pattern the test already used one block above it. Verified stable across two consecutive npm test runs from a clean git baseline: 44/44 files, 437/437 tests green, zero .neuron/*.md diff both times. Found the same root-cause bug (NeuronMemory.open(dir) walking up past an unmarked subdirectory to this repo's real root) also live in test/e2e/adversarial-recall.test.ts and test/e2e/benchmark-suite.test.ts, measured at 10,633 real lines injected into learning.md in one run — but npm test never runs test/e2e/*, so that's out of this ticket's literal scope and was split off as a fresh ticket 47 rather than silently widening this diff. Updated the neuron-2.2.0 map's Decisions-so-far with ticket 42's resolution and appended ticket 47 as a new child issue.

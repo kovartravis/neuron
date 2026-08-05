@@ -7,6 +7,7 @@ import os from 'node:os';
 describe('CLI Command: exec', () => {
   const tempDbDir = path.join(process.cwd(), 'src/__tests__/temp-exec');
   let tempDbPath: string;
+  let projectDir: string;
 
   beforeAll(() => {
     fs.mkdirSync(tempDbDir, { recursive: true });
@@ -14,6 +15,11 @@ describe('CLI Command: exec', () => {
 
   beforeEach(() => {
     tempDbPath = path.join(tempDbDir, `test-exec-${Date.now()}-${Math.random().toString(36).slice(2)}.sqlite`);
+    // Own project root, so config discovery stops here instead of walking up
+    // into the neuron repo's own neuron.yaml (ticket 42).
+    projectDir = path.join(tempDbDir, `proj-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(projectDir, { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
   });
 
   afterAll(() => {
@@ -26,14 +32,14 @@ describe('CLI Command: exec', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    execSync(`node ${cliPath} learn add "Vitest test runner requires --runInBand" --tags vitest,test --importance 4`, { env });
+    execSync(`node ${cliPath} learn add "Vitest test runner requires --runInBand" --tags vitest,test --importance 4`, { env, cwd: projectDir });
 
-    const result = execSync(`node ${cliPath} exec -- echo "test build"`, { env, stdio: 'pipe' });
+    const result = execSync(`node ${cliPath} exec -- echo "test build"`, { env, cwd: projectDir, stdio: 'pipe' });
     expect(result.toString().trim()).toBe('test build');
 
     let caughtError: any;
     try {
-      execSync(`node ${cliPath} exec -- node -e process.exitCode=42`, { env, stdio: 'pipe' });
+      execSync(`node ${cliPath} exec -- node -e process.exitCode=42`, { env, cwd: projectDir, stdio: 'pipe' });
     } catch (err: any) {
       caughtError = err;
     }
@@ -46,14 +52,14 @@ describe('CLI Command: exec', () => {
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
     try {
-      execSync(`node ${cliPath} exec -- node -e process.exitCode=1`, { env, stdio: 'pipe' });
+      execSync(`node ${cliPath} exec -- node -e process.exitCode=1`, { env, cwd: projectDir, stdio: 'pipe' });
     } catch (err) {}
 
-    const addRes = execSync(`node ${cliPath} learn add "Fix for build error: pass --no-cache to avoid stale artifacts" --tags failure-fix,build --importance 4`, { env }).toString();
+    const addRes = execSync(`node ${cliPath} learn add "Fix for build error: pass --no-cache to avoid stale artifacts" --tags failure-fix,build --importance 4`, { env, cwd: projectDir }).toString();
     const parsed = JSON.parse(addRes);
     expect(parsed.status).toBe('created');
 
-    const execRes = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'build artifacts'], { env });
+    const execRes = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'build artifacts'], { env, cwd: projectDir });
     expect(execRes.stdout.toString().trim()).toBe('build artifacts');
   });
 
@@ -68,10 +74,10 @@ describe('CLI Command: exec', () => {
 
     execSync(
       `node ${cliPath} learn add "Prefer WAL journal mode when many agents write concurrently" --tags db --importance 5`,
-      { env }
+      { env, cwd: projectDir }
     );
 
-    const res = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'concurrent database writes'], { env });
+    const res = spawnSync('node', [cliPath, 'exec', '--', 'echo', 'concurrent database writes'], { env, cwd: projectDir });
     expect(res.stdout.toString().trim()).toBe('concurrent database writes');
 
     // The learning is surfaced on stderr, which only happens when the query
@@ -82,7 +88,7 @@ describe('CLI Command: exec', () => {
     const probePath = path.join(tempDbDir, 'env-probe.cjs');
     fs.writeFileSync(probePath, 'process.stdout.write(String(process.env.NEURON_MOCK_EMBEDDER));\n');
 
-    const envProbe = spawnSync('node', [cliPath, 'exec', '--', 'node', probePath], { env });
+    const envProbe = spawnSync('node', [cliPath, 'exec', '--', 'node', probePath], { env, cwd: projectDir });
     expect(envProbe.stdout.toString().trim()).toBe('undefined');
   }, 120000);
 
@@ -99,7 +105,7 @@ describe('CLI Command: exec', () => {
     const res = spawnSync(
       'node',
       [cliPath, 'exec', '--', 'node', probePath, '-m', 'release: v2.1.0 — drift detection', 'tail'],
-      { env }
+      { env, cwd: projectDir }
     );
 
     expect(JSON.parse(res.stdout.toString())).toEqual([
@@ -113,7 +119,7 @@ describe('CLI Command: exec', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const res = spawnSync('node', [cliPath, 'exec', '--', 'echo first && echo second'], { env });
+    const res = spawnSync('node', [cliPath, 'exec', '--', 'echo first && echo second'], { env, cwd: projectDir });
     expect(res.stdout.toString().trim().split('\n')).toEqual(['first', 'second']);
   });
 
@@ -121,8 +127,8 @@ describe('CLI Command: exec', () => {
     // Isolated tmp project (own cwd + neuron.yaml, storage.mode: vector-only)
     // rather than this repo's own cwd/store: under the default `md` mode,
     // NEURON_DB_PATH only isolates SQLite, and reconcile would still pull in
-    // this project's real, populated `.neuron/learning.md` (ticket 42's known
-    // gap), making a "zero candidates" assertion unreliable.
+    // this project's real, populated `.neuron/learning.md` (ticket 42), making
+    // a "zero candidates" assertion unreliable.
     const tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-exec-gate-test-')));
     fs.writeFileSync(
       path.join(tmpDir, 'neuron.yaml'),

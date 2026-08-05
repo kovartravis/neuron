@@ -7,6 +7,7 @@ import { openDatabase } from '../index.js';
 describe('CLI Command: learn', () => {
   const tempDbDir = path.join(process.cwd(), 'src/__tests__/temp-learn');
   let tempDbPath: string;
+  let projectDir: string;
 
   beforeAll(() => {
     fs.mkdirSync(tempDbDir, { recursive: true });
@@ -14,6 +15,11 @@ describe('CLI Command: learn', () => {
 
   beforeEach(() => {
     tempDbPath = path.join(tempDbDir, `test-learn-${Date.now()}-${Math.random().toString(36).slice(2)}.sqlite`);
+    // Own project root, so config discovery stops here instead of walking up
+    // into the neuron repo's own neuron.yaml (ticket 42).
+    projectDir = path.join(tempDbDir, `proj-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(projectDir, { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
   });
 
   afterAll(() => {
@@ -26,28 +32,28 @@ describe('CLI Command: learn', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const addStdout = execSync(`node ${cliPath} learn add "Always test first" --tags test,tdd`, { env }).toString();
+    const addStdout = execSync(`node ${cliPath} learn add "Always test first" --tags test,tdd`, { env, cwd: projectDir }).toString();
     const addRes = JSON.parse(addStdout);
     expect(addRes.status).toBe('created');
     expect(addRes.id).toBeDefined();
 
-    const listStdout = execSync(`node ${cliPath} learn list`, { env }).toString();
+    const listStdout = execSync(`node ${cliPath} learn list`, { env, cwd: projectDir }).toString();
     const listRes = JSON.parse(listStdout);
     expect(listRes).toHaveLength(1);
     expect(listRes[0].content).toBe('Always test first');
     expect(listRes[0].tags).toEqual(['test', 'tdd']);
 
-    const queryStdout = execSync(`node ${cliPath} learn query "test"`, { env }).toString();
+    const queryStdout = execSync(`node ${cliPath} learn query "test"`, { env, cwd: projectDir }).toString();
     const queryRes = JSON.parse(queryStdout);
     expect(queryRes.results).toHaveLength(1);
     expect(queryRes.results[0].content).toBe('Always test first');
 
-    const deleteStdout = execSync(`node ${cliPath} learn delete ${addRes.id}`, { env }).toString();
+    const deleteStdout = execSync(`node ${cliPath} learn delete ${addRes.id}`, { env, cwd: projectDir }).toString();
     const deleteRes = JSON.parse(deleteStdout);
     expect(deleteRes.status).toBe('deleted');
     expect(deleteRes.id).toBe(addRes.id);
 
-    const listAfterDeleteStdout = execSync(`node ${cliPath} learn list`, { env }).toString();
+    const listAfterDeleteStdout = execSync(`node ${cliPath} learn list`, { env, cwd: projectDir }).toString();
     const listAfterDeleteRes = JSON.parse(listAfterDeleteStdout);
     expect(listAfterDeleteRes).toHaveLength(0);
   });
@@ -56,12 +62,12 @@ describe('CLI Command: learn', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const addStdout = execSync(`node ${cliPath} learn add "Original learning content" --tags initial --importance 3 --scope initial-scope`, { env }).toString();
+    const addStdout = execSync(`node ${cliPath} learn add "Original learning content" --tags initial --importance 3 --scope initial-scope`, { env, cwd: projectDir }).toString();
     const added = JSON.parse(addStdout);
 
     const updateStdout = execSync(
       `node ${cliPath} learn update ${added.id} "Updated learning content" --tags updated --importance 5 --scope updated-scope`,
-      { env }
+      { env, cwd: projectDir }
     ).toString();
     const updateRes = JSON.parse(updateStdout);
     expect(updateRes.status).toBe('updated');
@@ -82,11 +88,11 @@ describe('CLI Command: learn', () => {
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
     expect(() => {
-      execSync(`node ${cliPath} learn update`, { env, stdio: 'pipe' });
+      execSync(`node ${cliPath} learn update`, { env, cwd: projectDir, stdio: 'pipe' });
     }).toThrow(/ID and content are required for learn update/);
 
     expect(() => {
-      execSync(`node ${cliPath} learn update some-uuid`, { env, stdio: 'pipe' });
+      execSync(`node ${cliPath} learn update some-uuid`, { env, cwd: projectDir, stdio: 'pipe' });
     }).toThrow(/ID and content are required for learn update/);
   });
 
@@ -94,12 +100,12 @@ describe('CLI Command: learn', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    const learnHelpStdout = execSync(`node ${cliPath} learn --help`, { env }).toString();
+    const learnHelpStdout = execSync(`node ${cliPath} learn --help`, { env, cwd: projectDir }).toString();
     expect(learnHelpStdout).toContain('Usage: neuron learn');
     expect(learnHelpStdout).toContain('add');
 
     expect(() => {
-      execSync(`node ${cliPath} learn`, { env, stdio: 'pipe' });
+      execSync(`node ${cliPath} learn`, { env, cwd: projectDir, stdio: 'pipe' });
     }).toThrow(/Usage: neuron learn/);
   });
 });

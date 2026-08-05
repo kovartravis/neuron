@@ -25,11 +25,16 @@ describe('CLI Command: memory', () => {
   it('should support memory add, query, list, and delete CLI subcommands with custom categories', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+    // Own project root, so config discovery stops here instead of walking up
+    // into the neuron repo's own neuron.yaml (ticket 42).
+    const projectDir = path.join(tempDbDir, `proj-basic-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(projectDir, { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
 
     // 1. Add entry to custom category "decisions"
     const addStdout = execSync(
       `node ${cliPath} memory add "Use SQLite WAL mode for concurrency" --category decisions --tags adr,db --importance 4`,
-      { env }
+      { env, cwd: projectDir }
     ).toString();
     const added = JSON.parse(addStdout);
     expect(added.status).toBe('created');
@@ -46,7 +51,7 @@ describe('CLI Command: memory', () => {
     // 2. Query entries filtered by category "decisions"
     const queryStdout = execSync(
       `node ${cliPath} memory query "SQLite WAL" --categories decisions`,
-      { env }
+      { env, cwd: projectDir }
     ).toString();
     const queryRes = JSON.parse(queryStdout);
     expect(queryRes.results.length).toBeGreaterThanOrEqual(1);
@@ -60,7 +65,7 @@ describe('CLI Command: memory', () => {
     // 3. List entries in category "decisions"
     const listStdout = execSync(
       `node ${cliPath} memory list --category decisions`,
-      { env }
+      { env, cwd: projectDir }
     ).toString();
     const listRes = JSON.parse(listStdout);
     expect(listRes.length).toBeGreaterThanOrEqual(1);
@@ -68,7 +73,7 @@ describe('CLI Command: memory', () => {
     // 4. Update entry in category "decisions"
     const updateStdout = execSync(
       `node ${cliPath} memory update ${added.id} "Use SQLite WAL mode with 5s busy timeout" --category decisions`,
-      { env }
+      { env, cwd: projectDir }
     ).toString();
     const updateRes = JSON.parse(updateStdout);
     expect(updateRes.status).toBe('updated');
@@ -76,7 +81,7 @@ describe('CLI Command: memory', () => {
     // 5. Delete entry
     const deleteStdout = execSync(
       `node ${cliPath} memory delete ${added.id} --category decisions`,
-      { env }
+      { env, cwd: projectDir }
     ).toString();
     const deleteRes = JSON.parse(deleteStdout);
     expect(deleteRes.status).toBe('deleted');
@@ -160,6 +165,16 @@ describe('CLI Command: memory', () => {
    */
   describe('argv boundary handling', () => {
     const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    let projectDir: string;
+
+    // Own project root, so config discovery stops here instead of walking up
+    // into the neuron repo's own neuron.yaml (ticket 42).
+    beforeEach(() => {
+      projectDir = path.join(tempDbDir, `proj-argv-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(projectDir, { recursive: true });
+      fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
+    });
+
     const envFor = () => ({
       ...process.env,
       NEURON_DB_PATH: tempDbPath,
@@ -177,7 +192,7 @@ describe('CLI Command: memory', () => {
       expect(() => {
         execSync(
           `node ${cliPath()} memory add --category learning Fix for ONNX crash pin onnxruntime`,
-          { env: envFor(), stdio: 'pipe' }
+          { env: envFor(), cwd: projectDir, stdio: 'pipe' }
         );
       }).toThrow(/expects a single content argument.*got 6 bare arguments/s);
 
@@ -189,13 +204,14 @@ describe('CLI Command: memory', () => {
       const added = JSON.parse(
         execSync(`node ${cliPath()} memory add "original content" --category learning`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
 
       expect(() => {
         execSync(
           `node ${cliPath()} memory update ${added.id} --category learning Fix the crash by pinning`,
-          { env: envFor(), stdio: 'pipe' }
+          { env: envFor(), cwd: projectDir, stdio: 'pipe' }
         );
       }).toThrow(/expects an id and a single content argument/);
 
@@ -208,11 +224,12 @@ describe('CLI Command: memory', () => {
     it('joins an unquoted query instead of silently searching one word', () => {
       execSync(
         `node ${cliPath()} memory add "tree sitter grammar caching at init time" --category learning`,
-        { env: envFor() }
+        { env: envFor(), cwd: projectDir }
       );
       const out = JSON.parse(
         execSync(`node ${cliPath()} memory query tree sitter grammar caching`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
       expect(out.query).toBe('tree sitter grammar caching');
@@ -224,6 +241,7 @@ describe('CLI Command: memory', () => {
       expect(() => {
         execSync(`node ${cliPath()} memory add "content" --category learning --tag onnx`, {
           env: envFor(),
+          cwd: projectDir,
           stdio: 'pipe',
         });
       }).toThrow(/unknown option '--tag'[\s\S]*Did you mean '--tags'/);
@@ -234,6 +252,7 @@ describe('CLI Command: memory', () => {
     it('prints help for `memory add --help` instead of storing "--help"', () => {
       const out = execSync(`node ${cliPath()} memory add --category learning --help`, {
         env: envFor(),
+        cwd: projectDir,
       }).toString();
 
       expect(out).toMatch(/Usage: neuron memory/);
@@ -244,6 +263,7 @@ describe('CLI Command: memory', () => {
       const res = JSON.parse(
         execSync(`node ${cliPath()} memory add --category learning -- "--dash-leading content"`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
       expect(res.status).toBe('created');
@@ -264,6 +284,16 @@ describe('CLI Command: memory', () => {
    */
   describe('category enforcement', () => {
     const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    let projectDir: string;
+
+    // Own project root, so config discovery stops here instead of walking up
+    // into the neuron repo's own neuron.yaml (ticket 42).
+    beforeEach(() => {
+      projectDir = path.join(tempDbDir, `proj-enforce-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(projectDir, { recursive: true });
+      fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
+    });
+
     const envFor = () => ({
       ...process.env,
       NEURON_DB_PATH: tempDbPath,
@@ -273,6 +303,7 @@ describe('CLI Command: memory', () => {
       JSON.parse(
         execSync(`node ${cliPath()} memory add "${content}" --category ${category}`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
 
@@ -283,6 +314,7 @@ describe('CLI Command: memory', () => {
       const out = JSON.parse(
         execSync(`node ${cliPath()} memory list --categories learning --limit 100`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
 
@@ -295,6 +327,7 @@ describe('CLI Command: memory', () => {
       const out = JSON.parse(
         execSync(`node ${cliPath()} memory delete ${entry.id} --category learning`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
       expect(out.status).toBe('not_found');
@@ -311,6 +344,7 @@ describe('CLI Command: memory', () => {
       const out = JSON.parse(
         execSync(`node ${cliPath()} memory delete ${entry.id} --category history`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
       expect(out.status).toBe('deleted');
@@ -322,6 +356,7 @@ describe('CLI Command: memory', () => {
       const out = JSON.parse(
         execSync(`node ${cliPath()} memory update ${entry.id} "overwritten" --category history`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
       expect(out.status).toBe('not_found');
@@ -338,6 +373,7 @@ describe('CLI Command: memory', () => {
       const out = JSON.parse(
         execSync(`node ${cliPath()} memory update ${entry.id} "updated content" --category learning`, {
           env: envFor(),
+          cwd: projectDir,
         }).toString()
       );
       expect(out.status).toBe('updated');
