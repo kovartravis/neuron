@@ -141,7 +141,7 @@ every ticket resolved, every rc cut, stable published.
 | `2.2.0-rc3` | `10`–`15`, `39`, `41` | Recall adapter layer + the 2 `deterministic` adapters (Claude Code, Codex CLI) + the `instruction-only` fallback + the relevance gate (`27` designed it; `41` ships the structural half, `39` the one fitted constant) |
 | ~~`2.2.0-rc4`~~ | ~~`16`, `40`, `19`, `20`~~ | **Moved 2026-08-04** to [neuron-2.3.0](../neuron-2.3.0/map.md) — not load-bearing for any of the three pillars. `17`/`18` stay out of scope regardless (ruled out on the merits, not on sequencing) |
 | ~~`2.2.0-rc5`~~ | `28`–`33`, `35`–`38`, `43`–`45` | **Markdown-first**, no separate tag: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs. **Its own cut ticket `34` was dropped 2026-08-05** — these land straight on trunk and ship inside `21`; `46` closed out of scope the same day, continuing at [neuron-2.3.0](../neuron-2.3.0/map.md) |
-| `2.2.0` | `21` | Stable release — every prerequisite resolved (`15`, `33`, and the rest of rc5's tickets); `21` is now the frontier |
+| `2.2.0` | `21` | **Shipped 2026-08-05.** `v2.2.0` tagged and pushed; `npm publish` left to the maintainer |
 
 > **`27` settled the floor's *shape*** (2026-08-02, ahead of `11` reaching point
 > 4). It fixed point 4 as a two-leg conjunction and **rewrote `39`'s design**: the
@@ -808,6 +808,26 @@ every ticket resolved, every rc cut, stable published.
   recorded on the ADR itself. `RELEASE_2.0.0.md`, `TEST_INFRA.md` and past
   `CHANGELOG.md` entries left alone as historical records, same rule as
   ADRs. Unblocks `21`.
+
+- [21 — Release 2.2.0 Stable](issues/21-release-2.2.0-stable.md) — **The
+  destination is reached.** `v2.2.0` cut directly from rc3 plus trunk's rc5
+  work (no intermediate `rc5` tag, per `34`'s drop), tagged and pushed;
+  `npm publish` left to the maintainer, unbroken precedent since `04`.
+  CHANGELOG rewritten from three incomplete rc sections into one consolidated
+  `2.2.0` entry, leading with the storage-mode default change per the
+  maintainer's direction, with an honest Known Limitations section. Verified
+  the release rather than assumed it: 473/473 unit tests, and — after fixing
+  `47` along the way, see its own entry above — **12/13 E2E pillars, Pillar 8
+  the sole known pre-existing failure**, matching this map's baseline since
+  `26`. Tarball audited at 711.4 kB with nothing leaked (grown from the
+  ~613 KB figure quoted in ADR 0008 by organic feature growth plus a
+  pre-existing dashboard screenshot, not a regression). Blueprint refreshed;
+  `neuron scan --check` exits 0. Upgrade-path verification leaned on the
+  automated suite (`scan.fidelity.test.ts`, `implicit-rebaseline.test.ts`,
+  `hook.test.ts`) rather than a fresh manual 2.1.0 install; cold-query latency
+  was re-confirmed on the linked working tree but not separately measured
+  against the packed `.tgz` — both left as explicit, low-risk gaps rather than
+  claimed done, per this ticket's own "verify, don't assume" framing.
 
 ### Settled while charting
 

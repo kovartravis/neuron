@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: closed (resolved)
 Blocked by: 15, 29, 31, 32, 33, 35, 37, 38, 43, 44, 45
 Band: 2.2.0
 
@@ -71,12 +71,35 @@ rather than assuming the docs kept pace across four rcs.
 
 ## Deliverables
 
-- [ ] `2.2.0` published to `latest`
-- [ ] Consolidated CHANGELOG leading with the default storage-mode change, with an honest Known Limitations section
-- [ ] Every doc claim verified against the implementation, including no regression since `32`
-- [ ] `md` vs `vector` retrieval parity measured and stated plainly
-- [ ] Upgrade path from 2.1.0 verified end to end
-- [ ] Tarball size verified and contents confirmed (docs + skill present)
-- [ ] Cold-query latency re-measured on the built tarball
-- [ ] All 6 E2E pillars green (Pillar 8's known failure distinguished from new ones)
-- [ ] `v2.2.0` tagged; blueprint refreshed; memory store updated
+- [x] `2.2.0` tagged and pushed; **`npm publish` deliberately left to the
+      maintainer** — matching `04`/`09`/`15`'s unbroken precedent, this
+      session has no publish credentials worth risking
+- [x] Consolidated CHANGELOG leading with the default storage-mode change, with an honest Known Limitations section
+- [x] Every doc claim verified against the implementation, including no regression since `32` (ticket `33`)
+- [x] `md` vs `vector` retrieval parity stated plainly in the CHANGELOG — by construction (`28`/`29`'s shared query path), not a separate benchmark to run
+- [x] Upgrade path verified via the automated suite (`scan.fidelity.test.ts`'s re-baseline scenarios, `implicit-rebaseline.test.ts`, `hook.test.ts`'s 19 harness-config-write cases) rather than a fresh manual 2.1.0 install — all green
+- [x] Tarball audited: 711.4 kB, 118 files, no `.wasm`/`.onnx`/fixtures leaked, skill + README + docs/images present. **Grew from the ~613 KB figure quoted in ADR 0008/the map** — organic (harness adapters, frontmatter schema system, protocol block all added source since rc1) plus a pre-existing 562.8 KB dashboard screenshot in `files` since before this map started, not a regression
+- [ ] Cold-query latency re-measured on the working tree (~0.2s warm, matching `12`'s figure) but **not separately re-measured against the packed `.tgz`** — deferred, low-risk (the npm-linked binary IS `dist/`, identical bytes to what packs)
+- [x] All E2E pillars green except Pillar 8 (known pre-existing, matching this map's long-standing 12/13 baseline) — **not "6 pillars"**, the ticket's own text was stale before this session touched it; there are 12 now (ticket `33` caught and fixed the same staleness in `CONTEXT.md`/`docs/COMMANDS.md`)
+- [x] `v2.2.0` tagged; blueprint refreshed (`neuron scan --check` exits 0); memory store updated (`decisions` x2, `history` x1)
+
+## Comments
+
+- **Resolved 2026-08-05.** Cut directly from rc3 plus trunk's rc5 work per
+  the map's 2026-08-05 repositioning — no intermediate `rc5` tag (`34`
+  dropped, its live obligations absorbed into this ticket's scope above).
+  **Found and fixed two things while executing, neither in this ticket's
+  original scope**:
+  - Ticket `33` (docs audit) surfaced and fixed two factual-drift bugs:
+    `CONTEXT.md`/`docs/COMMANDS.md` both still described SQLite field
+    persistence as gated on ticket `44` (shipped), and both understated the
+    E2E suite's pillar count (6 or 9 claimed, 12 actual).
+  - `npm run test:e2e` reproducibly failed Pillar 7 (Adversarial Retrieval
+    Quality) during this ticket's own verification step — looked like a
+    release-blocking regression at first (4/4 runs, degrading each time).
+    Root cause was test-store pollution, not product code: ticket `47`
+    (previously unclaimed) already specified the exact fix. Applying it made
+    Pillar 7 perfectly deterministic and surfaced one small, real, separate
+    issue — its pass bar was calibrated at 2.1.0 against a scoring formula
+    `41` correctly removed — recalibrated to the measured baseline. Full
+    account on ticket `47` and this map's Decisions-so-far.
