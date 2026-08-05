@@ -52,7 +52,7 @@ it was taken against a `2.2.0-rc1` build and the band will have moved things.
    Antigravity and OpenCode are not in this cut (`16`/`40` closed out of scope,
    `17`/`18` ruled out on the merits); name Copilot CLI and Cursor as a stated
    roadmap item pointing at
-   [neuron-harness-expansion](../neuron-harness-expansion/map.md) rather than
+   [neuron-2.3.0](../neuron-2.3.0/map.md) rather than
    silently dropping them from the pitch. Do not claim any harness receives
    recall via `CLAUDE.md`/`AGENTS.md` instruction blocks now that `14` deletes
    step 1 on deterministic harnesses — that was always a weaker form of "works

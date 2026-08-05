@@ -25,9 +25,13 @@ when the codebase does.
 >
 > `16`, `40`, `20`, and `19`'s full compatibility-matrix scope are **closed
 > out of scope here** and continue as a fresh effort at
-> [neuron-harness-expansion](../neuron-harness-expansion/map.md) — recall for
+> [neuron-2.3.0](../neuron-2.3.0/map.md) — recall for
 > Copilot CLI and Cursor, and the fuller disclosure UX that becomes worth
-> building once there is a *less-than-deterministic* harness to explain. `19`'s
+> building once there is a *less-than-deterministic* harness to explain.
+> (That map was created the same day as `neuron-harness-expansion` and
+> **renamed to `neuron-2.3.0` later on 2026-08-04**, when the maintainer
+> widened it into the catch-all next-release map and added a config-vocabulary
+> band; the four tickets moved from here are unchanged by the rename.) `19`'s
 > minimal duty — truthfully reporting Claude Code/Codex fidelity in `neuron
 > init` and a two-row README note — is small enough now to fold into `15`
 > rather than carry its own ticket. See **Out of scope** below for the
@@ -117,7 +121,7 @@ every ticket resolved, every rc cut, stable published.
 | `2.2.0-rc1` | `01`–`04` | Real Tree-Sitter AST engine |
 | `2.2.0-rc2` | `05`, `06`, `09`, `24`, `26` | Centroid write-side enrichment, a timeout primitive, degradation counters — **and no new model jobs at all**: `07` and `08` are out of scope, `23`/`24` removed automatic pruning, `25` is deferred, `06` shipped with the model off the write path, and `26` removes the last model call from it |
 | `2.2.0-rc3` | `10`–`15`, `39`, `41` | Recall adapter layer + the 2 `deterministic` adapters (Claude Code, Codex CLI) + the `instruction-only` fallback + the relevance gate (`27` designed it; `41` ships the structural half, `39` the one fitted constant) |
-| ~~`2.2.0-rc4`~~ | ~~`16`, `40`, `19`, `20`~~ | **Moved 2026-08-04** to [neuron-harness-expansion](../neuron-harness-expansion/map.md) — not load-bearing for any of the three pillars. `17`/`18` stay out of scope regardless (ruled out on the merits, not on sequencing) |
+| ~~`2.2.0-rc4`~~ | ~~`16`, `40`, `19`, `20`~~ | **Moved 2026-08-04** to [neuron-2.3.0](../neuron-2.3.0/map.md) — not load-bearing for any of the three pillars. `17`/`18` stay out of scope regardless (ruled out on the merits, not on sequencing) |
 | `2.2.0-rc5` | `28`–`38`, `43`–`46` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
 | `2.2.0` | `21` | Stable release — now blocked by `15` (rc3 cut) and `34` (rc5 cut) only, not `20` |
 
@@ -649,6 +653,39 @@ every ticket resolved, every rc cut, stable published.
   pollution (reproduced identically against unmodified code before this
   session's changes). Unblocks `44`.
 
+- [44 — SQLite Additive Auto-Migration for Declared User-Defined Fields](issues/44-sqlite-additive-field-migration.md)
+  — Shipped as designed: every declared field becomes one nullable `TEXT`
+  column on the shared `memories` table, added via an eager, idempotent,
+  additive-only migration (`migrateDeclaredFields`, diffed against `PRAGMA
+  table_info` on every open) that runs after the version-gated migrations,
+  not inside them — column set depends on live `neuron.yaml`, not a fixed
+  schema version. A column removed from config is orphaned, never dropped,
+  matching `38`'s explicit-migration precedent. Column names are validated
+  against the ticket's own allowlist at **three** points (config load, plus
+  immediately before each DDL/DML interpolation site) rather than trusted
+  from one call site, and config load gained two checks `43` didn't need: a
+  field's column can't collide with one of `memories`' own fixed columns
+  (`content`, `createdAt`→`created_at` are real collisions that `43`'s
+  reserved-*flag* check doesn't catch), and two different field keys can't
+  fold to the same column (`fooBar`/`FooBar` verified as a real pair).
+  `43`'s "cannot be persisted yet" warning is deleted — every mode persists
+  now. **Found and fixed a wider pre-existing gap while wiring in the read
+  path**: `NeuronMemory.query()` never returned `fields` in *any* mode,
+  including `md`, because `DualStorageRouter.query()` always delegates to
+  the SQLite-backed `vectorDb.query()` (ADR 0011 retrieval parity) and
+  nothing populated field columns there before now — `43`'s own round-trip
+  tests only ever verified via `MdStorageAdapter.readCategory()` directly, a
+  path no CLI command or hook calls. Fixing `queryVector`'s two `SELECT`s
+  closes that gap for every mode at once. Also found and fixed two dropped-
+  `fields` bugs in `DualStorageRouter`'s reconcile/bootstrap paths (as
+  opposed to the live write path, which already forwarded `fields`
+  correctly) — one line each. Left open, flagged rather than fixed:
+  `computeMemoryHash` still excludes `fields` from its change-detection hash,
+  so a hand-edit to only a declared field's frontmatter value won't trigger
+  an `md`-mode resync; orthogonal to this ticket's vector-only/split scope
+  since those modes never hash-compare. 13 new tests + 1 rewritten, full
+  suite 466/466 green, all 45 files — no `42` pollution carryover.
+
 - [42 — Isolate CLI Tests From the Real `.neuron` Store](issues/42-isolate-cli-tests-from-real-store.md)
   — Every `execSync`-based `npm test` CLI test now plants an isolated tmp
   project (`package.json` only — sufficient to stop `findProjectRoot`/
@@ -747,7 +784,7 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 
 > **Trimmed 2026-08-04** alongside the destination narrowing. Nine fog patches
 > not owed by any of the three pillars moved to
-> [neuron-harness-expansion](../neuron-harness-expansion/map.md)'s own **Not
+> [neuron-2.3.0](../neuron-2.3.0/map.md)'s own **Not
 > yet specified** rather than staying parked here unresolved: the
 > plan-vs-architecture-diff feature, capturing a maintainer decision,
 > a write-time content-integrity floor, bootstrapping category centroids on a
@@ -808,20 +845,20 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
   scanning). Neither was load-bearing for any of the three: `10` already
   found both land `best-effort`, a real but harder-to-market claim. Continue
   as tickets `01`/`02` in
-  [neuron-harness-expansion](../neuron-harness-expansion/map.md) — a fresh
+  [neuron-2.3.0](../neuron-2.3.0/map.md) — a fresh
   effort, not a resumption, per this destination redraw.
 - **[19 — Compatibility Disclosure: `neuron init` Reporting & README
   Matrix](issues/19-init-reporting-readme-matrix.md)** — closed **2026-08-04**
   at its original full scope (matrix + fallback row + remediation UX for
   non-deterministic harnesses), which only earns its cost once a
   less-than-deterministic harness ships. Continues as ticket `03` in
-  [neuron-harness-expansion](../neuron-harness-expansion/map.md). Its minimal
+  [neuron-2.3.0](../neuron-2.3.0/map.md). Its minimal
   duty at this narrower scope — truthful `neuron init` reporting and a
   two-row README note for Claude Code/Codex — folds into `15` instead.
 - **[20 — Cut and Publish 2.2.0-rc4](issues/20-cut-rc4.md)** — closed
   **2026-08-04**: `rc4` is dropped from this map's path entirely (see the
   Destination callout and the Release bands table). Continues as ticket `04`
-  in [neuron-harness-expansion](../neuron-harness-expansion/map.md).
+  in [neuron-2.3.0](../neuron-2.3.0/map.md).
 
 - **`@neuron/core` — a separate package, SDK, or pluggable-provider system.**
   Considered and explicitly deprioritised in the 2026-08-02 repositioning

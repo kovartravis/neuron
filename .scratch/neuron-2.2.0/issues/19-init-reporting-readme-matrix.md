@@ -1,5 +1,5 @@
 Type: task
-Status: out of scope — 2026-08-04, destination narrowed to 2 deterministic harnesses; the full matrix/remediation/fallback-row scope here continues as ticket 03 in ../neuron-harness-expansion/map.md, where it becomes worth building once there is a less-than-deterministic harness to explain. This ticket's minimal duty (truthful neuron init reporting + a 2-row README note for Claude Code/Codex) folds into ticket 15 instead. Do not implement this ticket's full scope here.
+Status: out of scope — 2026-08-04, destination narrowed to 2 deterministic harnesses; the full matrix/remediation/fallback-row scope here continues as ticket 03 in ../neuron-2.3.0/map.md, where it becomes worth building once there is a less-than-deterministic harness to explain. This ticket's minimal duty (truthful neuron init reporting + a 2-row README note for Claude Code/Codex) folds into ticket 15 instead. Do not implement this ticket's full scope here.
 Blocked by: 16, 40
 Band: 2.2.0-rc4
 

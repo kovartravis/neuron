@@ -34,7 +34,7 @@ in front of users' existing agent configs?
    note to the README (Claude Code, Codex CLI — both `deterministic`) rather
    than a full compatibility matrix; the fuller matrix/remediation UX earns
    its cost once a `best-effort` harness ships (see
-   [neuron-harness-expansion](../neuron-harness-expansion/map.md)).
+   [neuron-2.3.0](../neuron-2.3.0/map.md)).
 8. Run `npm test` and `npm run test:e2e`.
 9. Tag and publish under the `rc` dist-tag.
 

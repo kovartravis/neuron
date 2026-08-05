@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: none
+Blocked by: 07
 
 # 01 — GitHub Copilot CLI Adapter
 

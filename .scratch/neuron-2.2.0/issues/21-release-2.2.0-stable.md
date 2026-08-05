@@ -28,7 +28,7 @@ rather than assuming the docs kept pace across four rcs.
    - languages still at regex fidelity (the 6 beyond ticket `02`'s 9)
    - **deterministic recall ships for Claude Code and Codex CLI only** —
      Copilot CLI and Cursor land `best-effort` per ticket `10`'s research and
-     continue in [neuron-harness-expansion](../neuron-harness-expansion/map.md),
+     continue in [neuron-2.3.0](../neuron-2.3.0/map.md),
      not this release; say so as a roadmap item, not an apology
    - any LLM job disabled or held back at ticket `09`
 3. **Documentation audit against the code**, not against the rc notes:
