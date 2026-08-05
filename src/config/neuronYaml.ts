@@ -297,6 +297,38 @@ export type RelevanceConfig = z.infer<typeof RelevanceConfigSchema>;
 
 export const DEFAULT_RELEVANCE: RelevanceConfig = RelevanceConfigSchema.parse({});
 
+/**
+ * Ticket 07's session-scoped recall budget (neuron-2.3.0). `epochCharBudget`
+ * bounds what the hook holds resident in the live context *window* — an
+ * epoch is the span between session start (or the last compaction) and the
+ * next `context-reset`, not the whole session — because `context-reset`
+ * deletes everything neuron previously injected (ADR 0014 §5), so
+ * re-injecting after one is recovery, not repetition. The budget therefore
+ * resets with the ledger rather than accumulating across a session; see
+ * `src/harnesses/ledger.ts`'s `rollEpoch`.
+ *
+ * Default is 18,000 chars: 6,000 reserved for the session-start architecture
+ * card (`SESSION_START_CHAR_BUDGET`) plus 8 worst-case full `pre-prompt` turns
+ * at `PRE_PROMPT_CHAR_BUDGET` (1,500 each). Real turns rarely spend the full
+ * per-turn cap — `filterUnseen` leaves progressively fewer novel entries as an
+ * epoch goes on — so this binds only in pathological cases (a huge store, a
+ * highly varied prompt sequence), by design: a cap that binds routinely is
+ * invisible to the user (no error, just quietly reduced recall), which is a
+ * worse failure than an occasionally generous budget.
+ *
+ * Published as ~6,000 tokens (3 chars/token, the "conservative" reading
+ * `src/harnesses/payload.ts` already uses) rather than the more common 4:1
+ * ratio — the failure direction preferred throughout this band is overstating
+ * neuron's own cost, not understating it.
+ */
+export const RecallConfigSchema = z.object({
+  epochCharBudget: z.number().int().positive().default(18000),
+});
+
+export type RecallConfig = z.infer<typeof RecallConfigSchema>;
+
+export const DEFAULT_RECALL: RecallConfig = RecallConfigSchema.parse({});
+
 export const NeuronConfigSchema = z.object({
   version: z.string().default('1.0'),
   storage: StorageConfigSchema.default({ mode: 'md', path: '.neuron' }),
@@ -313,6 +345,7 @@ export const NeuronConfigSchema = z.object({
   }),
   llm: LlmConfigSchema.default(DEFAULT_LLM),
   relevance: RelevanceConfigSchema.default(DEFAULT_RELEVANCE),
+  recall: RecallConfigSchema.default(DEFAULT_RECALL),
 });
 
 export type NeuronConfig = z.infer<typeof NeuronConfigSchema>;

@@ -90,6 +90,67 @@ describe('CLI Command: hook', () => {
     expect(run(['hook', 'claude-code', 'pre-prompt'], stdin).stdout.toString().trim()).not.toBe('');
   });
 
+  // Ticket 07 (neuron-2.3.0): the per-epoch char budget. Turn 1 runs under
+  // the large default budget so its real injected length can be measured
+  // (rather than hardcoding buildPayload's line-formatting internals), then
+  // the budget is set to exactly that spend so turn 2 has zero left.
+  it('hard-stops pre-prompt injection once the epoch budget is spent, and resumes after a context-reset rolls the epoch', () => {
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    execAdd('Use exponential backoff for retrying flaky network calls', 'learning');
+    const sessionId = 'epoch-budget-session';
+
+    const turn1 = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: sessionId, prompt: 'database access pattern' })
+    );
+    const turn1Context = JSON.parse(turn1.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(turn1Context).toContain('Repository Pattern');
+
+    // Cap the epoch at exactly what turn 1 already spent, so turn 2 has
+    // nothing left — a hard stop, not ordinary dedupe (the retry-backoff
+    // entry was never shown to this session).
+    fs.writeFileSync(
+      path.join(projectDir, 'neuron.yaml'),
+      `version: "1.0"\nrecall:\n  epochCharBudget: ${turn1Context.length}\n`
+    );
+
+    const turn2 = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: sessionId, prompt: 'exponential backoff retry' })
+    );
+    expect(turn2.status).toBe(0);
+    expect(turn2.stdout.toString().trim()).toBe('');
+
+    const resetResult = run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: sessionId }));
+    expect(resetResult.status).toBe(0);
+
+    // Same query, only the epoch changed — proves turn 2's silence was the
+    // budget, not irrelevance or prior injection.
+    const turn3 = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: sessionId, prompt: 'exponential backoff retry' })
+    );
+    expect(JSON.parse(turn3.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('exponential backoff');
+  });
+
+  it('neuron status reports recall cost telemetry recorded from real hook invocations', () => {
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    const sessionId = 'status-telemetry-session';
+    const stdin = JSON.stringify({ session_id: sessionId, prompt: 'database access pattern' });
+
+    expect(run(['hook', 'claude-code', 'pre-prompt'], stdin).stdout.toString().trim()).not.toBe('');
+    run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: sessionId }));
+
+    const statusResult = spawnSync('node', [cliPath, 'status'], { cwd: projectDir, env: env() });
+    const status = JSON.parse(statusResult.stdout.toString());
+
+    expect(status.recallCost.epochCharBudget).toBe(18000);
+    expect(status.recallCost.charsPerTokenRatio).toBe(3);
+    expect(status.recallCost.sessionsObserved).toBeGreaterThanOrEqual(1);
+    expect(status.recallCost.epochsObserved).toBeGreaterThanOrEqual(1);
+    expect(status.recallCost.maxCharsPerEpoch).toBeGreaterThan(0);
+  });
+
   it('degrades silently (exit 0, empty stdout) on malformed stdin rather than crashing', () => {
     const result = run(['hook', 'claude-code', 'pre-prompt'], 'not json at all {{{');
     expect(result.status).toBe(0);

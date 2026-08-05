@@ -42,6 +42,29 @@ describe('neuron.yaml Config Loader & Zod Parser', () => {
     expect(config.pullRules.default?.categories).toEqual(['learning']);
   });
 
+  // Ticket 07 (neuron-2.3.0): the per-epoch recall budget. Default is
+  // 18,000 chars when unset, and settable per project.
+  describe('recall.epochCharBudget', () => {
+    it('defaults to 18000 when no neuron.yaml exists', () => {
+      const emptyDir = path.join(tempDir, 'no-config-for-recall-default');
+      fs.mkdirSync(emptyDir, { recursive: true });
+      fs.writeFileSync(path.join(emptyDir, 'package.json'), '{}');
+
+      const config = loadNeuronYaml(emptyDir);
+      expect(config.recall.epochCharBudget).toBe(18000);
+    });
+
+    it('is settable per project', () => {
+      const yamlStr = `
+version: "1.0"
+recall:
+  epochCharBudget: 5000
+`;
+      const parsed = parseNeuronYaml(yamlStr);
+      expect(parsed.recall.epochCharBudget).toBe(5000);
+    });
+  });
+
   it('should parse valid canonical storage mode options (vector-only, md, split)', () => {
     const modes = ['vector-only', 'md', 'split'] as const;
     for (const mode of modes) {
