@@ -603,3 +603,75 @@ tags:
 taskId: null
 ---
 ADR 0012 ticket 41 (Decontaminate the Ranking Score and Land the Lexical Gate) implemented and resolved 2026-08-04, no deviation from the six structural decisions: score in src/index.ts's queryVector is now normRrf alone (the normImp blend term is deleted), importance stays a prune-only field. A new NeuronMemory.queryGated() method is the single retrieval choke point: it filters results to ftsMatched === true (proven algebraically identical to normRrf > 0.5) and returns a rejected count; query() is now a thin wrapper around it, so neuron exec, neuron memory query, the recall hooks in commands/hook.ts, and the legacy queryLearnings/queryHistory wrappers all inherit the gate for free rather than needing separate wiring. exec.ts lost its own matched.filter(score >= minScore) line entirely and now prints a zero-result/rejected-count stderr line; memory.ts's query subcommand adds a rejected JSON field. resolveExecCategories in src/config/neuronYaml.ts now merges onExec limit/minScore as last-match-wins (plain overwrite per matching rule in array order) instead of Math.max/Math.min, and this repo's own neuron.yaml had its two onExec limit values swapped (catch-all .* to 8, the npm-test/git-commit override to 5) so the override's tighter intent actually takes effect. Beyond the ticket's own written scope, ADR 0012's ticket-39 amendment had assigned neuron status visibility for rejection counts to this ticket, so getStatus() gained relevance.gateEnabled and a cumulative relevance.rejectedTotal counter using the same meta-table increment-on-conflict pattern as the existing enrichment degradation counters. Six pre-existing unit tests in src/index.test.ts encoded the removed importance-blend or a pre-gate assumption and were rewritten to the new invariants; full suite is 432/436 green, with the 4 failures being ticket 42's pre-existing real-store test-pollution gap (confirmed unrelated by reproducing identically on the unmodified working tree and by passing when run outside full-suite concurrency). One notable finding recorded in the ticket's Answer: re-running the acceptance criteria's live-store verification (neuron exec -- ls, and ticket 27's original 15 probes) against the current store no longer reproduces the original reject counts, because the store has since absorbed its own decisions/history entries about tickets 27/28/39 which quote ls/kubernetes/pytorch verbatim as illustrative examples, so those queries now get real, correct FTS matches against the project's own writeup of itself -- this is ADR 0012's own 'denser on neuron's internals than any user's store' caveat made concrete, not a defect, and the underlying mechanism was instead verified via controlled-content unit tests that hold the corpus fixed.
+
+---
+id: a827c671-1253-4d79-8c3e-4a72d975d599
+createdAt: 2026-08-05T00:39:17.537Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Renamed the .scratch/neuron-harness-expansion wayfinder map to .scratch/neuron-2.3.0 and redrew its destination as a catch-all next-release map rather than a single-theme effort, by maintainer decision on 2026-08-04. The original map was split off from neuron-2.2.0 the same day carrying only the Copilot CLI/Cursor adapters plus the compatibility-disclosure surface, and a second config-ergonomics effort would have meant three concurrent maps; folding new next-release work into one 2.3.0 map avoids that while keeping wayfinder's one-ticket-per-session discipline, since a looser destination widens what may be admitted rather than how much a session takes on. The map now charters two independent bands - harness expansion (tickets 01-03) and config vocabulary (05-06) - with the cut ticket 04 blocked by all five and its version settled as 2.3.0 rather than left open. All inbound links from neuron-2.2.0's map and its six out-of-scope tickets were repointed to the new path.
+
+---
+id: ac92302a-c243-4de3-98d3-8ec5237093b5
+createdAt: 2026-08-05T00:39:26.779Z
+importance: 4
+tags:
+  - adr
+  - enrichment
+  - rc2
+taskId: null
+---
+Chartered neuron-2.3.0 tickets 05 (per-category storage path) and 06 (per-category storage mode, split removed) as a sequenced config-vocabulary band, with 06 blocked by 05 rather than running them in parallel. Both express the same three-step precedence chain - categories.<name>.<setting> > storage.<setting> > default - so 05 builds the single resolver and 06 reuses it instead of a second copy of the rule; 05 also has to move storage.path's Zod .default('.neuron') into that resolver, because leaving the default in the schema makes 'the top level is empty' unrepresentable downstream. Ticket 06's central finding is that split is not a third storage behaviour at all: DualStorageRouter.transact branches on split before ever consulting categories[cat].storage, so split is a flag meaning 'honour the overrides' - which makes deleting it a compatibility decision first, since an existing mode:md config carrying a previously-inert per-category vector value silently changes behaviour under md mode's strict mirror, which deletes index entries absent from markdown.
+
+---
+id: 384124c4-71e1-4d6c-b2bf-54d93d34efba
+createdAt: 2026-08-05T00:52:35.435Z
+importance: 5
+tags:
+  - retrieval
+  - rc2
+  - benchmark
+taskId: null
+---
+Chartered a context-cost band (tickets 07-10) on the neuron-2.3.0 map to answer whether neuron's recall hook is worth the context it consumes, and blocked the harness band (01, 02) on it by maintainer decision 2026-08-04. The framing finding is that gross token-equivalence is not a winnable claim - injected tokens cost what they cost - so the band targets three narrower claims in ascending order of cost to prove: a bounded and disclosed per-session cost, an injection that is not mostly restating already-resident context, a net-negative resident footprint, and only then a counterfactual task A/B. The measurement gates the adapter work because building two more best-effort adapters before the cost question is answered widens the surface rather than the value, and ticket 03's disclosure surface has a context-cost column it cannot fill until ticket 07 produces the number. Nothing existing measures this: benchmark pillars 1-9 and the LongMemEval work both measure retrieval quality, not token economics.
+
+---
+id: b7c596e9-a5c9-4a80-91fe-10d96b0792bf
+createdAt: 2026-08-05T03:47:01.912Z
+importance: 5
+tags:
+  - rc2
+  - adr
+  - 2.2.0
+taskId: null
+---
+Neuron's recall hook now enforces a per-epoch character budget (default 18000 chars, ~6000 tokens at a conservative 3 chars/token) rather than only the existing per-injection caps, resolving neuron-2.3.0 ticket 07. An epoch is the span between session start or the last compaction and the next context-reset, not the whole session, because context-reset deletes everything neuron previously injected (ADR 0014 section 5) so re-injection after a compaction is recovery rather than repetition - the budget therefore resets when the epoch rolls rather than accumulating across a whole session, which was a deliberate tradeoff: it leaves cumulative session cost unbounded (though now disclosed via neuron status) in exchange for not letting long, memory-dependent sessions go permanently silent after they compact. On exhaustion the hook hard-stops rather than decaying the per-turn budget, because the hook's stdin carries only session_id and prompt with no signal indicating how much of the epoch remains, so any decay curve would be a guess rather than a measured policy. The session ledger file (src/harnesses/ledger.ts) was restructured so clearLedger's file deletion became rollEpoch, an archive-then-reset that preserves each finished epoch's cost in a history array on the same file the dedupe set already lived in, since both concepts share identical per-session, per-epoch scope.
+
+---
+id: 855d13c8-41a6-4414-99f5-b961a9106cf1
+createdAt: 2026-08-05T04:05:35.658Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Ticket 08 (Injection Redundancy Audit) cannot sample real session data yet: ticket 07's per-session telemetry format (rollEpoch, chars/turns/history in src/harnesses/ledger.ts) had never run against a committed build, and the two pre-existing real ledger files for this repo predate the rewrite (old injectedIds-only format, 2 sessions, 5 entries, skewed away from history). Ruling: ship ticket 07's code now and wait for real usage to accumulate telemetry, rather than reconstructing evidence from past queries or widening 'real' to mean this map's own wayfinder sessions — the latter two would let 08 proceed immediately but at the cost of the audit being honest about its evidence source, and the band's stated failure-direction preference throughout neuron-2.3.0 is to err toward the more defensible, harder-to-dispute measurement. Ticket 12 formalizes the wait as a blocking ticket with its own adequacy threshold (session/epoch count plus confirmed history-category coverage), rather than leaving 08 claimed indefinitely on an informal note.
+
+---
+id: 07187d81-16f9-4cd4-b855-b48b8c112456
+createdAt: 2026-08-05T13:19:01.449Z
+importance: 4
+tags:
+  - adr
+  - rc2
+  - wayfinder
+taskId: null
+---
+ADR note for wayfinder ticket 44 (SQLite Additive Auto-Migration for Declared User-Defined Fields), amending ADR 0013's field-schema design. Design choice: declared-field SQLite columns are added via an eager, idempotent, additive-only migration that diffs neuron.yaml's current field declarations against PRAGMA table_info(memories) on every store-open, rather than being folded into the existing user_version-gated migration sequence in src/index.ts -- because the column set tracks live per-project config, not a fixed released schema version, so a version counter is the wrong gate for it. A field removed from neuron.yaml orphans its column rather than dropping it, matching ticket 38's precedent that column removal is always an explicit, reviewed migration, never automatic -- the asymmetry is deliberate: adding a column is safe and reversible by ignoring it, dropping one is not. Column identifiers (camelCase field key to snake_case, via a new fieldKeyToColumnName in src/config/neuronYaml.ts) are validated against a strict allowlist at three separate points -- config load time in validateNeuronYaml, and again immediately before each DDL/DML interpolation site in src/index.ts -- rather than trusted from a single call site, because the value is interpolated into SQL text rather than bound as a parameter. Config-load validation also gained two new checks beyond ticket 43's reserved-CLI-flag check: a declared field's column cannot collide with one of the memories table's own fixed columns (content and createdAt->created_at are real collisions that the reserved-flag check does not catch, since neither --content nor --created-at is a reserved flag), and two different field keys cannot fold to the same column name (verified with a real colliding pair, fooBar and FooBar). A significant scope decision made while implementing rather than deferred to a future ticket: NeuronMemory.query() never returned the fields property in any storage mode before this ticket, including md, because DualStorageRouter.query() always delegates to the SQLite-backed vectorDb.query() regardless of mode (this is ADR 0011's retrieval-parity-by-construction design), and nothing populated field columns there until now -- ticket 43's own round-trip tests only exercised MdStorageAdapter.readCategory() directly, a code path no CLI command, hook, or recall path actually calls. Judged this in-scope for ticket 44 rather than a separate ticket, since 'give vector-only/split parity with md' is meaningless if the shared read path never surfaces fields for any mode -- fixing queryVector's two SELECT statements closes the gap for every mode at once, not just vector-only/split. Explicitly deferred rather than fixed in the same pass: mdVectorSync.ts's computeMemoryHash still excludes declared fields from its change-detection hash, so a hand-edit to only a field's frontmatter value will not trigger an md-mode reconcile resync -- this is judged orthogonal to ticket 44's vector-only/split column work, since those modes never go through hash-based reconcile at all, and is left for whoever next touches the reconcile engine.

@@ -2864,3 +2864,63 @@ tags:
 taskId: "42"
 ---
 Resolved wayfinder ticket 42 (Isolate CLI Tests From the Real .neuron Store): audited every execSync-based CLI test file npm test runs and isolated the ones that pollute the real .neuron/*.md store (cli.test.ts, exec.test.ts, history.test.ts, learn.test.ts, memory.test.ts) by planting a package.json in a per-test tmp project dir and passing cwd to every execSync/spawnSync call, matching the pattern init.test.ts already used correctly. Also found and fixed a masked regression in cli.test.ts's --scopes no-op test, which only passed before because real-store noise supplied incidental FTS matches — isolating it exposed that ticket 41's lexical relevance gate correctly rejects the test's own genuinely-unrelated seeded entry, so the test's seed content was corrected to share the query token, matching the pattern the test already used one block above it. Verified stable across two consecutive npm test runs from a clean git baseline: 44/44 files, 437/437 tests green, zero .neuron/*.md diff both times. Found the same root-cause bug (NeuronMemory.open(dir) walking up past an unmarked subdirectory to this repo's real root) also live in test/e2e/adversarial-recall.test.ts and test/e2e/benchmark-suite.test.ts, measured at 10,633 real lines injected into learning.md in one run — but npm test never runs test/e2e/*, so that's out of this ticket's literal scope and was split off as a fresh ticket 47 rather than silently widening this diff. Updated the neuron-2.2.0 map's Decisions-so-far with ticket 42's resolution and appended ticket 47 as a new child issue.
+
+---
+id: 2af691ef-dc77-43ca-b416-c482eaebcf6a
+createdAt: 2026-08-05T00:39:36.409Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Wayfinder session: added two config tickets to the next-release map and renamed that map from neuron-harness-expansion to neuron-2.3.0 per maintainer decision. Wrote .scratch/neuron-2.3.0/issues/05-per-category-storage-path.md (categories.*.path overriding storage.path, one shared precedence resolver, multi-root reconcile/bootstrap-seed/sync, path-traversal containment per root, collision validation) and 06-storage-mode-override-remove-split.md (collapse the vector-only|md|split and vector|md vocabularies into one md|vector pair settable at both levels, split/vector-only/md-only/dual all deprecated aliases, router split branches deleted, ticket 44's field-column warning restated). Rewrote the map's destination and Notes for the catch-all posture, wired 04 as blocked by 01,02,03,05,06 and settled its version as 2.3.0, added two fog patches (whether categories is authoritative or advisory, and what else 2.3.0 admits), and repointed every neuron-2.2.0 link to the new directory. No source code was touched.
+
+---
+id: b00188a3-d77a-4eec-8f51-6099ef3c8d70
+createdAt: 2026-08-05T00:52:55.719Z
+importance: 4
+tags:
+  - rc2
+  - benchmark
+  - wayfinder
+taskId: null
+---
+Charted the context-cost band on the neuron-2.3.0 wayfinder map in response to the maintainer's question about proving neuron is token-worthwhile. Wrote four tickets: 07 (session-scoped token budget plus per-session cost telemetry reported through neuron status, with the compaction-reset ruling as its crux), 08 (offline injection-redundancy audit measuring what share of injected tokens restate CLAUDE.md or git log, reported per category, no LLM), 09 (shrink the ~600-token resident protocol block, with disclosing an irreducible floor as a legitimate resolution), and 10 (counterfactual token A/B with a reasoned decision not to run it as a valid resolution, and the inverted-cosine risk arm reported as headline not footnote). Wired 01 and 02 as blocked by 07, 08 by 07, 09 by 08, 10 by 08 and 09, and the cut 04 by all nine. Updated the map's destination to three bands, added Notes recording the measured cost model and that no existing benchmark measures token economics, and added a fog patch for what happens if the finding is unfavourable. Frontier is now 05 and 07.
+
+---
+id: 226b47d9-d34d-4514-8bcb-06a95abb400e
+createdAt: 2026-08-05T03:46:52.575Z
+importance: 4
+tags:
+  - rc2
+  - 2.2.0
+  - wayfinder
+taskId: "07"
+---
+Resolved neuron-2.3.0 ticket 07 (Session Token Budget & Cost Telemetry). Grilled six sequential design questions before coding: the budget is per-epoch not per-session since context-reset deletes injected text so re-injection after compaction is recovery not repetition; exhaustion is a hard stop rather than decay because the hook's stdin only carries session_id and prompt, no signal to decay against; default is 18000 chars (6000 for the architecture card plus 8 worst-case 1500-char turns) published as approximately 6000 tokens at a conservative 3 chars-per-token ratio; and clearLedger became rollEpoch, archiving each finished epoch's cost into a history array on the same file the dedupe ledger already used rather than adding a second file with a second reset rule. Implemented in src/harnesses/ledger.ts (loadEpochState, remainingEpochBudget, recordSessionStartInjection, recordPrePromptTurn, rollEpoch, summarizeRecallCost), wired into src/commands/hook.ts's session-start and pre-prompt branches, added recall.epochCharBudget to src/config/neuronYaml.ts, and exposed the aggregate via a new recallCost section in neuron status. Surfaced ticket 11 as a new ticket: the architecture card injected at session-start never returns after a compaction because context-reset is execution-only per ADR 0014, an asymmetry found while implementing rather than during charting. 07's own budget default already reserves room for ticket 11 landing. All 453 unit tests pass across 44 files including new hard-stop and telemetry coverage in hook.test.ts, and the real .neuron store was confirmed byte-identical in content (grepped for test fixture strings, zero matches) after the full suite ran. Tickets 01 and 02 (Copilot and Cursor adapters) are now unblocked on the neuron-2.3.0 map.
+
+---
+id: 909d38b3-da5c-4662-8bb1-d7d3dd9af1b8
+createdAt: 2026-08-05T04:05:35.328Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "08"
+---
+Wayfinder pickup session on the neuron-2.3.0 map: claimed ticket 08 (Injection Redundancy Audit), then found its Scope item 4 assumed real per-session telemetry that did not actually exist — ticket 07's rewrite of the ledger format (chars/turns/history, no payload text) was implemented but sitting uncommitted, so zero sessions had ever run under it, and the two pre-existing real ledger files for this repo covered only 2 sessions and 5 entries under the old injectedIds-only format, skewed away from the history category the ticket most suspects. Grilled the maintainer on how to source evidence (reconstruct from past queries vs ship-and-wait vs widen 'real' to this map's own sessions); ruled ship-and-wait, so committed ticket 07's implementation (src/harnesses/ledger.ts, src/commands/hook.ts, src/commands/status.ts, src/config/neuronYaml.ts plus tests, 71 tests green) this session so real telemetry starts accruing. Also confirmed the maintainer's actual stated goal this session — a benchmarking session proving neuron reduces or is neutral to agent token consumption — is ticket 10's destination, not ticket 08's; maintainer chose to finish 08 as scoped rather than re-sequence. Created ticket 12 (Accumulate Real Per-Session Telemetry) as the new blocker, reverted ticket 08 to unclaimed with Blocked by: 07, 12, and updated map.md's sequencing notes and frontier line (now 01, 02, 05, 11, 12) accordingly. None of ticket 08's substantive Scope questions (definition of already-had context, redundancy measure, textual-vs-timeliness ruling) were resolved this session.
+
+---
+id: 2f889eac-f42b-4aed-9b82-9b9bb4a9685e
+createdAt: 2026-08-05T13:18:32.769Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - adr
+taskId: "44"
+---
+Resolved wayfinder ticket 44 (SQLite Additive Auto-Migration for Declared User-Defined Fields) on the neuron-2.2.0 map. Implemented migrateDeclaredFields() in src/index.ts: an eager, idempotent, additive-only migration that diffs every field declared across neuron.yaml's categories against PRAGMA table_info(memories) on every store-open and runs ALTER TABLE memories ADD COLUMN <snake_case> TEXT for whatever is missing, never dropping a column when a field is later removed from config. Wired the resulting columns into transactVector's INSERT/UPDATE (write) and queryVector's two SELECTs plus a new extractFields helper (read), and deleted ticket 43's now-obsolete 'cannot be persisted yet' stderr warning since every storage mode persists declared fields now. While wiring in the read path, found and fixed a wider pre-existing gap: NeuronMemory.query() never returned fields in any mode, including md, because DualStorageRouter.query() always delegates to the SQLite-backed vectorDb.query() and nothing populated field columns there before this ticket -- ticket 43's own tests only verified the round trip via MdStorageAdapter.readCategory() directly. Also fixed two dropped-fields bugs in DualStorageRouter's reconcile/bootstrapSeed paths. Added neuronYaml.ts's fieldKeyToColumnName plus a three-layer column-identifier validation (config load time, and again immediately before each DDL/DML interpolation site) with two new collision checks -- reserved memories columns (content, createdAt->created_at) and cross-key column folding (fooBar/FooBar). 13 new tests plus 1 rewritten across a new sqliteFieldSchema.test.ts, neuronYaml.test.ts, and fieldSchema.test.ts; full suite 466/466 green across all 45 files. Wrote the resolution into issues/44-sqlite-additive-field-migration.md's Answer section, set Status: resolved, and appended the decision to map.md's Decisions-so-far, unblocking ticket 46 (status --check/--repair).
