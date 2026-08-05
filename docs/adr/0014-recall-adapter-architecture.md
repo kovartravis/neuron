@@ -224,3 +224,19 @@ Four consequences follow:
 6. **Antigravity and OpenCode return only behind a research ticket that
    measures their behaviour**, per §1 — an adapter ticket cannot manufacture
    the capability facts it would need to declare.
+
+## Amendments
+
+### 2026-08-04 — `rc4` dropped; §1's Copilot CLI/Cursor line does not ship in 2.2.0
+
+The destination narrowed to a fast, focused 3-pillar cut (deterministic
+Claude Code/Codex recall, md-first storage, deterministic scanning) the day
+after this ADR was accepted. §1's second bullet — "`rc4` ships `best-effort`
+where it is documented: Copilot CLI (ticket 16) and Cursor (ticket 40)" — is
+superseded, not withdrawn: the reasoning that produced it still holds (both
+land `best-effort`, a real capability), it just isn't load-bearing for what
+2.2.0 shipped. Both adapters continue unchanged as tickets `01`/`02` on
+[neuron-2.3.0](../../.scratch/neuron-2.3.0/map.md). Everything else this ADR
+decided — the capability map, session-ledger dedup, payload budget, hook-target
+prompting, multi-harness resolution — shipped in 2.2.0-rc3 exactly as
+designed, for the two deterministic adapters.

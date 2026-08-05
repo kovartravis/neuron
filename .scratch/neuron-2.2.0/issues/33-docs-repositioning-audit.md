@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: closed (resolved)
 Blocked by: 32
 Band: 2.2.0-rc5
 
@@ -73,3 +73,37 @@ exhaustive one:
   handoff's "ticket group 2". Blocked by `32` because the README is the source of
   truth these documents are being aligned *to* — doing this first would mean
   aligning to a draft.
+- **Resolved 2026-08-05.** Full surface sweep against `32`'s wording found the
+  positioning itself already coherent everywhere checked: `CONTEXT.md`'s
+  glossary already orders memory/markdown terms ahead of `Architecture Scan`,
+  `CLAUDE.md` carries no architecture-first framing, `docs/agents/*.md` are
+  purely procedural (confirming the ticket's own hedge), and
+  `.claude/skills/neuron-memory/SKILL.md`'s storage-mode section already
+  matches the shipped vocabulary. The real staleness found was **factual, not
+  positional** — two doc-vs-code drifts the sweep's grep for old framing
+  wouldn't have caught on its own:
+  - `CONTEXT.md` and `docs/COMMANDS.md` both still said SQLite column storage
+    for declared fields on `vector-only`/`split` categories was an open gap
+    "until ticket 44 ships" — `44` shipped. Both corrected to state every mode
+    persists declared fields identically now.
+  - `CONTEXT.md` said the E2E suite spans "6 pillars" and `docs/COMMANDS.md`
+    said "nine"; the actual test files (`test/e2e/*.test.ts`) define 12,
+    Pillars 1–12. Both corrected to the full, named list, with Pillar 8's
+    known pre-existing failure called out inline so it isn't mistaken for a
+    new regression by whoever reads it next.
+  - ADR 0013 amended (dated note, not rewritten) to record that ticket `46`
+    — listed in its "Implemented by" — closed out of scope and continues as
+    [neuron-2.3.0's ticket 13](../../neuron-2.3.0/issues/13-status-check-repair.md);
+    the rest of the ADR's decisions shipped as designed.
+  - ADR 0014 amended (dated note) to record that `rc4`'s Copilot CLI/Cursor
+    line (§1) never shipped in 2.2.0 — superseded by the 2026-08-04
+    narrowing, which predates this ticket but had never been recorded on the
+    ADR itself. Both adapters continue unchanged as
+    [neuron-2.3.0](../../neuron-2.3.0/map.md) tickets `01`/`02`.
+  `docs/adr/*.md` otherwise left alone per the ADR rule (amend, never
+  rewrite); `RELEASE_2.0.0.md`, `TEST_INFRA.md` and `CHANGELOG.md`'s existing
+  entries are historical records of past releases, out of scope for the same
+  reason. No surface needed a positioning rewrite — `32`'s repositioning had
+  already propagated correctly everywhere it touched; this ticket's real
+  yield was catching two facts the codebase had moved past since those docs
+  were last touched.

@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: closed (out of scope)
 Blocked by: 43, 44
 Band: 2.2.0-rc5
 
@@ -35,3 +35,13 @@ entries identically to `md` entries, not just markdown files.
 
 - Graduated from [36](36-configurable-frontmatter-schema.md)'s grilling,
   2026-08-03.
+- **Closed out of scope 2026-08-05.** The maintainer repositioned the map to
+  drop the separate rc5 cut (`34`) and ship `2.2.0` stable directly, so the
+  route no longer needs a ticket blocked on `43`/`44` to gate the cut — and
+  this validation surface was never load-bearing for the three pillars the
+  destination narrowed to on 2026-08-04 (deterministic recall, md-first
+  storage, deterministic scanning). Its design is fully specified and its
+  prerequisites (`43`, `44`, `45`) already shipped, so it continues unchanged
+  as [neuron-2.3.0's ticket 13](../../neuron-2.3.0/issues/13-status-check-repair.md)
+  rather than being re-derived — a fresh effort per wayfinder rules, not a
+  resumption.

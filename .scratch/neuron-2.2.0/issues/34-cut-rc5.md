@@ -1,6 +1,6 @@
 Type: task
-Status: unclaimed
-Blocked by: 29, 31, 32, 33, 35, 37, 38, 43, 44, 45, 46
+Status: closed (out of scope)
+Blocked by: 29, 31, 32, 33, 35, 37, 38, 43, 44, 45
 Band: 2.2.0-rc5
 
 # 34 — Cut and Publish 2.2.0-rc5
@@ -59,3 +59,18 @@ absorb attention that belongs to this band's own failures.
 ## Comments
 
 - 2026-08-02: Filed as the closing ticket of the rc5 markdown-first band.
+- **Closed out of scope 2026-08-05.** The maintainer directed the map to drop
+  the separate `rc5` tag+publish step and go straight from rc5's work-on-trunk
+  to stable — the destination already narrowed to a fast, focused cut on
+  2026-08-04, and an intermediate rc for a band with no external consumers to
+  protect (no rc5 has shipped to any dist-tag yet) was pure ceremony. This
+  ticket's still-live deliverables (CHANGELOG leading with the default
+  storage-mode change, the honest `md` vs `vector` parity statement, the
+  cold-query latency re-measurement on the built tarball, the tarball-contents
+  check for the repositioned docs/skill, and confirming no README claim
+  regressed since `32`) are folded into
+  [21 — Release 2.2.0 Stable](21-release-2.2.0-stable.md)'s scope rather than
+  dropped — only the intermediate tag+publish ceremony is cut, not the
+  verification work behind it. Matches the precedent this map already set for
+  `rc4` (see map.md's Destination callout): the slot is dropped, not
+  renumbered away, and nothing it was gating is skipped.

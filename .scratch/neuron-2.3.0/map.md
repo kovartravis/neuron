@@ -70,7 +70,7 @@ token claim, and `2.3.0` is cut and published.
   maintainer decision on 2026-08-04 — measuring the cost on the two
   deterministic adapters that already shipped, before building two more —
   and unblocked once `07` resolved (see Decisions so far). Frontier is now
-  `01`, `02`, `05`, `11`, `12`.
+  `01`, `02`, `05`, `11`, `12`, `13`.
 - **Each band is sequenced internally.** `06` waits on `05` because both
   express the same precedence chain — `05` builds the resolver, `06` reuses
   it. `09`→`10` waits on `08` because each consumes the previous one's
@@ -82,6 +82,15 @@ token claim, and `2.3.0` is cut and published.
   never committed, so no session had run under its format), so `08` now also
   waits on `12` judging whether enough has accumulated since `07` shipped.
   See `08`'s own Comments for the full finding.
+- **[13 — `neuron status --check`/`--repair`](issues/13-status-check-repair.md)
+  arrived 2026-08-05**, continued from
+  [neuron-2.2.0's ticket 46](../neuron-2.2.0/issues/46-status-check-repair.md)
+  when that map dropped its separate rc5 cut and shipped `2.2.0` stable
+  directly from rc3 — the validation surface wasn't load-bearing for the
+  three pillars 2.2.0 narrowed to, but the design is fully specified from
+  `36`'s grilling on that map and its prerequisites already shipped there.
+  Unblocked from arrival; wired as a blocker of `04` since it's a real
+  feature, not fog.
 - **Inherited, not re-derived:** the adapter interface
   ([ADR 0014](../../docs/adr/0014-recall-adapter-architecture.md), ticket
   [11](../neuron-2.2.0/issues/11-recall-adapter-architecture.md)), the

@@ -1,33 +1,33 @@
 {
-  "timestamp": "2026-08-04T03:13:02.724Z",
+  "timestamp": "2026-08-05T19:36:09.265Z",
   "tier": "sanity",
-  "suiteDurationMs": 48464,
+  "suiteDurationMs": 17314,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 176.28,
-      "p95Ms": 8680.65,
-      "p99Ms": 11993.96,
-      "minMs": 57.76,
-      "maxMs": 12822.28,
-      "meanMs": 1830.31,
-      "totalMs": 14642.49,
-      "throughputPerSec": 0.55,
+      "p50Ms": 30.29,
+      "p95Ms": 49.09,
+      "p99Ms": 54.64,
+      "minMs": 22.69,
+      "maxMs": 56.03,
+      "meanMs": 32.64,
+      "totalMs": 261.11,
+      "throughputPerSec": 30.64,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
         "evaluations": 8,
         "recallAt1": 0.125,
-        "recallAt5": 0.625,
-        "mrr": 0.327,
-        "supersededViolations": 0,
+        "recallAt5": 0.5,
+        "mrr": 0.294,
+        "supersededViolations": 1,
         "byFamily": {
           "lexical-decoy": {
             "cases": 2,
-            "recallAt1": 0.5,
-            "recallAt5": 1,
-            "mrr": 0.6
+            "recallAt1": 0,
+            "recallAt5": 0.5,
+            "mrr": 0.175
           },
           "paraphrase": {
             "cases": 2,
@@ -37,23 +37,29 @@
           },
           "contradiction": {
             "cases": 2,
-            "recallAt1": 0,
+            "recallAt1": 0.5,
             "recallAt5": 1,
-            "mrr": 0.5
+            "mrr": 0.75
           },
           "multi-hop": {
             "cases": 2,
             "recallAt1": 0,
             "recallAt5": 0.5,
-            "mrr": 0.125
+            "mrr": 0.167
           }
         },
         "missedAtRank1": [
           {
             "id": "decoy-retry-budget",
             "family": "lexical-decoy",
-            "rank": 5,
-            "topResult": "Discovered that Google AI Studio enforces a strict 20 requests per day (RPD) hard cap on f"
+            "rank": 10,
+            "topResult": "When a retry budget is exhausted the retry handler logs a retry limit warning for the paym"
+          },
+          {
+            "id": "decoy-index-rebuild",
+            "family": "lexical-decoy",
+            "rank": 4,
+            "topResult": "Index rebuild takes hours when the index rebuild job competes with other index rebuild tas"
           },
           {
             "id": "para-token-expiry",
@@ -71,25 +77,19 @@
             "id": "contra-storage-default",
             "family": "contradiction",
             "rank": 2,
-            "topResult": "Updated neuron-memory skill SKILL.md (v2.0.0-rc3) to document the full md-file-management "
-          },
-          {
-            "id": "contra-scan-category",
-            "family": "contradiction",
-            "rank": 2,
-            "topResult": "Fix for architecture-card content corrupting its own category's markdown file: synthesizeA"
+            "topResult": "The default storage mode for new projects is vector-only, writing solely to the SQLite vec"
           },
           {
             "id": "hop-cold-start",
             "family": "multi-hop",
-            "rank": 4,
+            "rank": 3,
             "topResult": "Sluggish commands are often caused by an oversized memory store that needs pruning"
           },
           {
             "id": "hop-ci-only-failure",
             "family": "multi-hop",
             "rank": null,
-            "topResult": "Pipeline failures are usually caused by missing environment secrets that are present local"
+            "topResult": "Note 23: the asset pipeline validates its input eagerly and rejects malformed payloads bef"
           }
         ]
       }
@@ -97,20 +97,20 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 149.33,
-      "p95Ms": 149.33,
-      "p99Ms": 149.33,
-      "minMs": 149.33,
-      "maxMs": 149.33,
-      "meanMs": 149.33,
-      "totalMs": 149.33,
-      "throughputPerSec": 6.7,
+      "p50Ms": 28.86,
+      "p95Ms": 28.86,
+      "p99Ms": 28.86,
+      "minMs": 28.86,
+      "maxMs": 28.86,
+      "meanMs": 28.86,
+      "totalMs": 28.86,
+      "throughputPerSec": 34.65,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 149.327,
-            "p95Ms": 364.739,
+            "p50Ms": 28.864,
+            "p95Ms": 37.33,
             "recallAt1": 0.125
           }
         ]

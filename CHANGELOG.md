@@ -2,48 +2,75 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
-## [2.2.0-rc3] - 2026-08-04
+## [2.2.0] - 2026-08-05
 
-This is the release's headline: **recall is now enforced by the harness, not
-requested by an instruction.** `neuron init` wires a hook into Claude Code and
-OpenAI Codex CLI that queries the memory store and injects results before the
-model ever sees the prompt — the agent's cooperation is no longer required.
-Both harnesses were researched and verified to support this deterministically
-(ADR 0014); everything else this band evaluated (Copilot CLI, Cursor,
-Antigravity CLI, OpenCode) is out of scope for 2.2.0 — see
-[the map](.scratch/neuron-2.2.0/map.md#out-of-scope) for why.
+**Your memory is markdown now, by default.** `storage.mode` defaults to `md`:
+`.neuron/<category>.md` files are the store of record, hand-editable and
+diffable in a PR, with SQLite kept underneath as a rebuildable index rather
+than removed. This is the single most user-visible change in the release — it
+changes where memory physically lives — and every mode retrieves identically
+(`md` falls through to the same hybrid RRF query path `vector-only` always
+used), so there is no retrieval trade-off for taking the new default.
 
-**Upgrading changes what's on disk in two new ways** — read this before you
-run `neuron init` on an existing project:
+Alongside it, this release's other headline: **recall is now enforced by the
+harness, not requested by an instruction.** `neuron init` wires a hook into
+Claude Code and OpenAI Codex CLI that queries the memory store and injects
+results before the model ever sees the prompt — the agent's cooperation is no
+longer required. Both harnesses were researched and verified to support this
+deterministically (ADR 0014); everything else evaluated (Copilot CLI, Cursor,
+Antigravity CLI, OpenCode) is out of scope for 2.2.0 and continues in
+[neuron-2.3.0](.scratch/neuron-2.3.0/map.md) — see
+[the map](.scratch/neuron-2.2.0/map.md#out-of-scope) for why. `neuron scan`
+also moved to real Tree-Sitter AST parsing this release, and its output is now
+byte-stable — a re-scan of an unchanged tree reproduces the identical card.
 
-1. **It now writes into your harness's own config** — `.claude/settings.json`
-   and/or `.codex/hooks.json` — not just `CLAUDE.md`/`AGENTS.md`. `init` asks
-   where to install (user-global / project-committed / project-local) before
-   touching anything, and asks again before overwriting any existing
-   neuron-authored hook entry it finds. It never reads or modifies a hook it
-   didn't write, even one sharing the same event array. Non-interactive runs
-   (CI, `--yes`) default to **keep and warn**, never silently replacing
-   anything; `--hook-target`, `--overwrite-hooks`/`--keep-hooks`, `--harness
-   <list>`, `--no-hooks`, and `--uninstall-hooks` give scripted control over
-   all of it.
-2. **The protocol block loses its first step, on a harness that just earned
-   it.** On a project where the deterministic hook is actually wired and
-   firing, the generated `CLAUDE.md`/`AGENTS.md` block no longer tells the
-   agent to query the store itself — the hook already did. A harness with no
-   adapter (or one whose hook isn't currently registered) keeps the
-   query-first instruction unchanged. Existing hand-customised blocks are
-   never silently rewritten: `init` detects a differing managed region and
-   asks before replacing it, matching the hooks' own overwrite policy.
+This section supersedes and consolidates every `2.2.0-rc*` tag published
+during development (`rc1`–`rc3`); there is no separate `rc4` or `rc5` tag —
+both bands were folded directly into this release (see
+[the map](.scratch/neuron-2.2.0/map.md) for why).
 
-**Known pre-existing failures, unrelated to this band:** Pillar 8
-(multi-process contention) drops 1 of 50 writes against a `<5%` bar —
-reproduced on a clean tree before this band's changes, SQLite write-lock
-contention rather than anything the adapters touch. Four unit test files
-(`cli.test.ts`, `history.test.ts`, `learn.test.ts`, `memory.test.ts`) fail
-when run against this repo's own populated `.neuron/` store rather than an
-isolated fixture — tracked as
-[ticket 42](.scratch/neuron-2.2.0/issues/42-isolate-cli-tests-from-real-store.md),
-inherited from the `md`-default flip in `31`, not introduced here.
+### Upgrading from 2.1.0 — three things change on disk
+
+1. **Your first `neuron scan --diff` will report "Re-baseline Required"
+   instead of drift.** Tree-Sitter AST parsing replaces regex symbol
+   extraction, which changes what a scan finds (on this repository, the
+   symbol count fell from 3290 to 233 — almost all of it call sites the old
+   scanner had miscounted as methods). A card written by 2.1.0 and a scan
+   performed by 2.2.0 are measurements taken with different instruments, so
+   neuron refuses to diff across them rather than report phantom changes.
+   **Run `neuron scan` once** — that is the whole migration. If you gate CI on
+   `neuron scan --check`, its exit code `2` ("baseline not comparable") means
+   this, not a regression. Users who never run `--diff` explicitly need do
+   nothing — the implicit re-scan behind `memory query` re-baselines silently
+   on the next source edit.
+2. **`neuron init` now writes into your harness's own config**, not just
+   `CLAUDE.md`/`AGENTS.md` — `.claude/settings.json` and/or `.codex/hooks.json`
+   for the two harnesses with an adapter. It asks where to install
+   (user-global / project-committed / project-local) before touching
+   anything, and asks again before overwriting any existing neuron-authored
+   hook entry it finds; it never reads or modifies a hook it didn't write,
+   even one sharing the same event array. Non-interactive runs (CI, `--yes`)
+   default to **keep and warn**, never silently replacing anything;
+   `--hook-target`, `--overwrite-hooks`/`--keep-hooks`, `--harness <list>`,
+   `--no-hooks` and `--uninstall-hooks` give scripted control over all of it.
+   On a harness where the hook actually fires, the generated protocol block
+   also loses its first step ("query the store yourself") since the hook
+   already does it.
+3. **`storage.mode` now defaults to `md`.** Existing projects that name their
+   mode explicitly in `neuron.yaml` are unaffected. A project on the old
+   default upgrades with a one-line config change: the first `md`-mode
+   command exports the existing vector store to markdown and records
+   `meta.md_seeded_at` before any reconciliation runs, so nothing is lost on
+   the switch.
+
+**Known pre-existing failures, unrelated to any one band:** Pillar 8
+(multi-process contention) drops up to 3 of 50 writes against a `<5%` bar —
+reproduced repeatedly on a clean tree across the release, SQLite write-lock
+contention rather than anything a specific ticket touched. Four unit test
+files (`cli.test.ts`, `history.test.ts`, `learn.test.ts`, `memory.test.ts`)
+failed when run against this repo's own populated `.neuron/` store rather
+than an isolated fixture, inherited from the `md`-default flip — fixed by
+[ticket 42](.scratch/neuron-2.2.0/issues/42-isolate-cli-tests-from-real-store.md).
 
 ### Added — deterministic recall hooks for Claude Code and Codex CLI
 
@@ -180,28 +207,15 @@ database and **zero `.md` files**.
   first `md`-mode command exports the vector store to markdown and records
   `meta.md_seeded_at` before any mirroring happens.
 
-## [2.2.0-rc2] - 2026-08-02
-
-This band set out to expand the shipped Qwen1.5-0.5B model's job list and
-measured its way to the opposite conclusion: **the model still has exactly the
-one default-on job it had in 2.1.0** — code summarization during `neuron scan`.
-Three candidate jobs were tried and none shipped: salvage query expansion and
-LLM-assisted dedupe were both killed by their own pre-committed measurement bar
-before reaching review, and automatic pruning's judgement arms both
-false-deleted ground-truth-unrecoverable entries in testing and were removed.
-What did ship moved work *off* the model instead — tags and category inference
-now run on the embedder already loaded on the write path, not the LLM.
-
-**Known pre-existing failure, unrelated to this band:** Pillar 8
-(multi-process contention) fails at `3/50` rejected writes against a `<5%`
-bar. Reproduced on a clean tree with this band's changes stashed; it is SQLite
-write-lock contention, not enrichment.
-
-This build also carries two entries from the markdown-first band (rc5),
-which reached trunk first: `scope` removal and frontmatter round-trip fixes.
-They are documented below rather than held back, since what ships in this
-`rc` tag is whatever is on trunk when it is cut, not only the tickets
-originally planned for it.
+The shipped Qwen1.5-0.5B model's job list was evaluated for expansion and the
+measurement went the other way: **the model has exactly the one default-on job
+it had in 2.1.0** — code summarization during `neuron scan`. Salvage query
+expansion and LLM-assisted dedupe were both killed by their own pre-committed
+measurement bar before reaching review; automatic pruning's judgement arms
+both false-deleted ground-truth-unrecoverable entries in testing and were
+removed (see Not Shipped, below). What did ship moved work *off* the model
+instead — tags and category inference run on the embedder already loaded on
+the write path, not the LLM.
 
 ### Added — write-side enrichment (tags & category)
 
@@ -243,9 +257,9 @@ design in [ADR 0010](docs/adr/0010-llm-job-guardrails.md).
 
 ### Not shipped — salvage expansion, dedupe, automatic pruning
 
-Three jobs this band evaluated for the model's list did not clear the bar
-ticket [05](.scratch/neuron-2.2.0/issues/05-llm-quality-latency-guardrails.md)
-set, and none of the three shipped:
+Three jobs evaluated for the model's list did not clear the bar ticket
+[05](.scratch/neuron-2.2.0/issues/05-llm-quality-latency-guardrails.md) set,
+and none of the three shipped:
 
 - **Query expansion for weak retrieval** — the weakness floor the design
   depended on is *inverted* on the failures it was meant to catch: the mean
@@ -282,8 +296,9 @@ Measured `neuron memory query` end to end, each invocation its own process:
 first invocation in a shell session (cold OS/model file cache) **~4.8s**;
 steady state on repeated invocations (warm cache), **p50 ~223ms, p95 ~229ms**
 over 20 runs (min 221ms, max 232ms). Write-side enrichment runs on `add`, not
-`query`, so this band did not change the number — it is recorded here as the
-baseline budget rc3's auto-injection hooks have to fit inside.
+`query`, so this did not change the number — it is recorded here as the
+baseline budget the auto-injection hooks above have to fit inside (measured
+independently at ~0.2s warm per turn).
 
 ### Removed — `scope`
 
@@ -336,7 +351,7 @@ Ticket [35](.scratch/neuron-2.2.0/issues/35-frontmatter-roundtrip-integrity.md).
 `importance` is no longer inferred. The shipped 0.5B model's judgement was
 measured as noise (discrimination of -0.5 then +0.167 across consecutive runs,
 per-entry stability 0.5, and a note about irreversible production data loss rated
-`1`), so it shipped `off` by default in rc2 — and a dead-by-default path costs
+`1`), so it shipped `off` by default — and a dead-by-default path costs
 documentation, config surface and maintenance for a signal nobody should enable.
 
 - **`llm.enrichment.importance` is removed from `neuron.yaml`.** No action
@@ -354,43 +369,7 @@ documentation, config surface and maintenance for a signal nobody should enable.
 unchanged behaviour, but it is now the *only* thing that protects an entry, so it
 is worth stating plainly.
 
-## [2.2.0-rc1] - 2026-08-01
-
-The real AST release. `TreeSitterScanner` finally uses Tree-Sitter.
-
-### Upgrading from 2.1.0 — action required
-
-**Your first `neuron scan --diff` after upgrading will report "Re-baseline
-Required" instead of drift. Run `neuron scan` once. That is the whole migration.**
-
-2.2.0 replaces regex symbol extraction with real Tree-Sitter AST parsing, which
-changes what a scan finds. On this repository the symbol count fell from 3290 to
-233 — almost all of the difference being call sites the old scanner had recorded
-as `method` symbols — while genuinely *adding* symbols it had never seen, because
-its export pattern matched `export function` but not `export async function`.
-
-A blueprint card written by 2.1.0 and a scan performed by 2.2.0 are therefore
-measurements taken with different instruments. Rather than report the difference
-as hundreds of changes you did not make, neuron now refuses the comparison and
-tells you to re-baseline.
-
-**If you gate CI on `neuron scan --check`**, note the new exit code:
-
-| Code | Meaning |
-|------|---------|
-| `0` | In sync |
-| `1` | Architectural drift detected |
-| `2` | Baseline not comparable — re-baseline required |
-
-A build that starts failing with **exit 2** immediately after upgrading is
-reporting the migration, not a regression. Run `neuron scan` to re-baseline.
-Re-baselining is destructive to drift history: changes accumulated before it are
-absorbed into the new card rather than itemised.
-
-Users who never run `--diff` explicitly need do nothing — the implicit re-scan
-behind `memory query` re-baselines silently on the next source edit.
-
-### Added
+### Added — real AST parsing (`TreeSitterScanner` finally uses Tree-Sitter)
 
 - **Real Tree-Sitter AST symbol extraction**: `src/scanner/treesitter.ts` now
   runs S-expression queries against a parsed syntax tree instead of matching
@@ -425,7 +404,7 @@ behind `memory query` re-baselines silently on the next source edit.
   Languages with no grammar at all (Ruby, PHP, Swift, C#) stay silent, since
   their regex fidelity is expected.
 
-### Changed
+### Changed — AST dependency and restored documentation
 
 - **`web-tree-sitter`** is now a runtime dependency (~4.4 MB in `node_modules`).
   It is the only dependency added in this release.
@@ -436,11 +415,140 @@ behind `memory query` re-baselines silently on the next source edit.
   four extensions still described as line-oriented.
 - **ADR 0003 is marked implemented**, no longer deferred.
 
-### Removed
+### Removed — dead `--force` flag
 
 - **`neuron scan --force`**: the flag was documented as "bypass the content cache
   and force a full re-scan" but was never read by the ingest path. It did
   nothing. `neuron scan` already re-scans and updates the card in place.
+
+### Added — markdown is the store of record, vector demoted to a rebuildable index
+
+`md-only` is deleted rather than fixed — it reached markdown-first storage by
+*removing* SQLite, which also removed semantic search (a whole-string
+substring match), enrichment, and honest counts. The old `dual` mode already
+reached markdown-first storage by *demoting* SQLite instead, with none of
+those defects, so it is renamed **`md`** and becomes the vocabulary: `storage.mode`
+is now `vector-only` / `md` / `split`. `md-only` and `dual` both still parse as
+deprecated aliases for `md`, warning on `stderr`.
+
+- **Strict-mirror reconcile runs on every `md`/`split`-mode command**: markdown
+  writes land first, the vector index follows only on success (a vector-side
+  failure now warns to `stderr` instead of a swallowed error), and an entry
+  present in the index but absent from markdown is deleted — no tripwire, git
+  is the recovery story. Detection is a per-entry content hash: measured at
+  0.006 ms to diff a 264-entry store, 2.39 ms to re-embed one changed entry
+  versus ~630 ms for its whole category under the old per-category cache.
+- **A one-time bootstrap seed** exports an existing vector store to markdown
+  the first time `md`/`split` mode runs against it, recording
+  `meta.md_seeded_at` — without it, "not seeded yet" and "a human deleted
+  everything" are the same observable state. The seed exports the **union** of
+  every category `neuron.yaml` declares and every category actually present in
+  the store (`neuron scan`'s `architecture` category is the standing example
+  of one that often isn't declared) — seeding only the declared set was found
+  to silently destroy undeclared entries the moment someone later declared
+  that category.
+- **Retrieval parity is by construction, not a separate implementation**: `md`
+  mode's `query()` falls through to the same hybrid RRF path `vector-only`
+  always used, so there is no "markdown mode searches worse" caveat to state.
+- Per-category `storage: dual` is renamed `storage: md` to match, with `dual`
+  aliased and warning.
+
+[ADR 0011](docs/adr/0011-markdown-as-store-of-record.md);
+tickets [28](.scratch/neuron-2.2.0/issues/28-md-only-parity-design.md),
+[29](.scratch/neuron-2.2.0/issues/29-md-only-semantic-search.md).
+
+### Added — configurable per-category frontmatter schema
+
+A category can now declare its own `string`/`enum` frontmatter fields in
+`neuron.yaml`, enforced everywhere an entry gets written — the CLI, and
+`neuron scan`'s own direct writes — so an agent using the CLI cannot produce
+an entry that violates the declared shape:
+
+```yaml
+categories:
+  decisions:
+    fields:
+      ticket:
+        type: string
+        required: true
+      confidence:
+        type: enum
+        values: [low, medium, high]
+        default: medium
+```
+
+- **A declared field becomes its own CLI flag** (`ticket` → `--ticket`), not a
+  generic `--field k=v` escape hatch — `neuron memory --help` lists a
+  project's declared fields dynamically, and a typo'd flag name gets the same
+  edit-distance suggestion built-in flags already had.
+- **Required-but-missing hard-errors on `add`**, naming the field and
+  category, unless the category config supplies a `default:` — the same
+  policy already governing an omitted `--category`. `update` is a partial
+  patch and never re-demands a field.
+- **Every declared field also lives as a nullable SQLite column**, added by an
+  additive, idempotent auto-migration that diffs `neuron.yaml` against
+  `PRAGMA table_info` on every store open and only ever adds columns, never
+  drops one when a field is removed from config — `vector-only` and `split`
+  categories persist declared fields identically to `md`.
+- **Pre-existing entries against a newly-declared schema are read and
+  reported, never refused** — a missing value isn't fabricated (no safe
+  default exists for a free-text field like `reviewedBy`) and isn't ambiguous,
+  so it's simply reported as missing.
+- **An opt-in `strict: true` top-level config key** disables both tag and
+  category centroid inference, trading their convenience for a claim `md`
+  mode alone can't make: the same `memory add` produces the same field
+  values every time, not just the same shape and bytes.
+
+[ADR 0013](docs/adr/0013-configurable-frontmatter-schema.md);
+tickets [43](.scratch/neuron-2.2.0/issues/43-declarable-field-schema-cli-flags.md),
+[44](.scratch/neuron-2.2.0/issues/44-sqlite-additive-field-migration.md),
+[45](.scratch/neuron-2.2.0/issues/45-strict-mode-and-skill-docs.md).
+
+### Changed — the relevance gate ships; `score` no longer blends in `importance`
+
+Ticket `39`'s full LongMemEval sweep found no cosine floor that doesn't
+regress recall on real conversational text, so the gate that actually ships is
+lexical-only: a result whose top hit has no keyword (FTS) match at all is
+rejected, run through one choke point (`NeuronMemory.queryGated()`) that both
+`neuron exec` and `neuron memory query` share, so hooks and legacy query paths
+inherit it for free. `importance` is removed from the ranking `score` entirely
+(it displaced a cosine-1st-ranked result with an importance-5 3rd-ranked one
+on a live measurement) and survives only as a `prune`-time field. A rejected
+result is now an **announced** zero, not silence: both surfaces print a
+rejected count, and `neuron status` reports it cumulatively as
+`relevance.rejectedTotal`.
+
+Ticket [41](.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate.md);
+[ADR 0012](docs/adr/0012-relevance-gate-and-score-decontamination.md).
+
+### Known Limitations
+
+- **Four languages stay on the line-oriented fallback**: `.cs`, `.swift`,
+  `.rb`, `.php` have no Tree-Sitter grammar in 2.2.0 and carry weaker export
+  detection (a crude `export|public|pub` line test) than the ten AST-covered
+  extensions.
+- **Deterministic recall ships for Claude Code and Codex CLI only.** Copilot
+  CLI and Cursor were researched and land `best-effort` — a real capability,
+  just not one neuron can wire a verified deterministic hook for yet — and
+  continue as roadmap items in
+  [neuron-2.3.0](.scratch/neuron-2.3.0/map.md), not this release.
+- **`neuron status --check`/`--repair`** — the validation surface for
+  declared-field schema violations — is designed (ADR 0013) but not shipped;
+  it continues as [neuron-2.3.0's ticket 13](.scratch/neuron-2.3.0/issues/13-status-check-repair.md).
+- **Automatic pruning was evaluated and removed**, not shipped: both
+  candidate judgement methods false-deleted ground-truth-unrecoverable
+  entries in pre-committed testing. The hazard it would have addressed is
+  still live — `neuron memory prune`'s default importance ceiling (`3`) is
+  also the default value every entry gets when written without `--importance`
+  — so pass `--importance 4` or `5` on anything that must survive a prune.
+- **Salvage query expansion and LLM-assisted dedupe were evaluated and not
+  built** — both were ruled out by their own pre-committed measurement bar
+  before implementation began; see the entries below for the numbers.
+- **Pillar 8 (multi-process contention)** is a known pre-existing failure —
+  up to `3/50` rejected writes against a `<5%` bar, SQLite write-lock
+  contention unrelated to any 2.2.0 change — reproduced repeatedly on a
+  clean tree throughout the release. Owned by nobody yet.
+
 ## [2.1.6] - 2026-08-02
 
 ### Fixed

@@ -1,23 +1,23 @@
 {
-  "timestamp": "2026-08-04T03:13:10.228Z",
+  "timestamp": "2026-08-05T19:36:19.946Z",
   "tier": "sanity",
-  "suiteDurationMs": 55967,
+  "suiteDurationMs": 27994,
   "pillars": [
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "samples": 18,
-      "p50Ms": 610.65,
-      "p95Ms": 8635.3,
-      "p99Ms": 23489.78,
-      "minMs": 11.65,
-      "maxMs": 27203.4,
-      "meanMs": 2875.13,
-      "totalMs": 51752.34,
-      "throughputPerSec": 0.35,
+      "p50Ms": 426.96,
+      "p95Ms": 4282.55,
+      "p99Ms": 7863.91,
+      "minMs": 12.21,
+      "maxMs": 8759.25,
+      "meanMs": 1207.23,
+      "totalMs": 21730.16,
+      "throughputPerSec": 0.83,
       "extra": {
         "cases": 9,
         "accuracy": {
-          "model": 0,
+          "model": 0.111,
           "centroid": 1
         },
         "winner": "centroid",
@@ -25,12 +25,11 @@
           "model": [
             "cat-learning-1: expected learning, got (hard error)",
             "cat-learning-2: expected learning, got (hard error)",
-            "cat-learning-3: expected learning, got (hard error)",
             "cat-history-1: expected history, got (hard error)",
-            "cat-history-2: expected history, got learning",
+            "cat-history-2: expected history, got (hard error)",
             "cat-history-3: expected history, got (hard error)",
             "cat-decisions-1: expected decisions, got (hard error)",
-            "cat-decisions-2: expected decisions, got (hard error)",
+            "cat-decisions-2: expected decisions, got learning",
             "cat-decisions-3: expected decisions, got (hard error)"
           ],
           "centroid": []
@@ -40,26 +39,26 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "samples": 16,
-      "p50Ms": 5.5,
-      "p95Ms": 8.9,
-      "p99Ms": 9.14,
-      "minMs": 2.35,
-      "maxMs": 9.2,
-      "meanMs": 5.44,
-      "totalMs": 86.97,
-      "throughputPerSec": 183.98,
+      "p50Ms": 5.87,
+      "p95Ms": 9.77,
+      "p99Ms": 14.85,
+      "minMs": 3.89,
+      "maxMs": 16.12,
+      "meanMs": 6.32,
+      "totalMs": 101.05,
+      "throughputPerSec": 158.34,
       "extra": {
         "corpusSize": 158,
         "cases": 8,
         "disabled": {
-          "recallAt1": 0.375,
-          "recallAt5": 0.75,
-          "mrr": 0.473
+          "recallAt1": 0.25,
+          "recallAt5": 0.5,
+          "mrr": 0.362
         },
         "enabled": {
-          "recallAt1": 0.375,
-          "recallAt5": 0.75,
-          "mrr": 0.473,
+          "recallAt1": 0.25,
+          "recallAt5": 0.5,
+          "mrr": 0.362,
           "inferredGoldTags": [
             [
               "decoy-retry-budget",

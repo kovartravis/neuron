@@ -211,11 +211,9 @@ category, when omitted on `add`. `update` is a partial patch, the same as
 rather than re-demanded or cleared. `neuron memory --help` lists a project's
 declared fields once `neuron.yaml` declares any.
 
-SQLite column storage for these fields (`vector-only`/`split` categories) is
-not yet implemented — today a declared field only persists when the write
-reaches markdown (`storage.mode: md`, or `split` with that category's
-`storage: md`). Writing to a pure-vector row still validates the value but
-warns on stderr that it cannot be persisted yet.
+Every declared field also lives as a nullable SQLite column (`vector-only`/
+`split` categories), added by an additive, idempotent auto-migration (ticket
+44) — every storage mode persists declared fields identically.
 
 ---
 
@@ -344,11 +342,14 @@ npm run bench:view  # open the HTML scorecard
 ```
 
 `test:e2e` exercises the **real** pipeline — the ONNX embedder and the Qwen
-summarizer, not test stubs — across nine pillars: polyglot AST traversal at
+summarizer, not test stubs — across 12 pillars: polyglot AST traversal at
 scale, adversarial semantic recall, high-concurrency multi-agent stress,
 architectural drift latency, storage corruption self-healing, real pipeline
 integrity, adversarial retrieval quality, multi-process contention and crash
-recovery, and the retrieval scale curve.
+recovery, the retrieval scale curve, prune safety, category-strategy A/B, and
+enrichment retrieval non-regression. Pillar 8 (multi-process contention) is a
+known pre-existing failure (`3/50` rejected writes against a `<5%` bar), not
+specific to any one release.
 
 It needs a warm local ONNX model cache; a cold cache makes the first run
 substantially longer. See

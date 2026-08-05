@@ -102,5 +102,57 @@
     "adversarialMrr": 0.327,
     "droppedWriteRatio": 0,
     "lostWrites": 1
+  },
+  {
+    "timestamp": "2026-08-05T17:52:01.492Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 85,
+    "pillarsRan": 13,
+    "pillarsPassed": 11,
+    "durationMin": 1.26,
+    "adversarialRecallAt1": 0.125,
+    "adversarialMrr": 0.281,
+    "droppedWriteRatio": 0,
+    "lostWrites": 4
+  },
+  {
+    "timestamp": "2026-08-05T19:33:46.502Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 92,
+    "pillarsRan": 13,
+    "pillarsPassed": 12,
+    "durationMin": 0.64,
+    "adversarialRecallAt1": 0.125,
+    "adversarialMrr": 0.294,
+    "droppedWriteRatio": 0,
+    "lostWrites": 0
+  },
+  {
+    "timestamp": "2026-08-05T19:34:26.307Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 92,
+    "pillarsRan": 13,
+    "pillarsPassed": 12,
+    "durationMin": 0.48,
+    "adversarialRecallAt1": 0.125,
+    "adversarialMrr": 0.294,
+    "droppedWriteRatio": 0,
+    "lostWrites": 0
+  },
+  {
+    "timestamp": "2026-08-05T19:36:26.595Z",
+    "tier": "sanity",
+    "grade": "B",
+    "scorePercent": 92,
+    "pillarsRan": 13,
+    "pillarsPassed": 12,
+    "durationMin": 0.59,
+    "adversarialRecallAt1": 0.125,
+    "adversarialMrr": 0.294,
+    "droppedWriteRatio": 0,
+    "lostWrites": 2
   }
 ]

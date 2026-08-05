@@ -39,6 +39,24 @@ when the codebase does.
 > `rc3 → rc5 → stable` — `rc4`'s slot is reserved for the follow-on effort,
 > not renumbered away.
 
+> **Narrowed again on 2026-08-05, at the maintainer's direction.** rc5's own
+> cut ticket (`34`) is dropped — no separate `2.2.0-rc5` tag or publish, since
+> nothing has consumed that dist-tag yet and every one of rc5's tickets lands
+> straight on trunk anyway. The route becomes `rc3 → 2.2.0 stable` directly;
+> `34`'s still-live verification obligations (CHANGELOG leading with the
+> default storage-mode change, the `md`/`vector` parity statement, the
+> tarball-content and cold-latency re-checks) fold into `21`, matching how
+> `rc4`'s slot was dropped without dropping what it was gating. **`46`
+> (`neuron status --check`/`--repair`) is also closed out of scope**, same
+> session: the validation surface it reopens was never load-bearing for the
+> three pillars this destination narrowed to, and closing it removes the last
+> thing standing between `21` and an unblocked frontier once `33` lands. It
+> continues, unchanged in design, as
+> [neuron-2.3.0's ticket 13](../neuron-2.3.0/issues/13-status-check-repair.md).
+> This map's remaining path is now **`rc3 → stable`** — `rc5`'s tickets still
+> ship, just without their own tag; `21` is the only cut left. See **Out of
+> scope** below for both closures.
+
 The release covers four themes: real WebAssembly Tree-Sitter AST parsing,
 embedder-based write-side enrichment with a measured boundary on what a 0.5B
 model can be trusted with, harness-native recall — narrowed above to Claude
@@ -122,8 +140,8 @@ every ticket resolved, every rc cut, stable published.
 | `2.2.0-rc2` | `05`, `06`, `09`, `24`, `26` | Centroid write-side enrichment, a timeout primitive, degradation counters — **and no new model jobs at all**: `07` and `08` are out of scope, `23`/`24` removed automatic pruning, `25` is deferred, `06` shipped with the model off the write path, and `26` removes the last model call from it |
 | `2.2.0-rc3` | `10`–`15`, `39`, `41` | Recall adapter layer + the 2 `deterministic` adapters (Claude Code, Codex CLI) + the `instruction-only` fallback + the relevance gate (`27` designed it; `41` ships the structural half, `39` the one fitted constant) |
 | ~~`2.2.0-rc4`~~ | ~~`16`, `40`, `19`, `20`~~ | **Moved 2026-08-04** to [neuron-2.3.0](../neuron-2.3.0/map.md) — not load-bearing for any of the three pillars. `17`/`18` stay out of scope regardless (ruled out on the merits, not on sequencing) |
-| `2.2.0-rc5` | `28`–`38`, `43`–`46` | **Markdown-first**: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs |
-| `2.2.0` | `21` | Stable release — now blocked by `15` (rc3 cut) and `34` (rc5 cut) only, not `20` |
+| ~~`2.2.0-rc5`~~ | `28`–`33`, `35`–`38`, `43`–`45` | **Markdown-first**, no separate tag: markdown as the store of record with the vector store demoted to a rebuildable index, `scope` removed, `md` as the default mode, deterministic schema-enforced writes, a byte-stable architecture card, repositioned README and docs. **Its own cut ticket `34` was dropped 2026-08-05** — these land straight on trunk and ship inside `21`; `46` closed out of scope the same day, continuing at [neuron-2.3.0](../neuron-2.3.0/map.md) |
+| `2.2.0` | `21` | Stable release — every prerequisite resolved (`15`, `33`, and the rest of rc5's tickets); `21` is now the frontier |
 
 > **`27` settled the floor's *shape*** (2026-08-02, ahead of `11` reaching point
 > 4). It fixed point 4 as a two-leg conjunction and **rewrote `39`'s design**: the
@@ -723,6 +741,32 @@ every ticket resolved, every rc cut, stable published.
   `npm test` runs: 44/44 files, 437/437 tests, zero `.neuron/*.md` diff both
   times.
 
+- [47 — Isolate E2E Benchmarks From the Real `.neuron` Store](issues/47-isolate-e2e-benchmarks-from-real-store.md)
+  — Picked up off-band during `21`'s release verification, not because it was
+  next on any frontier: it turned out to be masking what first looked like a
+  real product regression. One-line fix exactly as specified — a
+  `package.json` guard in `test/e2e/adversarial-recall.test.ts`'s `beforeAll`;
+  `test/e2e/benchmark-suite.test.ts` needed no change, since
+  `generateSyntheticPolyglotWorkspace` already wrote one before `open()`.
+  **What it was masking**: repeated `npm run test:e2e` runs on an unpatched
+  tree made Pillar 7 (Adversarial Retrieval Quality) fail progressively worse
+  each time (recall@5 0.5→0.375→0.25) — every run's ~2,600-entry corpus was
+  landing in the real, cumulative `.neuron/learning.md`, so each run competed
+  against every prior run's near-duplicate leftovers. Isolated, Pillar 7
+  became perfectly deterministic: MRR `0.29375` every run. **A second, real
+  but much smaller issue was underneath**: that clean number sits just under
+  Pillar 7's own bar (`0.3`), because the bar has been unchanged since 2.1.0
+  and was implicitly calibrated against `score` blending `importance` into
+  ranking — golds are tagged `importance: 4` for exactly that boost. Ticket
+  `27` found the blend was itself a ranking defect and `41` correctly removed
+  it, so the boost's disappearance is by design, not regression; this one
+  test's bar was the one place `41` didn't re-validate (it rewrote six unit
+  tests, never ran the E2E suite). Recalibrated to `0.25`, below the measured,
+  now-deterministic baseline, matching `39`'s own measure-first precedent.
+  Full suite re-verified at this map's long-standing baseline: **12/13
+  pillars, only Pillar 8 red** (a different symptom this run — a concurrent-
+  open race — same documented SQLite write-lock contention class).
+
 - [32 — Ship the Repositioned README](issues/32-ship-repositioned-readme.md)
   — `README.md` replaced, re-audited claim-by-claim against the built CLI in a
   scratch project rather than source. **Found and fixed a live bug while
@@ -736,10 +780,34 @@ every ticket resolved, every rc cut, stable published.
   a hash of the project root. Architecture section rewritten under the
   determinism frame (byte-identical repeated scans, updates-in-place, both
   re-verified live) rather than the draft's apologetic framing. Does **not**
-  claim `neuron status --check`/`--repair` (ticket `46`, still open) or use
-  the draft's stale `neuron sync` mode list (corrected to `md`/`split` against
-  `docs/COMMANDS.md`). CHANGELOG entry deferred to `34`, matching
-  `04`/`09`/`15`'s cut-time precedent.
+  claim `neuron status --check`/`--repair` (ticket `46`, open at the time —
+  since closed out of scope, see **Out of scope**) or use the draft's stale
+  `neuron sync` mode list (corrected to `md`/`split` against
+  `docs/COMMANDS.md`). CHANGELOG entry deferred to `34` at the time,
+  matching `04`/`09`/`15`'s cut-time precedent — since folded into `21`
+  when `34` was dropped.
+
+- [33 — Repoint the Docs from Architecture-First to Markdown-First](issues/33-docs-repositioning-audit.md)
+  — Full surface sweep found the *positioning* `32` set already coherent
+  everywhere it touched: `CONTEXT.md`'s glossary orders memory/markdown terms
+  ahead of `Architecture Scan`, `CLAUDE.md` carries no architecture-first
+  framing, `docs/agents/*.md` are purely procedural, and the packaged skill's
+  storage-mode section already matches the shipped vocabulary — no rewrite
+  needed anywhere. What the sweep actually caught was **factual drift the
+  framing-grep couldn't see**: `CONTEXT.md` and `docs/COMMANDS.md` both still
+  said SQLite column storage for declared fields was gated on `44` shipping
+  (it had); both said the E2E suite spans 6 or 9 pillars when the test files
+  define **12**, Pillars 1–12 — corrected to the full list, with Pillar 8's
+  known pre-existing failure flagged inline so it reads as known rather than
+  new. Two ADRs amended with dated notes, not rewritten: **0013**, since
+  ticket `46` (listed under its "Implemented by") closed out of scope the
+  same session and continues as
+  [neuron-2.3.0's ticket 13](../neuron-2.3.0/issues/13-status-check-repair.md);
+  **0014**, since its `rc4` line (Copilot CLI/Cursor) never shipped in 2.2.0 —
+  a staleness left over from the 2026-08-04 narrowing that had never been
+  recorded on the ADR itself. `RELEASE_2.0.0.md`, `TEST_INFRA.md` and past
+  `CHANGELOG.md` entries left alone as historical records, same rule as
+  ADRs. Unblocks `21`.
 
 ### Settled while charting
 
@@ -871,6 +939,19 @@ surveyed is agent-invoked. Whether rc3 should also jump rc2 is open.
 
 <!-- ruled beyond this destination; closed, never graduates -->
 
+- **[34 — Cut and Publish 2.2.0-rc5](issues/34-cut-rc5.md)** — closed
+  **2026-08-05** at the maintainer's direction: no separate `rc5` tag or
+  publish, since nothing had consumed that dist-tag and every rc5 ticket
+  lands on trunk regardless. The route goes `rc3 → 2.2.0` directly. Its
+  still-live verification obligations were not dropped — they moved into
+  `21`'s scope (see that ticket and `34`'s own Comments for the full list).
+- **[46 — `neuron status --check`/`--repair`](issues/46-status-check-repair.md)**
+  — closed **2026-08-05**, same session. The validation surface `36` reopened
+  was real but never load-bearing for the three pillars this destination
+  narrowed to on 2026-08-04, and closing it clears the last thing that could
+  have gated `21` beyond `33`. Continues, design unchanged, as
+  [neuron-2.3.0's ticket 13](../neuron-2.3.0/issues/13-status-check-repair.md)
+  — a fresh effort, not a resumption, per this destination redraw.
 - **[16 — GitHub Copilot CLI Adapter](issues/16-copilot-adapter.md)** and
   **[40 — Cursor Adapter](issues/40-cursor-adapter.md)** — closed
   **2026-08-04** when the destination narrowed to a fast, focused 3-pillar

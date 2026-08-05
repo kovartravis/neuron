@@ -173,3 +173,17 @@ human or an agent explicitly told to go find the real answer.
 - Repair tooling has a hard boundary: it strengthens confidence in enum and
   defaultable fields, and is deliberately inert on identity fields, rather
   than quietly integrating the failure mode ticket 35 just closed.
+
+## Amendments
+
+### 2026-08-05 — `--check`/`--repair` moved to `neuron-2.3.0`
+
+Ticket `46`, listed above under "Implemented by," is closed out of scope on
+`neuron-2.2.0` and did not ship in 2.2.0: the maintainer dropped that map's
+separate rc5 cut and released `2.2.0` stable directly from rc3, and the
+validation surface this ADR reopens was never load-bearing for the three
+pillars the destination narrowed to on 2026-08-04. Everything else this ADR
+decided is unaffected — the schema/tiers/type-floor design (`43`), SQLite
+column parity (`44`) and `strict` mode (`45`) all shipped in 2.2.0 exactly as
+decided here. `--check`/`--repair` continues, design unchanged, as
+[neuron-2.3.0's ticket 13](../../.scratch/neuron-2.3.0/issues/13-status-check-repair.md).
