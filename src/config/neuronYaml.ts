@@ -370,6 +370,20 @@ export const DEFAULT_RECALL: RecallConfig = RecallConfigSchema.parse({});
 
 export const NeuronConfigSchema = z.object({
   version: z.string().default('1.0'),
+  /**
+   * Ticket 45 / ADR 0013. Opt-in, disables the two content-driven write-side
+   * inference mechanisms — tag centroid selection (`llm.enrichment.tags`)
+   * and category centroid/model inference (`llm.enrichment.categoryStrategy`)
+   * — so a project can additionally claim *value* determinism (an entry's
+   * stored fields depend only on what the caller passed, never on unrelated
+   * store state), not just the shape/byte determinism every project already
+   * gets. A literal `llm.enrichment.category` fallback name still applies
+   * under `strict`; it's a fixed default, not inference. The tradeoff is
+   * explicit: a project loses auto-tag/category convenience (every write
+   * needs an explicit `--category`, and gets no automatic tags) in exchange
+   * for the literal "deterministic" claim holding without qualification.
+   */
+  strict: z.boolean().default(false),
   storage: StorageConfigSchema.default({ mode: 'md', path: '.neuron' }),
   categories: z.record(z.string(), CategoryConfigSchema).default({
     learning: { description: 'Agent conventions, rules, and failure fixes' },

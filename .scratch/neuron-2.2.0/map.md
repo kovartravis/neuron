@@ -686,6 +686,21 @@ every ticket resolved, every rc cut, stable published.
   since those modes never hash-compare. 13 new tests + 1 rewritten, full
   suite 466/466 green, all 45 files — no `42` pollution carryover.
 
+- [45 — `strict` Mode and Updated `neuron-memory` Skill Docs](issues/45-strict-mode-and-skill-docs.md)
+  — Shipped as designed: a top-level `strict: false` key (sibling to
+  `storage`/`llm`, not nested in `llm.enrichment`) that, when `true`, gates
+  the two content-driven inference paths in `enrichUpsert` — tag centroid
+  selection is skipped entirely (no vocabulary embed) and category
+  centroid/model inference is skipped entirely (no embed, no model call),
+  leaving only a literal `llm.enrichment.category` fallback name live, since
+  a fixed default doesn't reopen the value-determinism gap the way
+  content-based inference does. An omitted category with no configured
+  fallback hard-errors naming `strict: true` as the cause. `.claude/skills/
+  neuron-memory/SKILL.md` gained a new §0b documenting `36`'s shape/byte/
+  value three-way split as a table and `strict`'s explicit trade-off against
+  §0a's own recommended posture. 5 new tests (3 behavioural, 2 config), full
+  suite 471/471 green.
+
 - [42 — Isolate CLI Tests From the Real `.neuron` Store](issues/42-isolate-cli-tests-from-real-store.md)
   — Every `execSync`-based `npm test` CLI test now plants an isolated tmp
   project (`package.json` only — sufficient to stop `findProjectRoot`/

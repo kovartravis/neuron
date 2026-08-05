@@ -318,6 +318,46 @@ categories:
     memory.close();
   });
 
+  it('strict: does not auto-fill tags even with a strong vocabulary match', async () => {
+    const strictYaml = `${CATEGORIES_BLOCK}strict: true\n`;
+    const memory = open(strictYaml, stubEnricher());
+    await seedVocabulary(memory, 'tree-sitter', 4);
+
+    const [res] = await memory.transact([
+      {
+        op: 'upsert',
+        category: 'learning',
+        content: 'Tree-sitter grammar loading and wasm parser fidelity note number 99',
+      },
+    ]);
+
+    expect(JSON.parse(storedRow(memory, res.id).tags)).toEqual([]);
+    memory.close();
+  });
+
+  it('strict: hard-errors naming strict mode on an omitted category with no fallback configured', async () => {
+    const strictYaml = `${CATEGORIES_BLOCK}strict: true\n`;
+    const memory = open(strictYaml, stubEnricher());
+    await expect(
+      memory.transact([{ op: 'upsert', content: 'No category, strict mode on' }])
+    ).rejects.toThrow(/strict: true/);
+    memory.close();
+  });
+
+  it('strict: still uses a literal llm.enrichment.category fallback, skipping inference entirely', async () => {
+    // A cold store has zero centroids — under the default (non-strict) strategy
+    // this would hard-error with "found no category close enough". Landing in
+    // the fallback instead proves centroid inference never ran.
+    const strictWithFallback = `${CATEGORIES_BLOCK}strict: true\nllm:\n  enrichment:\n    category: learning\n`;
+    const memory = open(strictWithFallback, stubEnricher());
+
+    const [res] = await memory.transact([
+      { op: 'upsert', content: 'An entry that lands in the configured fallback under strict' },
+    ]);
+    expect(storedRow(memory, res.id).category).toBe('learning');
+    memory.close();
+  });
+
   it('never leaves a row unenriched, so no read has a backlog to drain', async () => {
     const memory = open(BASE_YAML, stubEnricher());
     await memory.transact(

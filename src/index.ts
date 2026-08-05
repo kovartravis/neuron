@@ -814,6 +814,7 @@ export class NeuronMemory {
     m: Extract<MemoryMutation, { op: 'upsert' }>
   ): Promise<MemoryMutation> {
     const cfg = this.config.llm.enrichment;
+    const strict = this.config.strict;
     const now = new Date().toISOString();
     const explicitCategory = m.category ?? m.kind;
 
@@ -824,7 +825,12 @@ export class NeuronMemory {
       return { ...m, enrichedAt: now };
     }
 
-    const wantsTags = cfg.tags === 'infer' && (m.tags === undefined || m.tags.length === 0);
+    // Ticket 45 / ADR 0013: `strict` disables the two content-driven
+    // inference mechanisms (tag centroid selection, category
+    // centroid/model inference) so a project can claim value determinism,
+    // not just shape/byte. A literal `llm.enrichment.category` fallback is
+    // untouched — it's a fixed, content-independent default, not inference.
+    const wantsTags = !strict && cfg.tags === 'infer' && (m.tags === undefined || m.tags.length === 0);
     const wantsCategory = !explicitCategory;
 
     if (!wantsTags && !wantsCategory) {
@@ -837,7 +843,7 @@ export class NeuronMemory {
     // rather than reused from `transactVector` so that enrichment works
     // identically in md-only mode, where `transactVector` never runs.
     let embedding: Float32Array | null = null;
-    if (wantsTags || (wantsCategory && cfg.categoryStrategy === 'centroid')) {
+    if (wantsTags || (wantsCategory && !strict && cfg.categoryStrategy === 'centroid')) {
       try {
         embedding = await this.embedder.embed(m.content);
       } catch {
@@ -857,39 +863,50 @@ export class NeuronMemory {
     if (wantsCategory) {
       if (cfg.category === 'off') throw categoryRequired('is off (llm.enrichment.category: off)');
 
-      const declared = Object.keys(this.config.categories);
-      let cause = 'is unavailable';
-
-      if (cfg.categoryStrategy === 'centroid') {
-        category = embedding
-          ? selectCategory(embedding, this.getCategoryCentroids(declared))
-          : undefined;
-        if (!category) {
-          cause = 'found no category close enough to this entry';
-          this.recordDegradation('category_centroid_miss');
+      if (strict) {
+        // No centroid/model call — only a literal fallback name can supply
+        // the category under strict mode. Left as `infer`, there is nothing
+        // deterministic to fall back to, so this is the same hard error as
+        // an unavailable inference result elsewhere in this method.
+        if (cfg.category === 'infer') {
+          throw categoryRequired('is disabled (strict: true) and llm.enrichment.category has no fallback name configured');
         }
+        category = cfg.category;
       } else {
-        const result = await this.enricher.inferCategory({
-          content: m.content,
-          categories: declared.map(name => ({
-            name,
-            description: this.config.categories[name]?.description,
-          })),
-        });
-        if (result.degraded) {
-          cause = describeDegradation(result.degraded);
-          this.recordDegradation(result.degraded);
-        }
-        category = result.category;
-      }
+        const declared = Object.keys(this.config.categories);
+        let cause = 'is unavailable';
 
-      if (!category) {
-        // A literal category name in the config is the configured fallback for
-        // exactly this case; left as `infer`, it is a hard error instead.
-        if (cfg.category !== 'infer' && cfg.category !== 'off') {
-          category = cfg.category;
+        if (cfg.categoryStrategy === 'centroid') {
+          category = embedding
+            ? selectCategory(embedding, this.getCategoryCentroids(declared))
+            : undefined;
+          if (!category) {
+            cause = 'found no category close enough to this entry';
+            this.recordDegradation('category_centroid_miss');
+          }
         } else {
-          throw categoryRequired(cause);
+          const result = await this.enricher.inferCategory({
+            content: m.content,
+            categories: declared.map(name => ({
+              name,
+              description: this.config.categories[name]?.description,
+            })),
+          });
+          if (result.degraded) {
+            cause = describeDegradation(result.degraded);
+            this.recordDegradation(result.degraded);
+          }
+          category = result.category;
+        }
+
+        if (!category) {
+          // A literal category name in the config is the configured fallback for
+          // exactly this case; left as `infer`, it is a hard error instead.
+          if (cfg.category !== 'infer' && cfg.category !== 'off') {
+            category = cfg.category;
+          } else {
+            throw categoryRequired(cause);
+          }
         }
       }
     }

@@ -334,6 +334,18 @@ pullRules:
     });
   });
 
+  describe('strict (ticket 45)', () => {
+    it('defaults to off', () => {
+      const config = validateNeuronYaml({ categories: { learning: {} } });
+      expect(config.strict).toBe(false);
+    });
+
+    it('accepts an explicit opt-in', () => {
+      const config = validateNeuronYaml({ categories: { learning: {} }, strict: true });
+      expect(config.strict).toBe(true);
+    });
+  });
+
   describe('relevance.gate (ADR 0012, ticket 39)', () => {
     it('defaults the gate to enabled with no cosine floor key', () => {
       const config = validateNeuronYaml({ categories: { learning: {} } });

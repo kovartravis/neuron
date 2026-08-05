@@ -202,6 +202,53 @@ and no backlog to watch. Check `enrichment.degraded` in `neuron status`
 occasionally: a non-zero counter means inference is silently falling back, which
 is how a broken local model otherwise goes unnoticed for months.
 
+## 0b. Determinism: Shape, Byte, Value — and `strict` Mode
+
+"Deterministic" is not one property — neuron's own design work (ADR 0013,
+ticket 36) split it into three, and only two of them ship on by default:
+
+| Property | What it means | On by default? |
+|---|---|---|
+| **Shape** | Every entry conforms to its category's declared field schema — a required field with no `default:` hard-errors the write rather than landing malformed. | Yes, always enforced at `transact()`, the single choke point every writer shares. |
+| **Byte** | A given input produces byte-identical output every time — the architecture card in particular (ticket 35/37) only changes when the codebase does. | Yes, always. |
+| **Value** | The *values* a stored entry ends up with depend only on what the caller passed, never on unrelated store state. | **No — only under `strict: true`.** Off by default because centroid-based tag and category inference (§0a) is on by default, and centroids are built from whatever else is in the store, so the same content can enrich differently as the store changes. |
+
+Value determinism is unreachable while inference runs, by construction — it
+is not a bug the other two properties happen to share. A project that wants
+to claim "fully deterministic," not just "schema- and byte-deterministic,"
+has to give up inference's convenience for it. That trade is what `strict`
+mode is for.
+
+### What `strict: true` does
+
+```yaml
+strict: true   # top-level key, sibling to storage/categories/llm
+```
+
+- **Disables tag inference** (`llm.enrichment.tags: infer` becomes a no-op) —
+  an entry gets exactly the tags the caller passed, or none.
+- **Disables category *inference*** (`llm.enrichment.categoryStrategy`'s
+  centroid/model call never runs) — an omitted `--category` hard-errors,
+  naming `strict: true` as the cause, unless a fallback is configured (next
+  bullet).
+- **Does not touch a literal `llm.enrichment.category` fallback name.** A
+  fixed category name is a constant, content-independent default, not
+  inference — it stays available as the answer for an omitted `--category`
+  even under `strict`, and using it never calls the embedder or the model.
+- **Does not affect shape or byte determinism** — those are already always on
+  and unaffected by this key.
+
+### The trade-off to present
+
+Recommending `strict` trades away §0a's "pass `--category`, let tags infer"
+posture: **every write needs an explicit `--category`** (or a configured
+fallback name), and **tags never auto-fill** — an agent that wants tags under
+`strict` must pass `--tags` itself, which reintroduces the fragmented-
+vocabulary risk §0a's inference exists to avoid. Recommend `strict` only when
+the user has explicitly said the literal "deterministic" claim matters more
+than that convenience; it is not the default recommendation from §0a's own
+interview.
+
 ## 1. Beginning of Run (Context Loading)
 
 > [!IMPORTANT]
