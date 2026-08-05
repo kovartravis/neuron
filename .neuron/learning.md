@@ -2148,3 +2148,12 @@ tags:
 taskId: null
 ---
 Fix for scaffold.ts generating a deprecated config key: NEURON_YAML_TEMPLATE (src/config/scaffold.ts) still emitted pullRules.default.minScore: 0.35 after tickets 39/41 deprecated minScore as structurally inert (ADR 0012) — the deprecation only added a stderr warning path in neuronYaml.ts, it never touched the generator that ships the key into every fresh project. Symptom: any project bootstrapped via 'neuron init' on rc3+ would print '[neuron warning] pullRules.default.minScore is deprecated' on its very first subsequent command, since the raw parsed config has the key set explicitly. Root cause verified by grepping the codebase for minScore call sites and confirming validateNeuronYaml's warning fires only when the raw YAML sets the key, then running the actual generated template through the parser and observing the warning. Fix: delete the 'minScore: 0.35' line from the pullRules.default block in NEURON_YAML_TEMPLATE, extend the template's own doc comment to name minScore alongside the existing llm.enrichment.importance trap it already warned about, and add two regression tests in scaffold.test.ts — one asserting the template string never contains 'minScore', one asserting validateNeuronYaml raises zero stderr writes when parsing the template. This repo's own hand-written neuron.yaml still carries the stale key and was deliberately left alone, since it predates the deprecation and is out of scope for a template-generation fix.
+
+---
+id: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+createdAt: 2026-08-05T23:12:47.296Z
+importance: 3
+tags: []
+taskId: null
+---
+updated content
