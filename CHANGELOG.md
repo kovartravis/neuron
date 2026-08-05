@@ -588,6 +588,7 @@ Ticket [41](.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate
   as a conflict. `neuron sync --force` is required to make a manual `.md`
   edit take effect; a bare `neuron sync` is no longer sufficient. Updated in
   the packaged `neuron-memory` skill.
+
 ## [2.1.5] - 2026-08-02
 
 ### Fixed
@@ -625,6 +626,7 @@ Ticket [41](.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate
   `'dual'`, read path defaulted to `'vector'`). Both branches only ever
   dispatch on `=== 'md'`, so this had no behavioural effect, but the
   mismatched literal read as if it might.
+
 ## [2.1.4] - 2026-08-01
 
 ### Fixed
@@ -656,6 +658,7 @@ Ticket [41](.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate
   `list` read only the singular `--category`; `query` already read both. A
   multi-category filter parsed without error and returned every category
   unfiltered. `list` now reads `--categories` the same way `query` does.
+
 ## [2.1.3] - 2026-08-01
 
 Documentation only. No behaviour changes — but it corrects documentation that
@@ -729,6 +732,37 @@ described a destructive command as doing far less than it does.
   `--help` was treated as content by any subcommand that did not check for it
   first. `--help` and `-h` are now recognised everywhere.
 
+
+## [2.1.1] - 2026-08-01
+
+### Fixed
+
+- **Keyword-only matches on common words could outrank the correct result.**
+  Hybrid search fuses its semantic and FTS legs with Reciprocal Rank Fusion,
+  which rewards a document's rank *position* rather than how well it matched.
+  Because query terms were joined with `OR` and every word was searchable, a
+  document matching a single common word entered the FTS ranking — and when it
+  was the only match, it entered at rank 1 and collected the full RRF
+  contribution.
+
+  Observed on a three-document store: the query *"what payment provider do we
+  use"* returned a document about a Rust auth daemon at score `0.869`, above the
+  correct billing document at `0.500`. The word `use` prefix-matched `used`,
+  while the correct document matched no keyword terms at all.
+
+  `cleanFtsQuery` now drops standard English stopwords and the FTS operator
+  words, and deduplicates terms. A query made entirely of stopwords produces an
+  empty expression, which is already handled as "no keyword leg" and answered
+  semantically — better than a `MATCH` that hits every row.
+
+  Short domain terms are deliberately preserved: `git`, `db` and `ci` are exactly
+  the terse fallback queries the agent protocol recommends.
+
+  This affects retrieval quality for every `neuron memory query`, `neuron exec`
+  pre-command lookup, and drift-triggered recall. No configuration change or
+  re-indexing is required — the fix applies at query time.
+
+>>>>>>> ac68d6492bcfdc223b74aa27880717b36b6427b4
 ## [2.1.0] - 2026-07-31
 
 The architecture-awareness release. Neuron can now read the shape of a codebase

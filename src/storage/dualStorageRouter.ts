@@ -190,6 +190,7 @@ export class DualStorageRouter {
     } else if (mode === 'split') {
       await this.reconcile(this.mdCategoriesForSplit());
     }
+
     return this.vectorDb.query(query);
   }
 

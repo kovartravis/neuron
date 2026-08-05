@@ -384,4 +384,202 @@ describe('CLI Command: memory', () => {
       expect(row.content).toBe('updated content');
     });
   });
+
+  /**
+   * One root cause, four symptoms: argv boundaries were discarded. Unquoted
+   * content arrives as several bare words, and every one of these paths used to
+   * keep the first and drop the rest while exiting 0. The store then held a
+   * one-word memory that looked deliberate — 26% of the reference store was
+   * destroyed this way before anyone noticed.
+   */
+  describe('argv boundary handling', () => {
+    const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    const envFor = () => ({
+      ...process.env,
+      NEURON_DB_PATH: tempDbPath,
+      NEURON_MOCK_EMBEDDER: 'true',
+    });
+    const rowCount = (): number => {
+      if (!fs.existsSync(tempDbPath)) return 0;
+      const db = openDatabase(tempDbPath);
+      const n = (db.prepare('SELECT COUNT(*) AS c FROM memories').get() as any).c;
+      db.close();
+      return n;
+    };
+
+    it('refuses an unquoted add rather than storing only the first word', () => {
+      expect(() => {
+        execSync(
+          `node ${cliPath()} memory add --category learning Fix for ONNX crash pin onnxruntime`,
+          { env: envFor(), stdio: 'pipe' }
+        );
+      }).toThrow(/expects a single content argument.*got 6 bare arguments/s);
+
+      // The whole point: a refused write must not be a partial write.
+      expect(rowCount()).toBe(0);
+    });
+
+    it('refuses an unquoted update rather than overwriting with one word', () => {
+      const added = JSON.parse(
+        execSync(`node ${cliPath()} memory add "original content" --category learning`, {
+          env: envFor(),
+        }).toString()
+      );
+
+      expect(() => {
+        execSync(
+          `node ${cliPath()} memory update ${added.id} --category learning Fix the crash by pinning`,
+          { env: envFor(), stdio: 'pipe' }
+        );
+      }).toThrow(/expects an id and a single content argument/);
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(added.id) as any;
+      db.close();
+      expect(row.content).toBe('original content');
+    });
+
+    it('joins an unquoted query instead of silently searching one word', () => {
+      execSync(
+        `node ${cliPath()} memory add "tree sitter grammar caching at init time" --category learning`,
+        { env: envFor() }
+      );
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory query tree sitter grammar caching`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.query).toBe('tree sitter grammar caching');
+    });
+
+    it('rejects an unknown flag instead of swallowing it as a positional', () => {
+      // `--tag` used to land in positionals and be discarded, so the entry was
+      // written with no tags at all while reporting success.
+      expect(() => {
+        execSync(`node ${cliPath()} memory add "content" --category learning --tag onnx`, {
+          env: envFor(),
+          stdio: 'pipe',
+        });
+      }).toThrow(/unknown option '--tag'[\s\S]*Did you mean '--tags'/);
+
+      expect(rowCount()).toBe(0);
+    });
+
+    it('prints help for `memory add --help` instead of storing "--help"', () => {
+      const out = execSync(`node ${cliPath()} memory add --category learning --help`, {
+        env: envFor(),
+      }).toString();
+
+      expect(out).toMatch(/Usage: neuron memory/);
+      expect(rowCount()).toBe(0);
+    });
+
+    it('accepts dash-leading content after the `--` end-of-flags marker', () => {
+      const res = JSON.parse(
+        execSync(`node ${cliPath()} memory add --category learning -- "--dash-leading content"`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(res.status).toBe('created');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(res.id) as any;
+      db.close();
+      expect(row.content).toBe('--dash-leading content');
+    });
+  });
+
+  /**
+   * `--category` is required on delete/update but was never part of the SQL
+   * predicate, so it validated nothing: any id could be deleted or overwritten
+   * regardless of its real category, and the required flag was pure ceremony.
+   * `list --categories` had the same shape of bug on the read side — it parsed
+   * successfully and filtered nothing.
+   */
+  describe('category enforcement', () => {
+    const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    const envFor = () => ({
+      ...process.env,
+      NEURON_DB_PATH: tempDbPath,
+      NEURON_MOCK_EMBEDDER: 'true',
+    });
+    const addEntry = (content: string, category: string): { id: string } =>
+      JSON.parse(
+        execSync(`node ${cliPath()} memory add "${content}" --category ${category}`, {
+          env: envFor(),
+        }).toString()
+      );
+
+    it('list --categories filters instead of returning every category', () => {
+      addEntry('a learning entry', 'learning');
+      addEntry('a history entry', 'history');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory list --categories learning --limit 100`, {
+          env: envFor(),
+        }).toString()
+      );
+
+      expect(out.every((r: any) => r.category === 'learning')).toBe(true);
+    });
+
+    it('refuses to delete when --category does not match the entry', () => {
+      const entry = addEntry('a history entry', 'history');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory delete ${entry.id} --category learning`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('not_found');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT id FROM memories WHERE id = ?').get(entry.id);
+      db.close();
+      expect(row).toBeDefined();
+    });
+
+    it('deletes when --category matches', () => {
+      const entry = addEntry('a history entry', 'history');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory delete ${entry.id} --category history`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('deleted');
+    });
+
+    it('refuses to update when --category does not match the entry, leaving content untouched', () => {
+      const entry = addEntry('original content', 'learning');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory update ${entry.id} "overwritten" --category history`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('not_found');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(entry.id) as any;
+      db.close();
+      expect(row.content).toBe('original content');
+    });
+
+    it('updates when --category matches', () => {
+      const entry = addEntry('original content', 'learning');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory update ${entry.id} "updated content" --category learning`, {
+          env: envFor(),
+        }).toString()
+      );
+      expect(out.status).toBe('updated');
+
+      const db = openDatabase(tempDbPath);
+      const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(entry.id) as any;
+      db.close();
+      expect(row.content).toBe('updated content');
+    });
+  });
 });
