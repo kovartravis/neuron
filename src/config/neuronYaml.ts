@@ -131,6 +131,45 @@ export function fieldKeyToFlagName(key: string): string {
 }
 
 /**
+ * Converts a declared field's camelCase config key into its SQLite column
+ * name (`reviewedBy` → `reviewed_by`), ticket 44's counterpart to
+ * `fieldKeyToFlagName` above — same case-boundary logic, underscore instead
+ * of hyphen because SQL identifiers don't take one.
+ */
+export function fieldKeyToColumnName(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+}
+
+/**
+ * Allowlist a derived column name must satisfy before it is ever
+ * interpolated into DDL/DML (ticket 44). `FIELD_KEY_PATTERN` already
+ * constrains the source key to letters/digits, so this should be
+ * unreachable in practice — it is checked anyway, both here at config-load
+ * time and again immediately before `ALTER TABLE`/`INSERT`/`UPDATE` in
+ * `src/index.ts`, because a column name is about to be interpolated
+ * (not bound) into SQL and deserves defense in depth rather than a single
+ * trusted call site.
+ */
+const COLUMN_IDENTIFIER_PATTERN = /^[a-z_][a-z0-9_]*$/;
+
+export function isValidColumnIdentifier(name: string): boolean {
+  return COLUMN_IDENTIFIER_PATTERN.test(name);
+}
+
+/**
+ * The `memories` table's own fixed columns (`src/index.ts`'s migration v5,
+ * plus v6's `enriched_at`) — a declared field can never shadow one of these,
+ * the same non-negotiable a built-in CLI flag already gets via
+ * `RESERVED_FLAG_NAMES`. Unlike the flag list, most of these names (e.g.
+ * `content`, `createdAt` → `created_at`) are not themselves reserved flags,
+ * so this is a separate check, not a duplicate of it.
+ */
+export const RESERVED_COLUMN_NAMES = [
+  'id', 'project_id', 'category', 'content', 'tags', 'embedding',
+  'importance', 'task_id', 'created_at', 'updated_at', 'enriched_at',
+];
+
+/**
  * The single source of truth for every flag `parseFlags` recognises without
  * any `neuron.yaml` involved. `commands/utils.ts`'s `KNOWN_FLAGS` is derived
  * from this list plus whatever fields the loaded config declares, and
@@ -476,9 +515,18 @@ export function validateNeuronYaml(raw: unknown): NeuronConfig {
  *    no `default`, `neuron scan` (which writes via `transact()` directly and
  *    never calls `parseFlags`) could never supply it and would break on
  *    every run.
+ * 5. (ticket 44) A declared field's SQLite column name must not collide with
+ *    one of the `memories` table's own fixed columns, and two *different*
+ *    field keys must not derive the same column name — both would corrupt
+ *    the additive migration or silently blend two fields' values into one
+ *    column. The same key declared independently on two categories is fine
+ *    (check 2 above already covers that case) and intentionally shares one
+ *    column, matching how it already shares one CLI flag.
  */
 function validateDeclaredFields(config: NeuronConfig): void {
   const reserved = new Set(RESERVED_FLAG_NAMES);
+  const reservedColumns = new Set(RESERVED_COLUMN_NAMES);
+  const columnOwners = new Map<string, string>();
 
   for (const [category, catConfig] of Object.entries(config.categories)) {
     for (const [key, def] of Object.entries(catConfig.fields ?? {})) {
@@ -500,6 +548,25 @@ function validateDeclaredFields(config: NeuronConfig): void {
           `neuron.yaml: categories.${category}.fields.${key} would become the flag "${flag}", which collides with a reserved built-in flag. Rename the field.`
         );
       }
+
+      const column = fieldKeyToColumnName(key);
+      if (!isValidColumnIdentifier(column)) {
+        throw new Error(
+          `neuron.yaml: categories.${category}.fields.${key} would become the SQLite column "${column}", which fails identifier validation. Rename the field.`
+        );
+      }
+      if (reservedColumns.has(column)) {
+        throw new Error(
+          `neuron.yaml: categories.${category}.fields.${key} would become the SQLite column "${column}", which collides with a reserved column on the memories table. Rename the field.`
+        );
+      }
+      const owner = columnOwners.get(column);
+      if (owner !== undefined && owner !== key) {
+        throw new Error(
+          `neuron.yaml: categories.${category}.fields.${key} would become the SQLite column "${column}", which collides with field "${owner}" declared elsewhere. Rename one of the fields.`
+        );
+      }
+      columnOwners.set(column, key);
     }
   }
 

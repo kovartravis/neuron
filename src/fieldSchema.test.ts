@@ -4,15 +4,14 @@
  * defaults, enum membership, and the reject-undeclared-field guard — plus
  * the markdown round-trip that makes a written field value durable.
  *
- * Storage: SQLite column support for `vector-only`/`split` categories is
- * ticket 44's job, not this one's, so these tests use `storage.mode: md`
- * where a full round trip is meaningful, and `vector-only` only to assert
- * the "cannot persist yet" warning fires.
+ * Storage: SQLite column support for `vector-only`/`split` categories
+ * shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column
+ * migration and round-trip coverage. These tests use `storage.mode: md`
+ * where the markdown round-trip is meaningful.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
-import { vi } from 'vitest';
 import { NeuronMemory } from './index.js';
 import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
 import type { Embedder } from './components/embedder.js';
@@ -161,20 +160,16 @@ describe('Declared field-schema enforcement — transact() choke point (ticket 4
     memory.close();
   });
 
-  it('warns on stderr, but does not throw, when the storage mode cannot persist a field yet', async () => {
+  it('persists and reads back a declared field in vector-only mode (ticket 44)', async () => {
     const memory = open(VECTOR_ONLY_YAML);
-    const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     const [res] = await memory.transact([
       { op: 'upsert', category: 'decisions', content: 'An ADR', fields: { ticket: 'NEU-1' } },
     ]);
-
     expect(res.status).toBe('created');
-    const warnings = warnSpy.mock.calls.map(c => String(c[0])).join('\n');
-    expect(warnings).toContain('cannot be persisted yet');
-    expect(warnings).toContain('storage mode "vector-only"');
 
-    warnSpy.mockRestore();
+    const [entry] = await memory.query({ category: 'decisions' });
+    expect(entry.fields).toEqual({ ticket: 'NEU-1' });
     memory.close();
   });
 });

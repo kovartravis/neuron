@@ -33,7 +33,14 @@ export * from './config/index.js';
 
 import { DualStorageRouter } from './storage/dualStorageRouter.js';
 import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
-import { loadNeuronYaml, NeuronConfig, fieldKeyToFlagName } from './config/neuronYaml.js';
+import {
+  loadNeuronYaml,
+  NeuronConfig,
+  fieldKeyToFlagName,
+  fieldKeyToColumnName,
+  isValidColumnIdentifier,
+  collectDeclaredFieldFlags,
+} from './config/neuronYaml.js';
 import { suggestClosest } from './shared/textMatch.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
@@ -58,6 +65,23 @@ function resolveCategory(m: { category?: string; kind?: string }): string {
   return m.category ?? m.kind ?? 'learning';
 }
 
+/**
+ * Every declared field, across every category, deduplicated by key — two
+ * categories sharing a field key share one column, matching how they
+ * already share one CLI flag (`collectDeclaredFieldFlags`). Column-name
+ * validity (identifier pattern, no collision with a reserved column or
+ * another field) is already enforced once, at config-load time
+ * (`validateDeclaredFields` in `neuronYaml.ts`), so this is a pure
+ * derivation with no new failure mode of its own.
+ */
+function computeFieldColumns(config: NeuronConfig): Array<{ key: string; column: string }> {
+  const byKey = new Map<string, string>();
+  for (const { key } of collectDeclaredFieldFlags(config)) {
+    if (!byKey.has(key)) byKey.set(key, fieldKeyToColumnName(key));
+  }
+  return [...byKey.entries()].map(([key, column]) => ({ key, column }));
+}
+
 export class NeuronMemory {
   private db: any;
   private projectRoot: string;
@@ -74,6 +98,14 @@ export class NeuronMemory {
    * the very next write.
    */
   private tagVocabulary: Centroid[] | null = null;
+  /**
+   * Every declared field, across every category, paired with the SQLite
+   * column it owns (ticket 44). Computed once from config at construction —
+   * same per-process lifetime rationale as `tagVocabulary` above — and
+   * shared by the additive migration, the write path and the read path so
+   * there is exactly one derivation of "key → column" per process.
+   */
+  private fieldColumns: Array<{ key: string; column: string }>;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -91,6 +123,7 @@ export class NeuronMemory {
       ? { ...discovered, storage: { ...discovered.storage, mode: options.storageMode } }
       : discovered;
     this.config = config;
+    this.fieldColumns = computeFieldColumns(config);
     this.enricher =
       options.enricher ??
       new LocalEnrichmentModel({ timeoutMs: config.llm.enrichment.timeoutMs });
@@ -106,6 +139,7 @@ export class NeuronMemory {
     // index rather than removing it.
     this.db = openDatabase(options.dbPath);
     this.initialize();
+    this.migrateDeclaredFields();
 
     const vectorDbDelegate = {
       transact: (mutations: MemoryMutation[]) => this.transactVector(mutations),
@@ -458,6 +492,85 @@ export class NeuronMemory {
     }
   }
 
+  /**
+   * Additive-only SQLite parity for declared category fields (ticket 44 /
+   * ADR 0013). Unlike the `user_version`-gated migrations above, this is not
+   * a fixed schema step — it runs on every open, diffing whatever
+   * `neuron.yaml` currently declares against `PRAGMA table_info(memories)`
+   * and adding one nullable `TEXT` column per field that is missing.
+   * Idempotent by construction (the diff is against live schema state, not
+   * a version counter), and additive-only: a field removed from config
+   * simply stops appearing in `this.fieldColumns`, so its column and data
+   * are left alone rather than dropped — matching ticket 38's precedent
+   * that any column removal is an explicit, reviewed migration, never an
+   * automatic one.
+   *
+   * Enum membership is enforced in application code (`enforceFieldSchema`),
+   * not a SQL `CHECK` constraint, so changing a team's allowed enum values
+   * in `neuron.yaml` never requires a table rebuild.
+   */
+  private migrateDeclaredFields(): void {
+    if (this.fieldColumns.length === 0) return;
+
+    const existing = new Set(
+      (this.db.pragma('table_info(memories)') as Array<{ name: string }>).map((c) => c.name)
+    );
+    const missing = this.fieldColumns.filter((c) => !existing.has(c.column));
+    if (missing.length === 0) return;
+
+    this.db.transaction(() => {
+      for (const { key, column } of missing) {
+        // Re-validated here, immediately before interpolation into DDL, even
+        // though `validateNeuronYaml` already refused an unsafe column name
+        // at config-load time — this call site is the one that actually
+        // builds the SQL string, and it should not have to trust a caller
+        // three layers away to have done that check.
+        if (!isValidColumnIdentifier(column)) {
+          throw new Error(
+            `neuron: refusing to add SQLite column "${column}" for declared field "${key}" — fails identifier validation.`
+          );
+        }
+        this.db.exec(`ALTER TABLE memories ADD COLUMN ${column} TEXT`);
+      }
+    })();
+  }
+
+  /**
+   * Resolves a declared field's config key to its SQLite column name,
+   * re-validating the identifier at this call site too (see
+   * `migrateDeclaredFields`'s comment on defense in depth) since the result
+   * is interpolated into `transactVector`'s SQL rather than bound as a
+   * parameter.
+   */
+  private fieldColumnName(key: string): string {
+    const column = fieldKeyToColumnName(key);
+    if (!isValidColumnIdentifier(column)) {
+      throw new Error(`neuron: invalid SQLite column derived from declared field "${key}".`);
+    }
+    return column;
+  }
+
+  /** `, col1, col2, ...` — appended onto a `SELECT` that already reads a row's other columns. */
+  private fieldSelectSql(): string {
+    return this.fieldColumns.length ? ', ' + this.fieldColumns.map((c) => c.column).join(', ') : '';
+  }
+
+  /**
+   * A row's declared-field columns, sparse (only non-null ones), keyed back
+   * to their config field name. A column is `NULL` unless a write actually
+   * targeted it, so no per-category filtering is needed here — a category
+   * that never declared a given field never has a row with that column set.
+   */
+  private extractFields(row: any): Record<string, string> | undefined {
+    if (this.fieldColumns.length === 0) return undefined;
+    const out: Record<string, string> = {};
+    for (const { key, column } of this.fieldColumns) {
+      const value = row[column];
+      if (value !== null && value !== undefined) out[key] = value;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }
+
   public async query(q: MemoryQuery): Promise<Memory[]> {
     return (await this.queryGated(q)).results;
   }
@@ -518,7 +631,7 @@ export class NeuronMemory {
 
       // --- Semantic rank list ---
       const rows = (this.db.prepare(`
-        SELECT id, category, content, tags, embedding, importance, task_id, created_at
+        SELECT id, category, content, tags, embedding, importance, task_id, created_at${this.fieldSelectSql()}
         FROM memories
         WHERE project_id = ? ${categoryClause}
       `).all(this.projectId, ...categoryParams) as any[]);
@@ -578,7 +691,8 @@ export class NeuronMemory {
           tags: JSON.parse(row.tags),
           importance: row.importance,
           taskId: row.task_id ?? null,
-          createdAt: row.created_at
+          createdAt: row.created_at,
+          fields: this.extractFields(row)
         });
       }
 
@@ -587,7 +701,7 @@ export class NeuronMemory {
     } else {
       // No text query — list mode
       const stmt = this.db.prepare(`
-        SELECT id, category, content, tags, importance, task_id, created_at
+        SELECT id, category, content, tags, importance, task_id, created_at${this.fieldSelectSql()}
         FROM memories
         WHERE project_id = ? ${categoryClause}
         ORDER BY rowid ASC
@@ -602,7 +716,8 @@ export class NeuronMemory {
           tags: JSON.parse(row.tags),
           importance: row.importance,
           taskId: row.task_id ?? null,
-          createdAt: row.created_at
+          createdAt: row.created_at,
+          fields: this.extractFields(row)
         });
       }
       return results.slice(0, limit);
@@ -685,31 +800,7 @@ export class NeuronMemory {
       }
     }
 
-    this.warnIfFieldsNotPersistable(category, resolved);
-
     return { ...m, fields: Object.keys(resolved).length > 0 ? resolved : undefined };
-  }
-
-  /**
-   * SQLite column storage for declared fields is ticket 44's job, not this
-   * one's (43 is scoped to schema + CLI enforcement only). Until it lands, a
-   * validated field value written against a category that resolves to a pure
-   * vector row has nowhere durable to go — silently accepting it would be
-   * exactly the "guarantee in name only" failure ADR 0013 exists to avoid,
-   * so it is announced rather than swallowed.
-   */
-  private warnIfFieldsNotPersistable(category: string, fields: Record<string, string>): void {
-    if (Object.keys(fields).length === 0) return;
-    const mode = this.config.storage.mode;
-    const catStorage = this.config.categories[category]?.storage ?? 'md';
-    const persistable = mode === 'md' || (mode === 'split' && catStorage !== 'vector');
-    if (!persistable) {
-      process.stderr.write(
-        `[neuron warning] category "${category}" field value(s) (${Object.keys(fields).join(', ')}) were validated but cannot be persisted yet — ` +
-          `storage mode "${mode}"${mode === 'split' ? ` with categories.${category}.storage: "vector"` : ''} has no column for declared fields until ticket 44 ships. ` +
-          `Set storage.mode: md (or this category's storage: md) to persist them today.\n`
-      );
-    }
   }
 
   // --- Write-side enrichment ------------------------------------------------
@@ -939,8 +1030,17 @@ export class NeuronMemory {
             if (m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
             if (m.createdAt !== undefined) { sets.push('created_at = ?'); params.push(m.createdAt); }
             if (m.enrichedAt !== undefined) { sets.push('enriched_at = ?'); params.push(m.enrichedAt); }
+            // Declared category fields (ticket 44): `m.fields` at this point
+            // is already the fully-enforced partial patch from
+            // `enforceFieldSchema` — an untouched field simply isn't a key
+            // here, so its column is left alone, matching `update`'s
+            // existing partial-patch semantics for every other column.
+            for (const [key, value] of Object.entries(m.fields ?? {})) {
+              sets.push(`${this.fieldColumnName(key)} = ?`);
+              params.push(value);
+            }
             sets.push('updated_at = ?'); params.push(new Date().toISOString());
-            
+
             if (sets.length > 0) {
               params.push(id, this.projectId);
               this.db.prepare(`UPDATE memories SET ${sets.join(', ')} WHERE id = ? AND project_id = ?`).run(...params);
@@ -957,10 +1057,19 @@ export class NeuronMemory {
             const createdAt = m.createdAt ?? now;
             const taskId = m.taskId ?? null;
 
+            // Declared category fields (ticket 44): `m.fields` is already
+            // fully resolved (defaults filled, required checked) by
+            // `enforceFieldSchema` before `transact()` ever reaches here.
+            const fieldEntries = Object.entries(m.fields ?? {});
+            const fieldColumnsSql = fieldEntries.map(([key]) => this.fieldColumnName(key));
+            const fieldColumnsList = fieldColumnsSql.length ? ', ' + fieldColumnsSql.join(', ') : '';
+            const fieldPlaceholders = fieldColumnsSql.length ? ', ' + fieldColumnsSql.map(() => '?').join(', ') : '';
+            const fieldValues = fieldEntries.map(([, value]) => value);
+
             this.db.prepare(`
-              INSERT INTO memories (id, project_id, category, content, tags, embedding, importance, task_id, created_at, updated_at, enriched_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(id, this.projectId, category, m.content, tagsJson, blob, importance, taskId, createdAt, now, m.enrichedAt ?? null);
+              INSERT INTO memories (id, project_id, category, content, tags, embedding, importance, task_id, created_at, updated_at, enriched_at${fieldColumnsList})
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${fieldPlaceholders})
+            `).run(id, this.projectId, category, m.content, tagsJson, blob, importance, taskId, createdAt, now, m.enrichedAt ?? null, ...fieldValues);
             results.push({ id, status: 'created', project: this.projectName });
           } else {
             results.push({ id, status: 'not_found', project: this.projectName });

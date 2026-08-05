@@ -8,6 +8,8 @@ import {
   findNeuronYaml,
   resolveExecCategories,
   fieldKeyToFlagName,
+  fieldKeyToColumnName,
+  isValidColumnIdentifier,
   collectDeclaredFieldFlags,
 } from './neuronYaml.js';
 
@@ -472,6 +474,64 @@ pullRules:
         scan: { enabled: true, category: 'architecture', depth: 3 },
       });
       expect(config.categories.architecture.fields?.reviewedBy.default).toBe('unreviewed');
+    });
+  });
+
+  describe('SQLite column derivation & collision checks (ticket 44)', () => {
+    it('snake-cases a camelCase field key into its column name', () => {
+      expect(fieldKeyToColumnName('reviewedBy')).toBe('reviewed_by');
+      expect(fieldKeyToColumnName('ticket')).toBe('ticket');
+    });
+
+    it('accepts every column name fieldKeyToColumnName can produce from a valid field key', () => {
+      expect(isValidColumnIdentifier(fieldKeyToColumnName('reviewedBy'))).toBe(true);
+      expect(isValidColumnIdentifier('not a column')).toBe(false);
+    });
+
+    it('refuses a declared field whose column would collide with a reserved memories column', () => {
+      // `content` is not a reserved *flag* (`--content` is fine), but it is
+      // the `memories` table's own content column.
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {}, decisions: { fields: { content: { type: 'string' } } } },
+        })
+      ).toThrow(/collides with a reserved column/);
+    });
+
+    it('refuses a declared field whose column would collide with another reserved memories column via case folding', () => {
+      // `createdAt` -> `--created-at` is not a reserved flag, but its column
+      // `created_at` is the memories table's own timestamp column.
+      expect(() =>
+        validateNeuronYaml({
+          categories: { learning: {}, decisions: { fields: { createdAt: { type: 'string' } } } },
+        })
+      ).toThrow(/collides with a reserved column/);
+    });
+
+    it('refuses two different field keys across categories that derive the same column name', () => {
+      // Both `fooBar` and `FooBar` are valid, distinct camelCase keys
+      // (FIELD_KEY_PATTERN allows either case for the first letter), but
+      // `fieldKeyToColumnName` folds them to the identical column `foo_bar`.
+      expect(fieldKeyToColumnName('fooBar')).toBe(fieldKeyToColumnName('FooBar'));
+      expect(() =>
+        validateNeuronYaml({
+          categories: {
+            decisions: { fields: { fooBar: { type: 'string' } } },
+            learning: { fields: { FooBar: { type: 'string' } } },
+          },
+        })
+      ).toThrow(/collides with field/);
+    });
+
+    it('allows the same field key declared independently on two categories to share one column', () => {
+      const config = validateNeuronYaml({
+        categories: {
+          decisions: { fields: { ticket: { type: 'string', required: true } } },
+          learning: { fields: { ticket: { type: 'string', required: false } } },
+        },
+      });
+      expect(fieldKeyToColumnName('ticket')).toBe('ticket');
+      expect(config.categories.decisions.fields?.ticket.required).toBe(true);
     });
   });
 

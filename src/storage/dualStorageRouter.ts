@@ -287,6 +287,7 @@ export class DualStorageRouter {
           importance: entry.importance,
           taskId: entry.taskId ?? undefined,
           createdAt: entry.createdAt,
+          fields: entry.fields,
         });
       }
     }
@@ -315,6 +316,7 @@ export class DualStorageRouter {
           importance: mdEntry.importance,
           taskId: mdEntry.taskId ?? undefined,
           createdAt: mdEntry.createdAt,
+          fields: mdEntry.fields,
         }]);
       } catch (err) {
         this.warnVectorDrift(id, err);
