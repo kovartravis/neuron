@@ -75,6 +75,41 @@ describe('Architecture Scan Ingestion (ingestScanResults)', () => {
     expect(queried.length).toBe(1);
     expect(queried[0].content).toContain('test-ingest-project');
   });
+
+  it('never creates a duplicate card on repeat ingestion, even when other entries in the category outrank it semantically (ticket 37)', async () => {
+    const first = await ingestScanResults(memory, {
+      projectDir: tmpDir,
+      category: 'decisions',
+    });
+
+    // Flood the category with decoys whose content is a near-verbatim match
+    // for ingestScanResults' internal lookup text ('Repository Architectural
+    // Blueprint'), so a semantic top-10 search ranks them above the real
+    // card and the old `.find()`-over-a-query lookup would miss it entirely.
+    const decoys = Array.from({ length: 12 }, (_, i) => ({
+      op: 'upsert' as const,
+      category: 'decisions',
+      content: `Repository Architectural Blueprint decoy entry number ${i}`,
+      tags: ['decoy'],
+      importance: 3,
+    }));
+    await memory.transact(decoys);
+
+    const second = await ingestScanResults(memory, {
+      projectDir: tmpDir,
+      category: 'decisions',
+    });
+
+    expect(second.id).toBe(first.id);
+
+    const queried = await memory.query({
+      categories: ['decisions'],
+      limit: 20,
+    });
+
+    const blueprintCards = queried.filter(e => e.tags?.includes('architecture'));
+    expect(blueprintCards.length).toBe(1);
+  });
 });
 
 

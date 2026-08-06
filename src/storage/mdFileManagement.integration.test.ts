@@ -33,6 +33,12 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
         embed: async () => new Float32Array(384),
         embedQuery: async () => new Float32Array(384),
       },
+      // This db is the router's *vector* collaborator — production passes it a
+      // vector-only delegate, not a NeuronMemory that routes again. Pinning the
+      // mode keeps the fixture matching that, now that the schema default is
+      // `md` (ticket 31) and tempDir would otherwise get two markdown writers
+      // aimed at the same directory.
+      storageMode: 'vector-only',
     });
 
     mdAdapter = new MdStorageAdapter({ storagePath: mdStoragePath });
@@ -40,7 +46,7 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
     testConfig = {
       ...DEFAULT_CONFIG,
       storage: {
-        mode: 'dual',
+        mode: 'md',
         path: mdStoragePath,
       },
       categories: {
@@ -74,7 +80,6 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
         content: 'T3-01 Atomic Swap Test Entry',
         tags: ['integration', 'atomic'],
         importance: 4,
-        scope: 'project',
       },
     ];
 
@@ -162,7 +167,7 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
     // 2. Switch config mode to dual
     const dualConfig: NeuronConfig = {
       ...testConfig,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
     };
 
     // 3. Trigger backfill sync

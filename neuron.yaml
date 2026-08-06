@@ -1,7 +1,7 @@
 version: "1.0"
 
 storage:
-  mode: vector-only
+  mode: md
   path: .neuron
 
 categories:
@@ -43,11 +43,11 @@ pullRules:
     - commandPattern: ".*"
       categories:
         - learning
-      limit: 5
+      limit: 8
 
     - commandPattern: "^(npm test|git commit)"
       categories:
         - learning
         - history
         - decisions
-      limit: 8
+      limit: 5

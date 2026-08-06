@@ -1,0 +1,758 @@
+[
+  {
+    "id": "5eec6a22-1d36-4699-8695-b6c3e2bcdc0b",
+    "query_text": "readme documentation npm",
+    "scope": "global,neuron",
+    "created_at": "2026-07-15T03:20:14.052Z"
+  },
+  {
+    "id": "a2420435-3d2d-45a3-9cc8-169eaaebf1cc",
+    "query_text": "git publish npm",
+    "scope": "global,neuron",
+    "created_at": "2026-07-16T22:47:59.519Z"
+  },
+  {
+    "id": "0a924ae2-ca84-4a80-a4e2-826fe4195ab7",
+    "query_text": "bge hybrid search",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:35:04.137Z"
+  },
+  {
+    "id": "f4414733-e18b-437a-b77f-9a01da526fe0",
+    "query_text": "models components structure",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:44:11.233Z"
+  },
+  {
+    "id": "a387ec56-8c59-4c6b-ad72-fc0caca68051",
+    "query_text": "model tests removal",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:45:02.869Z"
+  },
+  {
+    "id": "beac183d-4602-4733-967f-b0b718744630",
+    "query_text": "cli subcommands refactor",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:46:31.199Z"
+  },
+  {
+    "id": "0e9f6016-b60d-4895-899e-44d9d5b34b5a",
+    "query_text": "exec command string query",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:48:45.242Z"
+  },
+  {
+    "id": "46da2ede-b229-48c9-ae62-3d604b2adf5f",
+    "query_text": "exec search history learnings",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:50:14.044Z"
+  },
+  {
+    "id": "53eedaf2-aaf5-4f40-a7ba-176632f4aa29",
+    "query_text": "NEURON_MOCK_EMBEDDER threshold exec",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:51:14.183Z"
+  },
+  {
+    "id": "b646592e-a635-47c5-b124-6a78ce69b28f",
+    "query_text": "remove mock embedder check exec",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:51:51.055Z"
+  },
+  {
+    "id": "836983da-003c-4511-84f6-95ce09b6e98e",
+    "query_text": "cli test split command test files",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:53:18.120Z"
+  },
+  {
+    "id": "71bb943a-e328-4290-85b0-bdee6ed29016",
+    "query_text": "cli exec feedback memory",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:56:27.436Z"
+  },
+  {
+    "id": "5669ffab-8cd6-4257-88cd-d9dc40b76029",
+    "query_text": "background passive learning history recording",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:58:30.933Z"
+  },
+  {
+    "id": "d450556e-3669-4149-8221-d46ffa199b57",
+    "query_text": "subagent background observer design",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T03:59:34.617Z"
+  },
+  {
+    "id": "dd163710-a27c-4b8e-9ea0-a1e773c6f371",
+    "query_text": "remove subagent kill active subagents",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:00:30.602Z"
+  },
+  {
+    "id": "a4a5c872-ed9c-401c-a65f-bb88bc929b79",
+    "query_text": "init harness config detectHarnesses",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:04:19.941Z"
+  },
+  {
+    "id": "0e7d74dd-e38d-4581-9337-1cf148e74428",
+    "query_text": "harnesses json config file loading",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:07:16.251Z"
+  },
+  {
+    "id": "8c0aaa03-4ebe-4d51-89fb-a6397496de33",
+    "query_text": "roadmap improvement feature suggestions",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:10:36.745Z"
+  },
+  {
+    "id": "146c6bda-fe50-4eab-88f1-db11146dba49",
+    "query_text": "UI web dashboard database view import export analytics",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:12:50.442Z"
+  },
+  {
+    "id": "7be32753-24d2-448f-8d6a-7da362eee4e1",
+    "query_text": "future feature todo ideas architecture",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:14:45.929Z"
+  },
+  {
+    "id": "d7a104a7-7954-4678-9abf-d6a2e691646d",
+    "query_text": "add todo issue tickets",
+    "scope": "global,neuron",
+    "created_at": "2026-07-26T04:16:11.821Z"
+  },
+  {
+    "id": "a1495bf4-d073-4771-93a8-a1d0f1b568bc",
+    "query_text": "md file management",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T00:26:57.164Z"
+  },
+  {
+    "id": "120c66b5-b73d-4206-b6cd-7ccec61a53c1",
+    "query_text": "grilling domain modeling .neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T00:31:06.320Z"
+  },
+  {
+    "id": "fdd32309-c350-4e22-9d59-51e5c182aa73",
+    "query_text": "ticket 17 web ui dashboard server",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T00:34:46.978Z"
+  },
+  {
+    "id": "629dd5b5-38b1-4749-a547-5389821287cd",
+    "query_text": "neuron learn query memory entry length",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:09:17.565Z"
+  },
+  {
+    "id": "0ec94469-6502-4051-b4ab-d213045e131d",
+    "query_text": "memory entry length",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:09:17.756Z"
+  },
+  {
+    "id": "3bf6b689-730a-4937-a373-d9d6c0b9287b",
+    "query_text": "neuron learn query neuronrc categories configuration",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:11:32.649Z"
+  },
+  {
+    "id": "d15a0608-aecd-4ff5-8cae-413432ab061b",
+    "query_text": "neuronrc categories configuration",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:11:32.833Z"
+  },
+  {
+    "id": "a5983be5-77f7-4e36-8ff4-2a935b906e4d",
+    "query_text": "neuron learn query agents.md sync skill neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:13:10.979Z"
+  },
+  {
+    "id": "dc36de1d-695b-428f-acc5-b56ce9588081",
+    "query_text": "agents.md sync skill neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:13:11.161Z"
+  },
+  {
+    "id": "a105a56e-6c38-4c78-996f-de5de9f1d9a9",
+    "query_text": "neuron learn query yaml config parser neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:14:30.919Z"
+  },
+  {
+    "id": "0533836c-a2d1-4db5-9f4f-a85043c395e2",
+    "query_text": "yaml config parser neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:14:31.096Z"
+  },
+  {
+    "id": "80975389-641b-4a5c-aacc-b2146e1f9413",
+    "query_text": "neuron learn query vector embeddings storage neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:15:14.150Z"
+  },
+  {
+    "id": "453c5ad8-4a55-4e74-8225-455f5fa733be",
+    "query_text": "vector embeddings storage neuronrc",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:15:14.331Z"
+  },
+  {
+    "id": "6fb206eb-cd30-4508-92bf-b88df34efb98",
+    "query_text": "neuron learn query grilling session ticket requirements",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:17:13.006Z"
+  },
+  {
+    "id": "0bb5cb78-ad26-40a9-a97b-2b2125ffe685",
+    "query_text": "grilling session ticket requirements",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:17:13.176Z"
+  },
+  {
+    "id": "10221490-95d8-44b8-af02-cebbf24d672c",
+    "query_text": "neuron learn query database schema migration unified table",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:20:37.749Z"
+  },
+  {
+    "id": "7a178b6e-61e9-4786-a095-768acda85400",
+    "query_text": "database schema migration unified table",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:20:37.934Z"
+  },
+  {
+    "id": "d0e73a14-b6eb-499b-94f7-5fcf37007a5a",
+    "query_text": "neuron learn query unit tests verification",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:28:40.357Z"
+  },
+  {
+    "id": "86a4978a-6178-42cc-a8ba-bf8d8b23a15e",
+    "query_text": "unit tests verification",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:28:40.547Z"
+  },
+  {
+    "id": "6e592851-74eb-491f-8229-c97d28114e0e",
+    "query_text": "neuron learn query readme update neuron.yaml categories",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:30:42.466Z"
+  },
+  {
+    "id": "de409968-7435-4d90-acf3-2b9fc1ee5780",
+    "query_text": "readme update neuron.yaml categories",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:30:42.642Z"
+  },
+  {
+    "id": "a2975ffb-8ed4-4c23-8ce5-1b8b266e389f",
+    "query_text": "neuron learn query git release npm package version tag",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:31:30.798Z"
+  },
+  {
+    "id": "4b4be889-6549-4095-ae40-8e8462c3d235",
+    "query_text": "git release npm package version tag",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:31:30.996Z"
+  },
+  {
+    "id": "f980e0a9-a4ca-4f9c-94e1-d3ae42b35b80",
+    "query_text": "neuron learn query readme killer features quickstart update",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:33:14.842Z"
+  },
+  {
+    "id": "0b871926-f673-45fc-a52d-b8614a295164",
+    "query_text": "readme killer features quickstart update",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:33:15.020Z"
+  },
+  {
+    "id": "81d5bbf4-e3be-4f93-9684-1b3237dfe9a8",
+    "query_text": "neuron learn query quickstart agent-first skill setup interview",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:35:04.602Z"
+  },
+  {
+    "id": "3cc62180-3e93-48b8-86a3-fa62d826c4cc",
+    "query_text": "quickstart agent-first skill setup interview",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:35:04.783Z"
+  },
+  {
+    "id": "d6203501-45cb-4843-ab56-44f98491dd78",
+    "query_text": "agents.md memory configuration align",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:40:35.551Z"
+  },
+  {
+    "id": "04c74d49-e1bc-4132-b5d8-1e62de0141e2",
+    "query_text": "neuron.yaml config CLI usage exec",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:41:33.291Z"
+  },
+  {
+    "id": "5f551286-ab43-4f8b-b268-2618c88aafe2",
+    "query_text": "readme ui screenshot dashboard",
+    "scope": "global,neuron",
+    "created_at": "2026-07-27T01:45:56.494Z"
+  },
+  {
+    "id": "cc0b4891-27d8-4f88-a7b9-d0ce78a69b3a",
+    "query_text": "agent memory benchmark",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:22:47.099Z"
+  },
+  {
+    "id": "cb1d5838-ccf7-4cce-949f-94e05513b970",
+    "query_text": "ui benchmark recall",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:30:57.931Z"
+  },
+  {
+    "id": "ec543d9a-f0d4-4962-ab75-0d7ccf7792b2",
+    "query_text": "benchmark output results JSON view",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:31:48.423Z"
+  },
+  {
+    "id": "fd685dbd-c452-4e08-af82-296efb3d58c4",
+    "query_text": "benchmark score retrieval judging",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:40:32.169Z"
+  },
+  {
+    "id": "d061529b-9c2e-493e-826e-4d60a8353f7d",
+    "query_text": "gemini free tier rate limits api",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:44:39.921Z"
+  },
+  {
+    "id": "98ec3af9-ac74-4ecf-a43c-a6a4a66e341d",
+    "query_text": "gemini api key env setup",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:45:51.257Z"
+  },
+  {
+    "id": "4ac39e2b-5fef-426c-acd4-c673f5724ad1",
+    "query_text": "manifest accuracy merge",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T01:50:24.044Z"
+  },
+  {
+    "id": "ebe2a105-0c46-405f-920b-ca9266aed90f",
+    "query_text": "mv .scratch/agent-memory-benchmark benchmarks/agent-memory-benchmark",
+    "scope": "global,neuron",
+    "created_at": "2026-07-28T02:02:22.199Z"
+  },
+  {
+    "id": "22fd1a3e-75ed-4e7e-aa14-f2ef477dd913",
+    "query_text": "rm -f src/config/neuronrc.ts src/config/neuronrc.test.ts",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:16:03.755Z"
+  },
+  {
+    "id": "dd9579f3-01fd-481c-93cb-e4cc30e9613d",
+    "query_text": "./node_modules/.bin/vitest run",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:16:28.119Z"
+  },
+  {
+    "id": "2d4d1c3f-cb42-40d6-a9b9-66ad70fb8faf",
+    "query_text": "neuron learn query md-file-management",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:20:55.217Z"
+  },
+  {
+    "id": "ddd3d8eb-a1ed-4205-b4e1-319d98e0e7a1",
+    "query_text": "md-file-management",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:20:55.288Z"
+  },
+  {
+    "id": "65dff280-7a8f-4f2b-861b-1c41e9ae6605",
+    "query_text": "neuron learn query md-file-management storage",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:21:42.862Z"
+  },
+  {
+    "id": "57d0c762-ffc0-4a01-b381-ac27e9544607",
+    "query_text": "neuron learn query markdown vector sync engine",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:21:42.902Z"
+  },
+  {
+    "id": "5fd59d9e-e896-4d31-bbcc-6dbf5cb31c9b",
+    "query_text": "cli sync command scaffolding",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:21:43.177Z"
+  },
+  {
+    "id": "59d6873e-875f-4d07-8ae0-b216bcbcf815",
+    "query_text": "e2e testing md-file-management",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:21:43.479Z"
+  },
+  {
+    "id": "04315174-c0b9-47b5-b9c4-2a1eb584a09b",
+    "query_text": "neuron learn query md-file-management test strategy",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:22:06.948Z"
+  },
+  {
+    "id": "70b10daa-a5ac-4c3a-9d95-e78e010f1fb8",
+    "query_text": "neuron learn query test setup runners project structure",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:22:07.302Z"
+  },
+  {
+    "id": "5c3eb933-a1ae-481b-8911-b26e0502d819",
+    "query_text": "neuron learn query MdStorageAdapter markdown storage",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:22:46.237Z"
+  },
+  {
+    "id": "b75433c6-7fac-4d71-b098-c6675af73cda",
+    "query_text": "git branch -a",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:23:44.666Z"
+  },
+  {
+    "id": "226a88e9-5123-4323-8772-1c9c8d44977a",
+    "query_text": "neuron learn query MdStorageAdapter verification",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:26:35.070Z"
+  },
+  {
+    "id": "fc17d3cb-f0ac-4a7a-8fc0-c33d95fdac77",
+    "query_text": "MdStorageAdapter stress test",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:26:55.970Z"
+  },
+  {
+    "id": "6bee3113-427b-403c-87d3-36b323179bb6",
+    "query_text": "MdStorageAdapter parse fix",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:27:15.503Z"
+  },
+  {
+    "id": "338addbc-9556-44cc-b09d-260c46f70f5a",
+    "query_text": "MdStorageAdapter remediation fix",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:28:31.932Z"
+  },
+  {
+    "id": "2de01dc3-f51b-413b-b714-278622e79bb6",
+    "query_text": "neuron learn query forensic audit mdStorageAdapter round 2",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:30:03.989Z"
+  },
+  {
+    "id": "c93279a0-d044-4f9e-8647-9372702f7342",
+    "query_text": "neuron learn query MdStorageAdapter empirical test",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:30:04.272Z"
+  },
+  {
+    "id": "144dd577-55b1-4849-bffa-749907dc61c0",
+    "query_text": "MdStorageAdapter gate verification",
+    "scope": "global,neuron",
+    "created_at": "2026-07-29T04:30:04.517Z"
+  },
+  {
+    "id": "a2410317-ba39-4aac-9807-04ba604a4a80",
+    "query_text": "personamem benchmark retrieval prompt failure mode",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T01:47:08.981Z"
+  },
+  {
+    "id": "a9bd1555-7f94-4952-b099-9dd4cb6dd5a2",
+    "query_text": "scan dry run",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:02:34.013Z"
+  },
+  {
+    "id": "b24d26f9-da4a-4477-894d-0757bd29d7f7",
+    "query_text": "summarizer model loading progress chatml prompt leakage",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:05:13.252Z"
+  },
+  {
+    "id": "462d4ec9-614e-4a01-95f6-3a1001c6a63a",
+    "query_text": "delete local model cache",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:07:19.614Z"
+  },
+  {
+    "id": "6957946f-bbcc-4957-ad3d-cc0269293ff5",
+    "query_text": "2.1.0 release plan",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:27:17.084Z"
+  },
+  {
+    "id": "88ee8ab1-3530-4b7d-ad90-d49714ae7bd3",
+    "query_text": "rc version bump release plan",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:28:05.799Z"
+  },
+  {
+    "id": "c33d2492-5640-409a-ae8f-3542ad43544b",
+    "query_text": "ticket 2 memory store ingestion grilling domain model",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:29:04.226Z"
+  },
+  {
+    "id": "cb73f1af-be38-48be-9c7d-5055ca03ed38",
+    "query_text": "documentation update readme skill help protocol",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:36:47.205Z"
+  },
+  {
+    "id": "92a6a01e-0616-4f05-8639-db7edbcc8f28",
+    "query_text": "init loading bar scanning",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:38:52.762Z"
+  },
+  {
+    "id": "52205683-60fb-42d5-af25-392302017f81",
+    "query_text": "neuron learn query scan yaml section",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:40:55.380Z"
+  },
+  {
+    "id": "9fdc3212-629b-4b99-bb13-d03b41afeaec",
+    "query_text": "neuron learn query architecture scan execution trigger",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:41:52.136Z"
+  },
+  {
+    "id": "b95098ba-53f1-40c9-a03b-42b19bd1f158",
+    "query_text": "neuron learn query architecture scan lazy initialization memory call diffing",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:43:38.946Z"
+  },
+  {
+    "id": "763ca9c0-0d48-4029-bf45-cbdb1a1ed22f",
+    "query_text": "neuron learn query ensureScanOrDiff subsequent scans diffing",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:45:33.340Z"
+  },
+  {
+    "id": "347e641c-8e91-4f93-96fc-9f555621c598",
+    "query_text": "neuron learn query revert scan diff code removal",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:45:48.376Z"
+  },
+  {
+    "id": "5a68a3d5-9ac6-49ca-8671-671e0dc33efb",
+    "query_text": "git release push version",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T19:48:57.805Z"
+  },
+  {
+    "id": "2fd47cdd-939a-4a29-b2c2-e78aa80dfc0f",
+    "query_text": "architectural scan config",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:00:35.975Z"
+  },
+  {
+    "id": "e6ae6744-14ea-4122-9bb7-b7bf7ee78921",
+    "query_text": "architectural scan default category",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:06:02.918Z"
+  },
+  {
+    "id": "891dd5e0-0191-4269-9f09-2120dfe93aab",
+    "query_text": "grill ticket 3",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:07:30.782Z"
+  },
+  {
+    "id": "05585cd9-2611-462a-b097-5c5386ddd370",
+    "query_text": "architectural drift diffing",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:10:27.495Z"
+  },
+  {
+    "id": "de89b2a3-2c98-4a9d-99f7-f219164a08a7",
+    "query_text": "grill summary plan complete",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:14:24.672Z"
+  },
+  {
+    "id": "3f1edfd9-1e8c-45b6-b8eb-a2e7ddec5811",
+    "query_text": "architecture category filtering scan tags",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:15:07.369Z"
+  },
+  {
+    "id": "295fa8ed-bcac-425b-b677-a0dfc67cfc13",
+    "query_text": "md mode overwrite scan blueprint entry",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:16:35.497Z"
+  },
+  {
+    "id": "a6743205-369e-4a31-9038-3f80d1529cfd",
+    "query_text": "vector db upsert transact",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:17:18.660Z"
+  },
+  {
+    "id": "585fb365-4788-4996-82c7-5a68864eeb70",
+    "query_text": "memory query architectural drift auto scan",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:23:33.923Z"
+  },
+  {
+    "id": "2d71d09f-5634-4fb2-95ec-71c5993c3d01",
+    "query_text": "auto re-scan on drift in memory query and exec",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:24:35.709Z"
+  },
+  {
+    "id": "c95c1dc4-1dee-46dd-b5df-f1096d51c636",
+    "query_text": "learn command handler query subcommand scan",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:27:39.236Z"
+  },
+  {
+    "id": "f2296330-8460-4366-819b-f578377ede01",
+    "query_text": "fold learn and history into memory",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:28:29.792Z"
+  },
+  {
+    "id": "a64b3023-a038-4cfd-9650-c581b941c416",
+    "query_text": "why learn query autoRescanIfDriftDetected not scanning",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:31:25.401Z"
+  },
+  {
+    "id": "cae36bb2-c592-4a74-8490-94c18a176a4c",
+    "query_text": "chinese characters summarizer architecture scan Qwen SmolLM2",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:35:48.987Z"
+  },
+  {
+    "id": "a247e717-e4b1-48f7-a69b-8d4ec0c2c683",
+    "query_text": "architecture scans 2.1.0 tickets roadmap next ticket",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:37:52.663Z"
+  },
+  {
+    "id": "bc09458b-2a57-45e4-9263-4f7d5478ec24",
+    "query_text": "benchmarking agent memory benchmark runner rate limit free tier",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:41:49.403Z"
+  },
+  {
+    "id": "885128c7-4415-4bf6-99e9-8eacabda7120",
+    "query_text": "deep testing suite architecture scans 2.1.0",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:43:05.654Z"
+  },
+  {
+    "id": "f67ea98c-24b7-4819-af6d-6b14b736e05e",
+    "query_text": "e2e benchmark suite test fixtures polyglot",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:47:35.087Z"
+  },
+  {
+    "id": "c2c1394d-5342-4daa-8b60-773e13aaac9e",
+    "query_text": "synthetic data generation benchmark test runner terminal ui dashboard",
+    "scope": "global,neuron",
+    "created_at": "2026-07-31T20:50:42.263Z"
+  },
+  {
+    "id": "840ba529-b2c4-4ebc-b561-97f3f909c9f9",
+    "query_text": "release candidate rc release process",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T00:37:00.092Z"
+  },
+  {
+    "id": "c5586b60-ae51-436f-a697-541a1ab1c30a",
+    "query_text": "Repository Architectural Blueprint",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T02:14:18.521Z"
+  },
+  {
+    "id": "331cb36b-f193-4595-8724-a9f98ee09eb6",
+    "query_text": "recall mechanism AGENTS.md CLAUDE.md instructions harness",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T02:25:31.212Z"
+  },
+  {
+    "id": "1fa73901-a1ca-4809-a4c5-1e3fae1413e4",
+    "query_text": "tree-sitter wasm AST parsing",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T02:25:32.221Z"
+  },
+  {
+    "id": "4e27a3d6-1094-437c-8ae7-2057a783caeb",
+    "query_text": "small llm local model",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T02:25:32.439Z"
+  },
+  {
+    "id": "c893ca0f-91a3-4714-90b0-2433f1317f60",
+    "query_text": "tree-sitter wasm grammar loading web-tree-sitter scanner",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T02:50:24.098Z"
+  },
+  {
+    "id": "6e9b658e-99e2-4d9f-a7a9-95420af7e1a6",
+    "query_text": "wayfinder map ticket tree-sitter grammars",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T03:10:54.504Z"
+  },
+  {
+    "id": "586c6bd8-c6f7-4267-ad6c-7f816903f520",
+    "query_text": "parser fidelity labelling baseline migration blueprint card drift",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T10:45:06.678Z"
+  },
+  {
+    "id": "ab6c5b01-1f9c-4de0-a39b-e6834761f41b",
+    "query_text": "Qwen 0.5B summarizer latency quality guardrails LLM jobs",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T11:59:22.932Z"
+  },
+  {
+    "id": "49513605-6121-4a37-a2a7-abeb0db1b5b9",
+    "query_text": "PersonaMem benchmark harness gemini free tier judge overnight run",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T12:21:52.401Z"
+  },
+  {
+    "id": "b5114651-2854-475d-b119-fe10da621545",
+    "query_text": "longmemeval benchmark gemini billing deferred write-side enrichment auto tags importance",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T15:50:02.032Z"
+  },
+  {
+    "id": "ca361333-ae3e-4ea7-9b94-2d2e85541656",
+    "query_text": "wayfinder map tickets grilling",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T15:56:29.955Z"
+  },
+  {
+    "id": "0535f0d5-ef71-4686-88e7-e932909d9074",
+    "query_text": "wayfinder map ticket implementation",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T17:00:27.863Z"
+  },
+  {
+    "id": "df0ecd84-134a-42a9-8304-ef6f9d385c97",
+    "query_text": "wayfinder map tickets tree-sitter grammars",
+    "scope": "global,neuron",
+    "created_at": "2026-08-01T20:47:32.607Z"
+  }
+]

@@ -1,0 +1,171 @@
+{
+  "timestamp": "2026-08-05T19:36:19.946Z",
+  "tier": "sanity",
+  "suiteDurationMs": 27994,
+  "pillars": [
+    {
+      "pillar": "Pillar 11: Category Strategy A/B",
+      "samples": 18,
+      "p50Ms": 426.96,
+      "p95Ms": 4282.55,
+      "p99Ms": 7863.91,
+      "minMs": 12.21,
+      "maxMs": 8759.25,
+      "meanMs": 1207.23,
+      "totalMs": 21730.16,
+      "throughputPerSec": 0.83,
+      "extra": {
+        "cases": 9,
+        "accuracy": {
+          "model": 0.111,
+          "centroid": 1
+        },
+        "winner": "centroid",
+        "errors": {
+          "model": [
+            "cat-learning-1: expected learning, got (hard error)",
+            "cat-learning-2: expected learning, got (hard error)",
+            "cat-history-1: expected history, got (hard error)",
+            "cat-history-2: expected history, got (hard error)",
+            "cat-history-3: expected history, got (hard error)",
+            "cat-decisions-1: expected decisions, got (hard error)",
+            "cat-decisions-2: expected decisions, got learning",
+            "cat-decisions-3: expected decisions, got (hard error)"
+          ],
+          "centroid": []
+        }
+      }
+    },
+    {
+      "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
+      "samples": 16,
+      "p50Ms": 5.87,
+      "p95Ms": 9.77,
+      "p99Ms": 14.85,
+      "minMs": 3.89,
+      "maxMs": 16.12,
+      "meanMs": 6.32,
+      "totalMs": 101.05,
+      "throughputPerSec": 158.34,
+      "extra": {
+        "corpusSize": 158,
+        "cases": 8,
+        "disabled": {
+          "recallAt1": 0.25,
+          "recallAt5": 0.5,
+          "mrr": 0.362
+        },
+        "enabled": {
+          "recallAt1": 0.25,
+          "recallAt5": 0.5,
+          "mrr": 0.362,
+          "inferredGoldTags": [
+            [
+              "decoy-retry-budget",
+              "negative",
+              "filler"
+            ],
+            [
+              "negative",
+              "neg_2",
+              "filler"
+            ],
+            [
+              "para-token-expiry",
+              "neg_1",
+              "negative"
+            ],
+            [
+              "negative",
+              "para-memory-growth",
+              "filler"
+            ],
+            [
+              "negative",
+              "neg_0",
+              "neg_1"
+            ],
+            [
+              "neg_0",
+              "negative",
+              "filler"
+            ],
+            [
+              "negative",
+              "neg_1",
+              "filler"
+            ],
+            [
+              "filler",
+              "negative",
+              "neg_0"
+            ]
+          ]
+        },
+        "delta": {
+          "recallAt1": 0,
+          "recallAt5": 0,
+          "mrr": 0
+        }
+      }
+    },
+    {
+      "pillar": "Pillar 10: Prune Safety",
+      "samples": 0,
+      "extra": {
+        "corpus": 12,
+        "guardedWithExplicitImportance": 3,
+        "distribution": {
+          "1": 0,
+          "2": 0,
+          "3": 9,
+          "4": 0,
+          "5": 3
+        },
+        "prunePreview": {
+          "1": {
+            "deleted": 0,
+            "criticalDeleted": []
+          },
+          "2": {
+            "deleted": 0,
+            "criticalDeleted": []
+          },
+          "3": {
+            "deleted": 9,
+            "criticalDeleted": [
+              "crit-credentials",
+              "crit-security",
+              "crit-release-block"
+            ]
+          },
+          "4": {
+            "deleted": 9,
+            "criticalDeleted": [
+              "crit-credentials",
+              "crit-security",
+              "crit-release-block"
+            ]
+          },
+          "5": {
+            "deleted": 12,
+            "criticalDeleted": [
+              "crit-prod-dataloss",
+              "crit-credentials",
+              "crit-corruption",
+              "crit-security",
+              "crit-irreversible",
+              "crit-release-block"
+            ]
+          }
+        },
+        "criticalDeletedAtDefaultThreshold": [
+          "crit-credentials",
+          "crit-security",
+          "crit-release-block"
+        ],
+        "unguardedCriticalAtDefault": 3
+      }
+    }
+  ]
+}

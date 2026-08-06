@@ -6,7 +6,14 @@ import { openDatabase } from './db.js';
 import {
   Embedder,
   TransformersEmbedder,
-  cleanFtsQuery
+  cleanFtsQuery,
+  EnrichmentModel,
+  LocalEnrichmentModel,
+  Centroid,
+  buildTagVocabulary,
+  buildCategoryCentroids,
+  selectTags,
+  selectCategory
 } from './components/index.js';
 import {
   MemoryKind,
@@ -26,7 +33,15 @@ export * from './config/index.js';
 
 import { DualStorageRouter } from './storage/dualStorageRouter.js';
 import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
-import { loadNeuronYaml } from './config/neuronYaml.js';
+import {
+  loadNeuronYaml,
+  NeuronConfig,
+  fieldKeyToFlagName,
+  fieldKeyToColumnName,
+  isValidColumnIdentifier,
+  collectDeclaredFieldFlags,
+} from './config/neuronYaml.js';
+import { suggestClosest } from './shared/textMatch.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
@@ -50,6 +65,23 @@ function resolveCategory(m: { category?: string; kind?: string }): string {
   return m.category ?? m.kind ?? 'learning';
 }
 
+/**
+ * Every declared field, across every category, deduplicated by key — two
+ * categories sharing a field key share one column, matching how they
+ * already share one CLI flag (`collectDeclaredFieldFlags`). Column-name
+ * validity (identifier pattern, no collision with a reserved column or
+ * another field) is already enforced once, at config-load time
+ * (`validateDeclaredFields` in `neuronYaml.ts`), so this is a pure
+ * derivation with no new failure mode of its own.
+ */
+function computeFieldColumns(config: NeuronConfig): Array<{ key: string; column: string }> {
+  const byKey = new Map<string, string>();
+  for (const { key } of collectDeclaredFieldFlags(config)) {
+    if (!byKey.has(key)) byKey.set(key, fieldKeyToColumnName(key));
+  }
+  return [...byKey.entries()].map(([key, column]) => ({ key, column }));
+}
+
 export class NeuronMemory {
   private db: any;
   private projectRoot: string;
@@ -57,6 +89,23 @@ export class NeuronMemory {
   private projectId: string;
   private embedder: Embedder;
   private router: DualStorageRouter;
+  private config: NeuronConfig;
+  private enricher: EnrichmentModel;
+  /**
+   * Computed once per process and never persisted. Each command invocation is
+   * its own process, so per-process is always fresh — which matters more than
+   * speed here, because a tag minted by an explicit write must be selectable by
+   * the very next write.
+   */
+  private tagVocabulary: Centroid[] | null = null;
+  /**
+   * Every declared field, across every category, paired with the SQLite
+   * column it owns (ticket 44). Computed once from config at construction —
+   * same per-process lifetime rationale as `tagVocabulary` above — and
+   * shared by the additive migration, the write path and the read path so
+   * there is exactly one derivation of "key → column" per process.
+   */
+  private fieldColumns: Array<{ key: string; column: string }>;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -69,23 +118,35 @@ export class NeuronMemory {
     
     this.embedder = options.embedder ?? new TransformersEmbedder();
 
-    const config = loadNeuronYaml(options.projectRoot);
+    const discovered = loadNeuronYaml(options.projectRoot);
+    const config: NeuronConfig = options.storageMode
+      ? { ...discovered, storage: { ...discovered.storage, mode: options.storageMode } }
+      : discovered;
+    this.config = config;
+    this.fieldColumns = computeFieldColumns(config);
+    this.enricher =
+      options.enricher ??
+      new LocalEnrichmentModel({ timeoutMs: config.llm.enrichment.timeoutMs });
     const configPath = config.storage?.path || '.neuron';
     const storagePath = path.isAbsolute(configPath)
       ? configPath
       : path.resolve(options.projectRoot, configPath);
     const mdAdapter = new MdStorageAdapter({ storagePath });
 
-    if (config.storage?.mode === 'md-only') {
-      this.db = null;
-    } else {
-      this.db = openDatabase(options.dbPath);
-      this.initialize();
-    }
+    // Every storage mode keeps the database now: `md-only` (which set
+    // `this.db = null`) was deleted by ticket 28 — every one of its defects
+    // traced to that one line. `md` mode demotes SQLite to a rebuildable
+    // index rather than removing it.
+    this.db = openDatabase(options.dbPath);
+    this.initialize();
+    this.migrateDeclaredFields();
 
     const vectorDbDelegate = {
       transact: (mutations: MemoryMutation[]) => this.transactVector(mutations),
       query: (q: MemoryQuery) => this.queryVector(q),
+      getMeta: (key: string) => this.getMeta(key),
+      setMeta: (key: string, value: string) => this.setMeta(key, value),
+      listStoredCategories: () => this.listStoredCategories(),
     } as any;
 
     this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config);
@@ -119,18 +180,56 @@ export class NeuronMemory {
     });
   }
 
-  static inMemory(projectName: string = 'test-project', embedder?: Embedder): NeuronMemory {
+  static inMemory(
+    projectName: string = 'test-project',
+    embedder?: Embedder,
+    enricher?: EnrichmentModel
+  ): NeuronMemory {
     return new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/in-memory/' + projectName,
       projectName,
-      embedder: embedder ?? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
+      embedder: embedder ?? { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      enricher,
+      // `projectRoot` here is fabricated, so `.neuron/` under it is a path
+      // nobody can write. Pinning the mode keeps an in-memory store in memory
+      // now that the schema default is `md` (ticket 31); markdown routing is
+      // exercised by constructing a router against a real directory instead.
+      storageMode: 'vector-only',
     });
   }
 
   public getDb(): any { return this.db; }
   public getProjectId(): string { return this.projectId; }
   public getEmbedder(): Embedder { return this.embedder; }
+  /** The loaded, validated `neuron.yaml` — the CLI layer reads it for dynamic `--help` text and the declared-field CLI flag surface (ticket 43). */
+  public getConfig(): NeuronConfig { return this.config; }
+
+  public getMeta(key: string): string | null {
+    if (!this.db) return null;
+    const row = this.db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;
+    return row ? row.value : null;
+  }
+
+  /**
+   * Every category the index actually holds rows for, which is not the same
+   * set as the categories declared in `neuron.yaml` — nothing validates a
+   * `--category` against the config, so a store routinely holds categories no
+   * config mentions (`neuron scan`'s `architecture` being the common one).
+   * The bootstrap seed needs the real set, not the declared one.
+   */
+  public listStoredCategories(): string[] {
+    if (!this.db) return [];
+    const rows = this.db
+      .prepare('SELECT DISTINCT category FROM memories WHERE project_id = ?')
+      .all(this.projectId) as { category: string }[];
+    return rows.map(r => r.category).filter(Boolean);
+  }
+
+  public setMeta(key: string, value: string): void {
+    if (!this.db) return;
+    this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value);
+  }
 
   private initialize(): void {
     try {
@@ -346,16 +445,165 @@ export class NeuronMemory {
       })();
       currentVersion = 5;
     }
+
+    // --- Migration v6: enrichment timestamp ---
+    // The column records that a write went through enrichment. It once also
+    // drove a deferral backlog for model-inferred importance; ticket 26 removed
+    // that job, so no row is written NULL any more and the partial index below
+    // covers an empty set. Both are kept rather than migrated away — the
+    // timestamp is still an honest record, and dropping a column would make an
+    // rc1/rc2 database non-downgradable for no gain.
+    if (currentVersion < 6) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          ALTER TABLE memories ADD COLUMN enriched_at TEXT;
+          CREATE INDEX IF NOT EXISTS idx_memories_unenriched
+            ON memories (project_id) WHERE enriched_at IS NULL;
+        `);
+        // Existing rows were written with hand-supplied metadata, so they are
+        // enriched by definition.
+        this.db.exec(`UPDATE memories SET enriched_at = updated_at WHERE enriched_at IS NULL;`);
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '6');
+        this.db.pragma('user_version = 6');
+      })();
+      currentVersion = 6;
+    }
+
+    // --- Migration v7: remove `scope` (ticket 38) ---
+    // `scope` was designed for a multi-tenant ambition never pursued (ADR 0011
+    // Consequence 1) — measured at 1 distinct value across 264 rows on this
+    // repo's own store. `is_manual_scope`, `query_logs` and
+    // `learning_query_matches` existed solely to serve it and had zero other
+    // readers, so all four are dropped together rather than deprecated in place.
+    if (currentVersion < 7) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          ALTER TABLE memories DROP COLUMN scope;
+          ALTER TABLE memories DROP COLUMN is_manual_scope;
+          DROP TABLE IF EXISTS query_logs;
+          DROP TABLE IF EXISTS learning_query_matches;
+        `);
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '7');
+        this.db.pragma('user_version = 7');
+      })();
+      currentVersion = 7;
+    }
+  }
+
+  /**
+   * Additive-only SQLite parity for declared category fields (ticket 44 /
+   * ADR 0013). Unlike the `user_version`-gated migrations above, this is not
+   * a fixed schema step — it runs on every open, diffing whatever
+   * `neuron.yaml` currently declares against `PRAGMA table_info(memories)`
+   * and adding one nullable `TEXT` column per field that is missing.
+   * Idempotent by construction (the diff is against live schema state, not
+   * a version counter), and additive-only: a field removed from config
+   * simply stops appearing in `this.fieldColumns`, so its column and data
+   * are left alone rather than dropped — matching ticket 38's precedent
+   * that any column removal is an explicit, reviewed migration, never an
+   * automatic one.
+   *
+   * Enum membership is enforced in application code (`enforceFieldSchema`),
+   * not a SQL `CHECK` constraint, so changing a team's allowed enum values
+   * in `neuron.yaml` never requires a table rebuild.
+   */
+  private migrateDeclaredFields(): void {
+    if (this.fieldColumns.length === 0) return;
+
+    const existing = new Set(
+      (this.db.pragma('table_info(memories)') as Array<{ name: string }>).map((c) => c.name)
+    );
+    const missing = this.fieldColumns.filter((c) => !existing.has(c.column));
+    if (missing.length === 0) return;
+
+    this.db.transaction(() => {
+      for (const { key, column } of missing) {
+        // Re-validated here, immediately before interpolation into DDL, even
+        // though `validateNeuronYaml` already refused an unsafe column name
+        // at config-load time — this call site is the one that actually
+        // builds the SQL string, and it should not have to trust a caller
+        // three layers away to have done that check.
+        if (!isValidColumnIdentifier(column)) {
+          throw new Error(
+            `neuron: refusing to add SQLite column "${column}" for declared field "${key}" — fails identifier validation.`
+          );
+        }
+        this.db.exec(`ALTER TABLE memories ADD COLUMN ${column} TEXT`);
+      }
+    })();
+  }
+
+  /**
+   * Resolves a declared field's config key to its SQLite column name,
+   * re-validating the identifier at this call site too (see
+   * `migrateDeclaredFields`'s comment on defense in depth) since the result
+   * is interpolated into `transactVector`'s SQL rather than bound as a
+   * parameter.
+   */
+  private fieldColumnName(key: string): string {
+    const column = fieldKeyToColumnName(key);
+    if (!isValidColumnIdentifier(column)) {
+      throw new Error(`neuron: invalid SQLite column derived from declared field "${key}".`);
+    }
+    return column;
+  }
+
+  /** `, col1, col2, ...` — appended onto a `SELECT` that already reads a row's other columns. */
+  private fieldSelectSql(): string {
+    return this.fieldColumns.length ? ', ' + this.fieldColumns.map((c) => c.column).join(', ') : '';
+  }
+
+  /**
+   * A row's declared-field columns, sparse (only non-null ones), keyed back
+   * to their config field name. A column is `NULL` unless a write actually
+   * targeted it, so no per-category filtering is needed here — a category
+   * that never declared a given field never has a row with that column set.
+   */
+  private extractFields(row: any): Record<string, string> | undefined {
+    if (this.fieldColumns.length === 0) return undefined;
+    const out: Record<string, string> = {};
+    for (const { key, column } of this.fieldColumns) {
+      const value = row[column];
+      if (value !== null && value !== undefined) out[key] = value;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
   }
 
   public async query(q: MemoryQuery): Promise<Memory[]> {
-    return this.router.query(q);
+    return (await this.queryGated(q)).results;
+  }
+
+  /**
+   * Ticket 41 / ADR 0012: the one retrieval choke point shared by `neuron exec`,
+   * `neuron memory query` and the recall hooks (`commands/hook.ts`), so the gate
+   * runs identically everywhere instead of being reimplemented per caller. Only
+   * fires on a text query — a bare category listing has no `ftsMatched` to gate
+   * on. The lexical leg rejects a result whose top hit has no FTS match at all;
+   * algebraically that is exactly `ftsMatched === false` (a row with no FTS
+   * match cannot clear `normRrf > 0.5`, since `score` is now `normRrf` itself —
+   * see the comment at its computation in `queryVector`). Structured as a single
+   * conjunct so ticket 39's cosine floor — measured and found to clear no bar on
+   * LongMemEval — can be added as a second conjunct without reshaping this.
+   */
+  public async queryGated(q: MemoryQuery): Promise<{ results: Memory[]; rejected: number }> {
+    const all = await this.router.query(q);
+    if (!q.text || !this.config.relevance.gate.enabled) {
+      return { results: all, rejected: 0 };
+    }
+    const results = all.filter(m => m.ftsMatched === true);
+    const rejected = all.length - results.length;
+    // ADR 0012 Amendment: "rejection counts belong in neuron status alongside
+    // the enrichment degradation counters" — a structural (unfitted) gate has
+    // no threshold to tune, so its cumulative impact is the only visibility
+    // into whether it's rejecting too much or too little.
+    if (rejected > 0) this.recordGateRejections(rejected);
+    return { results, rejected };
   }
 
   public async queryVector(q: MemoryQuery): Promise<Memory[]> {
     const limit = q.limit ?? 5;
-    const scopes = q.scopes ?? ['global', this.projectName];
-    const placeholders = scopes.map(() => '?').join(',');
     const results: Memory[] = [];
 
     // Resolve categories to query
@@ -378,23 +626,15 @@ export class NeuronMemory {
     if (q.text) {
       const queryVec = await this.embedder.embedQuery(q.text);
 
-      const logId = crypto.randomUUID();
-      const queryBlob = Buffer.from(queryVec.buffer, queryVec.byteOffset, queryVec.byteLength);
-      const createdAt = new Date().toISOString();
-      this.db.prepare(`
-        INSERT INTO query_logs (id, project_id, query_text, embedding, scope, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(logId, this.projectId, q.text, queryBlob, scopes.join(','), createdAt);
-
       const RRF_K = 60;
       const RRF_MAX = 2 / (RRF_K + 1); // theoretical max when a doc ranks #1 in both lists
 
       // --- Semantic rank list ---
       const rows = (this.db.prepare(`
-        SELECT id, category, content, tags, embedding, scope, importance, task_id, created_at
+        SELECT id, category, content, tags, embedding, importance, task_id, created_at${this.fieldSelectSql()}
         FROM memories
-        WHERE project_id = ? AND scope IN (${placeholders}) ${categoryClause}
-      `).all(this.projectId, ...scopes, ...categoryParams) as any[]);
+        WHERE project_id = ? ${categoryClause}
+      `).all(this.projectId, ...categoryParams) as any[]);
 
       // Compute semantic similarities and sort descending → rank position
       const withSim = rows.map(row => {
@@ -418,9 +658,9 @@ export class NeuronMemory {
           const ftsRows = (this.db.prepare(`
             SELECT m.id FROM memories_fts f
             JOIN memories m ON m.rowid = f.rowid
-            WHERE f.memories_fts MATCH ? AND m.project_id = ? AND m.scope IN (${placeholders}) ${categoryClause}
+            WHERE f.memories_fts MATCH ? AND m.project_id = ? ${categoryClause}
             ORDER BY rank
-          `).all(ftsQuery, this.projectId, ...scopes, ...categoryParams) as any[]);
+          `).all(ftsQuery, this.projectId, ...categoryParams) as any[]);
           ftsRows.forEach((r, i) => ftsRank.set(r.id, i + 1));
         } catch {
           // Malformed FTS query — degrade gracefully to semantic-only
@@ -428,14 +668,17 @@ export class NeuronMemory {
       }
 
       // --- RRF fusion + Importance ---
-      for (const { row } of withSim) {
+      for (const { row, similarity } of withSim) {
         const sr = semanticRank.get(row.id) ?? Infinity;
         const fr = ftsRank.get(row.id) ?? Infinity;
         const rrfScore = (sr === Infinity ? 0 : 1 / (RRF_K + sr))
                        + (fr === Infinity ? 0 : 1 / (RRF_K + fr));
-        const normRrf = rrfScore / RRF_MAX;
-        const normImp = (row.importance - 1) / 4;
-        const score = 0.75 * normRrf + 0.25 * normImp;
+        // `score` is `normRrf` alone (ticket 41 / ADR 0012): importance blended
+        // in used to win the ranking often enough to be a defect on every query
+        // (ticket 27 §1), and it is not demoted to a tie-break either — ranks are
+        // unique per row, so a tie-break job never runs. `importance` remains a
+        // prune-only field (ticket 27 §5, ticket 23's hazard guard).
+        const score = rrfScore / RRF_MAX;
 
         results.push({
           id: row.id,
@@ -443,11 +686,13 @@ export class NeuronMemory {
           kind: row.category, // backward compat
           content: row.content,
           score,
+          similarity,
+          ftsMatched: fr !== Infinity,
           tags: JSON.parse(row.tags),
-          scope: row.scope,
           importance: row.importance,
           taskId: row.task_id ?? null,
-          createdAt: row.created_at
+          createdAt: row.created_at,
+          fields: this.extractFields(row)
         });
       }
 
@@ -456,7 +701,7 @@ export class NeuronMemory {
     } else {
       // No text query — list mode
       const stmt = this.db.prepare(`
-        SELECT id, category, content, tags, scope, importance, task_id, created_at
+        SELECT id, category, content, tags, importance, task_id, created_at${this.fieldSelectSql()}
         FROM memories
         WHERE project_id = ? ${categoryClause}
         ORDER BY rowid ASC
@@ -469,18 +714,288 @@ export class NeuronMemory {
           kind: row.category, // backward compat
           content: row.content,
           tags: JSON.parse(row.tags),
-          scope: row.scope,
           importance: row.importance,
           taskId: row.task_id ?? null,
-          createdAt: row.created_at
+          createdAt: row.created_at,
+          fields: this.extractFields(row)
         });
       }
       return results.slice(0, limit);
     }
   }
 
+  /**
+   * The single seam for write-side enrichment. Every write routes through here
+   * — the CLI, the deprecated convenience helpers, and the storage router
+   * alike — so enrichment placed here is applied exactly once.
+   */
   public async transact(mutations: MemoryMutation[]): Promise<MutationResult[]> {
-    return this.router.transact(mutations);
+    const enriched: MemoryMutation[] = [];
+    for (const m of mutations) {
+      const afterEnrichment = m.op === 'upsert' ? await this.enrichUpsert(m) : m;
+      enriched.push(this.enforceFieldSchema(afterEnrichment));
+    }
+    return this.router.transact(enriched);
+  }
+
+  // --- Declared field-schema enforcement (ticket 43 / ADR 0013) -------------
+
+  /**
+   * Required-ness and enum-membership for config-declared category fields,
+   * enforced once, here — the single choke point every writer (the CLI via
+   * `parseFlags`, `neuron scan`'s `ingestScanResults` calling `transact()`
+   * directly) goes through, so there is exactly one place this can be
+   * gotten wrong rather than one per caller.
+   *
+   * Runs after `enrichUpsert` so an inferred category is already resolved:
+   * a category's declared fields cannot be checked before its category is
+   * known.
+   */
+  private enforceFieldSchema(m: MemoryMutation): MemoryMutation {
+    if (m.op !== 'upsert' && m.op !== 'update') return m;
+
+    const category = resolveCategory(m);
+    const fieldDefs = this.config.categories[category]?.fields ?? {};
+    const raw = m.fields ?? {};
+
+    for (const key of Object.keys(raw)) {
+      if (!(key in fieldDefs)) {
+        throw new Error(
+          `Error: --${fieldKeyToFlagName(key)} is not a declared field of category "${category}" ` +
+            `(neuron.yaml categories.${category}.fields).`
+        );
+      }
+    }
+
+    const resolved: Record<string, string> = { ...raw };
+
+    if (m.op === 'upsert') {
+      // Required-but-missing and defaults only bite on create. `update` is a
+      // partial patch — the same posture content/tags/importance/taskId
+      // already have — so it never re-demands a field the entry already
+      // satisfied when created, matching ticket 06's `--category` precedent
+      // ("hard error naming the cause, unless a default is configured").
+      for (const [key, def] of Object.entries(fieldDefs)) {
+        if (resolved[key] !== undefined) continue;
+        if (def.default !== undefined) {
+          resolved[key] = def.default;
+        } else if (def.required) {
+          throw new Error(
+            `Error: --${fieldKeyToFlagName(key)} is required for category "${category}" ` +
+              `(neuron.yaml categories.${category}.fields.${key}). ` +
+              `Pass --${fieldKeyToFlagName(key)} <value>, or add a "default:" in neuron.yaml.`
+          );
+        }
+      }
+    }
+
+    for (const [key, value] of Object.entries(resolved)) {
+      const def = fieldDefs[key];
+      if (def.type === 'enum' && !def.values.includes(value)) {
+        const suggestion = suggestClosest(value, def.values);
+        throw new Error(
+          `Error: --${fieldKeyToFlagName(key)} "${value}" is not one of [${def.values.join(', ')}]` +
+            (suggestion ? ` — did you mean "${suggestion}"?` : '')
+        );
+      }
+    }
+
+    return { ...m, fields: Object.keys(resolved).length > 0 ? resolved : undefined };
+  }
+
+  // --- Write-side enrichment ------------------------------------------------
+
+  /**
+   * Fill the metadata the caller left unset. Explicit input always wins
+   * per-field (ADR 0010 §5); an empty tag array counts as unset, since no
+   * caller means "definitely no tags" by passing one.
+   */
+  private async enrichUpsert(
+    m: Extract<MemoryMutation, { op: 'upsert' }>
+  ): Promise<MemoryMutation> {
+    const cfg = this.config.llm.enrichment;
+    const strict = this.config.strict;
+    const now = new Date().toISOString();
+    const explicitCategory = m.category ?? m.kind;
+
+    // Enrichment off entirely: category is still mandatory, and nothing is
+    // pending, so the write must not enter the backlog.
+    if (!cfg.enabled) {
+      if (!explicitCategory) throw categoryRequired('is disabled (llm.enrichment.enabled: false)');
+      return { ...m, enrichedAt: now };
+    }
+
+    // Ticket 45 / ADR 0013: `strict` disables the two content-driven
+    // inference mechanisms (tag centroid selection, category
+    // centroid/model inference) so a project can claim value determinism,
+    // not just shape/byte. A literal `llm.enrichment.category` fallback is
+    // untouched — it's a fixed, content-independent default, not inference.
+    const wantsTags = !strict && cfg.tags === 'infer' && (m.tags === undefined || m.tags.length === 0);
+    const wantsCategory = !explicitCategory;
+
+    if (!wantsTags && !wantsCategory) {
+      if (!explicitCategory) throw categoryRequired('is off (llm.enrichment.category: off)');
+      return { ...m, enrichedAt: now };
+    }
+
+    // The embedder is already loaded on the write path, so this second embed
+    // costs ~4ms rather than the ~180ms a cold load would. It is computed here
+    // rather than reused from `transactVector` so that enrichment works
+    // identically in md-only mode, where `transactVector` never runs.
+    let embedding: Float32Array | null = null;
+    if (wantsTags || (wantsCategory && !strict && cfg.categoryStrategy === 'centroid')) {
+      try {
+        embedding = await this.embedder.embed(m.content);
+      } catch {
+        this.recordDegradation('embedder_unavailable');
+      }
+    }
+
+    const tags = wantsTags && embedding
+      ? selectTags(embedding, this.getTagVocabulary(), {
+          maxTags: cfg.maxTags,
+          minSimilarity: cfg.minTagSimilarity,
+        })
+      : m.tags;
+
+    let category = explicitCategory;
+
+    if (wantsCategory) {
+      if (cfg.category === 'off') throw categoryRequired('is off (llm.enrichment.category: off)');
+
+      if (strict) {
+        // No centroid/model call — only a literal fallback name can supply
+        // the category under strict mode. Left as `infer`, there is nothing
+        // deterministic to fall back to, so this is the same hard error as
+        // an unavailable inference result elsewhere in this method.
+        if (cfg.category === 'infer') {
+          throw categoryRequired('is disabled (strict: true) and llm.enrichment.category has no fallback name configured');
+        }
+        category = cfg.category;
+      } else {
+        const declared = Object.keys(this.config.categories);
+        let cause = 'is unavailable';
+
+        if (cfg.categoryStrategy === 'centroid') {
+          category = embedding
+            ? selectCategory(embedding, this.getCategoryCentroids(declared))
+            : undefined;
+          if (!category) {
+            cause = 'found no category close enough to this entry';
+            this.recordDegradation('category_centroid_miss');
+          }
+        } else {
+          const result = await this.enricher.inferCategory({
+            content: m.content,
+            categories: declared.map(name => ({
+              name,
+              description: this.config.categories[name]?.description,
+            })),
+          });
+          if (result.degraded) {
+            cause = describeDegradation(result.degraded);
+            this.recordDegradation(result.degraded);
+          }
+          category = result.category;
+        }
+
+        if (!category) {
+          // A literal category name in the config is the configured fallback for
+          // exactly this case; left as `infer`, it is a hard error instead.
+          if (cfg.category !== 'infer' && cfg.category !== 'off') {
+            category = cfg.category;
+          } else {
+            throw categoryRequired(cause);
+          }
+        }
+      }
+    }
+
+    // Every inferred field now resolves inline — tags and category are both
+    // centroid cosine over an already-loaded embedder. Nothing defers, so the
+    // write is always stamped enriched (ticket 26).
+    return {
+      ...m,
+      category,
+      kind: undefined,
+      tags,
+      enrichedAt: now,
+    };
+  }
+
+  private getTagVocabulary(): Centroid[] {
+    if (this.tagVocabulary) return this.tagVocabulary;
+    if (!this.db) return (this.tagVocabulary = []);
+
+    const declaredTags = Object.values(this.config.categories).flatMap(c => c.tags ?? []);
+    const rows = this.db.prepare(
+      `SELECT tags, embedding FROM memories WHERE project_id = ? AND tags != '[]'`
+    ).all(this.projectId) as any[];
+
+    const entries = rows.map(row => ({
+      tags: safeParseTags(row.tags),
+      embedding: toFloat32(row.embedding),
+    }));
+
+    this.tagVocabulary = buildTagVocabulary(entries, declaredTags);
+    return this.tagVocabulary;
+  }
+
+  private getCategoryCentroids(allowed: string[]): Centroid[] {
+    if (!this.db) return [];
+    const rows = this.db.prepare(
+      `SELECT category, embedding FROM memories WHERE project_id = ?`
+    ).all(this.projectId) as any[];
+    return buildCategoryCentroids(
+      rows.map(row => ({ category: row.category, embedding: toFloat32(row.embedding) })),
+      allowed
+    );
+  }
+
+  /**
+   * Silence without counters is how a broken 0.5B model goes unnoticed for
+   * months (ADR 0010 §3). Counts live in `meta` so they survive the process.
+   */
+  private recordDegradation(reason: string): void {
+    if (!this.db) return;
+    try {
+      this.db.prepare(`
+        INSERT INTO meta (key, value) VALUES (?, '1')
+        ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+      `).run(`${DEGRADATION_KEY_PREFIX}${reason}`);
+    } catch {}
+  }
+
+  private readDegradationCounters(): Record<string, number> {
+    if (!this.db) return {};
+    const rows = this.db.prepare(
+      `SELECT key, value FROM meta WHERE key LIKE ?`
+    ).all(`${DEGRADATION_KEY_PREFIX}%`) as any[];
+    return Object.fromEntries(
+      rows.map(r => [r.key.slice(DEGRADATION_KEY_PREFIX.length), parseInt(r.value, 10) || 0])
+    );
+  }
+
+  /**
+   * Cumulative candidates the relevance gate has rejected (ticket 41 / ADR
+   * 0012 Amendment). The gate is structural, not fitted, so this total —
+   * not a per-query count alone — is the only signal that it is rejecting
+   * too much or too little in practice.
+   */
+  private recordGateRejections(count: number): void {
+    if (!this.db) return;
+    try {
+      this.db.prepare(`
+        INSERT INTO meta (key, value) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT)
+      `).run(RELEVANCE_GATE_REJECTED_KEY, String(count), count);
+    } catch {}
+  }
+
+  private readGateRejectedTotal(): number {
+    if (!this.db) return 0;
+    const row = this.db.prepare(`SELECT value FROM meta WHERE key = ?`).get(RELEVANCE_GATE_REJECTED_KEY) as { value: string } | undefined;
+    return row ? (parseInt(row.value, 10) || 0) : 0;
   }
 
   public async transactVector(mutations: MemoryMutation[]): Promise<MutationResult[]> {
@@ -529,14 +1044,20 @@ export class NeuronMemory {
             }
             if (m.tags !== undefined) { sets.push('tags = ?'); params.push(JSON.stringify(m.tags)); }
             if (m.importance !== undefined) { sets.push('importance = ?'); params.push(m.importance); }
-            if (m.scope !== undefined) { 
-              sets.push('scope = ?'); params.push(m.scope); 
-              sets.push('is_manual_scope = 1');
-            }
             if (m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
             if (m.createdAt !== undefined) { sets.push('created_at = ?'); params.push(m.createdAt); }
+            if (m.enrichedAt !== undefined) { sets.push('enriched_at = ?'); params.push(m.enrichedAt); }
+            // Declared category fields (ticket 44): `m.fields` at this point
+            // is already the fully-enforced partial patch from
+            // `enforceFieldSchema` — an untouched field simply isn't a key
+            // here, so its column is left alone, matching `update`'s
+            // existing partial-patch semantics for every other column.
+            for (const [key, value] of Object.entries(m.fields ?? {})) {
+              sets.push(`${this.fieldColumnName(key)} = ?`);
+              params.push(value);
+            }
             sets.push('updated_at = ?'); params.push(new Date().toISOString());
-            
+
             if (sets.length > 0) {
               params.push(id, this.projectId);
               this.db.prepare(`UPDATE memories SET ${sets.join(', ')} WHERE id = ? AND project_id = ?`).run(...params);
@@ -549,16 +1070,23 @@ export class NeuronMemory {
             const blob = Buffer.from(vec.buffer, vec.byteOffset, vec.byteLength);
             const tagsJson = JSON.stringify(m.tags ?? []);
             const importance = m.importance ?? 3;
-            const scope = m.scope ?? this.projectName;
-            const isManualScope = m.scope !== undefined ? 1 : 0;
             const now = new Date().toISOString();
             const createdAt = m.createdAt ?? now;
             const taskId = m.taskId ?? null;
 
+            // Declared category fields (ticket 44): `m.fields` is already
+            // fully resolved (defaults filled, required checked) by
+            // `enforceFieldSchema` before `transact()` ever reaches here.
+            const fieldEntries = Object.entries(m.fields ?? {});
+            const fieldColumnsSql = fieldEntries.map(([key]) => this.fieldColumnName(key));
+            const fieldColumnsList = fieldColumnsSql.length ? ', ' + fieldColumnsSql.join(', ') : '';
+            const fieldPlaceholders = fieldColumnsSql.length ? ', ' + fieldColumnsSql.map(() => '?').join(', ') : '';
+            const fieldValues = fieldEntries.map(([, value]) => value);
+
             this.db.prepare(`
-              INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(id, this.projectId, category, m.content, tagsJson, blob, scope, importance, isManualScope, taskId, createdAt, now);
+              INSERT INTO memories (id, project_id, category, content, tags, embedding, importance, task_id, created_at, updated_at, enriched_at${fieldColumnsList})
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${fieldPlaceholders})
+            `).run(id, this.projectId, category, m.content, tagsJson, blob, importance, taskId, createdAt, now, m.enrichedAt ?? null, ...fieldValues);
             results.push({ id, status: 'created', project: this.projectName });
           } else {
             results.push({ id, status: 'not_found', project: this.projectName });
@@ -623,88 +1151,6 @@ export class NeuronMemory {
         report.consolidated = { entries, consolidatedAt, previousCursor };
       }
 
-      if (policy.autoPromote) {
-        const promoted: Array<{ id: string; from: string; to: string }> = [];
-        const demoted: Array<{ id: string; from: string; to: string }> = [];
-
-        const queryLogs = this.db.prepare(`
-          SELECT id, embedding, created_at FROM query_logs WHERE project_id = ?
-        `).all(this.projectId) as any[];
-
-        const memories = this.db.prepare(`
-          SELECT id, embedding, scope, is_manual_scope, importance FROM memories WHERE project_id = ? AND category = 'learning'
-        `).all(this.projectId) as any[];
-
-        if (queryLogs.length > 0 && memories.length > 0) {
-          const insertMatch = this.db.prepare(`
-            INSERT OR IGNORE INTO learning_query_matches (learning_id, query_log_id, matched_at)
-            VALUES (?, ?, ?)
-          `);
-
-          for (const qLog of queryLogs) {
-            const qVec = new Float32Array(qLog.embedding.buffer, qLog.embedding.byteOffset, qLog.embedding.byteLength / 4);
-            for (const mem of memories) {
-              const lVec = new Float32Array(mem.embedding.buffer, mem.embedding.byteOffset, mem.embedding.byteLength / 4);
-              const similarity = dotProduct(qVec, lVec);
-              if (similarity >= 0.80) {
-                insertMatch.run(mem.id, qLog.id, qLog.created_at);
-              }
-            }
-          }
-
-          const cutoffDate = new Date();
-          cutoffDate.setDate(cutoffDate.getDate() - 30);
-          const cutoffStr = cutoffDate.toISOString();
-
-          const countStmt = this.db.prepare(`
-            SELECT COUNT(DISTINCT query_log_id) as count
-            FROM learning_query_matches
-            WHERE learning_id = ? AND matched_at >= ?
-          `);
-
-          const updateScopeStmt = this.db.prepare(`
-            UPDATE memories SET scope = ? WHERE id = ? AND project_id = ?
-          `);
-
-          for (const mem of memories) {
-            if (mem.is_manual_scope === 1) continue;
-
-            const countRow = countStmt.get(mem.id, cutoffStr) as { count: number };
-            const matchCount = countRow ? countRow.count : 0;
-            const currentScope = mem.scope;
-
-            let targetScope = currentScope;
-
-            if (currentScope !== 'global' && matchCount >= 15) {
-              targetScope = 'global';
-            } else if ((currentScope === this.projectName || currentScope === 'people') && matchCount >= 5) {
-              targetScope = 'project';
-            }
-
-            if (targetScope === currentScope && (mem.importance ?? 3) < 4) {
-              if (currentScope === 'global' && matchCount < 10) {
-                targetScope = matchCount < 3 ? this.projectName : 'project';
-              } else if (currentScope === 'project' && matchCount < 3) {
-                targetScope = this.projectName;
-              }
-            }
-
-            if (targetScope !== currentScope) {
-              updateScopeStmt.run(targetScope, mem.id, this.projectId);
-              if (
-                (currentScope !== 'global' && targetScope === 'global') ||
-                ((currentScope === this.projectName || currentScope === 'people') && targetScope === 'project')
-              ) {
-                promoted.push({ id: mem.id, from: currentScope, to: targetScope });
-              } else {
-                demoted.push({ id: mem.id, from: currentScope, to: targetScope });
-              }
-            }
-          }
-        }
-        report.promotions = { promoted, demoted };
-      }
-
       if (policy.pruneHistoryBeforeDays !== undefined) {
         const days = policy.pruneHistoryBeforeDays;
         const maxImportance = policy.maxPruneImportance ?? 3;
@@ -754,16 +1200,28 @@ export class NeuronMemory {
     const onnxPath = path.join(modelCacheDir, 'Xenova/bge-small-en-v1.5', 'onnx', 'model_quantized.onnx');
     const modelReady = fs.existsSync(onnxPath) ? 'ready' : 'not-cached';
 
+    const enrichmentCfg = this.config.llm.enrichment;
+
     return {
       project: this.projectName,
       projectRoot: this.projectRoot,
-      db: this.db ? 'ready' : 'md-only',
+      db: 'ready',
       model: modelReady,
       modelName: 'Xenova/bge-small-en-v1.5',
       totalCount,
       learnCount,
       historyCount,
-      categories
+      categories,
+      enrichment: {
+        enabled: enrichmentCfg.enabled,
+        category: enrichmentCfg.category,
+        tags: enrichmentCfg.tags,
+        degraded: this.readDegradationCounters()
+      },
+      relevance: {
+        gateEnabled: this.config.relevance.gate.enabled,
+        rejectedTotal: this.readGateRejectedTotal()
+      }
     };
   }
 
@@ -775,12 +1233,12 @@ export class NeuronMemory {
 
   // --- DEPRECATED METHODS (WRAPPERS) TO KEEP TESTS/CLI HAPPY TEMPORARILY ---
 
-  public async addLearning(content: string, tags: string[] = [], options: { importance?: number; scope?: string } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'upsert', category: 'learning', content, tags, importance: options.importance, scope: options.scope }]);
+  public async addLearning(content: string, tags?: string[], options: { importance?: number } = {}): Promise<any> {
+    const res = await this.transact([{ op: 'upsert', category: 'learning', content, tags, importance: options.importance }]);
     return res[0];
   }
-  public async queryLearnings(query: string, options: { limit?: number; scopes?: string[] } = {}): Promise<any> {
-    const results = await this.query({ text: query, categories: ['learning'], limit: options.limit, scopes: options.scopes });
+  public async queryLearnings(query: string, options: { limit?: number } = {}): Promise<any> {
+    const results = await this.query({ text: query, categories: ['learning'], limit: options.limit });
     return { results, project: this.projectName, query };
   }
   public listLearnings(options: { limit?: number } = {}): any[] {
@@ -790,8 +1248,8 @@ export class NeuronMemory {
       id: row.id, content: row.content, tags: JSON.parse(row.tags), createdAt: row.created_at
     }));
   }
-  public async updateLearning(id: string, content: string, options: { tags?: string[]; importance?: number; scope?: string } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'update', category: 'learning', id, content, tags: options.tags, importance: options.importance, scope: options.scope }]);
+  public async updateLearning(id: string, content: string, options: { tags?: string[]; importance?: number } = {}): Promise<any> {
+    const res = await this.transact([{ op: 'update', category: 'learning', id, content, tags: options.tags, importance: options.importance }]);
     return res[0];
   }
   public deleteLearning(id: string): any {
@@ -799,12 +1257,12 @@ export class NeuronMemory {
     return { id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName };
   }
 
-  public async addHistory(content: string, options: { taskId?: string; tags?: string[]; importance?: number; scope?: string } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'upsert', category: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance, scope: options.scope }]);
+  public async addHistory(content: string, options: { taskId?: string; tags?: string[]; importance?: number } = {}): Promise<any> {
+    const res = await this.transact([{ op: 'upsert', category: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance }]);
     return res[0];
   }
-  public async queryHistory(query: string, options: { limit?: number; scopes?: string[] } = {}): Promise<any> {
-    const results = await this.query({ text: query, categories: ['history'], limit: options.limit, scopes: options.scopes });
+  public async queryHistory(query: string, options: { limit?: number } = {}): Promise<any> {
+    const results = await this.query({ text: query, categories: ['history'], limit: options.limit });
     return { results, project: this.projectName, query };
   }
   public listHistory(options: { limit?: number } = {}): any[] {
@@ -819,18 +1277,13 @@ export class NeuronMemory {
     return { id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName };
   }
   public consolidateHistory(): any {
-    const report = this.maintain({ consolidate: true, autoPromote: true });
+    const report = this.maintain({ consolidate: true });
     return {
       entries: report.consolidated?.entries || [],
       consolidatedAt: report.consolidated?.consolidatedAt,
       previousCursor: report.consolidated?.previousCursor,
-      promotions: report.promotions,
       project: this.projectName
     };
-  }
-  public checkAutoPromotions(): any {
-    const report = this.maintain({ autoPromote: true });
-    return report.promotions || { promoted: [], demoted: [] };
   }
   public pruneHistory(options: { days?: number; maxImportance?: number } = {}): any {
     const report = this.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.maxImportance ?? 3 });
@@ -844,4 +1297,47 @@ function dotProduct(a: Float32Array, b: Float32Array): number {
     s += a[i] * b[i];
   }
   return s;
+}
+
+const DEGRADATION_KEY_PREFIX = 'enrichment_degraded:';
+const RELEVANCE_GATE_REJECTED_KEY = 'relevance_gate_rejected_total';
+
+/**
+ * Category is a non-nullable column that determines storage routing, so no
+ * entry can be written without one. When inference cannot produce a declared
+ * category and no fallback is configured, the write fails naming the cause —
+ * it never guesses and never invents a category.
+ */
+function categoryRequired(cause: string): Error {
+  return new Error(
+    `Error: --category is required — category inference ${cause}. ` +
+      `Pass --category <name>, or set llm.enrichment.category in neuron.yaml to a ` +
+      `declared category to use as a fallback.`
+  );
+}
+
+function describeDegradation(reason: string): string {
+  switch (reason) {
+    case 'timeout': return 'timed out';
+    case 'model_disabled': return 'is disabled in this environment';
+    case 'model_unavailable': return 'could not load the local model';
+    case 'category_not_declared': return 'did not name a declared category';
+    case 'empty_generation': return 'produced no output';
+    case 'no_declared_categories': return 'has no declared categories to choose from';
+    default: return 'failed';
+  }
+}
+
+/** The `importance` column default, and the floor inference may not go below. */
+function safeParseTags(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(t => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function toFloat32(blob: Buffer): Float32Array {
+  return new Float32Array(blob.buffer, blob.byteOffset, blob.byteLength / 4);
 }

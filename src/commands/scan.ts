@@ -45,8 +45,14 @@ export async function handleScanCommand(args: string[], memory?: NeuronMemory): 
           console.log(formatArchitecturalDiffMarkdown(diff));
         }
 
-        if (options.check && diff.hasDrift) {
-          process.exitCode = 1;
+        if (options.check) {
+          // 2 is distinct from 1 on purpose: an incomparable baseline is not
+          // drift, and the fix is `neuron scan`, not a code review.
+          if (diff.needsRebaseline) {
+            process.exitCode = 2;
+          } else if (diff.hasDrift) {
+            process.exitCode = 1;
+          }
         }
       } finally {
         if (ownedMemory && memInstance) {
@@ -90,7 +96,6 @@ export async function handleScanCommand(args: string[], memory?: NeuronMemory): 
         projectDir: projectRoot,
         category,
         depth,
-        force: !!options.force,
       });
 
       // Prime the drift guard so the next query doesn't redo this scan.

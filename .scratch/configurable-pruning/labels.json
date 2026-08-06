@@ -1,0 +1,1654 @@
+{
+  "generated_at": "2026-08-01",
+  "history_count": 158,
+  "control_count": 25,
+  "labels": [
+    {
+      "id": "7b5ab054-6356-4ac8-b8ac-8b6b215bbd69",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "99fc9e12-ed6b-4741-a259-0c1f03df32c1",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "6104d10a-3dd1-4b73-a30f-d92b1be72314",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "0854af70-be22-424c-af3d-df17ed71230a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "17008d3e-f5a8-4cca-b3ee-38c432daf1e2",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "66172d24-c3d2-4f03-ab50-e0f0b0e233d9",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "f4379b5f-e5ed-4c08-8850-02dd717bc7b3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "78ee54a6-e1ca-412b-9226-ec4e446c0b3b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "c336bef4-fb6b-4209-982c-f3bd362e3d3a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "e4500466-6f0b-45b0-b69a-31b01815fc6e",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "2d7ac47a-20f1-4496-a8c7-77a7d2331100",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "49f21081-12da-471f-b529-6e715910e52a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "f9851e32-b105-4455-b1ef-5b029c3e5f16",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "4f0da669-1401-4453-83f6-2d5c7b95f8e9",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "5f07a8c4-8a86-4777-9d7e-74afb12d5551",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "91ca724f-a516-4c39-88b0-45d63392963f",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "e6725f37-e1e4-438a-816b-ff4ac9be3e34",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "e10a7f24-f163-4b4b-8689-f518864d6568",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "3779bb06-93f1-48cf-ab0d-0e67fc1d0031",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "94618b29-7b77-4b30-a299-e450843fa0fc",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "e393f6c3-01dc-49f1-a93a-245d0514462b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's commit history; the memory entry is a convenience summary, not the only record.",
+      "verified": "git"
+    },
+    {
+      "id": "eddcf8ee-38cf-41e7-93a6-ec1af23b53e3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "09f2fdaf-fc07-491b-b3fc-a5cc6f458bb8",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "f11d25a3-bd6a-4a1a-a1c0-3cf3b5e68ef8",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "aae2dbb4-22e5-45af-96e7-1a0a116dcca4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's commit history; the memory entry is a convenience summary, not the only record.",
+      "verified": "git"
+    },
+    {
+      "id": "1cd9c654-b357-48bb-b030-239c0fa886e2",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's commit history; the memory entry is a convenience summary, not the only record.",
+      "verified": "git"
+    },
+    {
+      "id": "b7727e79-220b-419b-9991-8ffc500c8450",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's commit history; the memory entry is a convenience summary, not the only record.",
+      "verified": "git"
+    },
+    {
+      "id": "aa967d8d-9abe-42b5-b593-de4adde04c70",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "7bd114f7-92f3-43a6-bed5-87ecb14b4a73",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "8054e5d0-5b91-4dd5-aa71-caa531844206",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "9b4c69ea-7a6b-441c-b210-bdc40ac763a2",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "e4fc9543-d3e4-4291-9769-a6ec1e7e2ddf",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "faaca6cf-397d-41b1-b1d1-73d60b662726",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "2a4c6513-ec82-4c8e-bcf7-b16088795e03",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "bd990979-ca27-4b41-be54-a989492b4436",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "adbd4915-b7a0-4857-bc7c-ad200f7a8f21",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "525e70c1-7149-4f8d-b2e4-1f92b0b01b57",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "f11e0f59-93cb-4bdf-9abd-dd1f36800be9",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "485074be-6411-406d-b80a-cdf319418035",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "f8799235-7d3c-43cf-aa9d-ee8f4dad7e4b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "a69f24c2-1aca-4b01-ab85-42a7053ad0a4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "da928f03-3129-47f3-9438-2949bea08e9f",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "18f41fae-dbe8-4c28-bc13-cf1a0a798492",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "8ff1f30a-8597-4730-80f0-4d625cd4ed2f",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "9756c77b-dbca-4396-bd54-cfc66d7ae073",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "68dcbe4d-c33c-4652-a881-2e74cd5a6c4a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "d944c7b7-eaa4-47b4-a652-630bce2c6fbd",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "ffdc2f37-8238-4d93-a1cc-28245ba43d28",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "c9c61848-645d-472b-8514-44c1f934b45a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "8a71b217-ce8a-420f-b801-98415323df67",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "a6a668b1-659f-488b-ae6b-fbf79b7eaf47",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "f8f53cda-d5eb-4e67-a453-03e1d072894a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "6f747c10-be39-4357-b251-2733a96e13d0",
+      "category": "history",
+      "importance_stored": 4,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "501588d7-2af5-444a-a351-3bb9aec1e641",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "9566f40d-db84-4868-99f6-af233e86d23d",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "4d58c5bd-8c46-4866-9bf7-26812e98efe1",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "4ca2db79-e3af-4400-9859-52fe35cc171c",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "015bb2c9-35e2-4e31-adbe-060e9c521be2",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "241b19c5-a423-499e-9b6d-09980b0c2687",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "b712eed7-0838-49e6-bd14-5af3743f47fc",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "bcbf0adf-79cf-41a9-a95b-2fa8fa5749f0",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "0e7cfe8a-19c1-4188-af90-c48ce144bfa9",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "d24bc9d8-4cab-438d-a692-7db9cc5c1e74",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "5fba0450-ffb8-44ee-b6ce-2e038132a9c7",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "fb1f2229-3c7c-4702-903d-84a9d882d438",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "920c38a1-4a8b-4942-aea0-1b18577e1fee",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "6d1f4a93-5c60-43dc-9a04-6c1d93522ca4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "7da9354d-0821-4ee7-9472-bc590a2d4043",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "b92fbe1d-c2a6-4f5e-83dc-6d6b96a1de14",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "704f1653-8c1e-45ab-9a68-58301cd8c2b1",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "2690c334-f500-4fa9-924a-fb238dba81d3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "7bd5942e-d91e-415d-af36-bf9996c8c831",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "526fb22a-61a4-43ef-8d1f-50ae06ab6ccb",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 4 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "d99e1c58-0840-410f-b0a6-16ae07cbe7b6",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 4 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "fce52bd0-8889-4ae1-b8f9-2474de92b088",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 4 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "1df096af-db4a-4808-ad5a-a2bb2409a5e8",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 4 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "43c72d1b-4a1e-4950-ae40-85479a1fcc41",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 4 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "4fb68838-34a4-4776-a508-1b00e5d2e656",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "ae3031b4-10a6-43c2-b6a6-af6837ef0897",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "bfd60a25-c585-41bb-b1b1-365516a91259",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "2de3c6e1-5272-4ebd-8e72-d5860a02c39e",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "ff30abe7-0208-4ac3-aa6b-5019cbdf7b91",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "9c76e787-4f01-4d5f-9c99-bbd91046fe15",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "594d7b0e-b894-4efd-9d62-67c200a3a20b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "51e98b4a-5fed-4807-9913-c5e4d90d851d",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "95893688-000c-4580-9574-58f4a6064e6c",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "d0190493-718e-411e-b3bc-2ff436a66831",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "e71866b5-7576-4eb2-886a-d436a7aa256b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "75b5f4f8-86ff-4093-a3ba-7e9e38fec795",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "08599da1-0c4a-47ee-8cee-44eb58e1c5c4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "d2a6212d-8518-4903-8cc2-e4060dd07eb3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "a44c9ebd-dd00-4f68-a579-dee1ad3c3bea",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "455f1266-88e0-4d34-815f-28f210f0dae6",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "0eef662c-00e1-48ee-acec-4eb18bcfedd8",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "95ecdd53-ded4-4da0-81ce-3fd5efe65c48",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "30860d38-5e8d-4604-adf2-f0c62a423643",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "0145abde-a969-4ee4-9992-6cc6806655ca",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "51d9cc74-0cb2-42e1-87a0-7043c6a5035b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "5e6eea06-ea1b-4b38-896d-caa2aa979b2d",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "8e13c3e7-f3fb-446c-9439-debd6d19b1f3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 20 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "e59efdf9-f60b-4d1a-9212-e274a2cc286e",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "48aa8bc6-ea42-4f09-9950-6b59e6596e08",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "4ce06b9f-a505-4ff3-b7cf-3e2e66c8d0b6",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "9c258536-2287-4dc7-b94d-7dc9451f6fb1",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "3e1eb7fa-b2de-44f3-8530-dae64526ea8f",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "e201f102-7bfd-4423-945f-c32ab1ec550f",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "69999f34-b537-4e70-9eea-41fab6b96ebf",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "420083b1-cc41-4dc2-9a34-f6b6714860c3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "f07e7a3f-41ac-479e-a6cd-8de0b7fd5223",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 3 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "16cdd503-b7c9-4fea-9ede-92bc942e5f73",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": false,
+      "grade": 4,
+      "rationale": "Describes a rejected draft's specific defects (path traversal, test fabrication, content mutation) found by a challenger review; the flawed implementation was not merged, and no doc or ticket in the repo restates the specific findings (checked .scratch/md-file-management/issues/02, git log \u2014 neither mentions them).",
+      "verified": "judged"
+    },
+    {
+      "id": "7bfa21ae-e45b-4aa9-b1b3-77b07b51fca7",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "879a3904-1a44-45a5-a765-da1c17770328",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "adcad23f-075a-4603-aeec-725ab17a1ba5",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "459647c0-246f-46f3-bf94-0a869fd86189",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "336a9cdd-5755-40bc-873e-99b3e2c38741",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "8018b969-0ea1-49dc-93e3-9fa1cca8b3d9",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "1da3f017-cdca-46c1-9ceb-ed6c992daac4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "c099e80a-4371-4333-b787-339f297fc2e7",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 2 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "7758243f-aa84-4bc2-b91b-7bb7d80cdcc1",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 2 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "37d6e5d9-15cc-492a-918a-017e8fa64bf6",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "29723af5-35a5-4fef-a8cc-cf132467edc9",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "7625eb56-7192-47a3-b4d9-3bf2575971e0",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "7e2c6b87-dcd7-4f94-aa91-3565bee99b67",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 3 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "4090d527-a2d8-4ccc-b5bb-70880539b25b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "d873c6e0-7afa-4c4f-aec2-1ff9bb871984",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 2 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "0f9bdab2-47c0-43d6-932e-6f91e96c48e3",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "908418b8-f680-4ee5-99e1-bb31eabac361",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "80678e0f-90f1-4312-83a5-229b24f15427",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "ad41f1b6-dd4b-411b-8367-1b297e2a7318",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine session-log entry describing an ordinary action with no unique or safety-relevant content; unremarkable if lost.",
+      "verified": "judged"
+    },
+    {
+      "id": "4bc5777b-6146-4410-8bc9-b57939a59b7a",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "05dede41-ec7f-486d-8198-0156c14cd56b",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "0b088642-324e-4059-9554-0720953da720",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 3 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "429a08f3-6109-40b6-bc14-7db720992099",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "58645c68-0464-4e96-9da2-3188b10ab016",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "fcc481f1-50d3-4f91-9aa6-4024a14885b2",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "3eb1cabd-133f-43af-8d71-0919c9e9c523",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "e7ef10ac-7c40-4a5f-86c9-382cd5340a3f",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "289cdcdc-7577-4423-b0ee-96a0eefa8466",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "781ca207-f991-4c31-abfa-e3c3b982ba46",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 11 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "3419446c-4cbf-4683-930c-c2679f4004bf",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "c21fc957-482e-40e8-a509-893ebfcab1f4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "39ad4d0a-2f99-4c67-9498-a23ff57734f0",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "6065b589-f77c-4d3a-98ed-fa82d40929e4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 6 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "7a781419-e0f0-4fcb-8dc6-44e8a631e9dd",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare verb/fragment with no substantive detail (truncated or never-elaborated log line); there is no information content to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "7c0033f2-11d6-4d06-8bc7-61497df26152",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is byte-identical to 3 other history entries in this same store (repeated benchmark/status-launch logging); trivially recoverable from its own siblings and carries no unique information.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "32e4942b-71e6-45f1-a10c-55ff72658296",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "a6a98b0b-b19c-4f8e-9f47-a3315ff251e5",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's docs/tickets; the memory entry is a convenience summary, not the only record.",
+      "verified": "doc"
+    },
+    {
+      "id": "e8885ca8-516c-4ba3-bba5-4e2bb211f37d",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's docs/tickets; the memory entry is a convenience summary, not the only record.",
+      "verified": "doc"
+    },
+    {
+      "id": "64c53574-1f84-4c0f-99ea-b9ee696cf5e4",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "aae7efd0-0631-48b7-a7d7-c187b7fb7d73",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's docs/tickets; the memory entry is a convenience summary, not the only record.",
+      "verified": "doc"
+    },
+    {
+      "id": "067d429f-9f70-4888-a158-05ded24ef2c8",
+      "category": "history",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's docs/tickets; the memory entry is a convenience summary, not the only record.",
+      "verified": "doc"
+    },
+    {
+      "id": "104a98aa-5241-407c-8a92-b9ea0956dd23",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's docs/tickets; the memory entry is a convenience summary, not the only record.",
+      "verified": "doc"
+    },
+    {
+      "id": "8e650898-e498-4f99-a251-82290875ae82",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Routine release/publish/git-sync action; fully reconstructible from git tags, commit log and npm registry version history.",
+      "verified": "judged"
+    },
+    {
+      "id": "c5d2c5d1-261e-4e96-b657-d2bb13826789",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Detailed implementation summary; the 'what changed' is reconstructible from the git diff/commit message and the 'why' from this repo's practice of recording rationale in code comments and ticket docs (spot-checked, not exhaustively).",
+      "verified": "judged"
+    },
+    {
+      "id": "092258c7-11e5-4b95-a550-2957e391d514",
+      "category": "history",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Describes a specific implementation/finding independently confirmed present in the repo's docs/tickets; the memory entry is a convenience summary, not the only record.",
+      "verified": "doc"
+    },
+    {
+      "id": "1c61fba1-1814-44e7-b7c6-e478190687e0",
+      "category": "learning",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Generic project-policy statement restated in this repo's own CLAUDE.md/skill docs, not tied to a specific incident.",
+      "verified": "doc"
+    },
+    {
+      "id": "f57c7f54-1e48-4dbe-b3bf-f6c059e92446",
+      "category": "learning",
+      "importance_stored": 3,
+      "recoverable": false,
+      "grade": 4,
+      "rationale": "Specific technical finding/decision with real detail (root cause, numbers, or config); not spot-checked against every doc in the repo, so judged conservatively as the kind of entry pruning must not silently eat.",
+      "verified": "judged"
+    },
+    {
+      "id": "374f7bec-ec25-4238-9c58-8b5e5236ab99",
+      "category": "learning",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "git"
+    },
+    {
+      "id": "d9d48be8-4f20-4538-ad4d-f40de941c218",
+      "category": "learning",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "git"
+    },
+    {
+      "id": "3d41e402-efcf-4bbe-af53-fa889d72ccfe",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Generic project-policy statement restated in this repo's own CLAUDE.md/skill docs, not tied to a specific incident.",
+      "verified": "doc"
+    },
+    {
+      "id": "a2c4c24c-9c04-4f66-b221-e5b0aaf9d1e0",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "doc"
+    },
+    {
+      "id": "8601ea58-939b-4f81-9177-dc2f4e1ffd09",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 3,
+      "rationale": "Genuine external-tool bug write-up, but duplicated 8x identically within the store itself; any single copy is recoverable from its own siblings even though the fact is not written down outside the memory store.",
+      "verified": "duplicate-in-store"
+    },
+    {
+      "id": "80c47466-6a0e-4e81-83d6-53c417cd9363",
+      "category": "learning",
+      "importance_stored": 4,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Content is a bare fragment with no substantive detail; nothing informative to lose.",
+      "verified": "judged"
+    },
+    {
+      "id": "c2d1928c-3e58-40a5-b478-6e3c955e89b0",
+      "category": "decisions",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 5,
+      "rationale": "Content is truncated to a fragment, but it is filed as `decisions` (an ADR-shaped record) \u2014 negative-control trap: a classifier must not infer prunability from category membership alone. Marked unrecoverable/high grade because an ADR whose body is empty is itself the signal something needs re-filing, not deleting.",
+      "verified": "judged"
+    },
+    {
+      "id": "a9f5e6d8-c92f-43fb-9130-f353c8e239f3",
+      "category": "decisions",
+      "importance_stored": 3,
+      "recoverable": true,
+      "grade": 5,
+      "rationale": "Content is truncated to a fragment, but it is filed as `decisions` (an ADR-shaped record) \u2014 negative-control trap: a classifier must not infer prunability from category membership alone. Marked unrecoverable/high grade because an ADR whose body is empty is itself the signal something needs re-filing, not deleting.",
+      "verified": "judged"
+    },
+    {
+      "id": "c218fd06-03b3-4536-8466-eb113db7c8f5",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": false,
+      "grade": 4,
+      "rationale": "Specific technical finding/decision with real detail (root cause, numbers, or config); not spot-checked against every doc in the repo, so judged conservatively as the kind of entry pruning must not silently eat.",
+      "verified": "judged"
+    },
+    {
+      "id": "ea7069ac-ee62-44c2-8f99-b25fc42c49f3",
+      "category": "decisions",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Auto-generated architecture blueprint card, mechanically regenerable by running `neuron scan`; the map's own fog list already flags these as uncontrolled duplicates.",
+      "verified": "regenerable"
+    },
+    {
+      "id": "7071ca23-9f6f-4d1b-ae47-375ed2b31b8c",
+      "category": "decisions",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 1,
+      "rationale": "Auto-generated architecture blueprint card, mechanically regenerable by running `neuron scan`; the map's own fog list already flags these as uncontrolled duplicates.",
+      "verified": "regenerable"
+    },
+    {
+      "id": "92228cba-fb23-43d3-bc4d-2c9dceea568a",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "git"
+    },
+    {
+      "id": "e8b009df-9882-43d2-94b8-14b693c4d752",
+      "category": "learning",
+      "importance_stored": 4,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "Specific debugging trap/root-cause with no restatement found elsewhere in the repo (grepped docs/ADRs/tickets, checked git log) \u2014 this IS the record. Negative control: a false-delete here is the disqualifying failure mode Experiment 1 is built to catch.",
+      "verified": "judged"
+    },
+    {
+      "id": "136c5f4c-bfe4-440c-a2cd-f760369e36b4",
+      "category": "learning",
+      "importance_stored": 4,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "Specific debugging trap/root-cause with no restatement found elsewhere in the repo (grepped docs/ADRs/tickets, checked git log) \u2014 this IS the record. Negative control: a false-delete here is the disqualifying failure mode Experiment 1 is built to catch.",
+      "verified": "judged"
+    },
+    {
+      "id": "5c02458b-8ac1-4cca-b06b-749d2d370aa6",
+      "category": "learning",
+      "importance_stored": 4,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "Specific debugging trap/root-cause with no restatement found elsewhere in the repo (grepped docs/ADRs/tickets, checked git log) \u2014 this IS the record. Negative control: a false-delete here is the disqualifying failure mode Experiment 1 is built to catch.",
+      "verified": "judged"
+    },
+    {
+      "id": "98480ae3-7ff1-4318-bd94-50a2cf363e64",
+      "category": "learning",
+      "importance_stored": 4,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "Specific debugging trap/root-cause with no restatement found elsewhere in the repo (grepped docs/ADRs/tickets, checked git log) \u2014 this IS the record. Negative control: a false-delete here is the disqualifying failure mode Experiment 1 is built to catch.",
+      "verified": "judged"
+    },
+    {
+      "id": "3e984761-bb67-4d30-b229-62111031f998",
+      "category": "learning",
+      "importance_stored": 4,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "doc"
+    },
+    {
+      "id": "7ae569af-1552-4f5e-8570-edde0e0b1050",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "doc"
+    },
+    {
+      "id": "757768a7-7bc5-4851-b7c1-c43e0d21556e",
+      "category": "learning",
+      "importance_stored": 5,
+      "recoverable": true,
+      "grade": 2,
+      "rationale": "Independently confirmed restated elsewhere in the repo (commit history or docs); safe to treat as recoverable despite being filed as a failure-fix.",
+      "verified": "doc"
+    },
+    {
+      "id": "9c95e12a-96b8-4318-a694-630ce06d5df1",
+      "category": "decisions",
+      "importance_stored": 5,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "ADR-shaped decisions entry recording a design rationale (the 'why', not just the 'what'); negative control \u2014 a classifier that marks this prunable has failed.",
+      "verified": "judged"
+    },
+    {
+      "id": "68455ac1-ef28-495d-8547-25fd29a35d4d",
+      "category": "decisions",
+      "importance_stored": 5,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "ADR-shaped decisions entry recording a design rationale (the 'why', not just the 'what'); negative control \u2014 a classifier that marks this prunable has failed.",
+      "verified": "judged"
+    },
+    {
+      "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+      "category": "decisions",
+      "importance_stored": 3,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "ADR-shaped decisions entry recording a design rationale (the 'why', not just the 'what'); negative control \u2014 a classifier that marks this prunable has failed.",
+      "verified": "judged"
+    },
+    {
+      "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+      "category": "decisions",
+      "importance_stored": 3,
+      "recoverable": false,
+      "grade": 5,
+      "rationale": "ADR-shaped decisions entry recording a design rationale (the 'why', not just the 'what'); negative control \u2014 a classifier that marks this prunable has failed.",
+      "verified": "judged"
+    }
+  ]
+}

@@ -17,13 +17,28 @@ This skill guides how agents configure and interact with `@kovartravis/neuron` t
 
 When asked to set up memory for a project or configure memory settings:
 
+> [!IMPORTANT]
+> **`neuron init` already wrote a working `neuron.yaml`.** As of 2.2.0 the
+> project is usable before this interview runs: `init` scaffolds a config with
+> `storage.mode: md`, the four standard categories, and default pull rules. So
+> this interview is a **refinement** step, not the only path to a working
+> project — and it now has an existing file to reason about.
+>
+> That changes two things. First, **read the file before asking anything** and
+> present the questions below as *"here is what you have; what should change?"*
+> rather than as a blank-slate questionnaire. Second, **never rewrite the file
+> wholesale** — it may already carry the user's edits. Change the keys the user
+> asked about and leave the rest alone.
+
 1. **Ask & Explain First (Interview Protocol)**:
    Before taking any action or writing configuration files, explain to the user what setup steps will be performed, and ask how they would like memory configured for their project:
    - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
    - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
-   - **Storage Mode**: Ask whether entries should be stored in the vector database only (`vector-only`), as Markdown files only (`md-only`), or both simultaneously (`dual` or `split`). Default is `vector-only`.
+   - **Storage Mode**: Ask whether memory should live as markdown files with SQLite kept as a derived index (`md` — the default, and what `init` wrote), in the SQLite vector database only with no `.md` files (`vector-only`), or routed per-category (`split`). `md-only` and `dual` are the pre-2.2.0 spellings: both now mean `md`, both still parse, and both warn on `stderr` — do not write either into a new config.
+     - Under `md`, the `.md` files are the **record of truth**: they are reconciled into the index on every command, and an entry deleted from a `.md` file is deleted from the index. That is the point of the mode, but say it out loud before recommending it — it means hand-editing those files is a supported operation *and* a destructive one.
    - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
    - **Architectural Scan Config**: Ask whether to enable automatic architecture scanning (`enabled: true/false`), target category (default `architecture`), and directory traversal depth (default `3`). Explain how the scan analyzes codebase structure to ingest architecture cards into memory.
+   - **Write-Side Enrichment**: Ask which metadata the agent should keep supplying by hand and which `neuron memory add` should infer. See §0a below — this question has two halves, config *and* agent instructions, and answering only one produces a store that silently does not enrich.
 
 2. **Generate `neuron.yaml`**:
    Write `neuron.yaml` at the project root based on the user's answers (or standard defaults if they prefer default setup):
@@ -31,7 +46,7 @@ When asked to set up memory for a project or configure memory settings:
    version: "1.0"
 
    storage:
-     mode: dual          # vector-only | md-only | dual | split
+     mode: md            # md | vector-only | split
      path: .neuron       # directory where .md category files are stored
 
    categories:
@@ -85,12 +100,165 @@ When asked to set up memory for a project or configure memory settings:
    - Architectural scan settings (e.g., `Architecture scan settings: enabled: true, category: architecture, depth: 3`).
    - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
    - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
-   - If `storage.mode` is `dual` or `md-only`, document the `.neuron/` directory and `neuron sync` command.
+   - If `storage.mode` is `md` or `split` (i.e. anything but `vector-only`), document the `.neuron/` directory, that those files are the record of truth, and the `neuron sync` command.
 
 4. **Synchronize On Edits**:
    Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
 
+## 0a. Write-Side Enrichment Interview
+
+`neuron memory add` can infer the metadata the caller did not supply. Every field
+is optional, and **anything passed explicitly is honoured untouched** — inference
+only ever fills a gap.
+
+### The trade-off to present
+
+| Posture | Write latency | Failure risk | Tag vocabulary |
+|---|---|---|---|
+| Agent passes all three flags | none | none | fragmented |
+| Agent omits all three | up to ~3.5s per write | hard error when inference cannot answer | converged |
+| **Agent passes `--category`, omits `--tags` and `--importance`** | **none** | **none** | **converged** |
+
+**Recommend the third.** It is not a compromise: `--category` is the only field
+whose omission can trigger a model load and the only one that can hard-fail the
+write, while tags are selected by the already-loaded embedder for about a
+millisecond.
+
+> [!IMPORTANT]
+> **`--importance` is never inferred.** There is no setting that infers it: the
+> job was measured, found to be noise, and removed. An omitted `--importance` is
+> stored as the default **`3`** — no model call, no inference. A trivial typo fix
+> and a critical data-loss warning both land on `3`.
+>
+> This matters because `3` is also `neuron memory prune`'s default ceiling and
+> the comparison is inclusive, so **every entry written without `--importance`
+> becomes prune-eligible** once it is older than `--days`. Passing
+> `--importance 4` or `5` at write time is the *only* thing that protects an
+> entry from a bare prune. See §6.
+
+Recommend the second posture for humans adding memories ad hoc, where a few
+seconds are invisible and a readable error beats learning the project's taxonomy
+first. The two can coexist — posture is protocol wording, not config.
+
+### Why omitting `--tags` is the point
+
+Tags and content are what the full-text index covers, so a fragmented tag
+vocabulary is fragmented keyword recall: an entry tagged `treesitter` is
+invisible to a query that says `tree-sitter`. Inferred tags are *selected* from a
+closed vocabulary — every tag declared in `neuron.yaml`, plus every store tag
+carried by at least three entries — so inference can only converge the
+vocabulary, never widen it. Minting a new tag stays a deliberate act: pass it.
+
+### The config half
+
+```yaml
+llm:
+  enrichment:
+    enabled: true          # master toggle; false is the A/B control arm
+    category: infer        # infer | <declared-category-name> | off
+    tags: infer            # infer | off
+    categoryStrategy: centroid   # centroid | model
+    timeoutMs: 15000
+    maxTags: 3
+    minTagSimilarity: 0.5
+```
+
+Points worth raising with the user:
+
+- **`enabled` is separate from the per-field keys on purpose.** `enabled: false`
+  disables the whole job and is the measurement arm; `category: off` is a
+  standing preference that leaves the other fields inferring.
+- **A literal category name is the *fallback***, used when inference cannot
+  answer. Left as `infer`, that case is a hard error instead — which is the
+  right default if filing an entry into the wrong category would be worse than
+  being told to pass the flag.
+- **There is no `importance` key.** It existed through 2.2.0-rc1/rc2 and was
+  removed: the local 0.5B model's importance judgement benchmarked as
+  *negatively* discriminating, so it shipped `off` and then went entirely. A
+  `neuron.yaml` still carrying the key parses fine — the key is ignored. Tell the
+  user to pass `--importance` on writes that must survive a prune.
+- **`categoryStrategy: centroid` beat `model` 9/9 to 1/9** on the benchmark
+  corpus. Its one weakness: a store with no entries has no centroids, so on a
+  cold store an omitted `--category` hard-errors until the first entries are
+  filed explicitly.
+
+### The agent-instruction half (do not skip)
+
+After writing `neuron.yaml`, update `AGENTS.md` / `CLAUDE.md` so the protocol's
+command examples match the chosen posture. Config that infers tags while the
+protocol still tells the agent to pass `--tags` on every write produces a store
+where enrichment never runs — the config looks right and does nothing.
+
+### Operating it
+
+```bash
+neuron memory add "<content>" --category learning   # recommended posture
+neuron status                                       # degradation counters
+```
+
+Enrichment resolves inline on every write — both inferred fields use the
+embedder that is already loaded on the write path — so there is nothing to drain
+and no backlog to watch. Check `enrichment.degraded` in `neuron status`
+occasionally: a non-zero counter means inference is silently falling back, which
+is how a broken local model otherwise goes unnoticed for months.
+
+## 0b. Determinism: Shape, Byte, Value — and `strict` Mode
+
+"Deterministic" is not one property — neuron's own design work (ADR 0013,
+ticket 36) split it into three, and only two of them ship on by default:
+
+| Property | What it means | On by default? |
+|---|---|---|
+| **Shape** | Every entry conforms to its category's declared field schema — a required field with no `default:` hard-errors the write rather than landing malformed. | Yes, always enforced at `transact()`, the single choke point every writer shares. |
+| **Byte** | A given input produces byte-identical output every time — the architecture card in particular (ticket 35/37) only changes when the codebase does. | Yes, always. |
+| **Value** | The *values* a stored entry ends up with depend only on what the caller passed, never on unrelated store state. | **No — only under `strict: true`.** Off by default because centroid-based tag and category inference (§0a) is on by default, and centroids are built from whatever else is in the store, so the same content can enrich differently as the store changes. |
+
+Value determinism is unreachable while inference runs, by construction — it
+is not a bug the other two properties happen to share. A project that wants
+to claim "fully deterministic," not just "schema- and byte-deterministic,"
+has to give up inference's convenience for it. That trade is what `strict`
+mode is for.
+
+### What `strict: true` does
+
+```yaml
+strict: true   # top-level key, sibling to storage/categories/llm
+```
+
+- **Disables tag inference** (`llm.enrichment.tags: infer` becomes a no-op) —
+  an entry gets exactly the tags the caller passed, or none.
+- **Disables category *inference*** (`llm.enrichment.categoryStrategy`'s
+  centroid/model call never runs) — an omitted `--category` hard-errors,
+  naming `strict: true` as the cause, unless a fallback is configured (next
+  bullet).
+- **Does not touch a literal `llm.enrichment.category` fallback name.** A
+  fixed category name is a constant, content-independent default, not
+  inference — it stays available as the answer for an omitted `--category`
+  even under `strict`, and using it never calls the embedder or the model.
+- **Does not affect shape or byte determinism** — those are already always on
+  and unaffected by this key.
+
+### The trade-off to present
+
+Recommending `strict` trades away §0a's "pass `--category`, let tags infer"
+posture: **every write needs an explicit `--category`** (or a configured
+fallback name), and **tags never auto-fill** — an agent that wants tags under
+`strict` must pass `--tags` itself, which reintroduces the fragmented-
+vocabulary risk §0a's inference exists to avoid. Recommend `strict` only when
+the user has explicitly said the literal "deterministic" claim matters more
+than that convenience; it is not the default recommendation from §0a's own
+interview.
+
 ## 1. Beginning of Run (Context Loading)
+
+> [!IMPORTANT]
+> **Skip this section entirely on a harness with a deterministic recall hook
+> wired** (as of 2.2.0: Claude Code, Codex CLI — see `neuron init`'s
+> `hooks.installed` output). There, `neuron hook <harness> pre-prompt` already
+> injects matching memory into context before every turn, so a manual query
+> here would just repeat what the harness already delivered. The steps below
+> are the fallback for a harness with no such hook: query manually, because
+> nothing else will.
 
 At the very start of a session, before running any other commands or modifying files, load relevant past context:
 
@@ -125,8 +293,10 @@ Whenever a command execution, test run, or tool invocation fails:
 1. Investigate the failure and identify the verified root cause and fix.
 2. Immediately after resolving the issue (and before moving to the next task), record the learning to prevent future agents from repeating the mistake. **Do NOT write 1-sentence summaries.** Memory entries MUST be detailed, multi-sentence explanations (at least 3-4 sentences) capturing context, root cause, exact fix, and code/command examples:
    ```bash
-   neuron memory add --category learning "Fix for <error/issue>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --tags failure-fix,<topic> --importance 4
+   neuron memory add --category learning "Fix for <error/issue>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --importance 4
    ```
+   Tags are left to inference (§0a) — a failure-fix's category and content already
+   carry `failure-fix`-style signal for the centroid to select from.
 
 ## 4. End of Run (Memory Recording)
 
@@ -134,17 +304,18 @@ Before finishing your turn and ending the session:
 
 1. **Log Action History**: Record the action you took using the history log:
    ```bash
-   neuron memory add --category history "<summary of what was built or fixed>" --tags <related-topics> [--task-id <id>]
+   neuron memory add --category history "<summary of what was built or fixed>" [--task-id <id>]
    ```
-   - **`--tags`**: Use comma-separated tags from a standard vocabulary where possible (e.g., `tdd`, `db-schema`, `refactoring`, `debugging`, `git`).
+   - **`--tags`**: leave it to inference (§0a) — pass it explicitly only to mint a
+     genuinely new tag, which is a deliberate act, not the default.
    - **`--task-id`**: Link the history to the ticket or issue being resolved. Use the ticket/issue number (e.g., `01-db-schema-postgres` for local issues, or `#42` for GitHub/GitLab). Do NOT use process/task IDs like `task-144`.
 2. **Record New Learnings**: If you established new rules, resolved configurations, or made architectural decisions, record them explicitly as detailed multi-sentence entries (3-4 sentences minimum):
    ```bash
-   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>" --tags <topic>
+   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>"
    ```
 3. **Record Architectural Decisions**: If you changed module boundaries or made a design choice worth preserving, write it to the `decisions` category:
    ```bash
-   neuron memory add --category decisions "<decision, rationale, and alternatives considered>" --tags adr,<topic>
+   neuron memory add --category decisions "<decision, rationale, and alternatives considered>"
    ```
 4. **Refresh the Blueprint** if the session changed the codebase structure — see Section 8.
 
@@ -152,9 +323,9 @@ Before finishing your turn and ending the session:
 > deprecated as of 2.1.0 and print a warning to `stderr`. Prefer
 > `neuron memory --category <name>`.
 
-## 5. Markdown File Storage & Sync (`storage.mode: dual | md-only`)
+## 5. Markdown File Storage & Sync (`storage.mode: md | split`)
 
-When `storage.mode` is set to `dual`, `md-only`, or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`):
+Under `md` (the default) or `split`, memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`), and those files are the **record of truth** — SQLite is a derived index reconciled from them on every command, not a second copy:
 
 - **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`.
 - **Entry Format**: Each entry is a YAML frontmatter block followed by body text:
@@ -242,7 +413,7 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
    entries were written without `--importance`, treat `prune` as "delete all
    history older than N days" and decide on that basis.
 
-3. **Sync After Prune** (if using `dual` or `md-only` mode):
+3. **Sync After Prune** (if using `md` or `split` mode):
    - After pruning entries from the vector DB, run `neuron sync` to keep Markdown files consistent:
      ```bash
      neuron sync
@@ -330,13 +501,22 @@ it will confidently describe modules that no longer exist.
    contract. Pair it with the `decisions` entry explaining *why*:
    ```bash
    neuron scan
-   neuron memory add --category decisions "<why the boundary changed>" --tags adr,architecture
+   neuron memory add --category decisions "<why the boundary changed>"
    ```
 
-### Scanner accuracy caveat
+### Scanner accuracy
 
-Symbol extraction is line-oriented pattern matching, not full AST parsing.
-Multi-line declarations may be truncated, and some ordinary call sites are
-recorded as `method` symbols. Treat the `exportChanges` bucket as a strong
-signal rather than a precise contract diff, and confirm against the source
-before telling the user an export was removed.
+Symbols come from a parsed Tree-Sitter syntax tree for TypeScript, TSX,
+JavaScript, Python, Go, Rust, Java and C++. For those, `exportChanges` is a
+precise contract diff: call sites are no longer recorded as `method` symbols,
+and multi-line declarations are captured whole.
+
+`.cs`, `.swift`, `.rb` and `.php` have no grammar in 2.2.0 and fall back to
+line-oriented matching, where multi-line declarations may still be truncated.
+Treat their export contracts as a strong signal rather than a precise diff.
+
+If `neuron scan --diff` reports **"Re-baseline Required"**, the stored card was
+produced by a different parser than the current scan, so the two cannot be
+compared. That is not drift and nothing is wrong with the code — run
+`neuron scan` once to re-baseline. `--check` reports this as exit code `2`,
+distinct from `1` for real drift.

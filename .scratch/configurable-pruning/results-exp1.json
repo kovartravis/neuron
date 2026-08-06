@@ -1,0 +1,84 @@
+{
+  "max_prune_importance_threshold": 2,
+  "n_total_labels": 183,
+  "a1_recoverability_binary": {
+    "n_scored": 159,
+    "parse_failures": 24,
+    "parse_failure_rate": 0.1311,
+    "accuracy": 0.5912,
+    "precision_prunable": 0.9775,
+    "recall_prunable": 0.58,
+    "confusion": {
+      "tp": 87,
+      "fp": 2,
+      "tn": 7,
+      "fn": 63
+    },
+    "false_deletes_on_unrecoverable": [
+      {
+        "id": "e8b009df-9882-43d2-94b8-14b693c4d752",
+        "category": "learning",
+        "importance_predicted": 2
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "importance_predicted": 2
+      }
+    ],
+    "false_delete_count": 2,
+    "false_delete_rate_of_unrecoverable_set": 0.1818,
+    "disqualified": true,
+    "latency_ms": {
+      "p50": 541,
+      "p95": 980,
+      "mean": 617.5
+    }
+  },
+  "a2_recalibrated_scale": {
+    "n_scored": 130,
+    "parse_failures": 53,
+    "parse_failure_rate": 0.2896,
+    "accuracy": 0.3846,
+    "precision_prunable": 0.9231,
+    "recall_prunable": 0.3871,
+    "confusion": {
+      "tp": 48,
+      "fp": 4,
+      "tn": 2,
+      "fn": 76
+    },
+    "false_deletes_on_unrecoverable": [
+      {
+        "id": "98480ae3-7ff1-4318-bd94-50a2cf363e64",
+        "category": "learning",
+        "importance_predicted": 1
+      },
+      {
+        "id": "9c95e12a-96b8-4318-a694-630ce06d5df1",
+        "category": "decisions",
+        "importance_predicted": 1
+      },
+      {
+        "id": "68455ac1-ef28-495d-8547-25fd29a35d4d",
+        "category": "decisions",
+        "importance_predicted": 1
+      },
+      {
+        "id": "f57972b4-2aae-4f6b-a661-49c451b485f5",
+        "category": "decisions",
+        "importance_predicted": 1
+      }
+    ],
+    "false_delete_count": 4,
+    "false_delete_rate_of_unrecoverable_set": 0.3636,
+    "disqualified": true,
+    "latency_ms": {
+      "p50": 1157,
+      "p95": 1714,
+      "mean": 1247.4
+    }
+  },
+  "winner": null,
+  "verdict": "both_disqualified"
+}

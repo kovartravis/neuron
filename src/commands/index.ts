@@ -9,5 +9,6 @@ export * from './ui.js';
 export * from './sync.js';
 export * from './feedback.js';
 export * from './scan.js';
+export * from './hook.js';
 
 

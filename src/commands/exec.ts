@@ -16,7 +16,7 @@ export async function handleExecCommand(args: string[]): Promise<void> {
   const rawCommandStr = commandArgs.join(' ');
 
   const config = loadConfig(process.cwd());
-  const { categories, limit, minScore } = resolveExecCategories(config, rawCommandStr);
+  const { categories, limit } = resolveExecCategories(config, rawCommandStr);
 
   // Uses the real embedder: the mock returns an all-zero vector, which reduces
   // pre-command lookup to keyword matching and silently defeats the semantic
@@ -28,8 +28,9 @@ export async function handleExecCommand(args: string[]): Promise<void> {
     await autoRescanIfDriftDetected(memory, process.cwd());
   }
 
-  const matched = await memory.query({ text: rawCommandStr, categories, limit });
-  const relevant = matched.filter(m => (m.score ?? 0) >= minScore);
+  // The relevance gate (ticket 41 / ADR 0012) lives in `NeuronMemory.queryGated`,
+  // not here — `minScore` no longer gates anything (ADR 0012, ticket 39).
+  const { results: relevant, rejected } = await memory.queryGated({ text: rawCommandStr, categories, limit });
 
   if (relevant.length > 0) {
     process.stderr.write(`[neuron] Matched ${relevant.length} relevant learning(s) for command: "${rawCommandStr}"\n`);
@@ -37,6 +38,8 @@ export async function handleExecCommand(args: string[]): Promise<void> {
       process.stderr.write(`  - ${m.content}\n`);
     }
     process.stderr.write('\n');
+  } else {
+    process.stderr.write(`[neuron] 0 relevant learning(s) for "${rawCommandStr}" — ${rejected} candidate(s) below relevance gate\n`);
   }
 
   memory.close();

@@ -23,11 +23,16 @@ describe('CLI Command: status', () => {
 
   it('should run "status" command and return status JSON', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
-    
+
+    // NEURON_HOOK_CACHE_DIR isolates recallCost's ledger scan (ticket 07) from
+    // this repo's own real, dogfooded hook cache (ticket 42's pattern) —
+    // without it, status would summarize live session data from this very
+    // conversation and the assertions below would be non-deterministic.
     const stdout = execSync(`node ${cliPath} status`, {
       env: {
         ...process.env,
         NEURON_DB_PATH: tempDbPath,
+        NEURON_HOOK_CACHE_DIR: path.join(tempDbDir, 'hook-cache'),
       }
     }).toString();
 
@@ -35,5 +40,7 @@ describe('CLI Command: status', () => {
     expect(status.db).toBe('ready');
     expect(status.project).toBeDefined();
     expect(status.projectRoot).toBe(process.cwd());
+    expect(status.recallCost.epochCharBudget).toBe(18000);
+    expect(status.recallCost.sessionsObserved).toBe(0);
   });
 });

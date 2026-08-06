@@ -32,7 +32,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
   it('T4-01: Developer Git collaboration workflow (commit md files, pull & sync)', async () => {
     const configA: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: '.neuron' },
+      storage: { mode: 'md', path: '.neuron' },
       categories: { learning: { description: 'Learnings' } },
     };
 
@@ -46,6 +46,10 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       projectRoot: devADir,
       projectName: 'collab-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapterA = new MdStorageAdapter({ storagePath: mdStoragePathA });
     const routerA = new DualStorageRouter(dbA, adapterA, configA);
@@ -59,7 +63,6 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
         content: 'Developer A shared convention: Always run linter before PR',
         tags: ['git', 'convention', 'pr'],
         importance: 5,
-        scope: 'project',
       },
     ]);
 
@@ -84,6 +87,10 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       projectRoot: devBDir,
       projectName: 'collab-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapterB = new MdStorageAdapter({ storagePath: mdStoragePathB });
 
@@ -96,7 +103,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
     expect(syncResB.syncedToVector).toBe(1);
 
     // Developer B can now search and retrieve Developer A's learning
-    const afterSyncB = await dbB.query({ text: 'linter before PR', categories: ['learning'], scopes: ['project', 'global', 'collab-project'] });
+    const afterSyncB = await dbB.query({ text: 'linter before PR', categories: ['learning'] });
     expect(afterSyncB).toHaveLength(1);
     expect(afterSyncB[0].id).toBe('git-commit-mem-1');
     expect(afterSyncB[0].content).toContain('Always run linter before PR');
@@ -108,7 +115,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
   it('T4-02: Offline knowledge base editing & CLI resynchronization', async () => {
     const config: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: '.neuron' },
+      storage: { mode: 'md', path: '.neuron' },
       categories: { decisions: { description: 'Architectural Decisions' } },
     };
 
@@ -121,6 +128,10 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       projectRoot: devADir,
       projectName: 'offline-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapter = new MdStorageAdapter({ storagePath: mdStoragePath });
 
@@ -151,7 +162,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     expect(syncResult.syncedToVector).toBe(1);
 
     // Query vector DB to verify offline decision is indexed
-    const queryResults = await db.query({ text: 'Dual Storage Parity', categories: ['decisions'], scopes: ['project', 'global', 'offline-project'] });
+    const queryResults = await db.query({ text: 'Dual Storage Parity', categories: ['decisions'] });
     expect(queryResults).toHaveLength(1);
     expect(queryResults[0].id).toBe('adr-001');
     expect(queryResults[0].importance).toBe(5);
@@ -170,6 +181,10 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       projectRoot: devADir,
       projectName: 'migration-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
 
     // 1. Project operates initially in vector-only mode
@@ -184,7 +199,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     // 2. Developer upgrades config to dual mode
     const dualConfig: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
       categories: {
         learning: { description: 'Learnings' },
         history: { description: 'History' },
@@ -226,12 +241,16 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       projectRoot: devADir,
       projectName: 'recovery-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
     const adapter = new MdStorageAdapter({ storagePath: mdStoragePath });
 
     const config: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
     };
 
     // Pre-populate valid state
@@ -277,11 +296,15 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       projectRoot: devADir,
       projectName: 'onboarding-repo',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
+      // The router's vector collaborator, matching what production passes it
+      // (a vector-only delegate). Without pinning, the schema default `md`
+      // (ticket 31) puts a second markdown writer on the same directory.
+      storageMode: 'vector-only',
     });
 
     const config: NeuronConfig = {
       ...DEFAULT_CONFIG,
-      storage: { mode: 'dual', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
       categories: {
         learning: { description: 'Learnings' },
         history: { description: 'History' },
@@ -298,8 +321,8 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     const router = new DualStorageRouter(db, adapter, config);
 
     await router.transact([
-      { op: 'upsert', category: 'learning', id: 'onboard-1', content: 'Onboarding rule: Always format code', tags: ['onboarding'], scope: 'project' },
-      { op: 'upsert', category: 'decisions', id: 'onboard-2', content: 'Onboarding decision: Use Vitest runner', tags: ['test'], scope: 'project' },
+      { op: 'upsert', category: 'learning', id: 'onboard-1', content: 'Onboarding rule: Always format code', tags: ['onboarding'] },
+      { op: 'upsert', category: 'decisions', id: 'onboard-2', content: 'Onboarding decision: Use Vitest runner', tags: ['test'] },
     ]);
 
     // Step 3: Manual modification to one markdown entry
@@ -307,7 +330,6 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       id: 'onboard-1',
       content: 'Onboarding rule: Always format code and run typecheck',
       importance: 5,
-      scope: 'project',
     });
 
     // Step 4: A manual .md edit changes content without touching createdAt,
@@ -336,7 +358,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     expect(actualSyncResult.conflicts).toHaveLength(0);
 
     // Step 5: Execute vector query across all onboarded categories
-    const searchResults = await db.query({ text: 'typecheck', categories: ['learning'], scopes: ['project', 'global', 'onboarding-repo'] });
+    const searchResults = await db.query({ text: 'typecheck', categories: ['learning'] });
     expect(searchResults).toHaveLength(1);
     expect(searchResults[0].id).toBe('onboard-1');
     expect(searchResults[0].content).toContain('run typecheck');

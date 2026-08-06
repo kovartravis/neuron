@@ -8,6 +8,13 @@ import {
   readReconciledFingerprint,
   writeReconciledFingerprint,
 } from './fingerprint.js';
+import {
+  areComparable,
+  fidelityFromComponents,
+  LEGACY_FIDELITY,
+  parseFidelitySection,
+  type FidelityDescriptor,
+} from './fidelity.js';
 
 export interface ModuleDiff {
   type: 'added' | 'removed' | 'modified';
@@ -30,6 +37,13 @@ export interface DependencyDiff {
 export interface ArchitecturalDiff {
   hasDrift: boolean;
   isMissingBaseline?: boolean;
+  /**
+   * The baseline and the scan were produced by different parsers, so their
+   * difference is not drift. Mutually exclusive with `hasDrift`.
+   */
+  needsRebaseline?: boolean;
+  baselineFidelity?: string;
+  currentFidelity?: string;
   baselineId?: string;
   baselineTimestamp?: string;
   /** The live scan computed for this diff, so callers can re-ingest without re-scanning. */
@@ -52,6 +66,8 @@ export function parseBaselineBlueprint(markdownContent: string): {
    * dependencies were recorded — only the former can be diffed.
    */
   hasDependencySection: boolean;
+  /** How this card's symbols were obtained. Absent section means a 2.1.0 card. */
+  fidelity: FidelityDescriptor;
 } {
   const modules: Array<{ name: string; path: string }> = [];
   const exportsList: Array<{ file: string; symbol: string }> = [];
@@ -100,7 +116,13 @@ export function parseBaselineBlueprint(markdownContent: string): {
     }
   }
 
-  return { modules, exports: exportsList, dependencies, hasDependencySection };
+  return {
+    modules,
+    exports: exportsList,
+    dependencies,
+    hasDependencySection,
+    fidelity: parseFidelitySection(markdownContent) ?? LEGACY_FIDELITY,
+  };
 }
 
 export function calculateArchitecturalDiff(
@@ -116,6 +138,11 @@ export function calculateArchitecturalDiff(
   let baselineExports: Array<{ file: string; symbol: string }> = [];
   let baselineDeps: string[] = [];
   let canDiffDependencies = false;
+  let baselineFidelity: FidelityDescriptor;
+
+  const currentFidelity = fidelityFromComponents(
+    currentScan.modules.flatMap(m => m.components)
+  );
 
   if (typeof baseline === 'string') {
     const parsed = parseBaselineBlueprint(baseline);
@@ -123,6 +150,7 @@ export function calculateArchitecturalDiff(
     baselineExports = parsed.exports;
     baselineDeps = parsed.dependencies;
     canDiffDependencies = parsed.hasDependencySection;
+    baselineFidelity = parsed.fidelity;
   } else {
     baselineModules = baseline.modules.map(m => ({ name: m.name, path: m.path }));
     baselineExports = [];
@@ -135,6 +163,29 @@ export function calculateArchitecturalDiff(
     });
     baselineDeps = [...(baseline.manifest.dependencies || []), ...(baseline.manifest.devDependencies || [])];
     canDiffDependencies = true;
+    baselineFidelity = fidelityFromComponents(baseline.modules.flatMap(m => m.components));
+  }
+
+  // Refuse before comparing anything: a diff across a parser change reports
+  // hundreds of phantom changes, none of which the user caused. Refusal is
+  // all-or-nothing — a partially comparable report would still be misleading
+  // about the files it did compare.
+  if (!areComparable(baselineFidelity, currentFidelity)) {
+    return {
+      hasDrift: false,
+      needsRebaseline: true,
+      baselineFidelity: baselineFidelity.default,
+      currentFidelity: currentFidelity.default,
+      summary:
+        `Baseline was produced by a different parser (\`${baselineFidelity.default}\`) than this scan ` +
+        `(\`${currentFidelity.default}\`). Drift cannot be measured across that change. ` +
+        `Run \`neuron scan\` to re-baseline.`,
+      newModules: [],
+      removedModules: [],
+      exportChanges: [],
+      dependencyShifts: [],
+      totalChangesCount: 0,
+    };
   }
 
   // 1. Compare Modules
@@ -242,6 +293,27 @@ export function calculateArchitecturalDiff(
 }
 
 export function formatArchitecturalDiffMarkdown(diff: ArchitecturalDiff): string {
+  // Checked before `hasDrift`, which is false on a mismatch — reporting "In
+  // Sync" against a baseline we refused to read would be the worst outcome.
+  if (diff.needsRebaseline) {
+    return [
+      `### 🔬 Re-baseline Required`,
+      ``,
+      `**Summary**: ${diff.summary}`,
+      ``,
+      `| | Parser |`,
+      `|---|---|`,
+      `| Baseline | \`${diff.baselineFidelity}\` |`,
+      `| This scan | \`${diff.currentFidelity}\` |`,
+      ``,
+      `Symbol extraction changed between these two, so every difference below`,
+      `would be an artefact of the parser rather than a change you made. No`,
+      `drift is reported.`,
+      ``,
+      `Run \`neuron scan\` to re-baseline, after which drift is measured again.`,
+    ].join('\n');
+  }
+
   if (!diff.hasDrift) {
     return `### ✅ Architectural Status: In Sync\n\nNo architectural drift detected since baseline scan.`;
   }
@@ -360,11 +432,16 @@ export async function autoRescanIfDriftDetected(
     }
 
     const diff = await getArchitecturalDrift(memory, projectRoot);
-    if (diff.hasDrift || diff.isMissingBaseline) {
-      const msg = diff.isMissingBaseline
-        ? `[neuron] No baseline architecture card found in '${category}'. Performing initial scan...\n`
-        : `[neuron] Architectural drift detected (${diff.totalChangesCount} change(s)). Automatically re-scanning codebase topology...\n`;
-      process.stderr.write(msg);
+    if (diff.hasDrift || diff.isMissingBaseline || diff.needsRebaseline) {
+      // A fidelity mismatch re-baselines like anything else, but silently: the
+      // drift and missing-baseline messages would both be untrue here, and the
+      // condition resolves itself in the same breath that reports it.
+      const msg = diff.needsRebaseline
+        ? ''
+        : diff.isMissingBaseline
+          ? `[neuron] No baseline architecture card found in '${category}'. Performing initial scan...\n`
+          : `[neuron] Architectural drift detected (${diff.totalChangesCount} change(s)). Automatically re-scanning codebase topology...\n`;
+      if (msg) process.stderr.write(msg);
       await ingestScanResults(memory, {
         projectDir: projectRoot,
         category,

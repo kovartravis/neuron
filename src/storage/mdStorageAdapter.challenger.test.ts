@@ -20,14 +20,13 @@ describe('MdStorageAdapter Empirical Challenger Stress Harness', () => {
   });
 
   describe('1. Core Contract & Frontmatter Parsing Integrity', () => {
-    it('1.1: Frontmatter field preservation (id, createdAt, importance, tags, scope, taskId)', async () => {
+    it('1.1: Frontmatter field preservation (id, createdAt, importance, tags, taskId)', async () => {
       const adapter = new MdStorageAdapter({ storagePath: testDir });
 
       const inputEntry = {
         id: 'explicit-id-100',
         content: '## Entry Content\n\nDetailed body paragraph.',
         tags: ['learning', 'tdd'],
-        scope: 'project-scope',
         importance: 4,
         taskId: 'task-777',
         createdAt: '2026-07-28T12:00:00.000Z',
@@ -41,7 +40,6 @@ describe('MdStorageAdapter Empirical Challenger Stress Harness', () => {
       expect(readBack[0].category).toBe('learning');
       expect(readBack[0].importance).toBe(4);
       expect(readBack[0].tags).toEqual(['learning', 'tdd']);
-      expect(readBack[0].scope).toBe('project-scope');
       expect(readBack[0].taskId).toBe('task-777');
       expect(readBack[0].createdAt).toBe('2026-07-28T12:00:00.000Z');
       expect(readBack[0].content).toBe('## Entry Content\n\nDetailed body paragraph.');
@@ -110,7 +108,7 @@ describe('MdStorageAdapter Empirical Challenger Stress Harness', () => {
   });
 
   describe('3. Corrupt Frontmatter Parsing Resilience', () => {
-    it('3.1: Malformed frontmatter returns fallback memory item with assigned UUID rather than throwing error', async () => {
+    it('3.1: Malformed frontmatter hard-errors naming the file, instead of fabricating a fallback entry (ticket 35)', async () => {
       const adapter = new MdStorageAdapter({ storagePath: testDir });
       await adapter.ensureScaffolded(['learning']);
 
@@ -124,11 +122,10 @@ invalid: [unclosed array
 
 Body text under broken frontmatter.
 `;
-      fs.writeFileSync(path.join(testDir, 'learning.md'), corruptMd, 'utf8');
+      const filePath = path.join(testDir, 'learning.md');
+      fs.writeFileSync(filePath, corruptMd, 'utf8');
 
-      expect(async () => {
-        await adapter.readCategory('learning');
-      }).not.toThrow();
+      await expect(adapter.readCategory('learning')).rejects.toThrow(filePath);
     });
 
     it('3.2: Path traversal in category parameter is contained within storagePath', async () => {

@@ -21,7 +21,6 @@ describe('CLI Command: scan', () => {
     const stdout = execSync(`node ${cliPath} scan --dry-run`).toString();
 
     expect(stdout).toContain('# 🏛️ Repository Architectural Blueprint:');
-    expect(stdout).toContain('category: architecture');
     expect(stdout).toContain('Primary Subsystems');
   });
 

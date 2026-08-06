@@ -1,33 +1,33 @@
 {
-  "timestamp": "2026-08-01T00:15:48.372Z",
+  "timestamp": "2026-08-05T19:36:09.265Z",
   "tier": "sanity",
-  "suiteDurationMs": 3857,
+  "suiteDurationMs": 17314,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 5.51,
-      "p95Ms": 11.65,
-      "p99Ms": 13.43,
-      "minMs": 4.38,
-      "maxMs": 13.88,
-      "meanMs": 6.64,
-      "totalMs": 53.12,
-      "throughputPerSec": 150.6,
+      "p50Ms": 30.29,
+      "p95Ms": 49.09,
+      "p99Ms": 54.64,
+      "minMs": 22.69,
+      "maxMs": 56.03,
+      "meanMs": 32.64,
+      "totalMs": 261.11,
+      "throughputPerSec": 30.64,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
         "evaluations": 8,
-        "recallAt1": 0.375,
-        "recallAt5": 0.625,
-        "mrr": 0.458,
-        "supersededViolations": 0,
+        "recallAt1": 0.125,
+        "recallAt5": 0.5,
+        "mrr": 0.294,
+        "supersededViolations": 1,
         "byFamily": {
           "lexical-decoy": {
             "cases": 2,
-            "recallAt1": 0.5,
-            "recallAt5": 1,
-            "mrr": 0.625
+            "recallAt1": 0,
+            "recallAt5": 0.5,
+            "mrr": 0.175
           },
           "paraphrase": {
             "cases": 2,
@@ -37,23 +37,29 @@
           },
           "contradiction": {
             "cases": 2,
-            "recallAt1": 1,
+            "recallAt1": 0.5,
             "recallAt5": 1,
-            "mrr": 1
+            "mrr": 0.75
           },
           "multi-hop": {
             "cases": 2,
             "recallAt1": 0,
             "recallAt5": 0.5,
-            "mrr": 0.125
+            "mrr": 0.167
           }
         },
         "missedAtRank1": [
           {
             "id": "decoy-retry-budget",
             "family": "lexical-decoy",
-            "rank": 4,
+            "rank": 10,
             "topResult": "When a retry budget is exhausted the retry handler logs a retry limit warning for the paym"
+          },
+          {
+            "id": "decoy-index-rebuild",
+            "family": "lexical-decoy",
+            "rank": 4,
+            "topResult": "Index rebuild takes hours when the index rebuild job competes with other index rebuild tas"
           },
           {
             "id": "para-token-expiry",
@@ -68,16 +74,22 @@
             "topResult": "Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during "
           },
           {
+            "id": "contra-storage-default",
+            "family": "contradiction",
+            "rank": 2,
+            "topResult": "The default storage mode for new projects is vector-only, writing solely to the SQLite vec"
+          },
+          {
             "id": "hop-cold-start",
             "family": "multi-hop",
-            "rank": 4,
+            "rank": 3,
             "topResult": "Sluggish commands are often caused by an oversized memory store that needs pruning"
           },
           {
             "id": "hop-ci-only-failure",
             "family": "multi-hop",
             "rank": null,
-            "topResult": "Pipeline failures are usually caused by missing environment secrets that are present local"
+            "topResult": "Note 23: the asset pipeline validates its input eagerly and rejects malformed payloads bef"
           }
         ]
       }
@@ -85,21 +97,21 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 6.91,
-      "p95Ms": 6.91,
-      "p99Ms": 6.91,
-      "minMs": 6.91,
-      "maxMs": 6.91,
-      "meanMs": 6.91,
-      "totalMs": 6.91,
-      "throughputPerSec": 144.7,
+      "p50Ms": 28.86,
+      "p95Ms": 28.86,
+      "p99Ms": 28.86,
+      "minMs": 28.86,
+      "maxMs": 28.86,
+      "meanMs": 28.86,
+      "totalMs": 28.86,
+      "throughputPerSec": 34.65,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 6.911,
-            "p95Ms": 9.729,
-            "recallAt1": 0.375
+            "p50Ms": 28.864,
+            "p95Ms": 37.33,
+            "recallAt1": 0.125
           }
         ]
       }

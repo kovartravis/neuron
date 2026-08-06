@@ -2,13 +2,16 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { NeuronMemory } from './index.js';
+import { NeuronMemory, openDatabase } from './index.js';
 
 describe('NeuronMemory DB Migrations', () => {
-  it('should create the schema tables and columns required for scoped learnings and auto-promotion', () => {
+  it('should create the memories schema without scope, is_manual_scope, query_logs or learning_query_matches (ticket 38)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project'
     });
 
@@ -16,17 +19,80 @@ describe('NeuronMemory DB Migrations', () => {
 
     const memoriesCols = db.pragma("table_info(memories)") as any[];
     const memoriesNames = memoriesCols.map((c: any) => c.name);
-    expect(memoriesNames).toContain('is_manual_scope');
     expect(memoriesNames).toContain('category');
+    expect(memoriesNames).not.toContain('scope');
+    expect(memoriesNames).not.toContain('is_manual_scope');
 
-    const matchTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get() as { name: string } | undefined;
-    expect(matchTable?.name).toBe('learning_query_matches');
+    const matchTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get();
+    expect(matchTable).toBeUndefined();
+    const queryLogsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='query_logs'").get();
+    expect(queryLogsTable).toBeUndefined();
+  });
+
+  it('should migrate a pre-existing v6 database by dropping scope, is_manual_scope, query_logs and learning_query_matches without losing memory rows (ticket 38)', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-migration-test-'));
+    const dbPath = path.join(tempDir, 'legacy.sqlite');
+
+    // Build a v6-shaped database by hand — the schema this migration must upgrade from.
+    const seedDb = openDatabase(dbPath);
+    seedDb.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);
+      CREATE TABLE memories (
+        id TEXT PRIMARY KEY NOT NULL, project_id TEXT NOT NULL, category TEXT NOT NULL,
+        content TEXT NOT NULL, tags TEXT NOT NULL DEFAULT '[]', embedding BLOB NOT NULL,
+        scope TEXT NOT NULL DEFAULT 'project', importance INTEGER NOT NULL DEFAULT 3 CHECK (importance BETWEEN 1 AND 5),
+        is_manual_scope INTEGER NOT NULL DEFAULT 0, task_id TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+        enriched_at TEXT
+      );
+      CREATE TABLE query_logs (
+        id TEXT PRIMARY KEY NOT NULL, project_id TEXT NOT NULL, query_text TEXT NOT NULL,
+        embedding BLOB NOT NULL, scope TEXT NOT NULL, created_at TEXT NOT NULL
+      );
+      CREATE TABLE learning_query_matches (
+        learning_id TEXT NOT NULL, query_log_id TEXT NOT NULL, matched_at TEXT NOT NULL,
+        PRIMARY KEY (learning_id, query_log_id)
+      );
+    `);
+    seedDb.prepare(`INSERT INTO meta (key, value) VALUES ('schema_version', '6')`).run();
+    seedDb.prepare(`
+      INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at, enriched_at)
+      VALUES ('mem-1', 'proj-1', 'learning', 'a preserved memory', '[]', ?, 'global', 5, 1, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')
+    `).run(Buffer.alloc(1536));
+    seedDb.prepare(`
+      INSERT INTO query_logs (id, project_id, query_text, embedding, scope, created_at)
+      VALUES ('log-1', 'proj-1', 'old query', ?, 'global', '2026-01-01T00:00:00.000Z')
+    `).run(Buffer.alloc(1536));
+    seedDb.pragma('user_version = 6');
+    seedDb.close();
+
+    // Opening the legacy database through NeuronMemory must run the v7 migration.
+    const memory = new NeuronMemory({ dbPath, projectRoot: tempDir, projectName: 'legacy-project' });
+    const db = memory.getDb();
+
+    expect(db.pragma('user_version', { simple: true })).toBe(7);
+
+    const memoriesCols = (db.pragma('table_info(memories)') as any[]).map((c: any) => c.name);
+    expect(memoriesCols).not.toContain('scope');
+    expect(memoriesCols).not.toContain('is_manual_scope');
+
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='query_logs'").get()).toBeUndefined();
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get()).toBeUndefined();
+
+    const preserved = db.prepare('SELECT id, content, importance FROM memories WHERE id = ?').get('mem-1') as any;
+    expect(preserved.content).toBe('a preserved memory');
+    expect(preserved.importance).toBe(5);
+
+    memory.close();
+    fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
   it('should create memories_fts FTS5 virtual table for hybrid search', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project'
     });
 
@@ -42,6 +108,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
     });
@@ -55,26 +124,6 @@ describe('NeuronMemory DB Migrations', () => {
     expect(row).toBeDefined();
   });
 
-
-  it('should set is_manual_scope flag when explicit scope is provided', async () => {
-    const mockEmbedder = { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) };
-    const memory = new NeuronMemory({
-      dbPath: ':memory:',
-      projectRoot: '/test/project',
-      projectName: 'test-project',
-      embedder: mockEmbedder
-    });
-
-    const defaultLearn = await memory.addLearning('Default scope learning');
-    const manualLearn = await memory.addLearning('Manual scope learning', [], { scope: 'global' });
-
-    const db = memory.getDb();
-    const row1 = db.prepare('SELECT is_manual_scope FROM memories WHERE id = ?').get(defaultLearn.id) as { is_manual_scope: number };
-    const row2 = db.prepare('SELECT is_manual_scope FROM memories WHERE id = ?').get(manualLearn.id) as { is_manual_scope: number };
-
-    expect(row1.is_manual_scope).toBe(0);
-    expect(row2.is_manual_scope).toBe(1);
-  });
 
 
   it('should support adding and querying learnings with injected embedder', async () => {
@@ -107,6 +156,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -117,8 +169,10 @@ describe('NeuronMemory DB Migrations', () => {
     expect(res1.status).toBe('created');
     expect(res1.id).toBeDefined();
 
-    const queryResult = await memory.queryLearnings('query for run tests', { limit: 5 });
-    expect(queryResult.query).toBe('query for run tests');
+    // Includes "checkouts" so both entries clear the relevance gate (ticket 41):
+    // a result with no FTS match at all is rejected regardless of semantic similarity.
+    const queryResult = await memory.queryLearnings('query for run tests checkouts', { limit: 5 });
+    expect(queryResult.query).toBe('query for run tests checkouts');
     expect(queryResult.results).toHaveLength(2);
 
     const first = queryResult.results[0];
@@ -139,6 +193,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -169,6 +226,9 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -221,7 +281,7 @@ describe('NeuronMemory DB Migrations', () => {
     expect(status.historyCount).toBe(2);
   });
 
-  it('should store importance and scope for learnings and history, defaulting when omitted', async () => {
+  it('should store importance for learnings and history, defaulting to 3 when omitted', async () => {
     const mockEmbedder = {
       embed: async () => new Float32Array(384),
       embedQuery: async () => new Float32Array(384)
@@ -230,38 +290,37 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
 
-    // 1. Add learning and history with explicit importance and scope
-    const learning1 = await memory.addLearning('Learning with custom scope', ['tag'], { importance: 5, scope: 'kovart' });
-    const history1 = await memory.addHistory('History with custom scope', { importance: 2, scope: 'global' });
+    // 1. Add learning and history with explicit importance
+    const learning1 = await memory.addLearning('Learning with custom importance', ['tag'], { importance: 5 });
+    const history1 = await memory.addHistory('History with custom importance', { importance: 2 });
 
     // Verify values in DB
     const db = memory.getDb();
-    const l1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(learning1.id) as { scope: string; importance: number };
-    expect(l1.scope).toBe('kovart');
+    const l1 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(learning1.id) as { importance: number };
     expect(l1.importance).toBe(5);
 
-    const h1 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(history1.id) as { scope: string; importance: number };
-    expect(h1.scope).toBe('global');
+    const h1 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(history1.id) as { importance: number };
     expect(h1.importance).toBe(2);
 
-    // 2. Add learning and history without explicit importance and scope (should default)
+    // 2. Add learning and history without explicit importance (should default)
     const learning2 = await memory.addLearning('Default learning', ['tag']);
     const history2 = await memory.addHistory('Default history');
 
-    const l2 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(learning2.id) as { scope: string; importance: number };
-    expect(l2.scope).toBe('test-project');
+    const l2 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(learning2.id) as { importance: number };
     expect(l2.importance).toBe(3);
 
-    const h2 = db.prepare('SELECT scope, importance FROM memories WHERE id = ?').get(history2.id) as { scope: string; importance: number };
-    expect(h2.scope).toBe('test-project');
+    const h2 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(history2.id) as { importance: number };
     expect(h2.importance).toBe(3);
   });
 
-  it('should filter queries by scope, apply hybrid scoring, and log the query', async () => {
+  it('should rank purely by semantic RRF, with no importance term on the query path (ticket 41)', async () => {
     // 384-dimensional unit vectors
     const queryVec = new Float32Array(384);
     queryVec[0] = 1.0;
@@ -295,49 +354,42 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
 
-    // Add learnings:
-    // Item A: Sim = 0.9, Importance = 5 (Norm = 1.0). Scope = 'test-project'
-    // Score = 0.75 * 0.9 + 0.25 * 1.0 = 0.925
+    // Add learnings. Deliberately gives the lowest-similarity item the highest
+    // importance and vice versa — under the old importance-blended score this
+    // would have promoted item A above item C despite lower similarity; ticket
+    // 41 removed that term entirely, so rank now follows similarity alone.
+    // Item A: Sim = 0.9, Importance = 5 — would have scored 0.925 under the old blend
     await memory.addLearning('itemA content', ['tag'], { importance: 5 });
-
-    // Item B: Sim = 0.8, Importance = 5 (Norm = 1.0). Scope = 'kovart'
-    // Score = 0.75 * 0.8 + 0.25 * 1.0 = 0.85
-    await memory.addLearning('itemB content', ['tag'], { importance: 5, scope: 'kovart' });
-
-    // Item C: Sim = 0.95, Importance = 1 (Norm = 0.0). Scope = 'test-project'
-    // Score = 0.75 * 0.95 + 0.25 * 0.0 = 0.7125
+    // Item B: Sim = 0.8, Importance = 5 — would have scored 0.85 under the old blend
+    await memory.addLearning('itemB content', ['tag'], { importance: 5 });
+    // Item C: Sim = 0.95, Importance = 1 — would have scored 0.7125 (last) under the old blend
     await memory.addLearning('itemC content', ['tag'], { importance: 1 });
 
-    // 1. Query with default scopes (should only see 'global' and 'test-project', so A and C, not B)
-    const resDefault = await memory.queryLearnings('query test', { limit: 5 });
-    expect(resDefault.results).toHaveLength(2);
-    expect(resDefault.results[0].content).toBe('itemA content');
-    expect(resDefault.results[1].content).toBe('itemC content');
-
-    // 2. Query with custom scopes (include 'kovart', so A, B, and C are all visible)
-    const resCustom = await memory.queryLearnings('query test', { limit: 5, scopes: ['test-project', 'kovart'] });
-    expect(resCustom.results).toHaveLength(3);
-    expect(resCustom.results[0].content).toBe('itemA content');
-    expect(resCustom.results[1].content).toBe('itemB content');
-    expect(resCustom.results[2].content).toBe('itemC content');
-
-    // 3. Verify query log is written
-    const db = memory.getDb();
-    const logs = db.prepare('SELECT query_text, scope FROM query_logs ORDER BY created_at ASC').all() as any[];
-    expect(logs).toHaveLength(2);
-    expect(logs[0].query_text).toBe('query test');
-    expect(logs[0].scope).toBe('global,test-project');
-    expect(logs[1].scope).toBe('test-project,kovart');
+    // Queried via `queryVector` directly (bypassing the relevance gate, ticket
+    // 41): none of these contents share an FTS token with "query test", so the
+    // gate itself is not what this test is about — this isolates the ranking
+    // claim from the gate's filtering concern.
+    const results = await memory.queryVector({ text: 'query test', categories: ['learning'], limit: 5 });
+    expect(results).toHaveLength(3);
+    expect(results[0].content).toBe('itemC content'); // sim 0.95, importance 1 — highest similarity wins
+    expect(results[1].content).toBe('itemA content'); // sim 0.9
+    expect(results[2].content).toBe('itemB content'); // sim 0.8, importance 5 — lowest similarity, still last
   });
 
   it('should support pruning history based on age and importance criteria', async () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project'
     });
 
@@ -396,34 +448,35 @@ describe('NeuronMemory DB Migrations', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
 
     // 1. Add learning
-    const added = await memory.addLearning('original text', ['initial'], { importance: 3, scope: 'initial-scope' });
-    
+    const added = await memory.addLearning('original text', ['initial'], { importance: 3 });
+
     // Check initial state
     const db = memory.getDb();
-    const row1 = db.prepare('SELECT content, tags, importance, scope, embedding FROM memories WHERE id = ?').get(added.id) as any;
+    const row1 = db.prepare('SELECT content, tags, importance, embedding FROM memories WHERE id = ?').get(added.id) as any;
     expect(row1.content).toBe('original text');
     expect(JSON.parse(row1.tags)).toEqual(['initial']);
     expect(row1.importance).toBe(3);
-    expect(row1.scope).toBe('initial-scope');
     const floatArr1 = new Float32Array(row1.embedding.buffer, row1.embedding.byteOffset, row1.embedding.byteLength / 4);
     expect(floatArr1[0]).toBe(1);
 
-    // 2. Update with content and scope override, preserving tags and importance
-    const updateRes = await memory.updateLearning(added.id, 'updated text', { scope: 'new-scope' });
+    // 2. Update content, preserving tags and importance
+    const updateRes = await memory.updateLearning(added.id, 'updated text');
     expect(updateRes.status).toBe('updated');
     expect(updateRes.id).toBe(added.id);
 
     // Check updated state
-    const row2 = db.prepare('SELECT content, tags, importance, scope, embedding FROM memories WHERE id = ?').get(added.id) as any;
+    const row2 = db.prepare('SELECT content, tags, importance, embedding FROM memories WHERE id = ?').get(added.id) as any;
     expect(row2.content).toBe('updated text');
     expect(JSON.parse(row2.tags)).toEqual(['initial']); // preserved
     expect(row2.importance).toBe(3); // preserved
-    expect(row2.scope).toBe('new-scope'); // updated
     const floatArr2 = new Float32Array(row2.embedding.buffer, row2.embedding.byteOffset, row2.embedding.byteLength / 4);
     expect(floatArr2[0]).toBe(2); // regenerated embedding
 
@@ -438,106 +491,6 @@ describe('NeuronMemory DB Migrations', () => {
     expect(nonExistentRes.status).toBe('not_found');
   });
 
-  it('should promote, demote, and respect manual scope locks during checkAutoPromotions', async () => {
-    const identicalVec = new Float32Array(384).fill(1); // normalized identical vectors produce dot product 384
-    // Unit vector for perfect similarity match
-    const unitVec = new Float32Array(384);
-    unitVec[0] = 1.0;
-
-    const mockEmbedder = {
-      embed: async () => unitVec,
-      embedQuery: async () => unitVec
-    };
-
-    const memory = new NeuronMemory({
-      dbPath: ':memory:',
-      projectRoot: '/test/project',
-      projectName: 'test-project',
-      embedder: mockEmbedder
-    });
-
-    // 1. Add learnings
-    const learnDefault = await memory.addLearning('Default scope learning'); // scope = test-project, is_manual_scope = 0
-    const learnManual = await memory.addLearning('Manual scope learning', [], { scope: 'test-project' }); // is_manual_scope = 1
-
-    // 2. Add query logs (5 identical queries to trigger promotion from test-project -> project)
-    for (let i = 0; i < 5; i++) {
-      await memory.queryLearnings(`query text ${i}`);
-    }
-
-    // 3. Run checkAutoPromotions
-    const res1 = memory.checkAutoPromotions();
-    expect(res1.promoted).toHaveLength(1);
-    expect(res1.promoted[0].id).toBe(learnDefault.id);
-    expect(res1.promoted[0].from).toBe('test-project');
-    expect(res1.promoted[0].to).toBe('project');
-
-    // Manual learning should NOT be promoted despite having matching queries
-    const db = memory.getDb();
-    const manualRow = db.prepare('SELECT scope FROM memories WHERE id = ?').get(learnManual.id) as { scope: string };
-    expect(manualRow.scope).toBe('test-project');
-
-    // 4. Add 10 more queries (total 15 matches) to trigger promotion to global
-    for (let i = 5; i < 15; i++) {
-      await memory.queryLearnings(`query text ${i}`);
-    }
-
-    const res2 = memory.checkAutoPromotions();
-    expect(res2.promoted).toHaveLength(1);
-    expect(res2.promoted[0].id).toBe(learnDefault.id);
-    expect(res2.promoted[0].from).toBe('project');
-    expect(res2.promoted[0].to).toBe('global');
-
-    // 5. Test demotion: set query_logs matched_at to 40 days ago so active 30-day match count becomes 0
-    const oldDate = new Date();
-    oldDate.setDate(oldDate.getDate() - 40);
-    db.prepare('UPDATE query_logs SET created_at = ?').run(oldDate.toISOString());
-    db.prepare('UPDATE learning_query_matches SET matched_at = ?').run(oldDate.toISOString());
-
-    const res3 = memory.checkAutoPromotions();
-    expect(res3.demoted).toHaveLength(1);
-    expect(res3.demoted[0].id).toBe(learnDefault.id);
-    expect(res3.demoted[0].from).toBe('global');
-    expect(res3.demoted[0].to).toBe('test-project');
-  });
-
-  it('should exempt learnings with importance >= 4 from automated scope demotion', async () => {
-    const unitVec = new Float32Array(384);
-    unitVec[0] = 1.0;
-    const mockEmbedder = { embed: async () => unitVec, embedQuery: async () => unitVec };
-
-    const memory = new NeuronMemory({
-      dbPath: ':memory:',
-      projectRoot: '/test/project',
-      projectName: 'test-project',
-      embedder: mockEmbedder
-    });
-
-    // 1. Add a learning with importance 4 (is_manual_scope = 0)
-    const learnHighImp = await memory.addLearning('High importance rule', [], { importance: 4 });
-
-    // 2. Promote to global by logging 15 query matches
-    for (let i = 0; i < 15; i++) {
-      await memory.queryLearnings(`query text ${i}`);
-    }
-    const resPromoted = memory.checkAutoPromotions();
-    expect(resPromoted.promoted).toHaveLength(1);
-    expect(resPromoted.promoted[0].to).toBe('global');
-
-    // 3. Age out query logs (40 days ago) so active 30-day match count drops to 0
-    const oldDate = new Date();
-    oldDate.setDate(oldDate.getDate() - 40);
-    const db = memory.getDb();
-    db.prepare('UPDATE query_logs SET created_at = ?').run(oldDate.toISOString());
-    db.prepare('UPDATE learning_query_matches SET matched_at = ?').run(oldDate.toISOString());
-
-    // 4. Run checkAutoPromotions - high importance learning (importance = 4) MUST NOT be demoted
-    const resDemoted = memory.checkAutoPromotions();
-    expect(resDemoted.demoted).toHaveLength(0);
-
-    const row = db.prepare('SELECT scope FROM memories WHERE id = ?').get(learnHighImp.id) as { scope: string };
-    expect(row.scope).toBe('global');
-  });
 
   it('should enforce CHECK (importance BETWEEN 1 AND 5) constraints in SQLite schema', () => {
     const memory = NeuronMemory.inMemory();
@@ -547,16 +500,16 @@ describe('NeuronMemory DB Migrations', () => {
     // 1. Inserting importance 0 into memories must fail
     expect(() => {
       db.prepare(`
-        INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
-        VALUES ('test-1', 'proj-1', 'learning', 'content', '[]', ?, 'global', 0, 0, NULL, ?, ?)
+        INSERT INTO memories (id, project_id, category, content, tags, embedding, importance, task_id, created_at, updated_at)
+        VALUES ('test-1', 'proj-1', 'learning', 'content', '[]', ?, 0, NULL, ?, ?)
       `).run(Buffer.alloc(1536), now, now);
     }).toThrow(/CHECK constraint failed/);
 
     // 2. Inserting importance 6 into memories must fail
     expect(() => {
       db.prepare(`
-        INSERT INTO memories (id, project_id, category, content, tags, embedding, scope, importance, is_manual_scope, task_id, created_at, updated_at)
-        VALUES ('test-2', 'proj-1', 'history', 'content', '[]', ?, 'global', 6, 0, NULL, ?, ?)
+        INSERT INTO memories (id, project_id, category, content, tags, embedding, importance, task_id, created_at, updated_at)
+        VALUES ('test-2', 'proj-1', 'history', 'content', '[]', ?, 6, NULL, ?, ?)
       `).run(Buffer.alloc(1536), now, now);
     }).toThrow(/CHECK constraint failed/);
   });
@@ -577,6 +530,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -591,11 +547,105 @@ describe('NeuronMemory hybrid search (RRF)', () => {
 
     expect(results[0].content).toBe('pin onnxruntime to 1.20.1 to avoid crash');
   });
+
+  it('should expose raw cosine similarity and the lexical-leg match, ungated (ticket 39)', async () => {
+    // Ticket 39 needs the two legs of ADR 0012's gate — raw cosine and FTS
+    // presence — measurable from outside. Calls `queryVector` directly (not
+    // `query`) since the gate itself (ticket 41) now ships and would reject
+    // the zero-FTS-overlap "miss" entry outright; this asserts the pre-gate
+    // computation still exposes both legs undistorted, which is what the
+    // gate in `query`/`queryGated` reads.
+    const matchVec = new Float32Array(384);
+    matchVec[0] = 1.0;
+
+    const otherVec = new Float32Array(384);
+    otherVec[1] = 1.0;
+
+    const queryVec = new Float32Array(384);
+    queryVec[0] = 0.8;
+    queryVec[1] = 0.6;
+
+    const mockEmbedder = {
+      embed: async (text: string) => (text.includes('gate') ? matchVec : otherVec),
+      embedQuery: async () => queryVec
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector-only',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('relevance gate keyword hit', ['gate'], { importance: 3 });
+    await memory.addLearning('unrelated content, no keyword overlap', ['other'], { importance: 3 });
+
+    const results = await memory.queryVector({ text: 'gate', kind: 'learning' });
+
+    const hit = results.find(r => r.content === 'relevance gate keyword hit')!;
+    const miss = results.find(r => r.content === 'unrelated content, no keyword overlap')!;
+
+    expect(hit.ftsMatched).toBe(true);
+    expect(miss.ftsMatched).toBe(false);
+    expect(hit.similarity).toBeCloseTo(0.8, 5);
+    expect(miss.similarity).toBeCloseTo(0.6, 5);
+  });
+
+  it('gates queries through `query`/`queryGated`, rejecting no-FTS-match results and counting them in status (ticket 41 / ADR 0012 Amendment)', async () => {
+    const matchVec = new Float32Array(384);
+    matchVec[0] = 1.0;
+
+    const otherVec = new Float32Array(384);
+    otherVec[1] = 1.0;
+
+    const queryVec = new Float32Array(384);
+    queryVec[0] = 0.8;
+    queryVec[1] = 0.6;
+
+    const mockEmbedder = {
+      embed: async (text: string) => (text.includes('gate') ? matchVec : otherVec),
+      embedQuery: async () => queryVec
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector-only',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+
+    await memory.addLearning('relevance gate keyword hit', ['gate'], { importance: 3 });
+    await memory.addLearning('unrelated content, no keyword overlap', ['other'], { importance: 3 });
+
+    const { results, rejected } = await memory.queryGated({ text: 'gate', kind: 'learning' });
+    expect(results).toHaveLength(1);
+    expect(results[0].content).toBe('relevance gate keyword hit');
+    expect(rejected).toBe(1);
+
+    // Cumulative rejection count surfaces in status (ADR 0012 Amendment:
+    // "rejection counts belong in neuron status").
+    const status = memory.getStatus();
+    expect(status.relevance.gateEnabled).toBe(true);
+    expect(status.relevance.rejectedTotal).toBe(1);
+
+    // A bare `query()` call also gates (same choke point) and accumulates
+    // rather than resets the total.
+    const plain = await memory.query({ text: 'gate', kind: 'learning' });
+    expect(plain).toHaveLength(1);
+    expect(memory.getStatus().relevance.rejectedTotal).toBe(2);
+  });
 });
 
   it('should surface semantically relevant records even when no query keywords appear in the content', async () => {
     // Both learnings use distinct embeddings; no query word appears in either content.
-    // Only the semantic (vector) rank can differentiate them.
+    // Only the semantic (vector) rank can differentiate them. Queried via
+    // `queryVector` directly: the relevance gate (ticket 41) would reject
+    // both of these outright (neither has an FTS match at all), which is a
+    // deliberate, measured tradeoff (ticket 39: 0/500 false silences on real
+    // queries) — this test is about the underlying RRF ranking capability,
+    // not the gate's filtering behavior, so it bypasses the gate to isolate that.
     const vecClose = new Float32Array(384);
     vecClose[0] = 0.95; // high dot-product with query
 
@@ -621,6 +671,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -628,16 +681,19 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     await memory.addLearning('install homebrew before setting up dev tools', ['mac'], { importance: 3 });
     await memory.addLearning('configure webpack for production bundling', ['webpack'], { importance: 3 });
 
-    const results = await memory.query({ text: 'QUERYSYMBOL', kind: 'learning' });
+    const results = await memory.queryVector({ text: 'QUERYSYMBOL', kind: 'learning' });
 
     expect(results[0].content).toBe('install homebrew before setting up dev tools');
   });
 
-  it('should rank the higher-importance record first when FTS and semantic ranks are equivalent', async () => {
-    // Both learnings contain the keyword and share an identical embedding.
-    // Semantic rank and FTS rank are determined by insertion order (rowid).
-    // The low-importance record is inserted first (lower rowid), which would
-    // win on rank alone. Only the 25% importance term can promote the second record.
+  it('should ignore importance entirely when FTS and semantic ranks are equivalent (ticket 41)', async () => {
+    // Both learnings contain the keyword and share an identical embedding, so
+    // semantic rank and FTS rank are determined by insertion order (rowid) —
+    // ranks are assigned uniquely per row (ticket 27 §1), so this is not a
+    // true tie: the first-inserted record ranks #1 in both lists. Before
+    // ticket 41, a 25%-weighted importance term could still promote the
+    // second record over it; now `score` is `normRrf` alone; importance
+    // affects nothing on the query path.
     const sharedVec = new Float32Array(384);
     sharedVec[2] = 1.0;
 
@@ -646,46 +702,23 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
 
     // Inserted first → lower rowid → ranks #1 in both semantic and FTS lists
     await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 1 });
-    // Inserted second → higher rowid → ranks #2 in both lists, but importance=5 adds 0.25 points
+    // Inserted second → higher rowid → ranks #2 in both lists. Importance=5
+    // no longer moves it: this is the regression test for the removed term.
     await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 5 });
 
     const results = await memory.query({ text: 'sqlite', kind: 'learning' });
 
-    expect(results[0].importance).toBe(5);
-    expect(results[1].importance).toBe(1);
-  });
-
-  it('should not surface keyword-matching records that are outside the queried scope', async () => {
-    const sharedVec = new Float32Array(384);
-    sharedVec[3] = 1.0;
-
-    const mockEmbedder = { embed: async () => sharedVec, embedQuery: async () => sharedVec };
-
-    const memory = new NeuronMemory({
-      dbPath: ':memory:',
-      projectRoot: '/test/project',
-      projectName: 'test-project',
-      embedder: mockEmbedder
-    });
-
-    // In-scope: global scope, no keyword match
-    await memory.addLearning('general coding guidelines', ['general'], { importance: 3 });
-
-    // Out-of-scope: 'other-team' scope, exact keyword match — should be invisible to default query
-    await memory.addLearning('always use vitest for testing', ['vitest'], { importance: 5, scope: 'other-team' });
-
-    // Default scopes are ['global', 'test-project'] — 'other-team' is excluded
-    const results = await memory.query({ text: 'vitest testing', kind: 'learning' });
-
-    const contents = results.map(r => r.content);
-    expect(contents).not.toContain('always use vitest for testing');
-    expect(contents).toContain('general coding guidelines');
+    expect(results[0].importance).toBe(1);
+    expect(results[1].importance).toBe(5);
   });
 
   it('should merge learnings and history results into a single ranked list when no kind filter is applied', async () => {
@@ -709,6 +742,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -756,6 +792,9 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector-only',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -763,51 +802,55 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     await memory.addLearning('alpha learning', [], { importance: 3 });
     await memory.addLearning('beta learning', [], { importance: 3 });
 
-    const results = await memory.query({ text: 'search query', kind: 'learning' });
+    // Neither content shares an FTS token with "search query", so `query`'s
+    // relevance gate (ticket 41) would reject both; use `queryVector`
+    // directly since this test is about embedQuery-vs-embed selection, not
+    // the gate.
+    const results = await memory.queryVector({ text: 'search query', kind: 'learning' });
 
     // Correct: embedQuery → vecB → beta ranks first
     // Wrong:   embed      → vecA → alpha ranks first
     expect(results[0].content).toBe('beta learning');
   });
 
-  describe('NeuronMemory Native Markdown Delegation (Ticket 06)', () => {
-    it('should delegate transact and query natively to Markdown storage when storage.mode is md-only', async () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t06-test-'));
+  describe('NeuronMemory markdown-first storage (Ticket 29, formerly "Ticket 06 md-only delegation")', () => {
+    it('writes markdown as the record of truth and retrieves through the same hybrid path as vector-only in md mode', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t29-md-test-'));
       const configPath = path.join(tempDir, 'neuron.yaml');
       fs.writeFileSync(
         configPath,
-        `version: "1.0"\nstorage:\n  mode: md-only\n  path: .neuron\n`,
+        `version: "1.0"\nstorage:\n  mode: md\n  path: .neuron\n`,
         'utf8'
       );
 
       const memory = new NeuronMemory({
         dbPath: path.join(tempDir, 'test.sqlite'),
         projectRoot: tempDir,
-        projectName: 't06-project',
+        projectName: 't29-project',
         embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
       });
 
-      // Transact in md-only mode
       await memory.transact([
         {
           op: 'upsert',
           category: 'learning',
-          id: 't06-native-1',
+          id: 't29-native-1',
           content: 'Native markdown storage delegation learning',
           tags: ['native', 'md'],
         },
       ]);
 
-      // Verify file was written to disk in .neuron/learning.md
+      // Markdown is the record of truth: the file is written on disk.
       const mdFile = path.join(tempDir, '.neuron', 'learning.md');
       expect(fs.existsSync(mdFile)).toBe(true);
       const contentOnDisk = fs.readFileSync(mdFile, 'utf8');
       expect(contentOnDisk).toContain('Native markdown storage delegation learning');
 
-      // Query in md-only mode
+      // Retrieval is the same hybrid RRF path as vector-only — no separate
+      // markdown-side substring matcher (ADR 0011 §6).
       const queryResults = await memory.query({ text: 'Native markdown', categories: ['learning'] });
       expect(queryResults).toHaveLength(1);
-      expect(queryResults[0].id).toBe('t06-native-1');
+      expect(queryResults[0].id).toBe('t29-native-1');
       expect(queryResults[0].content).toContain('Native markdown storage delegation learning');
 
       memory.close();
@@ -815,43 +858,43 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     });
   });
 
-  describe('Ticket 08: Bypassing SQLite File Creation in md-only Mode', () => {
-    it('should not create any .sqlite database files on disk when storage.mode is md-only', async () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t08-test-'));
+  describe('Ticket 29: the database is present in md mode, as a rebuildable index', () => {
+    // md-only's whole premise — no database at all — was deleted by ticket 28:
+    // every one of its defects traced to `this.db = null`. `md` mode (the
+    // renamed `dual`) keeps the database; it demotes it to a rebuildable
+    // index rather than removing it, which is what makes hybrid retrieval,
+    // enrichment and honest counts all work unchanged.
+    it('creates a .sqlite database file on disk when storage.mode is md', async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t29-db-test-'));
       const configPath = path.join(tempDir, 'neuron.yaml');
       fs.writeFileSync(
         configPath,
-        `version: "1.0"\nstorage:\n  mode: md-only\n  path: .neuron\n`,
+        `version: "1.0"\nstorage:\n  mode: md\n  path: .neuron\n`,
         'utf8'
       );
 
-      const targetSqlitePath = path.join(tempDir, 'should-not-exist.sqlite');
+      const targetSqlitePath = path.join(tempDir, 'should-exist.sqlite');
 
       const memory = new NeuronMemory({
         dbPath: targetSqlitePath,
         projectRoot: tempDir,
-        projectName: 't08-project',
+        projectName: 't29-project',
         embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) },
       });
 
-      await memory.transact([
-        {
-          op: 'upsert',
-          category: 'learning',
-          id: 't08-1',
-          content: 'No sqlite file created test',
-          tags: ['t08'],
-        },
-      ]);
-
-      const res = await memory.query({ text: 'sqlite file', categories: ['learning'] });
-      expect(res).toHaveLength(1);
-
-      // Verify NO .sqlite file was created at targetSqlitePath
-      expect(fs.existsSync(targetSqlitePath)).toBe(false);
+      expect(memory.getDb()).not.toBeNull();
+      expect(fs.existsSync(targetSqlitePath)).toBe(true);
 
       memory.close();
       fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it('round-trips a value through getMeta/setMeta', () => {
+      const memory = NeuronMemory.inMemory('t29-meta-project');
+      expect(memory.getMeta('md_seeded_at')).toBeNull();
+      memory.setMeta('md_seeded_at', '2026-08-02T00:00:00.000Z');
+      expect(memory.getMeta('md_seeded_at')).toBe('2026-08-02T00:00:00.000Z');
+      memory.close();
     });
   });
 });

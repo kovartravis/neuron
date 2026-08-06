@@ -1,27 +1,32 @@
 import { NeuronMemory } from '../index.js';
-import { parseFlags, MEMORY_HELP } from './utils.js';
+import { parseFlags, getMemoryHelp } from './utils.js';
 import { autoRescanIfDriftDetected } from '../scanner/diff.js';
+import { collectDeclaredFieldFlags } from '../config/neuronYaml.js';
 
 export async function handleMemoryCommand(
   args: string[],
   memory: NeuronMemory,
   projectName: string
 ): Promise<void> {
+  const config = memory.getConfig();
+  const declaredFields = collectDeclaredFieldFlags(config);
+  const memoryHelp = getMemoryHelp(config);
+
   const subCommand = args[1];
   if (!subCommand) {
-    console.error(MEMORY_HELP);
+    console.error(memoryHelp);
     process.exit(1);
   }
   if (subCommand === '--help' || subCommand === '-h') {
-    console.log(MEMORY_HELP);
+    console.log(memoryHelp);
     process.exit(0);
   }
 
   const rest = args.slice(2);
-  const { positionals, options } = parseFlags(rest);
+  const { positionals, options } = parseFlags(rest, declaredFields);
 
   if (options.help) {
-    console.log(MEMORY_HELP);
+    console.log(memoryHelp);
     process.exit(0);
   }
 
@@ -58,7 +63,10 @@ export async function handleMemoryCommand(
   }
 
   const category = options.category;
-  if (!category && ['add', 'delete', 'update'].includes(subCommand)) {
+  // `--category` is optional on `add` only — write-side enrichment infers it,
+  // or the write fails naming the cause. It stays required for `delete` and
+  // `update`, where it selects an existing entry and inference is meaningless.
+  if (!category && ['delete', 'update'].includes(subCommand)) {
     console.error(`Error: --category is required for 'memory ${subCommand}'`);
     process.exit(1);
   }
@@ -72,12 +80,12 @@ export async function handleMemoryCommand(
     const res = await memory.transact([
       {
         op: 'upsert',
-        category: category!,
+        category,
         content,
         tags: options.tags,
         importance: options.importance,
-        scope: options.scope,
         taskId: options.taskId,
+        fields: options.fields,
       },
     ]);
     console.log(JSON.stringify(res[0]));
@@ -92,8 +100,11 @@ export async function handleMemoryCommand(
     }
     await autoRescanIfDriftDetected(memory, process.cwd());
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
-    const results = await memory.query({ text: queryText, categories, limit: options.limit, scopes: options.scopes });
-    console.log(JSON.stringify({ results, project: projectName, query: queryText }));
+    // `rejected` (ticket 41 / ADR 0012) lets an empty `results` mean "the
+    // relevance gate rejected N candidates" rather than being indistinguishable
+    // from an empty store.
+    const { results, rejected } = await memory.queryGated({ text: queryText, categories, limit: options.limit });
+    console.log(JSON.stringify({ results, project: projectName, query: queryText, rejected }));
   } else if (subCommand === 'list') {
     // Was `options.category` only, so `--categories a,b` parsed successfully
     // and silently had no filtering effect — `query` already reads both.
@@ -123,19 +134,18 @@ export async function handleMemoryCommand(
         content,
         tags: options.tags,
         importance: options.importance,
-        scope: options.scope,
         taskId: options.taskId,
+        fields: options.fields,
       },
     ]);
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'consolidate') {
-    const report = memory.maintain({ consolidate: true, autoPromote: true });
+    const report = memory.maintain({ consolidate: true });
     console.log(
       JSON.stringify({
         entries: report.consolidated?.entries || [],
         consolidatedAt: report.consolidated?.consolidatedAt,
         previousCursor: report.consolidated?.previousCursor,
-        promotions: report.promotions,
         project: projectName,
       })
     );
