@@ -127,6 +127,22 @@ accumulate toward exhaustion. Tightened the caveat in `copilot.ts` to say
 so plainly rather than imply an open risk that isn't actually reachable
 under this adapter's own design.
 
+**Maintainer scrutinized the adapter's actual value, same session.** Called
+out that session-start-only coverage means the entire per-turn,
+query-relevant recall value proposition (what Claude Code/Codex and
+ticket 10/18's A/B actually deliver) is absent for Copilot — what's left
+is narrower than "session-start injection" sounds: a guaranteed
+`architecture`-category card, once, nothing else. Because
+`deriveFidelity()` correctly reports `best-effort`, the protocol block
+never drops the full fallback instructions for Copilot either, so the
+hook is strictly additive and can't make a user worse off than no hook —
+but its value is unmeasured: ticket 10/18's A/B tested full (both-point)
+recall, not this thinner slice, so there's no direct evidence this
+guarantee is worth the adapter's real maintenance cost. **Maintainer
+decision: keep the adapter as built.** Not revisited further this
+session; a future session should not re-litigate this without new
+evidence (e.g., a session-start-only A/B, or real user reports).
+
 **Real-install verification (the one remaining deliverable) is
 deliberately not done this session.** Copilot CLI is not installed on
 this machine; the maintainer chose to verify independently against a real

@@ -1029,3 +1029,15 @@ tags:
 taskId: null
 ---
 Ticket 17 implementation choices not fully specified by ADR 0015, decided during execution: (1) the write-time similarity gate searches across ALL categories, not just the target one, because category is only resolved by write-side enrichment AFTER the gate must already have run, so scoping to an inferred category would require running enrichment twice; (2) already-superseded rows are excluded from gate candidacy (WHERE superseded_by IS NULL) so a live entry can't be marked as reversing a row that is itself already stale; (3) no new 'neuron memory get <id>' CLI surface was added for ADR 0015's 'direct id lookup' promise -- update/delete already select unfiltered by superseded_by, and a new findById() method on NeuronMemory covers --supersedes's internal resolution need, so the promise is satisfied at the storage layer without a new command; (4) reconcile/sync/bootstrapSeed's internal vectorDb.query() calls now all pass includeSuperseded:true and computeMemoryHash includes supersededBy in its payload, because a store-management read or hash that treats a superseded row as absent or unchanged would silently break the markdown hand-fix workflow ADR 0015 Decision 5 depends on. Ticket 18 (re-run ticket 10's counterfactual A/B) is next and is deliberately not self-graded by this ticket.
+
+---
+id: 946bf285-7927-4e34-8f88-feeb44868ca7
+createdAt: 2026-08-08T12:41:02.699Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: "01"
+---
+Ticket 01 (Copilot CLI adapter, neuron-2.3.0): maintainer scrutinized and confirmed keeping the session-start-only adapter as built, rather than dropping it for disclosure-only or deferring the call. Coverage is narrower than it sounds: session-start only ever queries the architecture category (max 3 results, once per session) since pre-prompt never fires on Copilot (userPromptSubmitted is documented notification-only) -- the entire per-turn, query-relevant recall value proposition ticket 10/18's A/B actually measured on Claude Code/Codex is absent here. The adapter is safely additive though: deriveFidelity() correctly reports best-effort, so the protocol block never drops Copilot's full fallback instructions, meaning the hook can't leave a user worse off than no hook at all. Its value is unmeasured -- no A/B has tested this thinner session-start-only slice specifically -- so a future session should not treat 'keep as built' as validated by evidence, only as a maintainer judgment call made without one.
