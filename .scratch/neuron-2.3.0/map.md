@@ -70,7 +70,7 @@ token claim, and `2.3.0` is cut and published.
   maintainer decision on 2026-08-04 — measuring the cost on the two
   deterministic adapters that already shipped, before building two more —
   and unblocked once `07` resolved (see Decisions so far). Frontier is now
-  `01`, `02`, `05`, `11`, `12`, `13`.
+  `01`, `02`, `05`, `08`, `11`, `13`.
 - **Each band is sequenced internally.** `06` waits on `05` because both
   express the same precedence chain — `05` builds the resolver, `06` reuses
   it. `09`→`10` waits on `08` because each consumes the previous one's
@@ -130,6 +130,13 @@ token claim, and `2.3.0` is cut and published.
   is resolved — the maintainer's specific ask (measure before building more
   adapters) is answered; whether neuron "has legs" more broadly still
   continues via `08`.
+- **[12 — Accumulate Real Per-Session Telemetry](issues/12-accumulate-real-session-telemetry.md)**
+  — enough has accumulated: 7 sessions / 5 epochs recorded under `07`'s
+  format (up from the 2-session/0-epoch baseline), with real `history`
+  injections in 5 of 5 new-format sessions (28 of 45 total injected ids,
+  zero unresolved against `.neuron/`). `learning` coverage is thin (1 id)
+  and carried to `08` as a stated limitation, not a reason to keep waiting.
+  `08` is unblocked.
 
 ## Not yet specified
 
