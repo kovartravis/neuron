@@ -94,12 +94,13 @@ agent to follow, no dependence on it choosing to look.
 
 | Harness | Recall |
 |---|---|
-| Claude Code | Deterministic (hook-based) |
-| OpenAI Codex CLI | Deterministic (hook-based) |
+| Claude Code | Deterministic (hook-based, every turn) |
+| OpenAI Codex CLI | Deterministic (hook-based, every turn) |
+| GitHub Copilot CLI | Best-effort — guarantees the architecture card at session start; Copilot has no per-turn hook point, so query-time recall still falls back to instructions |
 
 Any other harness falls back to an instruction in `CLAUDE.md`/`AGENTS.md`
-asking the agent to query the store itself. Support for more harnesses
-(GitHub Copilot CLI, Cursor) is on the roadmap.
+asking the agent to query the store itself. Cursor support is on the
+roadmap.
 
 ## 📁 What it looks like in your repo
 
@@ -287,6 +288,37 @@ here.
 
 ```yaml
 - run: neuron scan --check
+```
+
+## 📊 Measured, not just claimed
+
+Most memory tools assert they help. We ran a real counterfactual — same
+Claude Sonnet 5 agent, same tasks, memory hook on vs. off — and let a
+grading script decide, not us.
+
+**The first run found a real regression, not a win.** 24 sessions (4 tasks
+× 2 arms × 3 repeats): no measured token difference, and the memory arm
+failed *more often* than the no-memory control (33% vs 17%). Root cause: a
+superseded decision in `.neuron/decisions.md` was outranking the entry that
+reversed it — the agent trusted stale advice because nothing marked it
+stale.
+
+**We fixed the cause, then re-measured.** [Memory
+supersession](docs/adr/0015-memory-supersession.md) hard-blocks a write
+that looks like a near-duplicate of an existing entry until the agent
+resolves it, then excludes the superseded row from recall by default.
+Re-running the two tasks that actually regressed: memory-arm failure
+dropped from 67% to **0%**, beating the control's unchanged 33%.
+
+**What this isn't yet:** a re-run across the harness's full original task
+set (only the two regressed tasks have been re-confirmed post-fix), or a
+synthetic-fixture run that rules out the control arm quietly knowing an
+answer from this repo's own docs — both are open work. The harness is real
+and runnable, not a one-off script we deleted after:
+
+```bash
+npm run bench:token-ab:dry-run   # no spend, sanity-checks the harness
+npm run bench:token-ab           # the real thing — costs real API spend
 ```
 
 ## 🖥️ Local dashboard
