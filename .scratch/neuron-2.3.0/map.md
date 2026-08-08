@@ -106,6 +106,29 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   and `15` both block on `10` rather than duplicate its harness — `10`'s own
   Comments now flag that its harness must be built reusably for exactly this
   reason.
+- **`10` resolved 2026-08-07 with an unfavorable finding**, not the
+  favorable one the destination-elevation above was written expecting to
+  disclose: no measured token difference, and a higher failure rate for the
+  memory arm than the no-memory control. `14` and `15` inherit this as
+  their starting point — `14`'s own premise (does hook-injected git-log
+  search beat the agent running `git log` itself) is unaffected, but `15`'s
+  publication now needs to present a mixed-to-negative result honestly, not
+  primarily a favorable one.
+- **`10`'s finding graduated fog into [16 — Memory
+  Supersession](issues/16-memory-supersession.md)** the same session,
+  2026-08-07: both of `10`'s failure cases were a superseded
+  `.neuron/decisions.md` entry outcompeting the later entry that reverses
+  it, which is a measured instance of what this map's fog had been calling
+  "capturing a maintainer decision, not just an agent action" — that fog
+  entry is now closed, folded into `16`'s Question rather than restated
+  here. **Maintainer decision: `16` blocks `04`** — 2.3.0 does not cut with
+  this failure mode unfixed, rather than shipping the benchmark suite's
+  unfavorable finding as a disclosed-but-unaddressed limitation. `16` is
+  explicitly not a reopening of `neuron-2.2.0`'s automatic pruning (killed
+  by ticket 24's false-delete results) — it marks entries as superseded
+  without deleting them, a different mechanism the false-delete lesson
+  argues *against* reusing a content-only judgement call for. Frontier is
+  now `01`, `02`, `05`, `11`, `13`, `14`, `16`.
 - **[13 — `neuron status --check`/`--repair`](issues/13-status-check-repair.md)
   arrived 2026-08-05**, continued from
   [neuron-2.2.0's ticket 46](../neuron-2.2.0/issues/46-status-check-repair.md)
@@ -183,6 +206,20 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   floor handed to `03`/`04`: ~450 tokens deterministic, ~570 fallback,
   disclosed as ADR 0014's write-side cost, not a bug. This repo's own
   `CLAUDE.md` regenerated in place to match. Unblocks `10`.
+- **[10 — Counterfactual Token A/B](issues/10-counterfactual-token-ab.md)**
+  — ran the real thing: 24 Claude Sonnet 5 sessions (4 tasks × 2 arms ×
+  3 repeats), $5.20 total against the $20 approved budget. **No measured
+  token difference; the memory arm's failure rate was higher than
+  control's (33% vs 17%), not lower**, both misses caused by a superseded
+  entry in `.neuron/decisions.md` outcompeting the later entry that
+  reverses it — a live instance of the "confidently-wrong retrieval" and
+  "write-side capture gap" fog items below, not a new problem. Full
+  numbers and root-cause analysis in
+  `.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/findings.md`.
+  **This is not a favorable finding** — `03`'s disclosure and `04`'s
+  claim-versus-behaviour audit inherit it as-is, not rounded toward "no
+  effect." Unblocks `14` (which reuses this ticket's harness verbatim per
+  its own Scope item 1) and `15` (publication).
 
 ## Not yet specified
 
@@ -202,16 +239,6 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   inventing the thing it says not to invent. Graduates the moment the spec
   is supplied. Note the two-stage shape is consistent with everything
   `neuron-2.2.0` measured: embedder decides, model only phrases.
-- **Capturing a maintainer decision, not just an agent action.** Surfaced
-  2026-08-01 on `neuron-2.2.0` when a session re-claimed a deferred ticket.
-  Protocol step 4 records what the *agent did*; nothing records what the
-  *maintainer decided*, so a verbal reversal left no trace anywhere while
-  several artifacts kept asserting the opposite. Retrieval worked perfectly
-  and returned the wrong answer, which means deterministic hooks do not fix
-  this — hooks own the read side, and this is a write-side capture gap.
-  What is unformed is whose job the write is, and how a reversal
-  *supersedes* a stale high-confidence entry rather than merely competing
-  with it.
 - **A write-time content-integrity floor.** On `neuron-2.2.0`'s own store,
   roughly a quarter of entries held a single token (`Fix`, `Updated`,
   `When`) because unquoted shell arguments word-split and `neuron memory
@@ -286,6 +313,38 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
 - **What `2.3.0` else admits.** This map is a catch-all, so its own scope is
   fog by construction: work not owed by an earlier map lands here, and what
   lands is not yet known. The cut (`04`) is the only fixed point.
+- **The git-log-as-searchable-resident-source feature itself.** `14` only
+  tests the premise (does hook-injected git-log search beat the agent
+  running `git log` itself); it deliberately does not commit to *how* a
+  favourable answer gets built — whether it replaces the `history`-logging
+  write step in `CLAUDE.md`'s protocol block entirely, only supplements it,
+  and whether the index refreshes via a git hook or a check-HEAD-on-read
+  comparison at session-start/pre-prompt (the latter needs no separate
+  install step and can't be silently bypassed the way a git hook can, which
+  is the working lean, but it's not decided). Also unformed: `history`
+  entries that never correspond to any commit (this very ticket's own
+  resolution, at the time it was written, had none) are exactly what a
+  git-log index cannot cover, so "replace" and "supplement" are materially
+  different products, not just an implementation detail. Cannot be ticketed
+  until `14` answers whether the premise holds at all.
+- **The A/B harness's execution mechanism and funding.** Neither `10` nor
+  `14` specifies whether the "N tasks × 2 arms × k repeats" sessions run as
+  real Claude Code sessions (covered by whatever Claude Code subscription
+  the maintainer already pays for, not separately metered) or as a scripted
+  Claude API harness (billed per-token against a separate Anthropic Console
+  balance). Surfaced 2026-08-07 when the maintainer asked whether a monthly
+  Claude API credit allotment could fund the API-harness path — unconfirmed
+  from this session, since a coding session has no visibility into the
+  maintainer's actual Console billing/plan; check console.anthropic.com
+  directly. The two paths have very different cost profiles (subscription
+  sessions are effectively free at the margin but must be driven live and
+  are not scriptable for repeatable `k` repeats; an API harness is
+  scriptable and repeatable but bills per token at standard rates — roughly
+  low-single-digit dollars per run at Sonnet-tier pricing for a
+  medium-length agentic session, cheap enough that a modest monthly budget
+  could fund a small `N`×`k`, but this needs pricing against the tasks `10`
+  actually picks, not a guess). Whichever ticket claims `10` should settle
+  this before spending anything, per `10`'s own Scope item 6.
 
 ## Out of scope
 

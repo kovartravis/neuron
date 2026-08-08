@@ -1,0 +1,207 @@
+{
+  "generatedAt": "2026-08-08T05:31:24.190Z",
+  "model": "claude-sonnet-5",
+  "dryRun": true,
+  "taskCount": 4,
+  "repeats": 1,
+  "sessionCount": 8,
+  "totalCostUsd": 0,
+  "summary": {
+    "armStats": {
+      "memory": {
+        "sessions": 4,
+        "passed": 0,
+        "failed": 4,
+        "failureRate": 1,
+        "tokens": {
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "costUsd": 0
+      },
+      "control": {
+        "sessions": 4,
+        "passed": 0,
+        "failed": 4,
+        "failureRate": 1,
+        "tokens": {
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "costUsd": 0
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": 0,
+    "spread": 0,
+    "noMeasuredDifference": false
+  },
+  "results": [
+    {
+      "task": "prune-default-collision",
+      "arm": "memory",
+      "sessionLabel": "prune-default-collision-memory-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "prune-default-collision",
+      "arm": "control",
+      "sessionLabel": "prune-default-collision-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "qwen-05b-scoreboard",
+      "arm": "memory",
+      "sessionLabel": "qwen-05b-scoreboard-memory-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "qwen-05b-scoreboard",
+      "arm": "control",
+      "sessionLabel": "qwen-05b-scoreboard-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "memory",
+      "sessionLabel": "pruning-ab-verdict-memory-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "control",
+      "sessionLabel": "pruning-ab-verdict-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "write-side-capture-gap",
+      "arm": "memory",
+      "sessionLabel": "write-side-capture-gap-memory-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "write-side-capture-gap",
+      "arm": "control",
+      "sessionLabel": "write-side-capture-gap-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    }
+  ]
+}
