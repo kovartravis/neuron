@@ -457,6 +457,20 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   clean; `npm run test:e2e` skipped (no coupling, same reasoning `05`
   used — retrieval parity across storage modes is unchanged by this
   ticket). Frontier is now `11`, `13`, `14`, `19`, `20`, `21`, `22`.
+- **[23 — `init.test.ts`'s "harness-idempotent-test" Case Still Pollutes the
+  Real `.neuron` Store](issues/23-init-test-harness-idempotent-isolation-gap.md)**
+  added 2026-08-08, surfaced while committing `06`: one test in
+  `init.test.ts` never plants the `package.json` isolation guard every
+  sibling test in the file uses, so `findProjectRoot` walks past it to this
+  repo's real root and `neuron init`'s markdown writes land in the real
+  `.neuron/decisions.md`. A one-test gap in
+  [neuron-2.2.0's ticket 42](../neuron-2.2.0/issues/42-isolate-cli-tests-from-real-store.md)'s
+  audit, not a regression it introduced — verified via `git show`/`git log`
+  that ticket 42's own commit never touched this file, consistent with its
+  Answer's (in this one case incorrect) claim the file was already safe.
+  Not wired as a blocker of `04` — a test-infrastructure correctness gap,
+  not a release dependency. Frontier is now `11`, `13`, `14`, `19`, `20`,
+  `21`, `22`, `23`.
 
 ## Not yet specified
 
