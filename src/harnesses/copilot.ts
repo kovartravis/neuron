@@ -87,7 +87,8 @@ function capability(): CapabilityMap {
       failurePosture: 'unknown',
       timeoutMs: 'unknown',
       caveats: [
-        'No compaction-equivalent event is documented for Copilot CLI (the full event list is sessionStart, sessionEnd, userPromptSubmitted, preToolUse, postToolUse, agentStop, subagentStart, subagentStop, errorOccurred, notification) — the session ledger epoch never rolls on this harness, so an unusually long session could in principle exhaust its epoch budget with no reset point to clear it.',
+        'No compaction-equivalent event is documented for Copilot CLI (the full event list is sessionStart, sessionEnd, userPromptSubmitted, preToolUse, postToolUse, agentStop, subagentStart, subagentStop, errorOccurred, notification) — the session ledger epoch never rolls on this harness.',
+        'Low practical risk as designed: session-start is the only point that ever spends against the epoch (pre-prompt is never wired, so there is no repeated per-turn spend to accumulate), and its own per-injection cap (SESSION_START_CHAR_BUDGET, 6,000 chars) is well under the default 18,000-char epoch budget on its own. The gap would only matter if Copilot re-fires sessionStart more than once within a single session_id — undocumented, not observed, and would need a real report before building anything for it.',
       ],
     },
   };

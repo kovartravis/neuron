@@ -116,6 +116,17 @@ including the never-wired points, idempotency, conflict policies,
 malformed-JSON refusal, uninstall, verify, `project-local` collapse,
 `user-global` path). Full suite: 502/502 passing, `tsc --noEmit` clean.
 
+**Follow-up correction, same session:** the `context-reset` caveat
+originally overstated the epoch-exhaustion risk as live rather than
+theoretical. Checked the actual numbers: `session-start`'s own
+per-injection cap (`SESSION_START_CHAR_BUDGET`, 6,000 chars) is well under
+the default 18,000-char epoch budget on its own, and since `pre-prompt` is
+never wired for Copilot, session-start is the *only* point that ever
+spends against the epoch — there is no repeated per-turn spend to
+accumulate toward exhaustion. Tightened the caveat in `copilot.ts` to say
+so plainly rather than imply an open risk that isn't actually reachable
+under this adapter's own design.
+
 **Real-install verification (the one remaining deliverable) is
 deliberately not done this session.** Copilot CLI is not installed on
 this machine; the maintainer chose to verify independently against a real
