@@ -149,6 +149,22 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   regression is actually fixed. `04` rewired to block on `18` instead of
   the now-resolved `16`. Frontier is now `01`, `02`, `05`, `11`, `13`, `14`,
   `17`.
+- **[17 — Implement Memory Supersession](issues/17-implement-memory-supersession.md)
+  resolved 2026-08-08**, built against ADR 0015 with no design questions
+  left open. The write-time gate scopes its candidate search across every
+  category rather than the inferred one, because category resolution
+  happens inside write-side enrichment, which runs *after* the gate must
+  already have fired — a scope call this ticket made, not one ADR 0015
+  specified. Hand-fixing the two known-reversed pairs (Deliverable 4)
+  surfaced a real instance of the map's own "write-side capture gap": *
+  neither pair's correction entry actually existed in this repo's own
+  `.neuron/decisions.md`* — the maintainer's rulings had only ever been
+  captured in Claude's own cross-session memory and in `CHANGELOG.md`
+  prose. Both missing entries were written for real through the new
+  `--supersedes` flow rather than fabricated as a link between two
+  pre-existing rows. Full detail and the specific entry ids in
+  [17](issues/17-implement-memory-supersession.md)'s own Answer/Comments.
+  Unblocks `18`. Frontier is now `01`, `02`, `05`, `11`, `13`, `14`, `18`.
 - **[13 — `neuron status --check`/`--repair`](issues/13-status-check-repair.md)
   arrived 2026-08-05**, continued from
   [neuron-2.2.0's ticket 46](../neuron-2.2.0/issues/46-status-check-repair.md)
@@ -252,6 +268,26 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   [17](issues/17-implement-memory-supersession.md) for the build and
   [18](issues/18-rerun-counterfactual-ab-post-supersession.md) (blocked by
   `17`) to re-run `10`'s harness and confirm the fix.
+- **[17 — Implement Memory Supersession](issues/17-implement-memory-supersession.md)
+  resolved 2026-08-08.** Additive `superseded_by`/`superseded_at` SQLite
+  migration (v8) with markdown frontmatter round-trip; a write-time
+  embedding-similarity gate on `neuron memory add` (threshold `0.97`,
+  searching all categories since category isn't known until after the gate
+  must fire) that hard-blocks near-duplicates unless resolved via
+  `--supersedes <id>` or `--not-a-reversal`; default hard-exclusion of
+  superseded rows from `query`/`list`/`exec` with a query-only
+  `--include-superseded` escape hatch; a `findById()` direct-lookup method.
+  Reconcile/sync/bootstrap-seed switched their internal reads to
+  `includeSuperseded: true` and `computeMemoryHash` now folds in
+  `supersededBy`, so a markdown hand-fix is never lost by the mirror.
+  **Found mid-ticket:** neither of ticket `10`'s two known-reversed pairs
+  had an actual correction entry in this repo's own `.neuron/decisions.md`
+  — the maintainer's rulings existed only in Claude's own cross-session
+  memory and in `CHANGELOG.md` prose, a live instance of the write-side
+  capture gap this feature exists to fix. Both missing correction entries
+  were written for real via the new `--supersedes` flow (dogfooding),
+  rather than fabricating links between two pre-existing entries. Unblocks
+  `18`.
 
 ## Not yet specified
 
