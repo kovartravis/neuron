@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NeuronMemory } from '../index.js';
-import { MdStorageAdapter } from './mdStorageAdapter.js';
+import { MdStorage } from './mdStorage.js';
 import { NeuronConfig } from '../config/neuronYaml.js';
 import { Memory } from '../models/memory.js';
 
@@ -65,9 +65,18 @@ export function cleanTmpFiles(storagePath: string): number {
   return count;
 }
 
+/** `cleanTmpFiles` across every root an `MdStorage` currently writes into (ticket 05). */
+export function cleanAllTmpFiles(mdAdapter: MdStorage): number {
+  let count = 0;
+  for (const root of mdAdapter.listRoots()) {
+    count += cleanTmpFiles(root);
+  }
+  return count;
+}
+
 export async function syncMdWithVector(
   vectorDb: NeuronMemory,
-  mdAdapter: MdStorageAdapter,
+  mdAdapter: MdStorage,
   config: NeuronConfig,
   options?: SyncOptions
 ): Promise<SyncResult> {
@@ -88,8 +97,8 @@ export async function syncMdWithVector(
     conflicts: [],
   };
 
-  // Clean up any orphaned .tmp files in storage path
-  cleanTmpFiles(mdAdapter.storagePath);
+  // Clean up any orphaned .tmp files across every root this sync touches
+  cleanAllTmpFiles(mdAdapter);
 
   await mdAdapter.ensureScaffolded(categories);
 

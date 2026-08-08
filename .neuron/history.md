@@ -3068,3 +3068,27 @@ tags:
 taskId: "02"
 ---
 Wayfinder pickup on the neuron-2.3.0 map: claimed and built ticket 02 (Cursor Adapter). Implemented CursorAdapter (src/harnesses/cursor.ts) against ADR 0014's HarnessAdapter interface, wired into getAdapters()/ADAPTER_ID_BY_HARNESS_NAME in src/commands/init.ts and src/harnesses/index.ts. A direct fetch of cursor.com/docs/hooks resolved two things ticket 10's research left open: Cursor's stdout contract is a third distinct shape, flat and snake_case additional_context, so src/commands/hook.ts emit() gained a third branch alongside Claude/Codex's wrapped form and Copilot's flat camelCase one; and preCompact (Cursor's compaction-equivalent event) exists and runs in cloud/background agents but carries no session_id on its stdin, so it is wired for real firing evidence but can never actually roll the session ledger epoch, unlike Copilot which has no compaction event at all. Both session-start and context-reset are wired; pre-prompt stays unwired since beforeSubmitPrompt is confirmed permission-only. Verdict stays best-effort: failurePosture is a known fail-open (better documented than Copilot), but payload cap and timeout stay unknown. 14 new tests in cursor.test.ts plus an 8-test cursor block in hook.test.ts, full suite passing modulo one pre-existing unrelated concurrency-stress.test.ts flake (a SQLite migration race, reproduces independent of this session's changes). Real-install verification -- Cursor is not installed on this machine -- was split into new ticket 22, following the ticket 01/20 precedent; ticket 02 stays claimed, not resolved, blocked by 22. Updated the map's Notes and frontier (now 05, 11, 13, 14, 19, 20, 21, 22) and refreshed the architecture blueprint card via neuron scan, which had drifted far out of date (237 changes) independent of this session.
+
+---
+id: 64c1056a-951f-4d46-b156-62d1323dc276
+createdAt: 2026-08-08T13:57:08.054Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "02"
+---
+Pushed ticket-02 Cursor adapter (neuron-2.3.0) to GitHub -- commit 23fe2b5 on feat/2.3.0.
+
+---
+id: a35d57b6-89d6-4695-8a57-be020b210727
+createdAt: 2026-08-08T15:28:16.744Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "05"
+---
+Wayfinder pickup on the neuron-2.3.0 map: claimed and resolved ticket 05 (Per-Category Storage Path). Built the categories.<name>.path > storage.path > '.neuron' resolver (src/config/categoryPath.ts) and a MultiRootMdStorage adapter-per-root registry (src/storage/multiRootMdStorage.ts) that fans out over the existing single-root MdStorageAdapter rather than rewriting it. Settled four open design questions with the maintainer via AskUserQuestion before writing code: adapter-per-root registry over a self-resolving adapter; absolute per-category paths allowed; a category's resolved root changing between runs triggers a per-category re-export from the vector index into the new location (new md_root:<category> meta key extending bootstrapSeed's md_seeded_at pattern) rather than a physical file move, leaving the old file orphaned on disk; and a path set on a vector-mode category warns rather than errors. storage.path is now undefined by default (no baked-in .default('.neuron')) so top-level-unset is observable to the resolver -- an intentional, tested config-shape change. Updated index.ts, dualStorageRouter.ts, sync.ts, mdVectorSync.ts, neuronYaml.ts (schema + validateCategoryPaths collision/warn checks), scaffold.ts and README to match. 23 new tests (categoryPath.test.ts, multiRootMdStorage.test.ts, dualStorageRouter.pathChange.test.ts, neuronYaml.test.ts additions); npm test 546/546 green, tsc --noEmit clean. Deliberately skipped npm run test:e2e (the real-pipeline benchmark suite) after confirming zero coupling to anything this ticket touched. ADR deferred per the ticket's own instruction -- one ADR covers both 05 and 06's storage-vocabulary changes, written by whichever lands second; 06 (per-category storage.mode override, deletes split) is now unblocked and is the new frontier's first ticket. Updated map.md's Decisions-so-far and frontier (now 01, 02, 06, 11, 13, 14, 19).

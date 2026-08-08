@@ -3,9 +3,20 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { Memory } from '../models/memory.js';
+import { MdStorage } from './mdStorage.js';
 
 export interface MdStorageAdapterOptions {
   storagePath?: string;
+}
+
+/**
+ * The same category → filename sanitization `getFilePath` applies, exported
+ * so config-time collision validation (ticket 05, `validateNeuronYaml`) can
+ * predict which file two categories would collide on without constructing an
+ * adapter.
+ */
+export function sanitizeCategoryFilename(category: string): string {
+  return path.basename(category).replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
 /**
@@ -18,7 +29,7 @@ export interface MdStorageAdapterOptions {
  */
 const RESERVED_FRONTMATTER_KEYS = new Set(['id', 'createdAt', 'importance', 'tags', 'taskId', 'scope', 'supersededBy', 'supersededAt']);
 
-export class MdStorageAdapter {
+export class MdStorageAdapter implements MdStorage {
   readonly storagePath: string;
 
   constructor(options?: string | MdStorageAdapterOptions) {
@@ -36,8 +47,12 @@ export class MdStorageAdapter {
    * Prevents path traversal out of storagePath.
    */
   getFilePath(category: string): string {
-    const safeName = path.basename(category).replace(/[^a-zA-Z0-9_-]/g, '_');
-    return path.join(this.storagePath, `${safeName}.md`);
+    return path.join(this.storagePath, `${sanitizeCategoryFilename(category)}.md`);
+  }
+
+  /** This adapter only ever writes into its own single root. */
+  listRoots(): string[] {
+    return [this.storagePath];
   }
 
   /**

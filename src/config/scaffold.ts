@@ -48,6 +48,9 @@ storage:
   path: .neuron
 
 categories:
+  # Any category below may set its own "path:" to override storage.path just
+  # for it (e.g. "path: docs/adr" to keep decisions.md alongside other docs).
+  # Precedence: categories.<name>.path > storage.path > ".neuron".
   learning:
     description: Agent conventions, rules, and failure fixes
     tags: [rule, convention, failure-fix]

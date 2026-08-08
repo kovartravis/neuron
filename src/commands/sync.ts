@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { NeuronMemory } from '../index.js';
-import { MdStorageAdapter } from '../storage/mdStorageAdapter.js';
+import { MultiRootMdStorage } from '../storage/multiRootMdStorage.js';
 import { syncMdWithVector } from '../storage/mdVectorSync.js';
 import { loadNeuronYaml, DEFAULT_CONFIG, NeuronConfig } from '../config/neuronYaml.js';
+import { resolveAllCategoryRoots } from '../config/categoryPath.js';
 
 export async function handleSyncCommand(args: string[], memory: NeuronMemory, overrideStoragePath?: string): Promise<void> {
   const knownFlags = ['--dry-run', '--force', '-c', '--category'];
@@ -30,9 +31,7 @@ export async function handleSyncCommand(args: string[], memory: NeuronMemory, ov
     config = DEFAULT_CONFIG;
   }
 
-  const configPath = config.storage?.path || '.neuron';
-  const storagePath = overrideStoragePath || (path.isAbsolute(configPath) ? configPath : path.resolve(process.cwd(), configPath));
-  const mdAdapter = new MdStorageAdapter({ storagePath });
+  const mdAdapter = new MultiRootMdStorage(config, process.cwd(), overrideStoragePath);
 
   const categories = category
     ? [category]
@@ -43,6 +42,17 @@ export async function handleSyncCommand(args: string[], memory: NeuronMemory, ov
     console.log(`[sync] Starting synchronization across categories: ${categories.join(', ')}...`);
   } else {
     console.log(`[sync] Processing categories: ${categories.join(', ')}`);
+  }
+
+  // Ticket 05: report per-root, not just per-category — a category with an
+  // overridden `path` writes somewhere other than the rest of the project.
+  if (!overrideStoragePath) {
+    const roots = resolveAllCategoryRoots(config, process.cwd());
+    if (roots.size > 1) {
+      for (const [root, cats] of roots) {
+        console.log(`[sync]   ${root}: ${cats.join(', ')}`);
+      }
+    }
   }
 
   const result = await syncMdWithVector(memory, mdAdapter, config, {
@@ -70,19 +80,26 @@ export async function handleSyncCommand(args: string[], memory: NeuronMemory, ov
 }
 
 export function scaffoldNeuronDirectory(projectDir: string, config?: NeuronConfig): string[] {
-  const storagePath = path.join(projectDir, config?.storage?.path || '.neuron');
-  if (!fs.existsSync(storagePath)) {
-    fs.mkdirSync(storagePath, { recursive: true });
-  }
-
-  const categories = Object.keys(config?.categories || { learning: {}, history: {}, decisions: {} });
+  const effectiveConfig: NeuronConfig = {
+    ...DEFAULT_CONFIG,
+    ...config,
+    storage: config?.storage ?? DEFAULT_CONFIG.storage,
+    categories: config?.categories ?? { learning: {}, history: {}, decisions: {} },
+  };
+  const roots = resolveAllCategoryRoots(effectiveConfig, projectDir);
   const scaffolded: string[] = [];
 
-  for (const cat of categories) {
-    const filePath = path.join(storagePath, `${cat}.md`);
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, `# Category: ${cat}\n\n`, 'utf8');
-      scaffolded.push(filePath);
+  for (const [storagePath, categories] of roots) {
+    if (!fs.existsSync(storagePath)) {
+      fs.mkdirSync(storagePath, { recursive: true });
+    }
+
+    for (const cat of categories) {
+      const filePath = path.join(storagePath, `${cat}.md`);
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, `# Category: ${cat}\n\n`, 'utf8');
+        scaffolded.push(filePath);
+      }
     }
   }
 

@@ -12,6 +12,7 @@ import {
   isValidColumnIdentifier,
   collectDeclaredFieldFlags,
 } from './neuronYaml.js';
+import { resolveCategoryPath } from './categoryPath.js';
 
 describe('neuron.yaml Config Loader & Zod Parser', () => {
   const tempDir = path.join(process.cwd(), 'src/__tests__/temp-yaml-config');
@@ -38,7 +39,12 @@ describe('neuron.yaml Config Loader & Zod Parser', () => {
     const config = loadNeuronYaml(emptyDir);
     expect(config.version).toBe('1.0');
     expect(config.storage.mode).toBe('md');
-    expect(config.storage.path).toBe('.neuron');
+    // Ticket 05: `storage.path` itself is unset by default now — the '.neuron'
+    // literal lives only in `resolveCategoryPath`'s fallback chain
+    // (`categories.<name>.path > storage.path > '.neuron'`), not baked into
+    // the schema, or "top level is empty" would be unrepresentable.
+    expect(config.storage.path).toBeUndefined();
+    expect(resolveCategoryPath(config, 'learning', emptyDir)).toBe(path.join(emptyDir, '.neuron'));
     expect(config.categories.learning).toBeDefined();
     expect(config.categories.history).toBeDefined();
     expect(config.pullRules.default?.categories).toEqual(['learning']);
@@ -544,6 +550,59 @@ pullRules:
       });
       expect(fieldKeyToColumnName('ticket')).toBe('ticket');
       expect(config.categories.decisions.fields?.ticket.required).toBe(true);
+    });
+  });
+
+  describe('categories.*.path collisions & inert-mode warning (ticket 05)', () => {
+    it('allows two categories to resolve to the same directory (unchanged historical behaviour)', () => {
+      const config = validateNeuronYaml({
+        categories: { learning: {}, history: {} },
+      });
+      expect(config.categories.learning).toBeDefined();
+      expect(config.categories.history).toBeDefined();
+    });
+
+    it('refuses two categories that would resolve to the same file', () => {
+      expect(() =>
+        validateNeuronYaml({
+          storage: { mode: 'md', path: 'notes' },
+          categories: { learning: { path: 'notes/learning' }, weird: {} },
+        })
+      ).not.toThrow(); // sanity: distinct files under the same root are fine
+
+      expect(() =>
+        validateNeuronYaml({
+          categories: {
+            // Both sanitize (getFilePath's [^a-zA-Z0-9_-] -> "_" rule) to the
+            // identical filename "foo_bar.md" under the same resolved root.
+            'foo:bar': { path: 'shared' },
+            'foo bar': { path: 'shared' },
+          },
+          pullRules: { default: { categories: ['foo:bar'] } },
+        })
+      ).toThrow(/both resolve to the same file/);
+    });
+
+    it('warns, but does not throw, when a per-category path is set on a category whose storage resolves to "vector"', () => {
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      const config = validateNeuronYaml({
+        categories: { learning: { storage: 'vector', path: 'ignored-notes' } },
+      });
+      expect(config.categories.learning.path).toBe('ignored-notes');
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(`storage resolves to "vector"`));
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn when a per-category path is set on a category whose storage is (default or explicit) "md"', () => {
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      validateNeuronYaml({
+        categories: { learning: { path: 'notes' }, decisions: { storage: 'md', path: 'adr' } },
+      });
+      const inertWarning = warnSpy.mock.calls.find(call =>
+        String(call[0]).includes('storage resolves to "vector"')
+      );
+      expect(inertWarning).toBeUndefined();
+      warnSpy.mockRestore();
     });
   });
 

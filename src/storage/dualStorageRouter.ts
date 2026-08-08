@@ -1,21 +1,25 @@
 import { NeuronMemory } from '../index.js';
-import { MdStorageAdapter } from './mdStorageAdapter.js';
+import { MdStorage } from './mdStorage.js';
 import { NeuronConfig } from '../config/neuronYaml.js';
+import { resolveCategoryPath } from '../config/categoryPath.js';
 import { Memory, MemoryMutation, MemoryQuery, MutationResult } from '../models/memory.js';
 import { computeMemoryHash } from './mdVectorSync.js';
 
 const MD_SEEDED_AT_KEY = 'md_seeded_at';
 const RECONCILE_QUERY_LIMIT = 1_000_000;
+const categoryRootMetaKey = (category: string) => `md_root:${category}`;
 
 export class DualStorageRouter {
   private vectorDb: NeuronMemory;
-  private mdAdapter: MdStorageAdapter;
+  private mdAdapter: MdStorage;
   private config: NeuronConfig;
+  private projectRoot: string;
 
-  constructor(vectorDb: NeuronMemory, mdAdapter: MdStorageAdapter, config: NeuronConfig) {
+  constructor(vectorDb: NeuronMemory, mdAdapter: MdStorage, config: NeuronConfig, projectRoot: string = process.cwd()) {
     this.vectorDb = vectorDb;
     this.mdAdapter = mdAdapter;
     this.config = config;
+    this.projectRoot = projectRoot;
   }
 
   public setConfig(config: NeuronConfig): void {
@@ -254,8 +258,45 @@ export class DualStorageRouter {
     }
 
     for (const category of categories) {
-      await this.reconcileCategory(category);
+      await this.reconcileCategoryWithPathGuard(category);
     }
+  }
+
+  /**
+   * A category's resolved root (ticket 05: `categories.<name>.path >
+   * storage.path > '.neuron'`) can change between runs — someone edits
+   * `neuron.yaml`. The strict mirror below deletes any vector row whose id
+   * isn't found in the markdown it reads, so reconciling against the *new*
+   * root when the file actually still lives at the *old* one would read as
+   * "markdown is now empty" and delete the category's index rows — a
+   * category-scoped repeat of the exact "not seeded yet" vs. "a human
+   * deleted everything" ambiguity `bootstrapSeed`'s own `md_seeded_at` guard
+   * already exists to prevent (see the class doc above `reconcile`).
+   *
+   * `md_root:<category>` is the per-category counterpart of that guard: the
+   * last resolved root this router reconciled that category against. A
+   * first-ever sighting (upgrade from a pre-ticket-05 store, or a brand-new
+   * category) just records the current root — nothing to compare against
+   * yet, so nothing is reseeded. A *changed* root re-exports that one
+   * category from the vector index (authoritative here, the same source
+   * `bootstrapSeed` reads from) into its new location instead of running the
+   * destructive mirror, then records the new root and returns — the next
+   * call reconciles normally.
+   */
+  private async reconcileCategoryWithPathGuard(category: string): Promise<void> {
+    const resolvedRoot = resolveCategoryPath(this.config, category, this.projectRoot);
+    const metaKey = categoryRootMetaKey(category);
+    const knownRoot = this.vectorDb.getMeta(metaKey);
+
+    if (knownRoot === null) {
+      this.vectorDb.setMeta(metaKey, resolvedRoot);
+    } else if (knownRoot !== resolvedRoot) {
+      await this.seedCategoryFromVector(category);
+      this.vectorDb.setMeta(metaKey, resolvedRoot);
+      return;
+    }
+
+    await this.reconcileCategory(category);
   }
 
   /**
@@ -280,26 +321,41 @@ export class DualStorageRouter {
   private async bootstrapSeed(requested: string[]): Promise<void> {
     const categories = [...new Set([...requested, ...this.vectorDb.listStoredCategories()])];
     for (const category of categories) {
-      // `includeSuperseded: true` — this is a store-management read, not a
-      // retrieval one; a superseded row must seed into markdown too, or the
-      // seed silently drops it the way ticket 31's undeclared-category bug
-      // once dropped rows the mirror never visited (see the comment above).
-      const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT, includeSuperseded: true });
-      for (const entry of vecEntries) {
-        await this.mdAdapter.writeEntry(category, {
-          id: entry.id,
-          content: entry.content,
-          tags: entry.tags,
-          importance: entry.importance,
-          taskId: entry.taskId ?? undefined,
-          createdAt: entry.createdAt,
-          supersededBy: entry.supersededBy,
-          supersededAt: entry.supersededAt,
-          fields: entry.fields,
-        });
-      }
+      await this.seedCategoryFromVector(category);
+      // A category the seed just exported is, by construction, current as of
+      // right now — record its root so the very next reconcile doesn't read
+      // "no prior root on file" as a change to guard against.
+      this.vectorDb.setMeta(categoryRootMetaKey(category), resolveCategoryPath(this.config, category, this.projectRoot));
     }
     this.vectorDb.setMeta(MD_SEEDED_AT_KEY, new Date().toISOString());
+  }
+
+  /**
+   * Exports one category's live vector rows into markdown at its currently
+   * resolved root. Shared by `bootstrapSeed` (the whole-store first run) and
+   * `reconcileCategoryWithPathGuard` (a single category's root changing
+   * later) — both are "markdown doesn't reflect this category yet, and the
+   * vector index is the trustworthy source to rebuild it from" the same way.
+   */
+  private async seedCategoryFromVector(category: string): Promise<void> {
+    // `includeSuperseded: true` — this is a store-management read, not a
+    // retrieval one; a superseded row must seed into markdown too, or the
+    // seed silently drops it the way ticket 31's undeclared-category bug
+    // once dropped rows the mirror never visited (see the comment above).
+    const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT, includeSuperseded: true });
+    for (const entry of vecEntries) {
+      await this.mdAdapter.writeEntry(category, {
+        id: entry.id,
+        content: entry.content,
+        tags: entry.tags,
+        importance: entry.importance,
+        taskId: entry.taskId ?? undefined,
+        createdAt: entry.createdAt,
+        supersededBy: entry.supersededBy,
+        supersededAt: entry.supersededAt,
+        fields: entry.fields,
+      });
+    }
   }
 
   private async reconcileCategory(category: string): Promise<void> {

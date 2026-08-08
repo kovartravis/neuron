@@ -32,7 +32,7 @@ export * from './components/index.js';
 export * from './config/index.js';
 
 import { DualStorageRouter } from './storage/dualStorageRouter.js';
-import { MdStorageAdapter } from './storage/mdStorageAdapter.js';
+import { MultiRootMdStorage } from './storage/multiRootMdStorage.js';
 import {
   loadNeuronYaml,
   NeuronConfig,
@@ -41,6 +41,7 @@ import {
   isValidColumnIdentifier,
   collectDeclaredFieldFlags,
 } from './config/neuronYaml.js';
+import { resolveAllCategoryRoots } from './config/categoryPath.js';
 import { suggestClosest } from './shared/textMatch.js';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
@@ -127,11 +128,7 @@ export class NeuronMemory {
     this.enricher =
       options.enricher ??
       new LocalEnrichmentModel({ timeoutMs: config.llm.enrichment.timeoutMs });
-    const configPath = config.storage?.path || '.neuron';
-    const storagePath = path.isAbsolute(configPath)
-      ? configPath
-      : path.resolve(options.projectRoot, configPath);
-    const mdAdapter = new MdStorageAdapter({ storagePath });
+    const mdAdapter = new MultiRootMdStorage(config, options.projectRoot);
 
     // Every storage mode keeps the database now: `md-only` (which set
     // `this.db = null`) was deleted by ticket 28 — every one of its defects
@@ -149,7 +146,7 @@ export class NeuronMemory {
       listStoredCategories: () => this.listStoredCategories(),
     } as any;
 
-    this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config);
+    this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config, options.projectRoot);
   }
 
   static open(dir: string = process.cwd()): NeuronMemory {
@@ -1310,6 +1307,12 @@ export class NeuronMemory {
       learnCount,
       historyCount,
       categories,
+      storage: {
+        mode: this.config.storage.mode,
+        roots: [...resolveAllCategoryRoots(this.config, this.projectRoot).entries()].map(
+          ([root, categories]) => ({ path: root, categories })
+        ),
+      },
       enrichment: {
         enabled: enrichmentCfg.enabled,
         category: enrichmentCfg.category,

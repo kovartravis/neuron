@@ -397,6 +397,31 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   supplement the real-repo run is the ticket's own first Scope item, left
   open rather than decided at creation. Frontier is now `01`, `02`, `05`,
   `11`, `13`, `14`, `19`.
+- **[05 — Per-Category Storage Path](issues/05-per-category-storage-path.md)
+  resolved 2026-08-08.** `categories.<name>.path > storage.path > '.neuron'`
+  resolver (`src/config/categoryPath.ts`), backed by an adapter-per-root
+  registry (`MultiRootMdStorage`) rather than teaching the existing
+  single-root `MdStorageAdapter` to resolve internally — a maintainer call
+  via `AskUserQuestion` on Scope item 3, alongside three more: absolute
+  per-category paths are allowed; a category's resolved root changing
+  between runs triggers a per-category re-export from the vector index into
+  the new location (extending `bootstrapSeed`'s existing `md_seeded_at`
+  pattern with a per-category `md_root:<category>` meta key) rather than a
+  physical move — the old file is left orphaned on disk, not deleted or
+  renamed; and a `path` set on a category whose storage resolves to
+  `vector` (ticket `06`) warns rather than errors. `storage.path` itself is
+  now `undefined` by default (no more baked-in `.default('.neuron')`) so
+  "top level unset" is observable — an intentional, tested behaviour change
+  to the config shape, not to any file's actual location. Collision
+  validation (same file, not same directory) lives in `validateNeuronYaml`;
+  "path resolves to a file, not a directory" is checked where it's
+  fs-checkable, at adapter construction. 23 new tests, `npm test` 546/546,
+  `tsc --noEmit` clean; `npm run test:e2e` deliberately skipped (grepped,
+  zero coupling to anything this ticket touched). **ADR deferred, not
+  written** — ticket's own text calls for one ADR covering both `05` and
+  `06`'s vocabulary changes, written by whichever lands second; `06` hasn't
+  landed. Unblocks `06`. Frontier is now `01`, `02`, `06`, `11`, `13`, `14`,
+  `19`.
 
 ## Not yet specified
 

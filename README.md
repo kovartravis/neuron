@@ -151,6 +151,9 @@ storage:
   path: .neuron
 
 categories:
+  # Any category below may set its own "path:" to override storage.path just
+  # for it (e.g. "path: docs/adr" to keep decisions.md alongside other docs).
+  # Precedence: categories.<name>.path > storage.path > ".neuron".
   learning:
     description: Agent conventions, rules, and failure fixes
     tags: [rule, convention, failure-fix]
@@ -197,6 +200,39 @@ Storage modes:
   additive, non-destructive column migration.
 - **`split`** — per-category routing, e.g. `learning` in `.md` for
   reviewability, `history` in SQLite for volume.
+
+### Per-category storage path
+
+A category's markdown doesn't have to live under the project-wide
+`storage.path`. Set `path` on the category itself to send just that one
+elsewhere — a shared notes directory, or `decisions.md` living next to your
+other docs:
+
+```yaml
+storage:
+  mode: md
+  path: .neuron
+
+categories:
+  decisions:
+    description: Architectural Decision Records (ADRs) & design choices
+    path: docs/adr   # overrides storage.path for this category only
+  learning:
+    description: Agent conventions, rules, and failure fixes
+```
+
+Precedence is `categories.<name>.path > storage.path > ".neuron"` — a
+category with no `path` set still falls through to `storage.path`, and a
+project with no `storage.path` set still falls through to `.neuron`, exactly
+as before. Absolute paths are allowed (e.g. a notes directory shared across
+projects, outside this repo). Two categories may resolve to the same
+directory; they may not resolve to the same file.
+
+If you edit a category's `path` after entries already exist under the old
+one, the old `.md` file is **not** moved or deleted — Neuron re-exports that
+category from its SQLite index into the new location on the next command,
+and leaves the old file exactly where it was. Move or remove it yourself
+once you've checked the new one looks right.
 
 ### The guarantee in practice: declaring required fields
 

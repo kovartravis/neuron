@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
+import { rawCategoryPath } from './categoryPath.js';
+import { sanitizeCategoryFilename } from '../storage/mdStorageAdapter.js';
 
 // --- Zod Schemas ---
 
@@ -45,9 +47,16 @@ const RawStorageModeSchema = z.preprocess((val) => {
  * markdown before the strict mirror ever runs. Without that, flipping this
  * line would delete every entry that had never been written to a `.md` file.
  */
+/**
+ * `path` has no `.default('.neuron')` (ticket 05) — an absent value must be
+ * distinguishable from an explicit `.neuron`, since absence is what triggers
+ * the `categories.<name>.path > storage.path > '.neuron'` fallback chain in
+ * `resolveCategoryPath`. Baking the literal default in here would make "top
+ * level is empty" unrepresentable downstream.
+ */
 export const StorageConfigSchema = z.object({
   mode: RawStorageModeSchema.default('md'),
-  path: z.string().default('.neuron'),
+  path: z.string().optional(),
 });
 
 export type StorageConfig = z.infer<typeof StorageConfigSchema>;
@@ -117,6 +126,13 @@ export const CategoryConfigSchema = z.object({
   tags: z.array(z.string()).optional(),
   storage: RawCategoryStorageSchema.optional(),
   fields: z.record(z.string(), CategoryFieldSchema).optional(),
+  /**
+   * Ticket 05: overrides `storage.path` for this category alone. No default —
+   * absence (not `.neuron`) is what lets `resolveCategoryPath` fall through to
+   * `storage.path` and then the `.neuron` literal. Absolute values are allowed,
+   * matching `storage.path`'s own existing behaviour.
+   */
+  path: z.string().optional(),
 });
 
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
@@ -386,7 +402,7 @@ export const NeuronConfigSchema = z.object({
    * for the literal "deterministic" claim holding without qualification.
    */
   strict: z.boolean().default(false),
-  storage: StorageConfigSchema.default({ mode: 'md', path: '.neuron' }),
+  storage: StorageConfigSchema.default({ mode: 'md' }),
   categories: z.record(z.string(), CategoryConfigSchema).default({
     learning: { description: 'Agent conventions, rules, and failure fixes' },
     history: { description: 'Action history log and completed task summary' },
@@ -514,8 +530,50 @@ export function validateNeuronYaml(raw: unknown): NeuronConfig {
   }
 
   validateDeclaredFields(config);
+  validateCategoryPaths(config);
 
   return config;
+}
+
+/**
+ * Ticket 05's collision and inert-config rulings, decided with the maintainer
+ * rather than guessed:
+ *
+ * 1. Two categories resolving to the same *directory* is fine — that is
+ *    today's behaviour for every category sharing `storage.path`.
+ * 2. Two categories resolving to the same *file* (same directory, same
+ *    sanitized filename) is not: one would silently overwrite the other's
+ *    entries. Compared on the unresolved (`rawCategoryPath`) root so this
+ *    check needs no real project root to reason about.
+ * 3. A `path` set on a category whose effective storage mode is `vector`
+ *    (ticket 06) is inert — there is no markdown file for a per-category
+ *    path to mean anything about. Warned, not refused: a category flipping
+ *    from `md` to `vector` shouldn't have to remember to also delete `path`.
+ */
+function validateCategoryPaths(config: NeuronConfig): void {
+  const fileOwners = new Map<string, string>();
+
+  for (const category of Object.keys(config.categories)) {
+    const catConfig = config.categories[category];
+
+    const root = rawCategoryPath(config, category);
+    const fileKey = `${path.normalize(root)}${path.sep}${sanitizeCategoryFilename(category)}.md`;
+    const owner = fileOwners.get(fileKey);
+    if (owner !== undefined && owner !== category) {
+      throw new Error(
+        `neuron.yaml: categories.${category} and categories.${owner} both resolve to the same file ` +
+          `("${sanitizeCategoryFilename(category)}.md" under "${root}") — give one of them a distinct "path".`
+      );
+    }
+    fileOwners.set(fileKey, category);
+
+    if (catConfig.path !== undefined && (catConfig.storage || 'md') === 'vector') {
+      process.stderr.write(
+        `[neuron warning] categories.${category}.path is set but this category's storage resolves to "vector" — ` +
+          `there is no markdown file for it to point at, so "path" is ignored.\n`
+      );
+    }
+  }
 }
 
 /**
