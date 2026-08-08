@@ -88,7 +88,11 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   resolved 2026-08-07 — enough accumulated (see Decisions so far) — so `08`
   is unblocked and its Scope/Open-question decisions (definition of "already
   had," redundancy measure, textual-vs-timeliness ruling) remain exactly as
-  open as `08`'s own Comments left them.
+  open as `08`'s own Comments left them. **`08` itself resolved 2026-08-07**,
+  correcting its own Scope's stated failure direction (see Decisions so
+  far) and unblocking `09`. **`09` itself resolved 2026-08-07**, ruling
+  compress-and-disclose over reopening ADR 0014, and unblocking `10`.
+  Frontier is now `01`, `02`, `05`, `10`, `11`, `13`.
 - **The epic's destination was elevated 2026-08-07**, in the same session
   that resolved `08`: the maintainer asked to come out of this map with a
   *published, repeatable benchmark suite* proving (or honestly disclaiming)
@@ -167,6 +171,18 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   overstating redundancy, per maintainer ruling, to match the band-wide
   posture `07` set. Textual redundancy only; timeliness handed to `10`.
   Unblocks `09`, and its `history` finding is `09`'s strongest input.
+- **[09 — Shrink the Resident Footprint](issues/09-shrink-resident-footprint.md)**
+  — ruled compress + disclose the floor; option 2 (move a step to a hook)
+  left in fog rather than reopening ADR 0014 this session. Compressed
+  `metadataFlagsSection` (31% of the deterministic block, mostly rationale
+  prose) plus lighter trims to `failureFixStep`/`sessionEndStep`: 2,323 →
+  1,832 chars deterministic, 2,759 → 2,268 fallback (−491 chars / ~123
+  tokens / −21%, identical absolute saving on both variants). The
+  hook-install saving over fallback is unchanged in relative terms (~436
+  chars / ~109 tokens) since the same compression applied to both. Net
+  floor handed to `03`/`04`: ~450 tokens deterministic, ~570 fallback,
+  disclosed as ADR 0014's write-side cost, not a bug. This repo's own
+  `CLAUDE.md` regenerated in place to match. Unblocks `10`.
 
 ## Not yet specified
 
@@ -217,12 +233,18 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   centroid table or an index long before it's a real problem. Not ticketed
   because the trigger — what store size actually hurts — has not been
   measured.
-- **Should `neuron exec`'s pre-command lookup also become a hook?** Step 2
-  of the protocol still asks the agent to wrap commands. `10` confirmed
-  every harness exposes *some* `PreToolUse`-equivalent, so the prerequisite
-  fact is known — but whether to build on it is an adapter-architecture
-  design call, not a separable decision, and touching it now would mean
-  reopening ADR 0014 rather than extending it.
+- **Should `neuron exec`'s pre-command lookup also become a hook?** Step 1
+  of the deterministic protocol block (Command Execution) still asks the
+  agent to wrap commands. `10` confirmed every harness exposes *some*
+  `PreToolUse`-equivalent, so the prerequisite fact is known — but whether
+  to build on it is an adapter-architecture design call, not a separable
+  decision, and touching it now would mean reopening ADR 0014 rather than
+  extending it. Revisited (not resolved) by `09` on 2026-08-07 as its
+  "option 2" — confirmed ADR 0014 doesn't mention `neuron exec` at all, so
+  this would be a real scope expansion of that ADR, not an extension. `09`
+  ruled to leave it here rather than open a `/grilling` session under its
+  own ticket; best scoped as its own ticket once `01`/`02` make the
+  question concrete, if ever.
 - **Confidently-wrong retrieval is unowned.** A `neuron-2.2.0` measurement
   found raw cosine *inverted* on wrong answers — top-1 cosine on queries
   retrieval got wrong (mean 0.7779) is *higher* than on queries it got

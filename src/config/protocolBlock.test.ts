@@ -73,8 +73,8 @@ describe('generateProtocolBlock', () => {
     const deterministic = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
     const fallback = generateProtocolBlock({ fidelity: 'fallback', config: config() });
     for (const block of [deterministic, fallback]) {
-      expect(block).toContain('### On the metadata flags');
-      expect(block).toContain('`--importance` is optional too, but it is never inferred');
+      expect(block).toContain('### Metadata flags');
+      expect(block).toContain('`--importance`: omit defaults to `3`');
     }
   });
 });
