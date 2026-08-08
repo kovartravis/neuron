@@ -196,6 +196,28 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
 - **Protocol:** every session follows the `CLAUDE.md` memory-store loop
   (or its post-`14` short form, once that ticket lands upstream). Record
   ADRs under `decisions`, session logs under `history`.
+- **[01 — GitHub Copilot CLI Adapter](issues/01-copilot-adapter.md) built,
+  not resolved, 2026-08-08.** `CopilotAdapter` implemented and tested (14
+  new tests, full suite 502/502) against `.scratch/neuron-2.2.0/research/
+  harness-compatibility.md` plus a direct fetch of GitHub's own hooks
+  docs, which resolved two things that research left open: Copilot's
+  stdout contract is a flat `additionalContext` object, not Claude
+  Code/Codex's `hookSpecificOutput` wrapper, and its hook entries are a
+  flat array per event rather than matcher-grouped — both required real
+  `hook.ts` changes. Only `session-start` is wired; `pre-prompt` and
+  `context-reset` are honestly left unwired (documented notification-only,
+  and no compaction-equivalent event at all, respectively).
+  Maintainer scrutinized the adapter's actual value mid-session — coverage
+  is narrower than "session-start injection" sounds, a single guaranteed
+  `architecture`-category card and nothing else, unmeasured against
+  `10`/`18`'s A/B which tested full recall — and confirmed keeping it as
+  built rather than dropping to disclosure-only. Real-install verification
+  split into [20 — Verify Copilot CLI Adapter Against a Real
+  Installation](issues/20-verify-copilot-adapter-real-install.md) (HITL,
+  same split-verification-from-build move `18` used for `17`), at the
+  maintainer's request — `01`'s `Blocked by` now includes `20`, so `01`
+  drops out of the frontier until the maintainer resolves `20`
+  independently. Frontier is now `02`, `05`, `11`, `13`, `14`, `19`, `20`.
 
 ## Decisions so far
 

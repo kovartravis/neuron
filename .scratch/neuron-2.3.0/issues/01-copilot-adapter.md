@@ -1,6 +1,6 @@
 Type: task
 Status: claimed
-Blocked by: 07
+Blocked by: 07, 20
 
 # 01 — GitHub Copilot CLI Adapter
 
@@ -150,3 +150,11 @@ installation rather than have this session install it. This ticket is
 left `claimed`, not `resolved`, until that verification happens — its own
 Verification section makes real-install confirmation a hard requirement,
 not an optional nice-to-have.
+
+**Split into ticket [20](20-verify-copilot-adapter-real-install.md), same
+session, at the maintainer's request** — the same
+split-verification-from-build move ticket 18 used for ticket 17's
+memory-supersession work, so this implementation ticket doesn't sit open
+indefinitely on an ambiguous "claimed pending verification" status. `01`'s
+`Blocked by` now includes `20`; a future wayfinder session should not
+resolve `01` until `20` resolves.
