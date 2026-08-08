@@ -129,6 +129,26 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   without deleting them, a different mechanism the false-delete lesson
   argues *against* reusing a content-only judgement call for. Frontier is
   now `01`, `02`, `05`, `11`, `13`, `14`, `16`.
+- **[16 — Memory Supersession](issues/16-memory-supersession.md) resolved
+  2026-08-08**, grilling all six of its Scope items with the maintainer:
+  supersession triggers as a hard block on `neuron memory add` when the
+  (model-free) embedder finds a high-similarity existing entry, not a
+  standing protocol step; superseded entries hard-exclude from default
+  recall but are never deleted; the schema gets dedicated
+  `superseded_by`/`superseded_at` columns rather than reusing the generic
+  `fields` mechanism; the mechanism is one-way with no undo (a correction
+  is a new forward-linking entry); the two known-reversed pairs in this
+  repo's own store are hand-fixed rather than built into a migration tool;
+  and it stays fully orthogonal to `importance`/pruning. Full rationale in
+  [ADR 0015](../../docs/adr/0015-memory-supersession.md). Graduated
+  [17 — Implement Memory Supersession](issues/17-implement-memory-supersession.md)
+  for the build, and — split out separately so the build ticket doesn't
+  grade its own outcome —
+  [18 — Re-run Counterfactual A/B After Supersession](issues/18-rerun-counterfactual-ab-post-supersession.md)
+  blocked by `17`, re-running `10`'s harness to confirm the failure-rate
+  regression is actually fixed. `04` rewired to block on `18` instead of
+  the now-resolved `16`. Frontier is now `01`, `02`, `05`, `11`, `13`, `14`,
+  `17`.
 - **[13 — `neuron status --check`/`--repair`](issues/13-status-check-repair.md)
   arrived 2026-08-05**, continued from
   [neuron-2.2.0's ticket 46](../neuron-2.2.0/issues/46-status-check-repair.md)
@@ -220,6 +240,18 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   claim-versus-behaviour audit inherit it as-is, not rounded toward "no
   effect." Unblocks `14` (which reuses this ticket's harness verbatim per
   its own Scope item 1) and `15` (publication).
+- **[16 — Memory Supersession](issues/16-memory-supersession.md)** —
+  grilled all six Scope items. Supersession is a hard block on
+  `neuron memory add` (embedder-only candidate shortlisting, agent
+  resolves via `--supersedes <old-id>`); hard-excludes from default recall
+  without deleting; dedicated `superseded_by`/`superseded_at` columns; one
+  direction only, no undo (a correction is a new forward-linking entry);
+  the two known-reversed pairs are hand-fixed, not migration-tooled; zero
+  interaction with `importance`/pruning. Full design in
+  [ADR 0015](../../docs/adr/0015-memory-supersession.md). Graduated
+  [17](issues/17-implement-memory-supersession.md) for the build and
+  [18](issues/18-rerun-counterfactual-ab-post-supersession.md) (blocked by
+  `17`) to re-run `10`'s harness and confirm the fix.
 
 ## Not yet specified
 
