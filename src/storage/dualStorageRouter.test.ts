@@ -517,4 +517,24 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
       expect(reconciled?.supersededAt).toBe('2026-08-08T00:00:00.000Z');
     });
   });
+
+  /**
+   * `update`/`delete` in the old `dual` mode used to report only the
+   * markdown side's outcome — `vecResult` was computed and never consulted,
+   * unlike `upsert`, which does trust it — so a real vector-side change on a
+   * drifted entry (a manual `.md` edit not yet `sync`'d) was reported as
+   * `not_found`. Fixed to report success if either store changed; see
+   * 'md-mode transact reports success if either store changed within a
+   * single command' above for the still-live version of this scenario
+   * (a write-time error, not pre-existing drift).
+   *
+   * The "vector-only survivor, `.md` copy already gone" variant of this test
+   * does not carry over to `md` mode: `transact()` runs a strict-mirror
+   * `reconcile()` before every mutation (ADR 0011), which deletes an
+   * orphaned vector row the moment it sees the `.md` copy missing — so by
+   * the time the mutation runs, both stores already agree the entry is
+   * gone, and `not_found` is the correct answer, not a regression. `dual`
+   * mode had no such reconcile step, which is what made the scenario
+   * reachable there.
+   */
 });
