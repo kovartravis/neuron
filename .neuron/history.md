@@ -2948,3 +2948,87 @@ tags:
 taskId: "21"
 ---
 Repositioned the neuron-2.2.0 wayfinder map at the maintainer's direction and shipped v2.2.0 stable. Dropped ticket 34's separate rc5 cut (no intermediate tag/publish; its verification obligations folded into ticket 21) and closed ticket 46 (neuron status --check/--repair) out of scope, continuing it unchanged as neuron-2.3.0's ticket 13. Resolved ticket 33 (docs repositioning audit): swept CONTEXT.md, docs/COMMANDS.md, CLAUDE.md, the packaged skill, and the ADRs -- found the README's markdown-first positioning already coherent everywhere, but caught two factual staleness bugs a framing grep wouldn't (ticket-44 SQLite persistence claim, and the E2E suite's pillar count understated at 6/9 instead of 12); amended ADRs 0013 and 0014 with dated notes rather than rewriting them. During release verification, npm run test:e2e reproducibly failed Pillar 7 (Adversarial Retrieval Quality), 4/4 runs, worsening each time -- investigated and found it was test-store pollution (adversarial-recall.test.ts missing the package.json isolation guard ticket 42 already established elsewhere, ticket 47, previously unclaimed), not a product regression: isolating it made the pillar perfectly deterministic and exposed one real, small issue underneath -- its MRR bar was calibrated at 2.1.0 against a scoring formula ticket 41 correctly removed, so recalibrated the bar to the measured baseline. Executed ticket 21: rewrote CHANGELOG.md into one consolidated 2.2.0 section (previously three separate, incomplete rc sections), bumped package.json/package-lock.json to 2.2.0, verified the tarball (711.4 kB, no leaked grammars/models/fixtures -- the size grew from organic feature additions plus a pre-existing dashboard screenshot, not a regression), ran the full verification (473/473 unit tests, 12/13 E2E pillars with Pillar 8 the sole known pre-existing failure matching this map's long-standing baseline), refreshed the architecture blueprint via neuron scan, committed, tagged v2.2.0, and pushed both the branch and the tag -- npm publish left to the maintainer, matching every prior cut's precedent.
+
+---
+id: 23680a0a-a4b4-4016-9ca0-9dd78584a190
+createdAt: 2026-08-08T02:53:18.417Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "12"
+---
+Resolved neuron-2.3.0 wayfinder ticket 12 (Accumulate Real Per-Session Telemetry), picked up in response to the maintainer wanting to start on the tests that prove neuron saves agent tokens. Ticket 12 existed because ticket 07's new {epoch, injectedIds, charsSpent, turns, history} ledger format had shipped uncommitted with zero real sessions recorded, leaving ticket 08's redundancy audit with only 2 thin pre-07-format sessions to sample from. Checked neuron status's recallCost section (sessionsObserved: 7, epochsObserved: 5, up from the 2-session/0-epoch baseline) and cross-referenced every injectedId in the 5 new-format ledger files under ~/Library/Caches/neuron/hooks/a8541890092e7e49/ against the id: frontmatter in .neuron/history.md, decisions.md and learning.md, finding real history-category injections in 5 of 5 new-format sessions (28 of 45 total ids) and zero unresolved ids. Ruled enough had accumulated and resolved ticket 12, which unblocked ticket 08 (injection redundancy audit) — the next ticket in the context-cost band toward tickets 09 and 10, the actual token-savings claims; noted learning-category coverage is thin (1 id) and no session has yet rolled a second epoch, both carried forward as stated limitations for ticket 08 rather than blockers.
+
+---
+id: 3cfe6403-f084-4c1c-84b1-9f99ab5f3dcc
+createdAt: 2026-08-08T03:09:28.591Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+Resolved wayfinder ticket 08 (Injection Redundancy Audit) on the neuron-2.3.0 map: built an offline audit over the 5 real session ledgers ticket 12 characterized, embedding each injected memory entry (via neuron's own bge-small-en-v1.5 embedder, no LLM/no billing) against a resident corpus of CLAUDE.md plus the full git log. Found history redundancy against git log is total (18/18 entries, 29/29 occurrences score >=0.70 cosine similarity, the noise floor ticket 39 already established for this embedder), decisions is substantially redundant (72-83%, with the one exception being a vacuous single-word entry rather than a genuinely novel one), and learning remains a single data point too thin to conclude from. Corrected the ticket's own literal instruction to prefer a measure that understates redundancy -- ruled with the maintainer that this contradicted the band-wide posture ticket 07 set of erring toward overstating neuron's own cost, so implemented embedding similarity (which overstates via paraphrase/topical false positives) instead of lexical overlap. Wrote up full findings and reproducible scripts at .scratch/neuron-2.3.0/audits/08-injection-redundancy/, updated the map's Decisions-so-far, and unblocked ticket 09 (Shrink the Resident Footprint), which now has history's saturation finding as its strongest input.
+
+---
+id: f26f3b6f-14c4-46d9-b82b-af20e7e45c88
+createdAt: 2026-08-08T03:33:45.232Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "09"
+---
+Wayfinder pickup on the neuron-2.3.0 map: claimed ticket 9 (Shrink the Resident Footprint), the context-cost band's ticket on reducing the ~600-token resident protocol block injected by CLAUDE.md/AGENTS.md. Measured the current deterministic and fallback block sizes against this repo's real neuron.yaml (2,323 / 2,759 chars), broke the deterministic block down by section, and found the metadata-flags section alone was 31% of it and mostly rationale prose rather than instruction. Drafted a compressed rewrite, measured a 491-char (~123 token, 21%) net saving, and put a three-way ruling to the maintainer (compress+disclose, disclose-only, or also open ADR 0014 via grilling for a hook-driven exec step) with the recommended option pre-selected; maintainer chose compress+disclose. Implemented the compression in src/config/protocolBlock.ts (metadataFlagsSection, failureFixStep, sessionEndStep), updated the two protocolBlock.test.ts assertions that hardcoded the old wording, regenerated this repo's own CLAUDE.md managed region to match, and confirmed the full src/config/ suite (66/66) and protocolBlock.test.ts (15/15) pass under neuron exec. Resolved ticket 9 with a full Answer section, appended the resolution to map.md's Decisions-so-far, updated the map's Frontier note and the 'neuron exec as a hook' fog entry to record that 09 revisited but did not resolve it, and confirmed ticket 9's resolution unblocks ticket 10 (the counterfactual token A/B), which was blocked by both 08 and 09.
+
+---
+id: 1a6b6e9e-7870-4606-8257-e58d85b48e01
+createdAt: 2026-08-08T03:58:26.430Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Picked up wayfinder ticket 10 (Counterfactual Token A/B) on the neuron-2.3.0 map. Settled the harness's open funding/model questions with the maintainer (scripted Claude API harness against their own Console balance rather than a Code subscription, Claude Sonnet 5 chosen over Haiku 4.5 to avoid conflating a weak driver model's failures with the memory-hook effect being measured), then built benchmarks/token-ab/ (tasks.mjs, fixtures.mjs, session.mjs, run.mjs): 4 objective memory-relevant tasks graded by deterministic checks against ANSWER.md, git-worktree fixtures isolating .neuron/ presence as the only difference between arms, and npm run bench:token-ab / --dry-run. Validated the full pipeline end to end with --dry-run (fixture build/cleanup, grading against gold and plausible-wrong answers) at zero API spend. Left unresolved: no Anthropic credentials are available in this environment to run the real 24-session (~ estimated) A/B, so ticket 10 stays claimed rather than resolved pending a fresh non-leaked API key from the maintainer.
+
+---
+id: b2e856fe-f56d-4b16-85ff-f15a3cf44ce9
+createdAt: 2026-08-08T04:30:57.068Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Resolved wayfinder ticket 10 (Counterfactual Token A/B) on the neuron-2.3.0 map. Authenticated via ant auth login (browser OAuth, no key entered chat) after the maintainer's initial pasted key was flagged as leaked and never used. Ran an 8-session --k=1 pilot that caught a real harness bug (model resolved 'repository root' to filesystem root /, read-only -- fixed by spelling out the absolute fixture path), then the full 24-session --k=3 run for $5.20 total against the $20 approved budget. After the run, caught and fixed a negation-blind grading bug (regex matched 'intentional' inside 'this is *not* intentional design') by re-grading all 24 stored answers offline against the raw answerText, no extra spend. Final result: no measured token difference between memory and no-memory arms, and a HIGHER failure rate for the memory arm (33% vs 17%), both misses caused by a superseded .neuron/decisions.md entry outcompeting the later entry that reverses it -- a live instance of this project's own 'confidently-wrong retrieval' and 'write-side capture gap' fog items, not a new problem. Findings written to .scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/findings.md and fed into the map's Decisions-so-far with an explicit instruction that 03's disclosure and 04's claim-versus-behaviour audit must not round this toward a favorable or neutral result. Unblocked 14 and 15.
+
+---
+id: 292742b0-8372-4b28-a336-482abca731e2
+createdAt: 2026-08-08T05:08:21.562Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "16"
+---
+Wayfinder pickup on the neuron-2.3.0 map: claimed ticket 16 (Memory Supersession) and ran a full /grilling session with the maintainer through all six of its Scope items -- trigger (hard block on neuron memory add via embedder-only candidate shortlisting, agent resolves with --supersedes), retrieval effect (hard-exclude by default, never delete), schema (dedicated superseded_by/superseded_at columns, not the generic fields mechanism), direction/multiplicity (one-way, no undo -- a correction is a new forward-linking entry), existing-store migration (the two known-reversed pairs hand-fixed, no migration tool), and importance/prune interaction (none, confirmed orthogonal). Wrote ADR 0015 recording the decision. Resolved and closed ticket 16, graduated ticket 17 (Implement Memory Supersession) for the build, and -- per the maintainer's mid-session request to keep verification separate from the build -- split out ticket 18 (Re-run Counterfactual A/B After Supersession, blocked by 17) so the build ticket doesn't grade its own outcome against ticket 10's regression. Rewired ticket 04 (cut-and-publish) to block on 18 instead of the now-resolved 16. Updated the neuron-2.3.0 map's Decisions-so-far and Notes accordingly; frontier is now 01, 02, 05, 11, 13, 14, 17.
+
+---
+id: d615ac49-fcb0-402e-9739-821dba32020e
+createdAt: 2026-08-08T05:26:50.769Z
+importance: 4
+tags:
+  - rc2
+  - adr
+  - wayfinder
+taskId: "17"
+---
+Implemented ticket 17 (Memory Supersession) per ADR 0015: additive superseded_by/superseded_at SQLite migration (schema v8) with markdown frontmatter round-trip, a write-time embedding-similarity gate on 'neuron memory add' (threshold 0.97, calibrated against ticket 27/39's same-topic band per the ticket's own instruction) that hard-blocks near-duplicate writes unless resolved via --supersedes <id> or --not-a-reversal, default hard-exclusion of superseded rows from neuron memory query/list/exec with a query-only --include-superseded escape hatch, and a findById direct-lookup method. Reconcile/sync/bootstrap-seed's internal reads were switched to includeSuperseded:true and computeMemoryHash now folds in supersededBy, since those are store-management paths that must never lose track of a superseded row. Mid-implementation, discovered neither of ticket 10's two known-reversed pairs actually had a corresponding correction entry in this repo's own .neuron/decisions.md -- the maintainer's rulings were captured only in Claude's own cross-session memory and in CHANGELOG.md prose, a live instance of the write-side capture gap this feature exists to fix -- so both missing correction entries were written for real via the new --supersedes flow rather than fabricating links between two pre-existing entries. Added 15 new tests across index.supersession.test.ts, commands/memory.supersession.test.ts and a new dualStorageRouter.test.ts case; updated 3 pre-existing tests for the new schema shape. Full suite: 488/488 passing.
