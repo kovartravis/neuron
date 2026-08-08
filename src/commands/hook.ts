@@ -30,12 +30,15 @@ const HOOK_TIMEOUT_MS: Record<LifecyclePoint, number> = {
 const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset'];
 
 /**
- * Both harnesses share the same stdin fields (`session_id`, `prompt`) and
- * stdout contract (`hookSpecificOutput.additionalContext`), confirmed for
- * Codex via a direct fetch of its hooks docs during ticket 13 — so `runHook`
- * below needs no per-harness branching beyond this allowlist.
+ * Claude Code and Codex share the same stdin fields (`session_id`, `prompt`)
+ * and stdout contract (`hookSpecificOutput.additionalContext`), confirmed
+ * for Codex via a direct fetch of its hooks docs during ticket 13. Copilot
+ * CLI (ticket 01) shares the stdin fields but expects a flat
+ * `{"additionalContext": "..."}` at the root instead — confirmed via a
+ * direct fetch of its own hooks reference — so `emit()` branches on harness
+ * id for the one difference that matters.
  */
-const VALID_HARNESSES = ['claude-code', 'codex'];
+const VALID_HARNESSES = ['claude-code', 'codex', 'copilot'];
 
 function readStdin(): Promise<string> {
   return new Promise(resolve => {
@@ -51,7 +54,11 @@ function readStdin(): Promise<string> {
   });
 }
 
-function emit(hookEventName: string, additionalContext: string): void {
+function emit(harness: string, hookEventName: string, additionalContext: string): void {
+  if (harness === 'copilot') {
+    process.stdout.write(JSON.stringify({ additionalContext }) + '\n');
+    return;
+  }
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName, additionalContext } }) + '\n');
 }
 
@@ -79,13 +86,13 @@ export async function handleHookCommand(args: string[]): Promise<void> {
   recordFired(projectDir, harness, point);
 
   try {
-    await withTimeout(runHook(projectDir, point), HOOK_TIMEOUT_MS[point], `neuron hook ${harness} ${point}`);
+    await withTimeout(runHook(projectDir, harness, point), HOOK_TIMEOUT_MS[point], `neuron hook ${harness} ${point}`);
   } catch {
     // Silent degrade: no stdout means no injection; exit code stays 0.
   }
 }
 
-async function runHook(projectDir: string, point: LifecyclePoint): Promise<void> {
+async function runHook(projectDir: string, harness: string, point: LifecyclePoint): Promise<void> {
   const raw = await readStdin();
   let input: Record<string, unknown> = {};
   try {
@@ -118,7 +125,7 @@ async function runHook(projectDir: string, point: LifecyclePoint): Promise<void>
       const { text, includedIds } = buildPayload(results, cap);
       if (includedIds.length === 0) return;
       if (sessionId) recordSessionStartInjection(projectDir, sessionId, includedIds, text.length);
-      emit('SessionStart', text);
+      emit(harness, 'SessionStart', text);
       return;
     }
 
@@ -132,7 +139,7 @@ async function runHook(projectDir: string, point: LifecyclePoint): Promise<void>
       const results = await memory.query({ text: prompt, limit: 10 });
       const { text, includedIds } = buildPayload(results, PRE_PROMPT_CHAR_BUDGET);
       if (includedIds.length === 0) return;
-      emit('UserPromptSubmit', text);
+      emit(harness, 'UserPromptSubmit', text);
       return;
     }
 
@@ -150,7 +157,7 @@ async function runHook(projectDir: string, point: LifecyclePoint): Promise<void>
     const { text, includedIds } = buildPayload(unseen, Math.min(PRE_PROMPT_CHAR_BUDGET, remaining));
     recordPrePromptTurn(projectDir, sessionId, includedIds, text.length);
     if (includedIds.length === 0) return;
-    emit('UserPromptSubmit', text);
+    emit(harness, 'UserPromptSubmit', text);
   } finally {
     memory.close();
   }

@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: 07
 
 # 01 — GitHub Copilot CLI Adapter
@@ -58,8 +58,68 @@ them assume they have the same recall a Claude Code or Codex CLI user has.
 
 ## Deliverables
 
-- [ ] Copilot CLI adapter implementing the shared `HarnessAdapter` interface
-- [ ] Injection wired at `session-start`; `pre-prompt` honestly reported as non-injecting
-- [ ] Truthful fidelity verdict feeding ticket `03`'s matrix
-- [ ] Config-safety cases verified
+- [x] Copilot CLI adapter implementing the shared `HarnessAdapter` interface
+- [x] Injection wired at `session-start`; `pre-prompt` honestly reported as non-injecting
+- [x] Truthful fidelity verdict feeding ticket `03`'s matrix
+- [x] Config-safety cases verified
 - [ ] Behaviour confirmed against a real installation
+
+## Comments
+
+**2026-08-08:** Implemented `src/harnesses/copilot.ts` (`CopilotAdapter`,
+`id: 'copilot'`) and wired it into `getAdapters()` and
+`ADAPTER_ID_BY_HARNESS_NAME` (`github` → `copilot`) in
+`src/commands/init.ts`, matching the config harness entry `.github` /
+`AGENTS.md` already in `src/config/harnesses.json`.
+
+Two facts not in ticket `10`'s research, found via a direct fetch of
+`docs.github.com/en/copilot/reference/hooks-reference` and
+`.../use-hooks` during this ticket:
+
+1. **Stdout contract differs from Claude Code/Codex.** Copilot expects a
+   flat `{"additionalContext": "..."}` at the root, not the
+   `hookSpecificOutput.additionalContext` wrapper the other two share.
+   `src/commands/hook.ts`'s `emit()` now takes a `harness` parameter and
+   branches on it — the one piece of per-harness logic the shared hook
+   entrypoint needed.
+2. **Hook entries are a flat array per event name**, not matcher-grouped
+   the way Claude Code's and Codex's settings are — so `copilot.ts`'s
+   "is this neuron's own entry" check is an array-index lookup
+   (`findOwnEntry`), not a matcher-group shape check.
+
+Design calls made, honoring the interface rather than reinterpreting it:
+
+- Only `session-start` is ever wired. `pre-prompt` (`userPromptSubmitted`)
+  is documented as "no output processed, notification only" — a known
+  fact, not an `'unknown'` — so `install()`/`verify()` never touch it at
+  all rather than installing a hook whose output is provably discarded.
+- `context-reset` has no documented compaction-equivalent event on this
+  harness at all (full event list: `sessionStart`, `sessionEnd`,
+  `userPromptSubmitted`, `preToolUse`, `postToolUse`, `agentStop`,
+  `subagentStart`, `subagentStop`, `errorOccurred`, `notification`).
+  Disclosed as a `capability()` caveat: the session ledger epoch never
+  rolls on this harness, so an unusually long session could in principle
+  exhaust its epoch budget with no reset point to clear it. This is a
+  real, harness-specific limitation beyond "doesn't inject," not a design
+  choice.
+- `session-start`'s `failurePosture` and `payloadCapChars` are both
+  `'unknown'` (undocumented per ticket `10`'s research, unchanged by this
+  session's direct fetch) — enough on its own, per `deriveFidelity`, to
+  keep this harness `best-effort` rather than `deterministic`, matching
+  the research's own net assessment.
+- `project-local` collapses into the same file `project-committed` uses
+  (`.github/hooks/neuron.json`), with a warning — no gitignored
+  project-level scope is documented, the same gap Codex CLI has.
+
+14 new tests in `copilot.test.ts` (detect, capability/fidelity, install
+including the never-wired points, idempotency, conflict policies,
+malformed-JSON refusal, uninstall, verify, `project-local` collapse,
+`user-global` path). Full suite: 502/502 passing, `tsc --noEmit` clean.
+
+**Real-install verification (the one remaining deliverable) is
+deliberately not done this session.** Copilot CLI is not installed on
+this machine; the maintainer chose to verify independently against a real
+installation rather than have this session install it. This ticket is
+left `claimed`, not `resolved`, until that verification happens — its own
+Verification section makes real-install confirmation a hard requirement,
+not an optional nice-to-have.
