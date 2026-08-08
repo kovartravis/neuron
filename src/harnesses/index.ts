@@ -6,3 +6,4 @@ export * from './hookState.js';
 export * from './claudeCode.js';
 export * from './codex.js';
 export * from './copilot.js';
+export * from './cursor.js';

@@ -19,6 +19,8 @@ import {
   CODEX_HARNESS_ID,
   CopilotAdapter,
   COPILOT_HARNESS_ID,
+  CursorAdapter,
+  CURSOR_HARNESS_ID,
   HarnessAdapter,
   HookTarget,
   OverwritePolicy,
@@ -36,9 +38,14 @@ import type { NeuronConfig } from '../config/neuronYaml.js';
 
 export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
 
-/** Every harness with a real adapter. Grows as ticket 02 lands. */
+/** Every harness with a real adapter. */
 function getAdapters(harnessFilter?: string[]): HarnessAdapter[] {
-  const all: HarnessAdapter[] = [new ClaudeCodeAdapter(), new CodexAdapter(), new CopilotAdapter()];
+  const all: HarnessAdapter[] = [
+    new ClaudeCodeAdapter(),
+    new CodexAdapter(),
+    new CopilotAdapter(),
+    new CursorAdapter(),
+  ];
   if (!harnessFilter || harnessFilter.length === 0) return all;
   return all.filter(a => harnessFilter.includes(a.id));
 }
@@ -149,6 +156,7 @@ const ADAPTER_ID_BY_HARNESS_NAME: Record<string, string> = {
   claude: CLAUDE_CODE_HARNESS_ID,
   codex: CODEX_HARNESS_ID,
   github: COPILOT_HARNESS_ID,
+  cursor: CURSOR_HARNESS_ID,
 };
 
 /**

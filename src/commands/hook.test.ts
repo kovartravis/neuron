@@ -262,6 +262,74 @@ describe('CLI Command: hook', () => {
     });
   });
 
+  // --- Ticket 02 (neuron-2.3.0): Cursor adapter — same runHook() codepath,
+  // but a distinct stdout contract (flat, snake_case additional_context,
+  // confirmed via direct fetch of cursor.com/docs/hooks), so coverage
+  // exercises emit()'s cursor branch specifically rather than assuming it
+  // matches claude-code's/codex's wrapped shape. ---
+  describe('cursor', () => {
+    it('exits 0 and prints nothing on session-start against an empty store', () => {
+      const result = run(['hook', 'cursor', 'session-start'], JSON.stringify({ session_id: 's1' }));
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('injects the architecture card via a flat additional_context field, not hookSpecificOutput', () => {
+      execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+      const result = run(['hook', 'cursor', 'session-start'], JSON.stringify({ session_id: 's1' }));
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.additional_context).toContain('Repository Architectural Blueprint');
+      expect(parsed.hookSpecificOutput).toBeUndefined();
+      expect(parsed.additionalContext).toBeUndefined(); // not Copilot's camelCase field either
+    });
+
+    it('injects relevant results via a flat additional_context field for pre-prompt', () => {
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const result = run(
+        ['hook', 'cursor', 'pre-prompt'],
+        JSON.stringify({ session_id: 's1', prompt: 'how should I access the database here' })
+      );
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.additional_context).toContain('Repository Pattern');
+    });
+
+    it('deduplicates pre-prompt injection within the same session via the ledger', () => {
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const stdin = JSON.stringify({ session_id: 'cursor-dedupe-session', prompt: 'database access pattern' });
+
+      const first = run(['hook', 'cursor', 'pre-prompt'], stdin);
+      expect(first.stdout.toString().trim()).not.toBe('');
+
+      const second = run(['hook', 'cursor', 'pre-prompt'], stdin);
+      expect(second.status).toBe(0);
+      expect(second.stdout.toString().trim()).toBe('');
+    });
+
+    it('context-reset is a safe no-op when the harness sends no session_id (documented gap: preCompact carries none)', () => {
+      // Unlike claude-code/codex, Cursor's own preCompact stdin has no
+      // session_id field at all (confirmed via direct fetch) — this exercises
+      // that the hook still exits cleanly rather than assuming a field that
+      // isn't there.
+      const result = run(['hook', 'cursor', 'context-reset'], JSON.stringify({}));
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('degrades silently (exit 0, empty stdout) on malformed stdin rather than crashing', () => {
+      const result = run(['hook', 'cursor', 'pre-prompt'], 'not json at all {{{');
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('degrades silently when the prompt field is missing entirely', () => {
+      const result = run(['hook', 'cursor', 'pre-prompt'], JSON.stringify({ session_id: 's1' }));
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+  });
+
   function execAdd(content: string, category: string) {
     spawnSync(
       'node',

@@ -35,10 +35,13 @@ const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-
  * for Codex via a direct fetch of its hooks docs during ticket 13. Copilot
  * CLI (ticket 01) shares the stdin fields but expects a flat
  * `{"additionalContext": "..."}` at the root instead — confirmed via a
- * direct fetch of its own hooks reference — so `emit()` branches on harness
- * id for the one difference that matters.
+ * direct fetch of its own hooks reference. Cursor (ticket 02) shares the
+ * stdin fields too but expects a flat, **snake_case**
+ * `{"additional_context": "..."}` at the root — a third distinct shape,
+ * confirmed via a direct fetch of `cursor.com/docs/hooks` — so `emit()`
+ * branches on harness id for the difference that matters each time.
  */
-const VALID_HARNESSES = ['claude-code', 'codex', 'copilot'];
+const VALID_HARNESSES = ['claude-code', 'codex', 'copilot', 'cursor'];
 
 function readStdin(): Promise<string> {
   return new Promise(resolve => {
@@ -57,6 +60,10 @@ function readStdin(): Promise<string> {
 function emit(harness: string, hookEventName: string, additionalContext: string): void {
   if (harness === 'copilot') {
     process.stdout.write(JSON.stringify({ additionalContext }) + '\n');
+    return;
+  }
+  if (harness === 'cursor') {
+    process.stdout.write(JSON.stringify({ additional_context: additionalContext }) + '\n');
     return;
   }
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName, additionalContext } }) + '\n');

@@ -239,6 +239,34 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   version string rather than a manual flag. Not wired as a blocker of `04`
   — it's forward-looking release infrastructure, not a dependency of this
   cut. Frontier is now `02`, `05`, `11`, `13`, `14`, `19`, `20`, `21`.
+- **[02 — Cursor Adapter](issues/02-cursor-adapter.md) built, not resolved,
+  2026-08-08.** `CursorAdapter` implemented and tested (14 new tests in
+  `cursor.test.ts`, plus an 8-test `cursor` block in `hook.test.ts`; full
+  suite passing modulo one pre-existing, unrelated
+  `concurrency-stress.test.ts` flake — a SQLite migration race independent
+  of this ticket) against `.scratch/neuron-2.2.0/research/harness-
+  compatibility.md` plus a direct fetch of `cursor.com/docs/hooks`, which
+  resolved two things research left open: the stdout contract is a third
+  distinct shape — flat, snake_case `{"additional_context": ...}`, matching
+  neither Claude Code/Codex's wrapped form nor Copilot's flat camelCase one
+  — and `preCompact` (Cursor's compaction-equivalent event) exists and runs
+  in cloud/background agents but carries no `session_id` on its stdin, so
+  it's wired for real firing evidence but can never actually roll the
+  session ledger epoch — a different root cause than Copilot's gap (no
+  compaction event at all) with the same practical consequence. Both
+  `session-start` and `context-reset` are wired; `pre-prompt` is honestly
+  left unwired (`beforeSubmitPrompt` confirmed permission-only, no context
+  field). `failurePosture: 'fail-open'` is a real, known value (Cursor's
+  documented default) — better-documented than Copilot's `'unknown'` — but
+  `payloadCapChars`/`timeoutMs` stay `'unknown'`, keeping the verdict
+  `best-effort` as expected. Real-install verification (including the
+  cloud/background-agent hole Scope item 3 calls out) is deliberately not
+  done this session — Cursor isn't installed on this machine — split into
+  [22 — Verify Cursor Adapter Against a Real
+  Installation](issues/22-verify-cursor-adapter-real-install.md), the same
+  split-verification-from-build move `20` used for `01`. `02`'s `Blocked by`
+  now includes `22`, so `02` drops out of the frontier until `22` resolves.
+  Frontier is now `05`, `11`, `13`, `14`, `19`, `20`, `21`, `22`.
 
 ## Decisions so far
 
