@@ -3116,3 +3116,15 @@ tags:
 taskId: "06"
 ---
 Resolved wayfinder ticket 06 (neuron-2.3.0 map): Storage Mode - Top-Level Default with Per-Category Override, split Removed. Grilled the upgrade-hazard question with the maintainer via AskUserQuestion before writing code (three rulings: reseed-on-first-sighting fix for a real data-loss bug found while grounding the questions, split aliases to md not vector, and category flips from md to vector warn once on stderr rather than refusing/auto-migrating). Collapsed StorageModeEnum to md|vector with four deprecated aliases (md-only, dual, vector-only, split); DualStorageRouter.transact/query now use one resolveCategoryStorage(category) resolver instead of a three-way mode dispatch; fixed reconcileCategoryWithPathGuard's first-sighting branch to reseed instead of running the destructive strict mirror. Ticket 44's field-column warning turned out already moot (ticket 44 shipped unconditional column support). Wrote ADR 0016 covering both ticket 05's and this ticket's storage-vocabulary changes. Swept docs: README, scaffold.ts template, docs/COMMANDS.md, CONTEXT.md, TEST_INFRA.md, and the packaged neuron-memory skill (explicit maintainer request mid-session). npm test 552/552 green, tsc clean, npm run test:e2e skipped (no coupling). Updated map.md Decisions-so-far; frontier is now 11, 13, 14, 19, 20, 21, 22.
+
+---
+id: c241551d-1c68-43d9-94f3-9e994f9684bc
+createdAt: 2026-08-08T23:42:36.497Z
+importance: 3
+tags:
+  - rc2
+  - wayfinder
+  - release
+taskId: "06"
+---
+Pushed ticket-06 storage mode override / split removal (neuron-2.3.0) to GitHub -- commit 08fbdda on feat/2.3.0.
