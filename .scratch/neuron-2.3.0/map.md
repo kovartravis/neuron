@@ -218,6 +218,27 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   maintainer's request — `01`'s `Blocked by` now includes `20`, so `01`
   drops out of the frontier until the maintainer resolves `20`
   independently. Frontier is now `02`, `05`, `11`, `13`, `14`, `19`, `20`.
+- **Branch reconciled to `main` and renamed, 2026-08-08.** The working
+  branch (`feat/2.2.0-tree-sitter-grammars`, stale-named since before this
+  map existed) had drifted from `main`, which independently carried real
+  fixes from a separate `.scratch/2.1.x-hardening` effort. Merged both
+  directions (this branch's work into `main`, then reconciled a concurrent
+  PR that landed on `main` mid-session), fast-forwarded `main` to include
+  everything, and cut a fresh branch — `feat/2.3.0` — for this map's
+  ongoing work, per the new epic-boundary branch policy recorded in this
+  repo's own `decisions` store. Also cut `v2.3.0-rc1` (npm publish pending
+  the maintainer's own `npm login`), specifically so `20`'s real-install
+  verification can happen on another machine without waiting for the full
+  map to close.
+- **[21 — GitHub Action: Automated npm Publish on Push to
+  Main](issues/21-github-action-automated-publish.md)** added 2026-08-08 at
+  the maintainer's direct request, immediately after manually walking
+  through the `v2.3.0-rc1` cut and hitting the exact friction point
+  (`npm publish` blocked on interactive `npm login`) the ticket exists to
+  remove. Chooses the `rc`/`latest` dist-tag from `package.json`'s own
+  version string rather than a manual flag. Not wired as a blocker of `04`
+  — it's forward-looking release infrastructure, not a dependency of this
+  cut. Frontier is now `02`, `05`, `11`, `13`, `14`, `19`, `20`, `21`.
 
 ## Decisions so far
 
