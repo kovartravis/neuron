@@ -22,7 +22,7 @@ describe('Memory supersession (ticket 17 / ADR 0015)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder,
     });
@@ -48,7 +48,7 @@ describe('Memory supersession (ticket 17 / ADR 0015)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder,
     });
@@ -71,7 +71,7 @@ describe('Memory supersession (ticket 17 / ADR 0015)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder,
     });

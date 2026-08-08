@@ -49,7 +49,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       // The router's vector collaborator, matching what production passes it
       // (a vector-only delegate). Without pinning, the schema default `md`
       // (ticket 31) puts a second markdown writer on the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
     const adapterA = new MdStorageAdapter({ storagePath: mdStoragePathA });
     const routerA = new DualStorageRouter(dbA, adapterA, configA);
@@ -90,7 +90,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       // The router's vector collaborator, matching what production passes it
       // (a vector-only delegate). Without pinning, the schema default `md`
       // (ticket 31) puts a second markdown writer on the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
     const adapterB = new MdStorageAdapter({ storagePath: mdStoragePathB });
 
@@ -131,7 +131,7 @@ describe('Tier 4: Real-World E2E Scenarios (mdFileManagement)', () => {
       // The router's vector collaborator, matching what production passes it
       // (a vector-only delegate). Without pinning, the schema default `md`
       // (ticket 31) puts a second markdown writer on the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
     const adapter = new MdStorageAdapter({ storagePath: mdStoragePath });
 
@@ -170,8 +170,8 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
     db.close();
   });
 
-  // T4-03: Storage backend migration (vector-only to dual mode backfill)
-  it('T4-03: Storage backend migration (vector-only to dual mode backfill)', async () => {
+  // T4-03: Storage backend migration (vector to md mode backfill)
+  it('T4-03: Storage backend migration (vector to md mode backfill)', async () => {
     const dbPath = path.join(devADir, 'migration.sqlite');
     const mdStoragePath = path.join(devADir, '.neuron');
 
@@ -184,10 +184,10 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       // The router's vector collaborator, matching what production passes it
       // (a vector-only delegate). Without pinning, the schema default `md`
       // (ticket 31) puts a second markdown writer on the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
 
-    // 1. Project operates initially in vector-only mode
+    // 1. Project operates initially in vector mode
     await db.transact([
       { op: 'upsert', category: 'learning', id: 'mig-1', content: 'Pre-migration learning 1', tags: ['v1'] },
       { op: 'upsert', category: 'history', id: 'mig-2', content: 'Pre-migration history 2', tags: ['v1'] },
@@ -244,7 +244,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       // The router's vector collaborator, matching what production passes it
       // (a vector-only delegate). Without pinning, the schema default `md`
       // (ticket 31) puts a second markdown writer on the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
     const adapter = new MdStorageAdapter({ storagePath: mdStoragePath });
 
@@ -299,7 +299,7 @@ We chose dual storage mode to ensure git-tracked markdown files stay in sync wit
       // The router's vector collaborator, matching what production passes it
       // (a vector-only delegate). Without pinning, the schema default `md`
       // (ticket 31) puts a second markdown writer on the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
 
     const config: NeuronConfig = {

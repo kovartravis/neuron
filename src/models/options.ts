@@ -19,5 +19,5 @@ export interface NeuronMemoryOptions {
    * since the schema default (`md`, ticket 31) would otherwise route markdown
    * writes at a path that does not exist.
    */
-  storageMode?: 'vector-only' | 'md' | 'split';
+  storageMode?: 'md' | 'vector';
 }

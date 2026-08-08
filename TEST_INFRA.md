@@ -38,6 +38,6 @@
 |---|----------|--------------------|-------------|
 | 1 | T4-01 | R1, R2, R3, R4 | Developer Git Collaboration Workflow (commit md files, pull & sync) |
 | 2 | T4-02 | R1, R3, R4 | Offline Knowledge Base Editing & Resynchronization |
-| 3 | T4-03 | R2, R3, R4 | Storage Backend Migration (vector-only -> dual mode backfill) |
+| 3 | T4-03 | R2, R3, R4 | Storage Backend Migration (vector -> md mode backfill) |
 | 4 | T4-04 | R1, R2, R3 | Interrupted Operation & Power Failure Recovery |
 | 5 | T4-05 | R1, R2, R3, R4 | Fresh Repository Onboarding (init -> dual write -> sync -> search) |

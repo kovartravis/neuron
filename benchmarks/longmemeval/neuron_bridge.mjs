@@ -42,14 +42,14 @@ rl.on('line', async (line) => {
           try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch (_) {}
         }
       }
-      // storageMode pinned to 'vector-only': the schema default became 'md'
+      // storageMode pinned to 'vector': the schema default became 'md'
       // in ticket 31, which would run per-write markdown files + reconcile
       // for a throwaway benchmark ingest of tens of thousands of documents.
       neuron = new NeuronMemory({
         dbPath: dbPath || ':memory:',
         projectRoot: process.cwd(),
         projectName: 'benchmark',
-        storageMode: 'vector-only'
+        storageMode: 'vector'
       });
       console.log(JSON.stringify({ id, status: 'ok' }));
     } else if (action === 'ingest') {

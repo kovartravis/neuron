@@ -27,7 +27,7 @@ function makeMemory() {
   return new NeuronMemory({
     dbPath: ':memory:',
     projectRoot: '/test/project',
-    storageMode: 'vector-only',
+    storageMode: 'vector',
     projectName: 'test-project',
     embedder,
   });

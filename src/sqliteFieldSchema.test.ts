@@ -1,10 +1,9 @@
 /**
  * SQLite additive auto-migration for declared category fields (ticket 44 /
- * ADR 0013) — the `vector-only`/`split` counterpart to
- * `fieldSchema.test.ts`'s markdown round-trip. Covers the migration
- * mechanics (additive, idempotent, never `DROP COLUMN`) and the
- * write-then-query round trip through real SQLite columns rather than
- * frontmatter.
+ * ADR 0013) — the `vector`-storage counterpart to `fieldSchema.test.ts`'s
+ * markdown round-trip. Covers the migration mechanics (additive, idempotent,
+ * never `DROP COLUMN`) and the write-then-query round trip through real
+ * SQLite columns rather than frontmatter.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'node:fs';
@@ -40,9 +39,9 @@ function open(yamlBody: string): NeuronMemory {
   });
 }
 
-const VECTOR_ONLY_YAML = `version: "1.0"
+const VECTOR_YAML = `version: "1.0"
 storage:
-  mode: vector-only
+  mode: vector
 categories:
   learning:
     description: Agent conventions
@@ -58,9 +57,12 @@ categories:
         default: medium
 `;
 
-const SPLIT_YAML = `version: "1.0"
+// Ticket 06: `mode: split` + a per-category `storage: vector` override used
+// to be the only way to reach this shape; the override is always live now,
+// so the same shape is expressed directly under the default top-level `md`.
+const CATEGORY_OVERRIDE_YAML = `version: "1.0"
 storage:
-  mode: split
+  mode: md
 categories:
   learning:
     description: Agent conventions
@@ -78,7 +80,7 @@ describe('SQLite additive field migration (ticket 44)', () => {
   afterAll(() => fs.rmSync(tempRoot, { recursive: true, force: true }));
 
   it('adds one nullable TEXT column per declared field on a fresh store', () => {
-    const memory = open(VECTOR_ONLY_YAML);
+    const memory = open(VECTOR_YAML);
     const cols = (memory.getDb().pragma('table_info(memories)') as any[]).map((c) => c.name);
     expect(cols).toContain('ticket');
     expect(cols).toContain('confidence');
@@ -86,7 +88,7 @@ describe('SQLite additive field migration (ticket 44)', () => {
   });
 
   it('is a no-op on a store that already has the columns (idempotent re-open)', () => {
-    const { root, dbPath } = makeProject(VECTOR_ONLY_YAML);
+    const { root, dbPath } = makeProject(VECTOR_YAML);
     const first = new NeuronMemory({ dbPath, projectRoot: root, projectName: 'p', embedder: mockEmbedder });
     first.close();
 
@@ -122,7 +124,7 @@ describe('SQLite additive field migration (ticket 44)', () => {
 
     fs.mkdirSync(tempDir, { recursive: true });
     fs.writeFileSync(path.join(tempDir, 'package.json'), '{}');
-    fs.writeFileSync(path.join(tempDir, 'neuron.yaml'), VECTOR_ONLY_YAML);
+    fs.writeFileSync(path.join(tempDir, 'neuron.yaml'), VECTOR_YAML);
 
     const memory = new NeuronMemory({ dbPath, projectRoot: tempDir, projectName: 'legacy-project', embedder: mockEmbedder });
     const db = memory.getDb();
@@ -142,12 +144,12 @@ describe('SQLite additive field migration (ticket 44)', () => {
   });
 
   it('never drops a column when a field is removed from neuron.yaml', () => {
-    const { root, dbPath } = makeProject(VECTOR_ONLY_YAML);
+    const { root, dbPath } = makeProject(VECTOR_YAML);
     const withField = new NeuronMemory({ dbPath, projectRoot: root, projectName: 'p', embedder: mockEmbedder });
     withField.close();
 
     // Re-declare the config without `ticket`/`confidence` at all.
-    fs.writeFileSync(path.join(root, 'neuron.yaml'), `version: "1.0"\nstorage:\n  mode: vector-only\ncategories:\n  learning:\n    description: Agent conventions\n  decisions:\n    description: ADRs\n`);
+    fs.writeFileSync(path.join(root, 'neuron.yaml'), `version: "1.0"\nstorage:\n  mode: vector\ncategories:\n  learning:\n    description: Agent conventions\n  decisions:\n    description: ADRs\n`);
 
     const withoutField = new NeuronMemory({ dbPath, projectRoot: root, projectName: 'p', embedder: mockEmbedder });
     const cols = (withoutField.getDb().pragma('table_info(memories)') as any[]).map((c) => c.name);
@@ -157,8 +159,8 @@ describe('SQLite additive field migration (ticket 44)', () => {
     withoutField.close();
   });
 
-  it('persists a declared field to its own column and reads it back via query() in vector-only mode', async () => {
-    const memory = open(VECTOR_ONLY_YAML);
+  it('persists a declared field to its own column and reads it back via query() in vector mode', async () => {
+    const memory = open(VECTOR_YAML);
     const [created] = await memory.transact([
       { op: 'upsert', category: 'decisions', content: 'Adopt ticket 44', fields: { ticket: 'NEU-44' } },
     ]);
@@ -173,7 +175,7 @@ describe('SQLite additive field migration (ticket 44)', () => {
   });
 
   it('merges on update — an untouched column survives, a touched one changes', async () => {
-    const memory = open(VECTOR_ONLY_YAML);
+    const memory = open(VECTOR_YAML);
     const [created] = await memory.transact([
       { op: 'upsert', category: 'decisions', content: 'Adopt ticket 44', fields: { ticket: 'NEU-44', confidence: 'low' } },
     ]);
@@ -187,8 +189,8 @@ describe('SQLite additive field migration (ticket 44)', () => {
     memory.close();
   });
 
-  it('gives split mode\'s vector-storage categories the same column-backed persistence', async () => {
-    const memory = open(SPLIT_YAML);
+  it('gives a per-category vector-storage override the same column-backed persistence (ticket 06)', async () => {
+    const memory = open(CATEGORY_OVERRIDE_YAML);
     const [created] = await memory.transact([
       { op: 'upsert', category: 'decisions', content: 'A vector-storage ADR', fields: { reviewedBy: 'alice' } },
     ]);

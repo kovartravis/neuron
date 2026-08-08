@@ -40,9 +40,10 @@ export const NEURON_YAML_TEMPLATE = `version: "1.0"
 
 # Your memory lives in markdown. SQLite is kept as a rebuildable index that is
 # reconciled from these files on every command — the .md files are the record.
-#   md          markdown is authoritative, vector index derived from it
-#   vector-only local SQLite vector DB with FTS5 only, no .md files
-#   split       per-category routing (see categories.*.storage below)
+#   md      markdown is authoritative, vector index derived from it (default)
+#   vector  local SQLite vector DB with FTS5 only, no .md files
+# Any category below may set its own "storage:" to override this just for it.
+# Precedence: categories.<name>.storage > storage.mode > "md".
 storage:
   mode: md
   path: .neuron

@@ -7,20 +7,37 @@ import { sanitizeCategoryFilename } from '../storage/mdStorageAdapter.js';
 
 // --- Zod Schemas ---
 
-export const StorageModeEnum = z.enum(['vector-only', 'md', 'split']);
+export const StorageModeEnum = z.enum(['md', 'vector']);
 export type StorageMode = z.infer<typeof StorageModeEnum>;
 
 /**
- * `md-only` and `dual` are pre-2.2.0-rc5 spellings, both deleted by ticket 28:
- * `md-only` because every one of its defects traced to `this.db = null`, and
- * `dual` because it was renamed to `md` — same mechanism, correct name now
- * that `md-only` no longer exists to be confused with. Both alias to `md`
- * with a stderr warning rather than hard-failing, because a config that
- * errors on upgrade turns a rename into an outage (ADR 0011 §7).
+ * Four deprecated spellings, all deleted by ticket 06 (neuron-2.3.0) or its
+ * predecessor ticket 28, all aliased rather than hard-failing — a config that
+ * errors on upgrade turns a rename into an outage (ADR 0011 §7):
+ *
+ * - `md-only` and `dual` are pre-2.2.0-rc5 spellings: `md-only` because every
+ *   one of its defects traced to `this.db = null`, and `dual` because it was
+ *   renamed to `md` — same mechanism, correct name now that `md-only` no
+ *   longer exists to be confused with.
+ * - `vector-only` is the pre-2.3.0 top-level spelling of the vector-only
+ *   mode, renamed to `vector` to converge with the per-category vocabulary
+ *   (which never had an "-only" suffix to begin with).
+ * - `split` is deleted outright (ticket 06): the per-category override
+ *   (`categories.<name>.storage`) is now always live regardless of the
+ *   top-level mode, so `split` was never a third storage behaviour — it was
+ *   a flag meaning "honour the overrides," which every mode now does. It
+ *   aliases to `md` rather than `vector` because that is split's own
+ *   pre-existing default for a category with no explicit override
+ *   (`mdCategoriesForSplit` treated anything not explicitly `vector` as
+ *   `md`) — aliasing to `md` reproduces every existing split config's
+ *   behaviour byte-for-byte, overrides included, where aliasing to `vector`
+ *   would silently flip every override-less category to vector-only.
  */
 const STORAGE_MODE_ALIASES: Record<string, StorageMode> = {
   'md-only': 'md',
   dual: 'md',
+  'vector-only': 'vector',
+  split: 'md',
 };
 
 const RawStorageModeSchema = z.preprocess((val) => {
@@ -67,6 +84,12 @@ export type StorageConfig = z.infer<typeof StorageConfigSchema>;
  * aliases to `md`, and `md` itself now means what `dual` used to — there is no
  * more "pure markdown, no vector row ever" option, matching the top-level
  * dissolution of `md-only`.
+ *
+ * This value is now **always live** (ticket 06, neuron-2.3.0) — precedence is
+ * `categories.<name>.storage > storage.mode > 'md'`. Before ticket 06 it was
+ * inert except under the now-deleted `storage.mode: split`; every other
+ * top-level mode silently ignored it. `DualStorageRouter.resolveCategoryStorage`
+ * is the resolver.
  */
 const RawCategoryStorageSchema = z.preprocess((val) => {
   if (val === 'dual') {

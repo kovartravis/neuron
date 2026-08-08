@@ -31,7 +31,13 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     }
   });
 
-  const makeConfig = (mode: 'vector-only' | 'md-only' | 'dual' | 'md' | 'split'): NeuronConfig => ({
+  // `md-only`, `dual`, `vector-only` and `split` are all *legacy* spellings
+  // that reach the router raw, bypassing `neuron.yaml`'s Zod alias layer
+  // (that layer only runs in `config/neuronYaml.ts`) — the router itself
+  // recognises only the two canonical values (`md`, `vector`) since ticket
+  // 06, so every one of these four strings now falls into the same
+  // unrecognized-mode safe fallback R2-T1-02 exercises.
+  const makeConfig = (mode: 'vector-only' | 'md-only' | 'dual' | 'md' | 'split' | 'vector'): NeuronConfig => ({
     version: '1.0',
     storage: { mode, path: storagePath },
     categories: { learning: {}, history: {}, decisions: {} },
@@ -41,8 +47,8 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
 
   // --- Tier 1 Coverage Tests (R2-T1-01 to R2-T1-05) ---
 
-  it('R2-T1-01: routes add mutation to SQLite vector DB only in vector-only mode', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('vector-only'));
+  it('R2-T1-01: routes add mutation to SQLite vector DB only in vector mode', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('vector'));
 
     const results = await router.transact([
       { op: 'upsert', category: 'learning', id: 'vec-1', content: 'Vector only content', tags: ['v1'] },
@@ -60,10 +66,12 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories).toHaveLength(0);
   });
 
-  it('R2-T1-02: an unrecognized legacy "md-only" mode string falls back to vector-only rather than routing to markdown (ticket 29: md-only was deleted, not repaired)', async () => {
+  it('R2-T1-02: an unrecognized legacy "md-only" mode string falls back to vector rather than routing to markdown (ticket 29: md-only was deleted, not repaired)', async () => {
     // A raw router-level config bypasses the neuron.yaml alias/warning layer
     // (config/neuronYaml.ts), so a stale 'md-only' string reaching the router
-    // directly is just another unrecognized mode, same bucket as R2-T2-02.
+    // directly is just another unrecognized mode, same bucket as R2-T2-02 —
+    // and, since ticket 06, the same bucket 'vector-only' and 'split' fall
+    // into too, since the router only recognises 'md'/'vector' now.
     const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md-only'));
 
     const results = await router.transact([
@@ -101,8 +109,8 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories[0].id).toBe('dual-1');
   });
 
-  it('R2-T1-04: routes update mutation in split storage mode', async () => {
-    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('split'));
+  it('R2-T1-04: routes update mutation in md storage mode (the mode split aliases to, ticket 06)', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     await router.transact([
       { op: 'upsert', category: 'history', id: 'split-1', content: 'Original split content' },
@@ -119,8 +127,8 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories[0].content).toContain('Updated split content');
   });
 
-  it('Ticket 29 item 7: split mode\'s per-category vocabulary gets the same treatment as the top-level modes — "vector" stays vector-only, and a category with no explicit storage (or "md") writes both, matching the top-level "dual" → "md" rename', async () => {
-    const config = makeConfig('split');
+  it('Ticket 06: the per-category storage override is always live under any top-level mode — "vector" stays vector-only, and a category with no explicit storage (or "md") writes both — matching what "split" used to require a special top-level mode to reach', async () => {
+    const config = makeConfig('md');
     config.categories = {
       ...config.categories,
       learning: { storage: 'vector' },
@@ -138,6 +146,27 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
 
     expect((await mdAdapter.readCategory('history')).some(m => m.id === 'split-md-1')).toBe(true);
     expect((await memoryDb.query({ category: 'history' })).some(m => m.id === 'split-md-1')).toBe(true);
+  });
+
+  it('Ticket 06: the per-category override is also live when the top-level mode is "vector" — a category explicitly set to "md" still writes markdown', async () => {
+    const config = makeConfig('vector');
+    config.categories = {
+      ...config.categories,
+      learning: {}, // no explicit storage: defers to top-level "vector"
+      history: { storage: 'md' }, // override: writes markdown despite top-level "vector"
+    };
+    const router = new DualStorageRouter(memoryDb, mdAdapter, config);
+
+    await router.transact([
+      { op: 'upsert', category: 'learning', id: 'top-vec-1', content: 'defers to top-level vector' },
+      { op: 'upsert', category: 'history', id: 'override-md-1', content: 'overridden to md' },
+    ]);
+
+    expect((await mdAdapter.readCategory('learning'))).toHaveLength(0);
+    expect((await memoryDb.query({ category: 'learning' })).some(m => m.id === 'top-vec-1')).toBe(true);
+
+    expect((await mdAdapter.readCategory('history')).some(m => m.id === 'override-md-1')).toBe(true);
+    expect((await memoryDb.query({ category: 'history' })).some(m => m.id === 'override-md-1')).toBe(true);
   });
 
   it('R2-T1-05: routes delete mutation to both backends in md mode', async () => {
@@ -180,7 +209,7 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     writeSpy.mockRestore();
   });
 
-  it('R2-T2-02: falls back to vector-only mode when invalid storage mode is specified in config', async () => {
+  it('R2-T2-02: falls back to vector mode when invalid storage mode is specified in config', async () => {
     const invalidConfig = {
       storage: { mode: 'invalid-mode-string' as any, path: storagePath },
     } as NeuronConfig;
@@ -214,7 +243,7 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('R2-T2-04: queries md mode through the same hybrid RRF path as vector-only, with no separate markdown-side retrieval (ADR 0011 §6 — retrieval parity by construction)', async () => {
+  it('R2-T2-04: queries md mode through the same hybrid RRF path as vector mode, with no separate markdown-side retrieval (ADR 0011 §6 — retrieval parity by construction)', async () => {
     const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 
     await router.transact([
@@ -537,4 +566,70 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
    * mode had no such reconcile step, which is what made the scenario
    * reachable there.
    */
+
+  describe('Ticket 06: a category entering the md-reconciled set for the first time reseeds rather than deletes', () => {
+    it('does not delete a category\'s pre-existing vector rows when it first resolves to md storage on an already-seeded store', async () => {
+      // 1. Seed the whole-store marker via an unrelated category — 'telemetry'
+      // is never mentioned yet.
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'seed-marker', content: 'seed marker' },
+      ]);
+      expect(memoryDb.getMeta('md_seeded_at')).not.toBeNull();
+
+      // 2. Populate real vector rows for 'telemetry' *after* the whole-store
+      // bootstrap already ran, so it is not covered by that seed.
+      await memoryDb.transact([
+        { op: 'upsert', category: 'telemetry', id: 'pre-existing-1', content: 'pre-existing vector row' },
+      ]);
+      expect((await mdAdapter.readCategory('telemetry'))).toHaveLength(0);
+
+      // 3. Declare 'telemetry' for the first time, resolving to md. Before the
+      // fix, reconcileCategoryWithPathGuard's first-sighting branch fell
+      // through to the destructive mirror, which reads the never-written
+      // telemetry.md as empty and deletes every vector row as "absent from
+      // markdown."
+      const nextConfig = makeConfig('md');
+      nextConfig.categories = { ...nextConfig.categories, telemetry: {} };
+      router.setConfig(nextConfig);
+      await router.query({ category: 'telemetry' });
+
+      const survivors = await memoryDb.query({ category: 'telemetry' });
+      expect(survivors.some(m => m.id === 'pre-existing-1')).toBe(true);
+      expect((await mdAdapter.readCategory('telemetry')).some(m => m.id === 'pre-existing-1')).toBe(true);
+    });
+  });
+
+  describe('Ticket 06: stale-file warning when a category flips from md to vector storage', () => {
+    it('warns once on stderr when a category already holding real markdown entries flips to vector storage', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      await router.transact([
+        { op: 'upsert', category: 'learning', id: 'about-to-go-stale', content: 'will become stale' },
+      ]);
+      expect((await mdAdapter.readCategory('learning')).some(m => m.id === 'about-to-go-stale')).toBe(true);
+
+      const overrideConfig = makeConfig('md');
+      overrideConfig.categories = { ...overrideConfig.categories, learning: { storage: 'vector' } };
+      router.setConfig(overrideConfig);
+
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      await router.query({ category: 'learning' });
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('now resolves to "vector"'));
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn for a category with no pre-existing markdown content, and warns at most once per router instance', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('vector'));
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+      await router.transact([{ op: 'upsert', category: 'learning', id: 'fresh-1', content: 'fresh' }]);
+      expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining('now resolves to "vector"'));
+
+      // A later query, even after the vector-mode category accumulates rows,
+      // must not start warning — there was never real markdown to go stale.
+      await router.query({ category: 'learning' });
+      expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining('now resolves to "vector"'));
+      warnSpy.mockRestore();
+    });
+  });
 });

@@ -73,8 +73,11 @@ recall:
     });
   });
 
-  it('should parse valid canonical storage mode options (vector-only, md, split)', () => {
-    const modes = ['vector-only', 'md', 'split'] as const;
+  it('should parse valid canonical storage mode options (md, vector)', () => {
+    // Ticket 06 (neuron-2.3.0): the vocabulary collapsed to two canonical
+    // spellings. `vector-only`, `md-only`, `dual` and `split` are all
+    // deprecated aliases now — see the aliasing describe block below.
+    const modes = ['md', 'vector'] as const;
     for (const mode of modes) {
       const yamlStr = `
 version: "1.0"
@@ -91,20 +94,32 @@ categories:
     }
   });
 
-  describe('md-only and dual storage mode aliasing (ticket 29)', () => {
+  describe('deprecated storage.mode spellings alias rather than error (tickets 29, 06)', () => {
     // md-only was deleted (28: md-only's every defect traced to `this.db =
     // null`; dual already reaches markdown-first storage without any of
-    // them) and dual was renamed md (same mechanism, correct name). Both
-    // spellings alias to 'md' rather than hard-failing, because a config
-    // that errors on upgrade turns a rename into an outage.
-    for (const alias of ['md-only', 'dual'] as const) {
-      it(`normalizes storage.mode: ${alias} to "md" and warns on stderr`, () => {
+    // them) and dual was renamed md (same mechanism, correct name).
+    // vector-only was renamed vector (06: converges with the per-category
+    // vocabulary, which never had an "-only" suffix). split was deleted
+    // outright (06: the per-category override is always live now, so split
+    // was never a third behaviour, just a flag meaning "honour the
+    // overrides") — it aliases to md, not vector, because that reproduces
+    // split's own pre-existing default for a category with no explicit
+    // override. Every spelling aliases rather than hard-failing, because a
+    // config that errors on upgrade turns a rename into an outage.
+    const aliases: Array<[string, 'md' | 'vector']> = [
+      ['md-only', 'md'],
+      ['dual', 'md'],
+      ['vector-only', 'vector'],
+      ['split', 'md'],
+    ];
+    for (const [alias, canonical] of aliases) {
+      it(`normalizes storage.mode: ${alias} to "${canonical}" and warns on stderr`, () => {
         const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
         const config = validateNeuronYaml({
           storage: { mode: alias, path: '.neuron' },
           categories: { learning: {} },
         });
-        expect(config.storage.mode).toBe('md');
+        expect(config.storage.mode).toBe(canonical);
         expect(warnSpy).toHaveBeenCalledWith(
           expect.stringContaining(`storage.mode: "${alias}" is deprecated`)
         );
@@ -198,7 +213,7 @@ pullRules:
   it('should resolve exec categories based on command matching and fall back to default', () => {
     const config = validateNeuronYaml({
       version: '1.0',
-      storage: { mode: 'vector-only', path: '.neuron' },
+      storage: { mode: 'vector', path: '.neuron' },
       categories: {
         learning: {},
         history: {},
@@ -255,7 +270,7 @@ pullRules:
     // override the broad rule's looser default, not lose to it.
     const config = validateNeuronYaml({
       version: '1.0',
-      storage: { mode: 'vector-only', path: '.neuron' },
+      storage: { mode: 'vector', path: '.neuron' },
       categories: { learning: {}, history: {}, decisions: {} },
       pullRules: {
         default: { categories: ['learning'], limit: 5, minScore: 0.35 },

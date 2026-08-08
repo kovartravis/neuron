@@ -63,7 +63,7 @@ function makeProject(yamlBody: string): { root: string; dbPath: string } {
 
 const CATEGORIES_BLOCK = `version: "1.0"
 storage:
-  mode: vector-only
+  mode: vector
 categories:
   learning:
     description: Agent conventions, rules, and failure fixes

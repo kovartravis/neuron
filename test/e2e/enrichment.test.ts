@@ -66,7 +66,7 @@ function openStore(name: string, yamlBody: string): NeuronMemory {
 
 const CATEGORIES_YAML = `version: "1.0"
 storage:
-  mode: vector-only
+  mode: vector
 categories:
   learning:
     description: Agent conventions, rules, and failure fixes

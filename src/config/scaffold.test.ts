@@ -92,7 +92,7 @@ describe('neuron.yaml scaffolding (ticket 31)', () => {
 
   it('leaves an existing config untouched and reports it as not created', () => {
     const configPath = path.join(tempDir, 'neuron.yaml');
-    const handEdited = 'version: "1.0"\nstorage:\n  mode: vector-only\n  path: .custom\ncategories:\n  notes: {}\n';
+    const handEdited = 'version: "1.0"\nstorage:\n  mode: vector\n  path: .custom\ncategories:\n  notes: {}\n';
     fs.writeFileSync(configPath, handEdited);
 
     const result = scaffoldNeuronYaml(tempDir);

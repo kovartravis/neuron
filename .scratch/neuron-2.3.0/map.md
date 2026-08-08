@@ -422,6 +422,41 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   `06`'s vocabulary changes, written by whichever lands second; `06` hasn't
   landed. Unblocks `06`. Frontier is now `01`, `02`, `06`, `11`, `13`, `14`,
   `19`.
+- **[06 — Storage Mode: Top-Level Default with Per-Category Override, `split`
+  Removed](issues/06-storage-mode-override-remove-split.md) resolved
+  2026-08-08.** Grilled the upgrade-hazard question first, per its own Scope
+  item 1, via `AskUserQuestion`. While grounding the questions against the
+  real router code, found a **real, mechanical data-loss bug** the
+  always-live override would newly trigger:
+  `DualStorageRouter.reconcileCategoryWithPathGuard`'s first-sighting branch
+  fell through to the destructive strict-mirror reconcile instead of
+  reseeding, on an assumption ("nothing to compare against yet") that held
+  only while `split` gated whether the per-category override was live —
+  broken once the override is always live, since a category can now enter
+  the `md`-reconciled set for the first time on a store that already has
+  real vector rows for it. Fixed by reseeding every first sighting the same
+  way a root change already does, with a regression test that reproduces
+  the exact scenario. Three rulings: `split` aliases to `md`, not `vector`
+  (reproduces split's own pre-existing default byte-for-byte); a category
+  flipping `md`→`vector` warns once on stderr rather than refusing to load
+  or auto-migrating `neuron.yaml`; general upgrade posture is warn, never
+  refuse, never auto-migrate. Ticket 44's field-column warning (Scope item
+  5) turned out already moot — ticket 44 (2.2.0) shipped unconditional
+  SQLite column support for declared fields regardless of storage mode;
+  only stale comments claimed otherwise. [ADR 0016 — Per-Category Storage
+  Vocabulary](../../docs/adr/0016-per-category-storage-vocabulary.md)
+  written, covering both `05`'s and this ticket's vocabulary changes (owed
+  jointly per `05`'s own Answer). Docs swept — scaffold template, README,
+  `docs/COMMANDS.md`, `CONTEXT.md`, `TEST_INFRA.md`, and the packaged
+  `neuron-memory` skill (`.claude/skills/neuron-memory/SKILL.md`, copied
+  into every user project by `neuron init`) — the skill sweep done at the
+  maintainer's direct mid-session request. ADR 0011's own historical text
+  and `CHANGELOG.md` deliberately left untouched (append-only record), as
+  was `test/e2e/adversarial-corpus.ts`'s deliberately-superseded
+  `contra-storage-default` fixture. `npm test` 552/552 green, `tsc --noEmit`
+  clean; `npm run test:e2e` skipped (no coupling, same reasoning `05`
+  used — retrieval parity across storage modes is unchanged by this
+  ticket). Frontier is now `11`, `13`, `14`, `19`, `20`, `21`, `22`.
 
 ## Not yet specified
 

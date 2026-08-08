@@ -143,9 +143,10 @@ version: "1.0"
 
 # Your memory lives in markdown. SQLite is kept as a rebuildable index that is
 # reconciled from these files on every command — the .md files are the record.
-#   md          markdown is authoritative, vector index derived from it
-#   vector-only local SQLite vector DB with FTS5 only, no .md files
-#   split       per-category routing (see categories.*.storage below)
+#   md      markdown is authoritative, vector index derived from it (default)
+#   vector  local SQLite vector DB with FTS5 only, no .md files
+# Any category below may set its own "storage:" to override this just for it.
+# Precedence: categories.<name>.storage > storage.mode > "md".
 storage:
   mode: md
   path: .neuron
@@ -195,11 +196,15 @@ Storage modes:
   rebuildable semantic-search index, kept in sync by a reconcile pass that
   runs on every command (measured overhead: ~6.5ms on a 264-entry store).
   Delete the database and Neuron rebuilds it from your `.md` files.
-- **`vector-only`** — SQLite only, no `.md` files, for projects that don't
-  want files on disk at all. Carries the identical schema guarantee via an
+- **`vector`** — SQLite only, no `.md` files, for projects that don't want
+  files on disk at all. Carries the identical schema guarantee via an
   additive, non-destructive column migration.
-- **`split`** — per-category routing, e.g. `learning` in `.md` for
-  reviewability, `history` in SQLite for volume.
+
+`vector-only` and `split` are deprecated spellings from before 2.3.0 — both
+still parse (with a stderr warning) rather than erroring on upgrade.
+`vector-only` aliases to `vector`. `split` aliases to `md`, since the
+per-category override below is what `split` used to gate and is now always
+live regardless of the top-level mode.
 
 ### Per-category storage path
 
@@ -233,6 +238,30 @@ one, the old `.md` file is **not** moved or deleted — Neuron re-exports that
 category from its SQLite index into the new location on the next command,
 and leaves the old file exactly where it was. Move or remove it yourself
 once you've checked the new one looks right.
+
+### Per-category storage mode
+
+Set `storage` on a category to override the top-level `storage.mode` just for
+it — e.g. keep `history` in reviewable markdown while routing a
+high-volume category straight to SQLite:
+
+```yaml
+storage:
+  mode: md
+  path: .neuron
+
+categories:
+  learning:
+    description: Agent conventions, rules, and failure fixes
+  telemetry:
+    description: High-volume, low-value entries
+    storage: vector   # this category alone skips markdown
+```
+
+Precedence is `categories.<name>.storage > storage.mode > "md"`. If a
+category's storage flips from `md` to `vector` and it already has an existing
+`.md` file, that file is left on disk untouched but stops being updated —
+Neuron warns once on stderr so it doesn't go stale unnoticed.
 
 ### The guarantee in practice: declaring required fields
 
@@ -278,7 +307,7 @@ the same input to always produce the same output.
 | `neuron memory add/query/list/update/delete/consolidate/prune` | Multi-category memory operations, backed by plain `.md` files by default |
 | `neuron exec -- <command>` | Runs a command with pre-execution safety lookup pulled from stored memory, and a non-blocking drift warning if the codebase moved |
 | `neuron scan` / `scan --diff` / `scan --check` | Ingests an architectural blueprint card; reports drift; exits non-zero in CI on real drift |
-| `neuron sync` | Explicit forced rebuild between markdown and SQLite, for `md`/`split` modes — ordinary commands already reconcile automatically |
+| `neuron sync` | Explicit forced rebuild between markdown and SQLite, for categories resolving to `md` — ordinary commands already reconcile automatically |
 | `neuron status` | Displays storage, embedding model, drift and relevance-gate status as JSON |
 | `neuron ui` | Launches the local dashboard |
 | `neuron feedback [message]` | Generates pre-filled GitHub issue links (`--type bug\|feature\|general`) |

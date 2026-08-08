@@ -36,9 +36,9 @@ export interface Memory {
   ftsMatched?: boolean;
   /**
    * Config-declared per-category fields (ticket 43 / ADR 0013), keyed by
-   * config key. Round-trips through markdown frontmatter today; SQLite
-   * column storage for `vector-only`/`split` categories ships in ticket 44,
-   * so a value set here is not yet guaranteed to survive a pure-vector row.
+   * config key. Round-trips through markdown frontmatter, and — since
+   * ticket 44 — as additive SQLite columns on `memories`, so a value set
+   * here survives regardless of a category's resolved storage.
    */
   fields?: Record<string, string>;
   /**

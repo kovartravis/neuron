@@ -38,7 +38,7 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
       // mode keeps the fixture matching that, now that the schema default is
       // `md` (ticket 31) and tempDir would otherwise get two markdown writers
       // aimed at the same directory.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
 
     mdAdapter = new MdStorageAdapter({ storagePath: mdStoragePath });
@@ -152,19 +152,19 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
     expect(learningMemories).toEqual([]);
   });
 
-  // T3-04: changing storage.mode from vector-only to dual triggers mdVectorSync backfill
-  it('T3-04: changing storage.mode from vector-only to dual triggers mdVectorSync backfill', async () => {
-    // 1. Populate DB while in vector-only mode
+  // T3-04: changing storage.mode from vector to md triggers mdVectorSync backfill
+  it('T3-04: changing storage.mode from vector to md triggers mdVectorSync backfill', async () => {
+    // 1. Populate DB while in vector mode
     await db.transact([
-      { op: 'upsert', category: 'learning', id: 't3-04-v1', content: 'Vector-only entry 1', tags: ['vonly'] },
-      { op: 'upsert', category: 'history', id: 't3-04-v2', content: 'Vector-only entry 2', tags: ['vonly'] },
+      { op: 'upsert', category: 'learning', id: 't3-04-v1', content: 'Vector entry 1', tags: ['vonly'] },
+      { op: 'upsert', category: 'history', id: 't3-04-v2', content: 'Vector entry 2', tags: ['vonly'] },
     ]);
 
     // Ensure no markdown files exist yet
     const initialMdMemories = await mdAdapter.readAll(['learning', 'history']);
     expect(initialMdMemories).toHaveLength(0);
 
-    // 2. Switch config mode to dual
+    // 2. Switch config mode to md
     const dualConfig: NeuronConfig = {
       ...testConfig,
       storage: { mode: 'md', path: mdStoragePath },
@@ -180,11 +180,13 @@ describe('Tier 3: MdFileManagement Integration Tests', () => {
     expect(backfilledMemories.map(m => m.id).sort()).toEqual(['t3-04-v1', 't3-04-v2']);
   });
 
-  // T3-05: CLI neuron sync --force invokes mdVectorSync under split storage mode
-  it('T3-05: CLI neuron sync --force invokes mdVectorSync under split storage mode', async () => {
+  // T3-05: CLI neuron sync --force invokes mdVectorSync under md storage mode
+  // (the mode `split` used to require for this behaviour, before ticket 06
+  // deleted `split` and made the per-category override always live under `md`)
+  it('T3-05: CLI neuron sync --force invokes mdVectorSync under md storage mode', async () => {
     const splitConfig: NeuronConfig = {
       ...testConfig,
-      storage: { mode: 'split', path: mdStoragePath },
+      storage: { mode: 'md', path: mdStoragePath },
     };
 
     // Seed both DB and Markdown

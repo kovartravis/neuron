@@ -211,17 +211,18 @@ category, when omitted on `add`. `update` is a partial patch, the same as
 rather than re-demanded or cleared. `neuron memory --help` lists a project's
 declared fields once `neuron.yaml` declares any.
 
-Every declared field also lives as a nullable SQLite column (`vector-only`/
-`split` categories), added by an additive, idempotent auto-migration (ticket
+Every declared field also lives as a nullable SQLite column (`vector`-storage
+categories), added by an additive, idempotent auto-migration (ticket
 44) — every storage mode persists declared fields identically.
 
 ---
 
 ## `neuron sync`
 
-Synchronizes memories between Markdown files and the SQLite database. Relevant in
-`md` and `split` storage modes, where it is the *explicit* forced rebuild —
-ordinary commands already reconcile markdown into the index automatically.
+Synchronizes memories between Markdown files and the SQLite database. Relevant
+for any category resolving to `md` storage (`storage.mode`, or a per-category
+override), where it is the *explicit* forced rebuild — ordinary commands
+already reconcile markdown into the index automatically.
 
 | Flag | Description |
 |---|---|
@@ -268,7 +269,7 @@ Generates pre-filled GitHub issue links.
 version: "1.0"
 
 storage:
-  mode: md               # md (default) | vector-only | split
+  mode: md               # md (default) | vector
   path: .neuron
 
 categories:

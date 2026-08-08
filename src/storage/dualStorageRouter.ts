@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { NeuronMemory } from '../index.js';
 import { MdStorage } from './mdStorage.js';
 import { NeuronConfig } from '../config/neuronYaml.js';
@@ -14,6 +15,7 @@ export class DualStorageRouter {
   private mdAdapter: MdStorage;
   private config: NeuronConfig;
   private projectRoot: string;
+  private staleVectorWarningsChecked = new Set<string>();
 
   constructor(vectorDb: NeuronMemory, mdAdapter: MdStorage, config: NeuronConfig, projectRoot: string = process.cwd()) {
     this.vectorDb = vectorDb;
@@ -26,45 +28,29 @@ export class DualStorageRouter {
     this.config = config;
   }
 
+  /**
+   * Ticket 06 (neuron-2.3.0) collapsed the old three-way `vector-only` /
+   * `split` / `md` dispatch into one always-live per-category resolution —
+   * `resolveCategoryStorage` decides each mutation's category individually,
+   * and `mdCategories()` (the subset that resolves to `md`) is what gets
+   * reconciled first. A pure-vector config (no category resolves to `md`)
+   * reconciles an empty list, which `reconcile()` short-circuits on
+   * immediately — the same zero-cost path the old `vector-only` branch's
+   * direct `vectorDb.transact` call gave, just reached without a special case.
+   */
   public async transact(mutations: MemoryMutation[]): Promise<MutationResult[]> {
-    const mode = this.getStorageMode();
-
-    if (mode === 'vector-only') {
-      return this.vectorDb.transact(mutations);
-    }
-
-    if (mode === 'split') {
-      await this.reconcile(this.mdCategoriesForSplit());
-      const results: MutationResult[] = [];
-      for (const m of mutations) {
-        const cat = m.category ?? m.kind ?? 'learning';
-        // Per-category vocabulary got the same rename treatment as the
-        // top-level modes (ticket 29 item 7): 'vector' is vector-only, and
-        // 'md' (the default) now means markdown-first-with-vector-index —
-        // what 'dual' used to mean. There is no more "pure markdown, no
-        // vector row ever" option at the category level, matching the
-        // top-level dissolution of `md-only`.
-        const catStorage = this.config?.categories?.[cat]?.storage || 'md';
-        if (catStorage === 'vector') {
-          results.push(...(await this.vectorDb.transact([m])));
-        } else {
-          results.push(...(await this.transactMdMutation(m)));
-        }
-      }
-      return results;
-    }
-
-    if (mode === 'md') {
-      await this.reconcile(this.allCategories());
-      const results: MutationResult[] = [];
-      for (const m of mutations) {
+    await this.warnStaleVectorCategories();
+    await this.reconcile(this.mdCategories());
+    const results: MutationResult[] = [];
+    for (const m of mutations) {
+      const cat = m.category ?? m.kind ?? 'learning';
+      if (this.resolveCategoryStorage(cat) === 'vector') {
+        results.push(...(await this.vectorDb.transact([m])));
+      } else {
         results.push(...(await this.transactMdMutation(m)));
       }
-      return results;
     }
-
-    // Default fallback
-    return this.vectorDb.transact(mutations);
+    return results;
   }
 
   /**
@@ -179,29 +165,25 @@ export class DualStorageRouter {
   }
 
   /**
-   * `md` and `split` both retrieve through the same hybrid RRF path as
-   * `vector-only` — a category's per-category storage designation only ever
-   * affected the *write* side (whether markdown is also written), never
+   * Every category retrieves through the same hybrid RRF path regardless of
+   * its resolved storage — a category's storage designation only ever
+   * affects the *write* side (whether markdown is also written), never
    * retrieval, so there is nothing left to dispatch on here. This is what
    * "retrieval parity by construction" (ADR 0011 §6) means concretely: the
-   * ~80-line markdown-side substring matcher `md-only` used is deleted with
-   * the mode, not repaired, and the split-mode query dispatch that used to
-   * (mis-)branch on per-category storage is gone rather than fixed, because
-   * both branches converged to the same call.
+   * ~80-line markdown-side substring matcher `md-only` used was deleted with
+   * that mode, not repaired, and ticket 06 deleted the `split`-mode query
+   * dispatch that used to (mis-)branch on per-category storage rather than
+   * fixing it, because both branches converged to the same call.
    */
   public async query(query: MemoryQuery): Promise<Memory[]> {
-    const mode = this.getStorageMode();
-    if (mode === 'md') {
-      await this.reconcile(this.allCategories());
-    } else if (mode === 'split') {
-      await this.reconcile(this.mdCategoriesForSplit());
-    }
+    await this.warnStaleVectorCategories();
+    await this.reconcile(this.mdCategories());
     return this.vectorDb.query(query);
   }
 
   /**
    * The *schema* default is `md` (ticket 31), but this fallback deliberately
-   * stays `vector-only` and is not a duplicate of it. It fires only when the
+   * stays `vector` and is not a duplicate of it. It fires only when the
    * config reaching this router carries a mode the router does not recognise —
    * i.e. something that bypassed Zod, which is the one case where we know
    * nothing about the caller's intent. `md` runs a strict mirror that deletes
@@ -209,23 +191,73 @@ export class DualStorageRouter {
    * config would turn "I don't understand this setting" into data loss.
    * Falling back to the read-only-safe mode is the correct failure direction.
    */
-  private getStorageMode(): string {
-    const validModes = ['vector-only', 'md', 'split'];
+  private getTopLevelStorageMode(): 'md' | 'vector' {
+    const validModes = ['md', 'vector'];
     const mode = this.config?.storage?.mode;
     if (mode && validModes.includes(mode)) {
-      return mode;
+      return mode as 'md' | 'vector';
     }
-    return 'vector-only';
+    return 'vector';
+  }
+
+  /**
+   * Ticket 06's always-live precedence: `categories.<name>.storage >
+   * storage.mode > 'md'`. Before this ticket the per-category value was
+   * inert except under the now-deleted `split` mode; every top-level mode
+   * now defers to it the same way `split` used to.
+   */
+  private resolveCategoryStorage(category: string): 'md' | 'vector' {
+    const override = this.config?.categories?.[category]?.storage;
+    if (override === 'md' || override === 'vector') {
+      return override;
+    }
+    return this.getTopLevelStorageMode();
   }
 
   private allCategories(): string[] {
     return Object.keys(this.config?.categories || {});
   }
 
-  private mdCategoriesForSplit(): string[] {
-    return this.allCategories().filter(
-      cat => (this.config?.categories?.[cat]?.storage || 'md') !== 'vector'
-    );
+  private mdCategories(): string[] {
+    return this.allCategories().filter(cat => this.resolveCategoryStorage(cat) === 'md');
+  }
+
+  /**
+   * Ticket 06 grilling ruling: making the per-category override always live
+   * is a silent behaviour change for a config that already has real markdown
+   * for a category whose resolved storage now flips to `vector` (e.g. a
+   * `categories.foo.storage: vector` that used to be ignored under
+   * `storage.mode: md`). Nothing is deleted — the category simply drops out
+   * of `mdCategories()`, so its `.md` file just stops being written — but the
+   * file silently goes stale, which is worth disclosing even though it isn't
+   * worth blocking. Checked once per process (mirroring every other
+   * deprecated-spelling warning's granularity in this file) against real
+   * entries, not bare file existence, so a freshly-scaffolded empty file
+   * doesn't trigger a false warning.
+   */
+  private async warnStaleVectorCategories(): Promise<void> {
+    for (const category of this.allCategories()) {
+      if (this.staleVectorWarningsChecked.has(category)) continue;
+      // Only a category currently resolving to `vector` is marked as
+      // checked — one that resolves to `md` right now must stay eligible
+      // for a *later* check, since `setConfig` (or an edited `neuron.yaml`
+      // on the next process) can still flip it to `vector` afterward. A
+      // category that already resolves to `vector` can only ever gain
+      // markdown content by resolving to `md` first, so it is safe to never
+      // look at again once seen here.
+      if (this.resolveCategoryStorage(category) !== 'vector') continue;
+      this.staleVectorWarningsChecked.add(category);
+
+      const filePath = this.mdAdapter.getFilePath(category);
+      if (!fs.existsSync(filePath)) continue;
+      const entries = await this.mdAdapter.readCategory(category);
+      if (entries.length === 0) continue;
+      process.stderr.write(
+        `[neuron warning] categories.${category} now resolves to "vector" storage, but "${filePath}" ` +
+          `already holds ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} — it will no longer be kept ` +
+          `in sync and its contents are now stale. Remove it manually if it's no longer needed.\n`
+      );
+    }
   }
 
   /**
@@ -274,23 +306,39 @@ export class DualStorageRouter {
    * already exists to prevent (see the class doc above `reconcile`).
    *
    * `md_root:<category>` is the per-category counterpart of that guard: the
-   * last resolved root this router reconciled that category against. A
-   * first-ever sighting (upgrade from a pre-ticket-05 store, or a brand-new
-   * category) just records the current root — nothing to compare against
-   * yet, so nothing is reseeded. A *changed* root re-exports that one
-   * category from the vector index (authoritative here, the same source
-   * `bootstrapSeed` reads from) into its new location instead of running the
-   * destructive mirror, then records the new root and returns — the next
-   * call reconciles normally.
+   * last resolved root this router reconciled that category against. Both a
+   * first-ever sighting *and* a changed root re-export that one category
+   * from the vector index (authoritative here, the same source
+   * `bootstrapSeed` reads from) into its resolved location instead of running
+   * the destructive mirror, then record the root and return — the next call
+   * reconciles normally.
+   *
+   * The first-ever-sighting branch used to just record the root and fall
+   * through to the destructive mirror, on the reasoning that "nothing to
+   * compare against yet" meant nothing needed reseeding — true only as long
+   * as every category reaching this method had already been reconciled at
+   * least once before (ticket 05's world, where `md`/`split` mode's category
+   * set never changed shape between runs). Ticket 06 (neuron-2.3.0) broke
+   * that assumption: making the per-category storage override always live
+   * means a category can enter `mdCategories()` for the first time on a
+   * store that already has real vector rows for it — e.g. an existing
+   * `storage.mode: md` config where `categories.foo.storage: vector` used to
+   * be silently ignored and now takes effect the *other* way once it's
+   * removed, or simply a category whose override changes from `vector` to
+   * `md`. Falling through to `reconcileCategory` in that case would read the
+   * category's never-before-written `.md` file as empty and delete every one
+   * of its vector rows as "absent from markdown" — real, silent data loss,
+   * not the "nothing to reseed" case the old comment assumed. Reseeding
+   * first-ever sightings the same as root changes closes that window; for a
+   * genuinely brand-new category (nothing in either store yet) it is a
+   * harmless zero-row export.
    */
   private async reconcileCategoryWithPathGuard(category: string): Promise<void> {
     const resolvedRoot = resolveCategoryPath(this.config, category, this.projectRoot);
     const metaKey = categoryRootMetaKey(category);
     const knownRoot = this.vectorDb.getMeta(metaKey);
 
-    if (knownRoot === null) {
-      this.vectorDb.setMeta(metaKey, resolvedRoot);
-    } else if (knownRoot !== resolvedRoot) {
+    if (knownRoot === null || knownRoot !== resolvedRoot) {
       await this.seedCategoryFromVector(category);
       this.vectorDb.setMeta(metaKey, resolvedRoot);
       return;

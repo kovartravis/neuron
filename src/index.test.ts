@@ -11,7 +11,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project'
     });
 
@@ -96,7 +96,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project'
     });
 
@@ -114,7 +114,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) }
     });
@@ -162,7 +162,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -199,7 +199,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -232,7 +232,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -296,7 +296,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -360,7 +360,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -393,7 +393,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project'
     });
 
@@ -454,7 +454,7 @@ describe('NeuronMemory DB Migrations', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -536,7 +536,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -577,7 +577,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -615,7 +615,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -677,7 +677,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -708,7 +708,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -748,7 +748,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -798,7 +798,7 @@ describe('NeuronMemory BGE query instruction prefix', () => {
       projectRoot: '/test/project',
       // Fabricated root: no directory to write .neuron/ into, so the mode is
       // pinned rather than inherited from the schema default (`md`, ticket 31).
-      storageMode: 'vector-only',
+      storageMode: 'vector',
       projectName: 'test-project',
       embedder: mockEmbedder
     });
@@ -818,7 +818,7 @@ describe('NeuronMemory BGE query instruction prefix', () => {
   });
 
   describe('NeuronMemory markdown-first storage (Ticket 29, formerly "Ticket 06 md-only delegation")', () => {
-    it('writes markdown as the record of truth and retrieves through the same hybrid path as vector-only in md mode', async () => {
+    it('writes markdown as the record of truth and retrieves through the same hybrid path as vector mode', async () => {
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t29-md-test-'));
       const configPath = path.join(tempDir, 'neuron.yaml');
       fs.writeFileSync(
@@ -850,7 +850,7 @@ describe('NeuronMemory BGE query instruction prefix', () => {
       const contentOnDisk = fs.readFileSync(mdFile, 'utf8');
       expect(contentOnDisk).toContain('Native markdown storage delegation learning');
 
-      // Retrieval is the same hybrid RRF path as vector-only — no separate
+      // Retrieval is the same hybrid RRF path as vector mode — no separate
       // markdown-side substring matcher (ADR 0011 §6).
       const queryResults = await memory.query({ text: 'Native markdown', categories: ['learning'] });
       expect(queryResults).toHaveLength(1);

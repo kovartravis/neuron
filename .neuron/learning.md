@@ -2181,3 +2181,27 @@ tags:
 taskId: null
 ---
 Fix for benchmarks/token-ab/run.mjs's fixture builder silently testing pre-fix code: fixtures.mjs calls 'git worktree add --detach HEAD', which reads the last commit, not the working tree -- so if the change under test (e.g. ticket 17's memory-supersession implementation) is still uncommitted, a live A/B re-run against that fixture measures the OLD behaviour and would have reproduced the original regression even though the fix existed on disk. Caught 2026-08-08 before spending anything live, via 'git diff --stat HEAD -- .neuron/decisions.md' showing 229 deleted lines still uncommitted. Resolution: before trusting any git-worktree-based fixture (this harness or a future one), diff the target paths against HEAD, not just 'git status', to confirm the fixture will actually see the change being tested; commit first if it doesn't.
+
+---
+id: 5d492dbb-1124-4830-bfe6-3a8edfad774d
+createdAt: 2026-08-08T23:06:14.581Z
+importance: 4
+tags:
+  - md-storage
+  - failure-fix
+  - adr
+taskId: null
+---
+Fix for a real (not hypothetical) data-loss bug in DualStorageRouter.reconcileCategoryWithPathGuard: its first-sighting branch (knownRoot === null) fell through to the destructive strict-mirror reconcile instead of reseeding, on the assumption that a category reaching that method had always been reconciled before. Root cause: that assumption only held while storage.mode: split gated whether the per-category storage override was live; making the override always live (ticket 06, neuron-2.3.0) lets a category enter the md-reconciled set for the first time on a store that already has real vector rows for it, and the destructive mirror reads its never-written .md file as empty and deletes every row as 'absent from markdown'. Fixed by routing every first-ever sighting through the same seedCategoryFromVector reseed a root change already uses: change 'if (knownRoot === null) { setMeta; }  else if (knownRoot !== resolvedRoot) { seed; setMeta; return; }' to 'if (knownRoot === null || knownRoot !== resolvedRoot) { seed; setMeta; return; }'. Any future change to what categories get added to the reconciled set (not just storage-mode changes) should re-check this code path for the same hazard.
+
+---
+id: 64978a27-6c1c-4bef-919b-1917d2851dd5
+createdAt: 2026-08-08T23:42:02.061Z
+importance: 4
+tags:
+  - failure-fix
+  - md-storage
+  - adr
+taskId: null
+---
+Fix for real markdown-store pollution found 2026-08-08 while about to commit ticket 06's work: git diff showed .neuron/decisions.md with 232 lines removed, the real 'Repository Architectural Blueprint: @kovartravis/neuron' architecture card silently overwritten with test fixture content (project name 'harness-idempotent-test', 0 modules). Root cause: src/commands/init.test.ts's 'is idempotent — running twice overwrites skill without error' test execs a real 'node dist/cli.js init' subprocess against a temp project dir named .../harness-idempotent-test, which runs neuron scan as part of init; that scan's write path resolved storage.mode: md against the REAL repo root rather than the isolated temp dir (the same class of bug ticket 42 already tracks for markdown-path isolation, but a previously-unidentified instance/location — init.test.ts specifically, not the CLI-invoking test files ticket 42 already names). Verified via direct sqlite3 query against the real production DB (~/Library/Application Support/neuron/db/<hash>.sqlite) that the corruption never reached SQLite — only the markdown mirror was polluted, presumably because that init subprocess's own SQLite writes went to its own isolated NEURON_DB_PATH while its markdown writes leaked into the real repo. Recovery: git show HEAD:.neuron/decisions.md to get the clean base, then reappend only the legitimate new entries from the corrupted working-tree file (diff the two to confirm nothing else was lost), rather than a blind git checkout which would have also discarded real uncommitted additions. General rule reinforced: before any git commit/push in this repo, run 'git diff --stat -- .neuron/' and actually read it, not just glance at the file list — a large unexplained deletion count in a memory-store file is the tripwire, and ticket 42 (test isolation) should add init.test.ts to its scope.

@@ -3092,3 +3092,27 @@ tags:
 taskId: "05"
 ---
 Wayfinder pickup on the neuron-2.3.0 map: claimed and resolved ticket 05 (Per-Category Storage Path). Built the categories.<name>.path > storage.path > '.neuron' resolver (src/config/categoryPath.ts) and a MultiRootMdStorage adapter-per-root registry (src/storage/multiRootMdStorage.ts) that fans out over the existing single-root MdStorageAdapter rather than rewriting it. Settled four open design questions with the maintainer via AskUserQuestion before writing code: adapter-per-root registry over a self-resolving adapter; absolute per-category paths allowed; a category's resolved root changing between runs triggers a per-category re-export from the vector index into the new location (new md_root:<category> meta key extending bootstrapSeed's md_seeded_at pattern) rather than a physical file move, leaving the old file orphaned on disk; and a path set on a vector-mode category warns rather than errors. storage.path is now undefined by default (no baked-in .default('.neuron')) so top-level-unset is observable to the resolver -- an intentional, tested config-shape change. Updated index.ts, dualStorageRouter.ts, sync.ts, mdVectorSync.ts, neuronYaml.ts (schema + validateCategoryPaths collision/warn checks), scaffold.ts and README to match. 23 new tests (categoryPath.test.ts, multiRootMdStorage.test.ts, dualStorageRouter.pathChange.test.ts, neuronYaml.test.ts additions); npm test 546/546 green, tsc --noEmit clean. Deliberately skipped npm run test:e2e (the real-pipeline benchmark suite) after confirming zero coupling to anything this ticket touched. ADR deferred per the ticket's own instruction -- one ADR covers both 05 and 06's storage-vocabulary changes, written by whichever lands second; 06 (per-category storage.mode override, deletes split) is now unblocked and is the new frontier's first ticket. Updated map.md's Decisions-so-far and frontier (now 01, 02, 06, 11, 13, 14, 19).
+
+---
+id: ea073842-72b2-4794-8d03-9a47eeb84709
+createdAt: 2026-08-08T15:44:36.454Z
+importance: 3
+tags:
+  - wayfinder
+  - rc2
+  - release
+taskId: "05"
+---
+Pushed ticket-05 per-category storage path (neuron-2.3.0) to GitHub -- commit 377b8a2 on feat/2.3.0.
+
+---
+id: 54fbf602-2441-43bf-a3f9-2d1fbf037ccd
+createdAt: 2026-08-08T23:06:24.848Z
+importance: 3
+tags:
+  - rc2
+  - wayfinder
+  - md-storage
+taskId: "06"
+---
+Resolved wayfinder ticket 06 (neuron-2.3.0 map): Storage Mode - Top-Level Default with Per-Category Override, split Removed. Grilled the upgrade-hazard question with the maintainer via AskUserQuestion before writing code (three rulings: reseed-on-first-sighting fix for a real data-loss bug found while grounding the questions, split aliases to md not vector, and category flips from md to vector warn once on stderr rather than refusing/auto-migrating). Collapsed StorageModeEnum to md|vector with four deprecated aliases (md-only, dual, vector-only, split); DualStorageRouter.transact/query now use one resolveCategoryStorage(category) resolver instead of a three-way mode dispatch; fixed reconcileCategoryWithPathGuard's first-sighting branch to reseed instead of running the destructive strict mirror. Ticket 44's field-column warning turned out already moot (ticket 44 shipped unconditional column support). Wrote ADR 0016 covering both ticket 05's and this ticket's storage-vocabulary changes. Swept docs: README, scaffold.ts template, docs/COMMANDS.md, CONTEXT.md, TEST_INFRA.md, and the packaged neuron-memory skill (explicit maintainer request mid-session). npm test 552/552 green, tsc clean, npm run test:e2e skipped (no coupling). Updated map.md Decisions-so-far; frontier is now 11, 13, 14, 19, 20, 21, 22.

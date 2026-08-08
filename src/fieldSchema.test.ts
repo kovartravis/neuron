@@ -4,10 +4,10 @@
  * defaults, enum membership, and the reject-undeclared-field guard — plus
  * the markdown round-trip that makes a written field value durable.
  *
- * Storage: SQLite column support for `vector-only`/`split` categories
- * shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column
- * migration and round-trip coverage. These tests use `storage.mode: md`
- * where the markdown round-trip is meaningful.
+ * Storage: SQLite column support for `vector`-storage categories shipped in
+ * ticket 44 — see `sqliteFieldSchema.test.ts` for the column migration and
+ * round-trip coverage. These tests use `storage.mode: md` where the markdown
+ * round-trip is meaningful.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'node:path';
@@ -61,9 +61,9 @@ categories:
         default: medium
 `;
 
-const VECTOR_ONLY_YAML = `version: "1.0"
+const VECTOR_YAML = `version: "1.0"
 storage:
-  mode: vector-only
+  mode: vector
 categories:
   learning:
     description: Agent conventions
@@ -160,8 +160,8 @@ describe('Declared field-schema enforcement — transact() choke point (ticket 4
     memory.close();
   });
 
-  it('persists and reads back a declared field in vector-only mode (ticket 44)', async () => {
-    const memory = open(VECTOR_ONLY_YAML);
+  it('persists and reads back a declared field in vector mode (ticket 44)', async () => {
+    const memory = open(VECTOR_YAML);
 
     const [res] = await memory.transact([
       { op: 'upsert', category: 'decisions', content: 'An ADR', fields: { ticket: 'NEU-1' } },

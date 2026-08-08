@@ -124,7 +124,7 @@ describe('CLI Command: exec', () => {
   });
 
   it('announces zero relevant results with a rejected count when the relevance gate clears the candidate list (ticket 41)', () => {
-    // Isolated tmp project (own cwd + neuron.yaml, storage.mode: vector-only)
+    // Isolated tmp project (own cwd + neuron.yaml, storage.mode: vector)
     // rather than this repo's own cwd/store: under the default `md` mode,
     // NEURON_DB_PATH only isolates SQLite, and reconcile would still pull in
     // this project's real, populated `.neuron/learning.md` (ticket 42), making
@@ -132,7 +132,7 @@ describe('CLI Command: exec', () => {
     const tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-exec-gate-test-')));
     fs.writeFileSync(
       path.join(tmpDir, 'neuron.yaml'),
-      'version: "1.0"\nstorage:\n  mode: vector-only\n  path: .neuron\ncategories:\n  learning:\n    description: test\n'
+      'version: "1.0"\nstorage:\n  mode: vector\n  path: .neuron\ncategories:\n  learning:\n    description: test\n'
     );
 
     try {

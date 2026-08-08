@@ -192,7 +192,7 @@ export class NeuronMemory {
       // nobody can write. Pinning the mode keeps an in-memory store in memory
       // now that the schema default is `md` (ticket 31); markdown routing is
       // exercised by constructing a router against a real directory instead.
-      storageMode: 'vector-only',
+      storageMode: 'vector',
     });
   }
 
