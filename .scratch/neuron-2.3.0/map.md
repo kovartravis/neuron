@@ -314,6 +314,18 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   superseded by this result). Unblocks `04`'s `18` dependency (many of `04`'s
   other blockers remain open; `15` stays blocked on `14`, unaffected by this
   resolution).
+- **[19 — Run the Counterfactual A/B on Synthetic Repos with Synthetic
+  Memory Sets](issues/19-synthetic-fixture-counterfactual-ab.md)** added
+  2026-08-08 at the maintainer's direct request, chartering the fix for the
+  methodological gap `10`'s own findings.md flagged (a task's answer can be
+  independently documented in this repo's ordinary docs, weakening the
+  control-arm comparison) plus the real-repo dogfooding friction `18` hit
+  mechanically (fixtures build from committed `HEAD`, entangling a
+  benchmark re-run with this repo's own release-branch state). Not wired as
+  a blocker of `14`/`15`/`04` — whether synthetic fixtures replace or
+  supplement the real-repo run is the ticket's own first Scope item, left
+  open rather than decided at creation. Frontier is now `01`, `02`, `05`,
+  `11`, `13`, `14`, `19`.
 
 ## Not yet specified
 
