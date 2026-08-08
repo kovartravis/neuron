@@ -449,24 +449,242 @@ tags:
   - deep
 taskId: null
 ---
-# 🏛️ Repository Architectural Blueprint: harness-idempotent-test
+# 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-harness-idempotent-test is a TypeScript software system structured into 0 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 14 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
 
 ## 🧾 Dependency Contract
-_No declared dependencies._
+- `@anthropic-ai/sdk`
+- `@huggingface/transformers`
+- `@types/better-sqlite3`
+- `@types/node`
+- `env-paths`
+- `onnxruntime-web`
+- `tsx`
+- `typescript`
+- `vitest`
+- `web-tree-sitter`
+- `yaml`
+- `zod`
 
 ## 🔗 Subsystem Dependency Map
 ```text
-harness-idempotent-test
-
+@kovartravis/neuron
+├── benchmarks (benchmarks)
+├── longmemeval (benchmarks/longmemeval)
+├── src (src)
+├── commands (src/commands)
+├── components (src/components)
+├── config (src/config)
+├── e2e (src/e2e)
+├── harnesses (src/harnesses)
+├── models (src/models)
+├── scanner (src/scanner)
+├── shared (src/shared)
+├── storage (src/storage)
+├── ui (src/ui)
+└── e2e (test/e2e)
 ```
 
 ## 📦 Primary Subsystems & Module Boundaries
+
+### 🧩 benchmarks (`benchmarks`)
+Primary benchmarks module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/e2e-runner.js`**: Driver for the deep E2E benchmark & correctness suite. Pillar results come from vitest's JSON reporter and the metrics file the suite itself writes — never from scraping stdout. The previous revision inferred status with `!output.includes(name) || overallPassed`, which marked a pillar PASSED precisely when it had NOT run, so a suite that died early scored better than one that ran and failed.
+- **`benchmarks/generate-dashboard.js`** (Exports: `generateDashboard`): Renders the benchmark dashboard from the artifacts the suites write. Self-contained output: inline CSS/SVG, no network fetches, no chart library. Charts use a single series hue because every plot here shows one measure across categories (magnitude), not competing identities — categorical colors would imply a distinction that does not exist. Pass/fail uses the reserved status palette and always pairs color with an icon and a text label, so state is never carried by hue alone.
+- **`benchmarks/open-report.js`**: Regenerates the dashboard from whatever artifacts are on disk and opens it. Kept separate from the runner so the report can be viewed without re-running a benchmark that takes minutes.
+
+### 🧩 longmemeval (`benchmarks/longmemeval`)
+Primary longmemeval module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/longmemeval/neuron.py`** (Exports: `NeuronMemoryProvider`): This code file defines a memory provider class for(neuron) that uses SQLitewal mode, FTS5 full-text indexing, local BGE vector embeddings, and Reciprocal Rank Fusion (RRF). The constructor initializes a memory provider instance and ensures that it can obtain a proc using the Popen
+- **`benchmarks/longmemeval/relevance_gate_eval.py`** (Exports: `eval_floor, eval_full_gate, reject, pctl`): Source file relevance_gate_eval.py (Methods: leg(), prose(), fix(), result()) exports primary project types and helper functions.
+- **`benchmarks/longmemeval/retrieval_eval.py`**: Memory benchmarking of a single-neuron LeMMA model. The model needs to put any gold evidence before the reader. Only a zero-level call costs no API quota (for local CPU). N is set to the number of queries loaded by the dataset "longmemeval". After loading the
+
+### 🧩 src (`src`)
+Primary src module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/cli.test.ts`**: Source file cli.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/cli.ts`**: Source file cli.ts (Methods: main(), slice(), log(), exit()) exports primary project types and helper functions.
+- **`src/db.test.ts`**: Source file db.test.ts (Methods: describe(), it(), openDatabase(), expect()) exports primary project types and helper functions.
+- **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase`): The `createNodeSqliteWrapper` function is used to establish a connection with a SQLite database using Node.js, without loading it as a module. It initializes a DatabaseSync instance, creates a new transaction on the database (if provided), executes SQL queries within the transaction and returns a single row value
+- **`src/enrichment.test.ts`**: Write-side enrichment, asserted at the transaction entry point — what ends up in the store. That was once two seams; the query seam carried the enrichment backlog's drain guarantee, and ticket 26 removed the only deferred job, so a read has no enrichment behaviour left to assert. Nothing here asserts how a tag was chosen. The category strategy in particular was A/B'd precisely because its winner was unknown, so tests that pinned the mechanism would have been rewritten by the experiment they existed to support.
+- **`src/fieldSchema.test.ts`**: Declarable per-category frontmatter fields (ticket 43 / ADR 0013), asserted at the `transact()` choke point — required-but-missing, defaults, enum membership, and the reject-undeclared-field guard — plus the markdown round-trip that makes a written field value durable. Storage: SQLite column support for `vector-only`/`split` categories shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column migration and round-trip coverage. These tests use `storage.mode: md` where the markdown round-trip is meaningful.
+- **`src/index.supersession.test.ts`**: Source file index.supersession.test.ts (Methods: primitives(), vecAt(), Float32Array(), describe()) exports primary project types and helper functions.
+- **`src/index.test.ts`**: Source file index.test.ts (Methods: describe(), it(), NeuronMemory(), getDb()) exports primary project types and helper functions.
+- **`src/index.ts`** (Exports: `NeuronMemory`): Resolve a `category` from a mutation/query, supporting the deprecated `kind` field. Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
+- **`src/sqliteFieldSchema.test.ts`**: SQLite additive auto-migration for declared category fields (ticket 44 / ADR 0013) — the `vector-only`/`split` counterpart to `fieldSchema.test.ts`'s markdown round-trip. Covers the migration mechanics (additive, idempotent, never `DROP COLUMN`) and the write-then-query round trip through real SQLite columns rather than frontmatter.
+
+### 🧩 commands (`src/commands`)
+Primary commands module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/commands/exec.test.ts`**: Source file exec.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/commands/exec.ts`** (Exports: `handleExecCommand`): Function handleExecCommand in exec.ts (Methods: handleExecCommand(), indexOf(), slice(), error()) handles utility and command processing.
+- **`src/commands/feedback.test.ts`**: The cli command is used to issue GitHub issues about a specific problem. The command takes three arguments:
+- title: A string indicating the problem being mentioned.
+- body: A string describing how the issue occurred.
+- type: A string indicating whether the issue should be assigned as "bug" or "
+- **`src/commands/feedback.ts`** (Exports: `buildGitHubIssueUrl, handleFeedbackCommand`): The purpose of this code file is to generate a GitHub issue URL based on an input parameters such as a title, body, and type. The URL is formatted with the `project-name` subdirectory, and it includes the issue issue number (E026), description (F257
+- **`src/commands/history.test.ts`**: Source file history.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/commands/history.ts`** (Exports: `handleHistoryCommand`): This code defines a function called `handleHistoryCommand` that takes several command arguments, including `args`, `memory`, and `projectName`. The function searches for the option "-h" or "-help", and prints out information such as the label for "neuron history", along with warnings when
+- **`src/commands/hook.test.ts`**: Source file hook.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/commands/hook.ts`** (Exports: `handleHookCommand`): This code defines a hook that specifies a bounds for a hanging query to allow a certain amount of time for a user's turn.
+- **`src/commands/index.ts`**: Source file index.ts exports primary project types and helper functions.
+- **`src/commands/init.test.ts`**: The end-to-end claim ticket 31 exists to make true: the README's Quick Start, run verbatim, leaves markdown in the repo rather than an invisible database.
+- **`src/commands/init.ts`** (Exports: `ProtocolWriteReport, handleInitCommand`): Every harness with a real adapter. Grows as ticket 02 lands.
+- **`src/commands/learn.test.ts`**: Source file learn.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/commands/learn.ts`** (Exports: `handleLearnCommand`): Function handleLearnCommand in learn.ts (Methods: handleLearnCommand(), error(), exit(), log()) handles utility and command processing.
+- **`src/commands/memory.supersession.test.ts`**: Source file memory.supersession.test.ts (Methods: process(), vecAt(), Float32Array(), makeMemory()) exports primary project types and helper functions.
+- **`src/commands/memory.test.ts`**: A project whose config names a literal fallback category. The model is disabled under NODE_ENV=test, so the fallback is what makes the success path deterministic without loading 500M parameters.
+- **`src/commands/memory.ts`** (Exports: `handleMemoryCommand`): Function handleMemoryCommand in memory.ts (Methods: handleMemoryCommand(), getConfig(), collectDeclaredFieldFlags(), getMemoryHelp()) handles utility and command processing.
+- **`src/commands/scan.determinism.test.ts`**: The primary purpose of this code file is to describe a module that implements the `neuron scanned determinism` ticket in its `scan.js` function. The purpose is to assess the reliability of the implementation under different scenarios.
+- **`src/commands/scan.fidelity.test.ts`**: The `--check` exit-code contract, which is what CI gates on: 0  clean and comparable 1  real architectural drift 2  incomparable — the baseline was produced by a different parser Code 2 is deliberately distinct from 1: failing a build for drift the user introduced is correct, and failing it because they upgraded neuron is a different problem with a different fix.
+- **`src/commands/scan.test.ts`**: Source file scan.test.ts (Methods: describe(), join(), it(), execSync()) exports primary project types and helper functions.
+- **`src/commands/scan.ts`** (Exports: `handleScanCommand`): Function handleScanCommand in scan.ts (Methods: handleScanCommand(), log(), parseFlags(), cwd()) handles utility and command processing.
+- **`src/commands/status.test.ts`**: Source file status.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/commands/status.ts`** (Exports: `handleStatusCommand`): Function handleStatusCommand in status.ts (Methods: handleStatusCommand(), getStatus(), loadNeuronConfig(), 07()) handles utility and command processing.
+- **`src/commands/sync.test.ts`**: A genuine content conflict (both sides present, different content) used to be silently resolved by comparing createdAt, which ties in the common case and defaulted to markdown winning — including when markdown was the stale side. Without --force, `sync` must now report the conflict, leave both stores untouched, and exit non-zero so a script or CI run notices rather than silently accepting a guessed resolution.
+- **`src/commands/sync.ts`** (Exports: `handleSyncCommand, scaffoldNeuronDirectory`): Function handleSyncCommand in sync.ts (Methods: handleSyncCommand(), some(), includes(), error()) handles utility and command processing.
+- **`src/commands/ui.test.ts`**: The `NeuronMemory` class is used to represent a neuron memory object.
+The `startUiServer` method starts a new HTTP server for the `ui-server`. A basic setup includes creating a neural network as an object and initializing the server to use that model. The `fetch` method is
+- **`src/commands/ui.ts`** (Exports: `UiCommandOptions, handleUiCommand`): Function handleUiCommand in ui.ts (Methods: parseUiArgs(), parseInt(), findFreePort(), Promise()) handles utility and command processing.
+- **`src/commands/utils.test.ts`**: Source file utils.test.ts (Methods: describe(), it(), spyOn(), mockImplementation()) exports primary project types and helper functions.
+- **`src/commands/utils.ts`** (Exports: `findProjectRoot, drawBox, parseFlags, updateMarkdownFile, getMemoryHelp`): Every option `parseFlags` understands with no `neuron.yaml` involved. Used to reject unrecognised flags and to suggest a correction — a typo'd flag used to be pushed into `positionals` and silently discarded, so `--importanc 5` looked like it worked and wrote the default instead. Re-exported from `config/neuronYaml.ts`, which is also where `validateNeuronYaml` checks a declared field's flag against this same list at config-load time (ticket 43) — one vocabulary, not two that can drift.
+
+### 🧩 components (`src/components`)
+Primary components module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/components/embedder.test.ts`**: It generates 384-dimensional floats at different lengths (with and without normalization) for given text, using transformers that conform to the specified model schema described in the test file. This ensures the quality of the resulting embedding data. It also computes an accurate L2 norm and verifies the robustness of
+- **`src/components/embedder.ts`** (Exports: `Embedder, TransformersEmbedder`): The `applyCrossPlatformShims` function is used to apply cross-platform JavaScript-shim modules during the rendering process of a given component. By using `create Require`, it is used to build and load a module based on an environment variable name. The module is then applied at runtime. The `
+- **`src/components/enricher.ts`** (Exports: `Centroid, VocabularyEntry, buildTagVocabulary, buildCategoryCentroids, TagSelectionOptions, selectTags, selectCategory, CategoryOption, CategoryInferenceInput, CategoryInferenceResult, EnrichmentModel, LocalEnrichmentModelOptions, LocalEnrichmentModel, buildCategoryPrompt`): Write-side enrichment: inferring the metadata a caller did not supply. Two fields are inferred, by different machinery chosen from what each field actually is (see `.scratch/write-side-enrichment/spec.md`): tags       — selected from a closed vocabulary by centroid cosine. No model: the embedder is already loaded on the write path, and ADR 0010 §4 forbids the model from minting a tag, which makes tagging a ranking problem rather than a generation one. category   — centroid cosine by default, which beat the model 9/9 to 1/9 on the same corpus (Pillar 11). The model strategy survives as an opt-in because it can read a category's `description` as an instruction rather than merely as a similarity target. `importance` was a third inferred field and is not inferred any more. Pillar 10 measured the shipped 0.5B model's judgement as noise — discrimination of -0.5 then +0.167 across consecutive runs, per-entry stability 0.5, and a note about irreversible production data loss rated `1`. It shipped `off` in ticket 06 and was removed outright in ticket 26; an omitted `--importance` takes the column default. Git history holds the implementation if a larger model ever makes the question worth reopening.
+- **`src/components/fts-query.test.ts`**: Source file fts-query.test.ts (Methods: describe(), it(), expect(), toBe()) exports primary project types and helper functions.
+- **`src/components/fts-query.ts`** (Exports: `isStopword, cleanFtsQuery`): Converts a natural language query string into a safe SQLite FTS5 MATCH expression. ## Why stopwords are dropped The keyword leg is fused with the semantic leg by Reciprocal Rank Fusion, which rewards a document's rank position in each list rather than how well it actually matched. Because terms are joined with `OR`, a document matching a single common word enters the FTS ranking at all — and if it is the only match, it enters at rank 1 and collects the full RRF contribution. Observed: the query "what payment provider do we use" ranked a document about a Rust auth daemon above the correct billing document, because `"do"`, `"we"` and `"use"` were searchable terms. Noise words give noise a guaranteed seat. Dropping them means an all-stopword query produces an empty expression, which the caller treats as "no keyword leg" and answers semantically — the correct degradation, and far better than a MATCH that hits every row.
+- **`src/components/generator.ts`** (Exports: `GeneratorProgress, getTextGenerator, isTextGeneratorLoaded, resetTextGenerator`): The key purpose of the code file is to define a shared text generation model, called "Xenova/Qwen1.5-0.5B-Chat", using the XENova Qwen model available on the Node.js runtime. The loaded model will dominate its total cost by consuming
+- **`src/components/index.ts`**: Source file index.ts exports primary project types and helper functions.
+- **`src/components/summarizer.test.ts`**: Handles dual storage reads and writes across Markdown and SQLite
+- **`src/components/summarizer.ts`** (Exports: `SummarizerOptions, SmolLM2Summarizer`): Delegates to the process-wide loader so a scan and write-side enrichment running in the same process share one ~3.2s model load rather than paying for it twice.
+- **`src/components/timeout.ts`** (Exports: `TimeoutError, withTimeout`): This code file exports a date-time object called `timeout`. It defines an abstract `TimeoutError` type that extends `Error`, which is used to handle timeouts. The `timeout` primitive includes the label "timeout" when created, along with a value for how long the value takes (`ms`).
+
+### 🧩 config (`src/config`)
+Primary config module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/config/harness.ts`** (Exports: `AgentHarness, detectHarnesses, copySkill`): Function detectHarnesses in harness.ts (Methods: detectHarnesses(), filter(), map(), copySkill()) handles utility and command processing.
+- **`src/config/index.ts`**: Source file index.ts exports primary project types and helper functions.
+- **`src/config/neuronYaml.test.ts`**: Source file neuronYaml.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/config/neuronYaml.ts`** (Exports: `StorageMode, StorageConfig, CategoryField, CategoryConfig, fieldKeyToFlagName, fieldKeyToColumnName, isValidColumnIdentifier, DeclaredFieldFlag, collectDeclaredFieldFlags, PullRuleDefault, PullRuleOnExec, PullRulesConfig, ScanConfig, LlmEnrichmentConfig, LlmConfig, RelevanceGateConfig, RelevanceConfig, RecallConfig, NeuronConfig, findNeuronYaml, findConfigFile, validateNeuronYaml, parseNeuronYaml, loadNeuronYaml, loadConfig, resolveExecCategories`): `md-only` and `dual` are pre-2.2.0-rc5 spellings, both deleted by ticket 28: `md-only` because every one of its defects traced to `this.db = null`, and `dual` because it was renamed to `md` — same mechanism, correct name now that `md-only` no longer exists to be confused with. Both alias to `md` with a stderr warning rather than hard-failing, because a config that errors on upgrade turns a rename into an outage (ADR 0011 §7).
+- **`src/config/protocolBlock.test.ts`**: The purpose of this code file is to implement a test suite for generating protocol blocks with specific properties and conditions. It tests that the generated protocol block properly encodes specific properties such as learning rules, decision history, and audio echoes using the `NeuronConfigSchema` object provided by the `neuron
+- **`src/config/protocolBlock.ts`** (Exports: `ProtocolFidelity, ProtocolBlockOptions, generateProtocolBlock, ProtocolWriteAction, UpsertProtocolBlockResult, upsertProtocolBlock`): Ticket 14: hooks own the read side on a harness with a deterministic adapter, so the generated protocol block only needs to teach the write side there. A harness with no such adapter (including every harness without a `HarnessAdapter` at all — 'best-effort' ones fall into this bucket too, since neither can guarantee the model ever sees a result) has nothing else performing recall, so it keeps the manual query step.
+- **`src/config/scaffold.test.ts`**: The template is a contract with the user: a key in it that the schema does not read looks configured and does nothing. `llm.enrichment.importance` is the concrete hazard — removed by ticket 26, and silently dropped by Zod, so it would fail invisibly rather than loudly.
+- **`src/config/scaffold.ts`** (Exports: `ScaffoldResult, scaffoldNeuronYaml`): The `neuron init` configuration writes if a project has no keys (message 31). The two Rules govern what may appear here: Rule 1 (every key is one the schemaactually reads) indicates that instead of specifying a new key to add, a schema already exists in the `.
+
+### 🧩 e2e (`src/e2e`)
+Primary e2e module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/e2e/mdFileManagement.e2e.test.ts`**: Source file mdFileManagement.e2e.test.ts (Methods: describe(), beforeEach(), mkdtempSync(), afterEach()) exports primary project types and helper functions.
+
+### 🧩 harnesses (`src/harnesses`)
+Primary harnesses module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/harnesses/cacheDir.ts`** (Exports: `projectHash, hookCacheDir, sessionFileKey`): Same hash scheme `NeuronMemory` uses for its SQLite filename (`src/index.ts`), reused here so ledger/hook-state files land in a predictable, collision-resistant per-project directory without importing `NeuronMemory` itself — this module only ever touches the filesystem, never the memory store.
+- **`src/harnesses/claudeCode.test.ts`**: Source file claudeCode.test.ts (Methods: describe(), join(), ClaudeCodeAdapter(), beforeEach()) exports primary project types and helper functions.
+- **`src/harnesses/claudeCode.ts`** (Exports: `ClaudeCodeAdapter`): Neuron's own lifecycle vocabulary, translated to Claude Code's event names.
+- **`src/harnesses/codex.test.ts`**: Source file codex.test.ts (Methods: describe(), join(), CodexAdapter(), beforeEach()) exports primary project types and helper functions.
+- **`src/harnesses/codex.ts`** (Exports: `CodexAdapter`): Neuron's own lifecycle vocabulary, translated to Codex CLI's event names. Confirmed identical to Claude Code's naming (`learn.chatgpt.com/docs/hooks`, fetched directly during this ticket): `SessionStart`, `UserPromptSubmit`, and `PreCompact` are named exactly the same on both harnesses.
+- **`src/harnesses/copilot.test.ts`**: Este é um script para o código Testeur de copiar ao seu local e verificar se os exemplos da libreria Node Autenticação para JavaScript estão seguros. Este script ajuda a detectar o nome de projetamento na loginação GitHub, gerando uma nova diretoria do
+- **`src/harnesses/copilot.ts`** (Exports: `CopilotAdapter`): This codefile is used to define a class called "Copilot" which represents a component for connecting to a Node.js instance running a chatbot such as Chatfuel. It includes methods required by Copilot such as hook loading, parsing, and interacting with events. The code defines a namespace for the
+- **`src/harnesses/hookState.ts`** (Exports: `recordFired, readFiringState`): Firing evidence, not inference from file contents. Ticket 10 found no harness researched documents an external way to confirm a registered hook actually fired — so neuron manufactures its own evidence: the hook command records a timestamp the moment it runs, before doing any of the work that could fail. `verify()` reads this file to answer "is this hook firing" as a fact, not a guess from `settings.json` being present.
+- **`src/harnesses/index.ts`**: The key objective is to export the needed functions and packages from the `src` directory to other modules. It provides a way to leverage common functions from other sources or modules, improves project readability, and enhances code maintainability.
+- **`src/harnesses/ledger.test.ts`**: Source file ledger.test.ts (Methods: entry(), describe(), join(), beforeEach()) exports primary project types and helper functions.
+- **`src/harnesses/ledger.ts`** (Exports: `EpochRecord, EpochState, loadEpochState, filterUnseen, remainingEpochBudget, recordSessionStartInjection, recordPrePromptTurn, rollEpoch, RecallCostSummary, summarizeRecallCost`): Session-scoped recall state (ADR 0014 §3 dedupe, extended by ticket 07 / neuron-2.3.0 with a per-epoch cost budget). An epoch is the span between session start (or the last compaction) and the next `context-reset` — not the whole session — because compaction deletes everything neuron previously injected, so re-injecting after one is recovery, not repetition. Both the dedupe ledger and the char-spend budget therefore share one lifecycle: `rollEpoch` resets both together rather than treating them as two files with two reset rules. A ledger older than this is treated as abandoned rather than tracked forever — sessions that never fire `context-reset` (compaction) or end cleanly would otherwise leak one file per session indefinitely.
+- **`src/harnesses/payload.test.ts`**: Source file payload.test.ts (Methods: entry(), describe(), it(), buildPayload()) exports primary project types and helper functions.
+- **`src/harnesses/payload.ts`** (Exports: `formatMemoryEntry, PayloadResult, buildPayload`): The payload budget, per ADR 0014 §4: no relevance floor ships (ticket 39 found every cosine floor from 0.50-0.70 regresses recall on real conversational text), so the character ceiling is the sole volume control, and it must sit strictly below the smallest known harness cap so neuron never relies on spill-to-file — spill hands the model a preview and a path, which turns deterministic recall back into agent-invoked recall at exactly the moment the payload is largest. Claude Code's own documented cap is 10,000 characters (`additionalContext` / `systemMessage` / stdout). Codex CLI's is ~2,500 tokens, which neuron counts as characters rather than tokens (exact, free, and tokenising on the hook path would spend per-turn latency approximating a limit one harness already states in characters) — even a generous 4 chars/token reading of that cap is 10,000 chars, and a conservative 3 chars/token reading is 7,500. Both budgets below are chosen to sit under every one of those readings, not just Claude Code's own cap, since this module is shared by every adapter (ticket 13 onward).
+- **`src/harnesses/types.ts`** (Exports: `LifecyclePoint, SupportRecord, CapabilityMap, FidelityLabel, deriveFidelity, HookTarget, OverwritePolicy, InstallOptions, InstallResult, UninstallResult, VerifyPointStatus, VerifyResult, HarnessAdapter`): The recall adapter interface, per ADR 0014 / ticket 11. Capability is a per-lifecycle-point map, not a single enum: two harnesses can occupy the same `deterministic`/`best-effort` label while differing on exactly what they leave undocumented. The enum is derived for display only (`neuron init` output, the README matrix) and is never itself stored — see `deriveFidelity` below.
+
+### 🧩 models (`src/models`)
+Primary models module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/models/index.ts`**: The primary purpose of this code file is to import and export functions from various modules that perform different tasks.
+- **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): Source file maintenance.ts exports primary project types and helper functions.
+- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult`): @deprecated Use plain `string` for category names instead.
+- **`src/models/options.ts`** (Exports: `NeuronMemoryOptions`): Injected write-side enricher. Tests supply a stub so the transaction seam can be exercised without loading a 500M-parameter model; production leaves it unset and gets `LocalEnrichmentModel`.
+
+### 🧩 scanner (`src/scanner`)
+Primary scanner module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/scanner/analyzer.test.ts`**: This is a test file for the Scanner Engine that runs a test with a specific configuration. The tests are written using the 'vitest' package and its methods such as describe, it, expect, beforeAll, afterAll and it is used so that a set of specific properties can be tested without
+- **`src/scanner/analyzer.ts`** (Exports: `isIgnoredEntryName, ModuleSummary, ScanResult, scanProjectTopology`): Traversal rules shared by the topology scan and the drift fingerprint guard. Both must agree on exactly which files feed a scan: if the guard watches a narrower set than the scanner reads, edits to the difference are invisible and drift is never re-checked. Derived from the parser's own language list so the filter can never be narrower than what TreeSitterScanner can actually parse — a mismatch here silently hides whole languages (previously .tsx/.jsx/.cpp) from every scan.
+- **`src/scanner/degradation-warning.test.ts`**: Scope item 2: a language that should have parsed from an AST but could not must say so loudly, not degrade in silence. The distinction that matters: Ruby and PHP have no grammar in 2.2.0 at all, so their regex fidelity is expected and unremarkable. TypeScript falling back means something went wrong with the install, and the resulting card is worse than the user has any reason to expect.
+- **`src/scanner/diff.test.ts`**: The same card, declaring the fidelity the current scan is produced at. Drift tests must use this: against the legacy fixture the engine correctly refuses to compare at all, which would make them vacuous.
+- **`src/scanner/diff.ts`** (Exports: `ModuleDiff, ExportDiff, DependencyDiff, ArchitecturalDiff, parseBaselineBlueprint, calculateArchitecturalDiff, formatArchitecturalDiffMarkdown, getArchitecturalDrift, autoRescanIfDriftDetected`): The baseline and the scan were produced by different parsers, so their difference is not drift. Mutually exclusive with `hasDrift`.
+- **`src/scanner/fidelity.ts`** (Exports: `FidelityDescriptor, descriptorFor, fidelityFromComponents, areComparable, formatFidelitySection, parseFidelitySection`): Parser fidelity: how a blueprint card's symbols were obtained, and whether two cards can be meaningfully compared at all. A drift report is a comparison between two measurements. If the two were taken with different instruments, their difference is not drift — it is an artefact of the instrument change. Recording fidelity on the card is what lets `neuron scan --diff` tell those apart instead of reporting hundreds of phantom export changes the moment a user upgrades.
+- **`src/scanner/fingerprint.test.ts`**: Source file fingerprint.test.ts (Methods: describe(), join(), beforeEach(), random()) exports primary project types and helper functions.
+- **`src/scanner/fingerprint.ts`** (Exports: `FingerprintInputs, computeProjectFingerprint, readReconciledFingerprint, writeReconciledFingerprint, clearReconciledFingerprint`): Cheap change-detection for the implicit drift re-scan. `scanProjectTopology` parses every source file's AST, which is far too expensive to run on every `memory query`. A stat-only walk over the same file set is orders of magnitude cheaper, so we fingerprint the tree and skip the scan entirely when nothing has moved since the last reconcile. This guard only gates the implicit re-scan. `neuron scan`, `--diff`, and `--check` always perform a real scan, so CI and explicit checks are never served a cached verdict.
+- **`src/scanner/grammars.test.ts`**: Build an npm-shaped tarball containing the given `package/`-relative files.
+- **`src/scanner/grammars.ts`** (Exports: `GrammarSpec, grammarCacheDir, grammarPaths, isGrammarCached, cachedLanguages, GrammarFetchOutcome, EnsureGrammarsOptions, ensureGrammars, GrammarLoader`): Tree-Sitter grammar acquisition. Compiled `.wasm` grammars are fetched at `neuron init` and cached on disk rather than bundled in the npm tarball. Eight grammars weigh ~8.5 MB against a 621 KB package, and the ONNX models already establish the fetch-at-init pattern, so grammars follow it. See docs/adr/0008. Artifacts come from the official `tree-sitter-<lang>` packages on the npm registry, which ship both a prebuilt `.wasm` and a `queries/tags.scm`.
+- **`src/scanner/implicit-rebaseline.test.ts`**: The implicit path — the auto-rescan fired by `memory query`. On a fidelity mismatch it re-baselines exactly as it would for drift, and says nothing. A distinct announcement was considered and rejected: the drift and missing-baseline messages would both state something untrue here, and the migration is not something the user needs to act on when it self-heals.
+- **`src/scanner/ingest.test.ts`**: Main app entry
+- **`src/scanner/ingest.ts`** (Exports: `IngestOptions, ingestScanResults`): The main purpose of this code file is to define an immutable storage reference to a blueprint card, using a stable index with SHA-256 hash for it and the binary representation of each block in the pipeline. The binary representation includes a sequence of four hexadecimal digits (`-`) along with the category
+- **`src/scanner/queries.ts`** (Exports: `SymbolKind, isIgnoredCapture, isTypeLikeAncestor, resolveKind, kindPrecedence, refineGoTypeSpec`): Per-language symbol extraction queries and the rules that turn a captured syntax node into a `ScannedSymbol`. Two things live here because they are one decision: which S-expression query finds declarations in a language, and how the node it captures maps to a symbol kind. Splitting them would let a query and its kind table drift. ## Why some queries are hand-written Most grammars ship a `queries/tags.scm` (ticket 01 caches it next to the `.wasm`). Those queries were written for code navigation — "jump to the thing under my cursor" — not for the declaration inventory a blueprint card needs, so each one is audited before adoption rather than trusted wholesale. TypeScript's shipped query fails that audit outright: it covers only ambient declaration forms (`function_signature`, `method_signature`, `abstract_class_declaration`, `interface_declaration`) and has no rule for `function_declaration` or `method_definition`. Against `export class Alpha { thing() {} }` it captures nothing but a stray generic parameter, where JavaScript's equivalent has 13 definition rules. Neuron is itself a TypeScript project, so TypeScript and TSX get the queries below and everything else uses its shipped `tags.scm`.
+- **`src/scanner/treesitter.test.ts`**: These tests exercise the real grammars, not a mock. A mocked parser would only prove the query strings are strings — the whole point is whether the queries actually match the declaration forms each grammar produces. Grammars normally arrive via `neuron init`; fetch anything missing once so a cold checkout still runs. Every AST assertion below also asserts `fidelity === 'ast'`, so an offline machine fails loudly instead of quietly passing at regex fidelity — which is the failure mode ticket 02 exists to remove.
+- **`src/scanner/treesitter.ts`** (Exports: `ScannedSymbol, ParserFidelity, ParsedFile, DynamicGrammarLoader, TreeSitterScanner`): Whether the symbol is part of the file's public surface. Methods are never exports — the class is. Keeping members out of this set is what stops `neuron scan --diff` reporting an export contract change every time a private helper is renamed.
+
+### 🧩 shared (`src/shared`)
+Primary shared module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/shared/textMatch.ts`** (Exports: `editDistance, suggestClosest`): Cheap edit distance, only ever called on an error path (a typo'd CLI flag or enum value). Shared between `commands/utils.ts` (unknown-flag suggestions) and `NeuronMemory`'s field-schema enforcement (enum-value suggestions, ticket 43) so the two surfaces suggest corrections the same way rather than drifting into two slightly different heuristics.
+
+### 🧩 storage (`src/storage`)
+Primary storage module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/storage/dualStorageRouter.test.ts`**: `update`/`delete` in md mode reports success if EITHER store actually changed within the same command — `vecResult` is consulted, not just the md outcome, so a real vector-side change is never reported as `not_found` just because the markdown-side write hiccupped in the same call. This used to also cover a second scenario — a markdown-only deletion made between commands, leaving a vector-only orphan for a later update/delete to salvage — but ticket 29's strict-mirror reconcile (below) now purges that orphan automatically on the very next command, before the mutation is even processed, so "not_found" on it is correct now rather than a bug.
+- **`src/storage/dualStorageRouter.ts`** (Exports: `DualStorageRouter`): Markdown-first write ordering (ADR 0011 Consequence 2): the markdown write happens first, and on `upsert` the vector embed is only attempted once it has succeeded — markdown can never be behind, so the index can only ever be missing something a human deleted, never holding something markdown never had. A vector-side failure no longer disappears into a bare `catch {}`; it is reported to stderr and left for the next command's reconcile pass to repair, rather than blocking a write whose record of truth (markdown) already landed.
+- **`src/storage/index.ts`**: This code file is a import statement that exports functions for use in other files within the module.
+- **`src/storage/mdFileManagement.integration.test.ts`**: Source file mdFileManagement.integration.test.ts (Methods: describe(), beforeEach(), mkdtempSync(), join()) exports primary project types and helper functions.
+- **`src/storage/mdStorageAdapter.challenger.test.ts`**: Source file mdStorageAdapter.challenger.test.ts (Methods: describe(), join(), now(), beforeEach()) exports primary project types and helper functions.
+- **`src/storage/mdStorageAdapter.test.ts`**: Source file mdStorageAdapter.test.ts (Methods: describe(), join(), now(), beforeEach()) exports primary project types and helper functions.
+- **`src/storage/mdStorageAdapter.ts`** (Exports: `MdStorageAdapterOptions, MdStorageAdapter`): Frontmatter keys with dedicated `Memory` fields — the structural (`id`, `createdAt`) and semantic-reserved (`importance`, `tags`, `taskId`) tiers from ADR 0013. `scope` is a residue of a field removed in v2.2.0 (ticket 38), kept here so it stays silently dropped rather than round-tripping into `fields`. Everything else found in a frontmatter block is a user-defined declared field (ticket 43) and is read into `Memory.fields`.
+- **`src/storage/mdVectorSync.test.ts`**: Previously named "Timestamp Conflict Resolution" and asserted that a newer `createdAt` on the markdown side won. That mechanism is gone: a normal `memory update` never touches `createdAt` on either side, and `.md` frontmatter has no `updatedAt`, so comparing `createdAt` was comparing two values that are almost always equal — which meant "md wins" fired on every real conflict, not just ones where md was genuinely newer. That silently reverted a real vector-side update to stale markdown content in production use. A conflict is now reported and left untouched unless --force explicitly says markdown wins.
+- **`src/storage/mdVectorSync.ts`** (Exports: `SyncOptions, SyncResult, computeMemoryHash, cleanTmpFiles, syncMdWithVector`): Entries present on both sides with genuinely different content, left untouched. Neither store has a reliable last-modified signal — `.md` frontmatter has no `updatedAt`, and a normal `memory update` never touches `createdAt` on either side — so there is no safe way to guess which side is fresher. Guessing here is what caused a real regression: a legitimate vector-side update silently reverted to stale markdown content because their (unchanged, identical) `createdAt` values tied. Resolve explicitly with `--force` (markdown wins, matching its documented "force re-embed" semantics) after inspecting the conflict.
+
+### 🧩 ui (`src/ui`)
+Primary ui module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/ui/html.ts`** (Exports: `generateDashboardHtml`): Function generateDashboardHtml in html.ts (Methods: generateDashboardHtml(), rgba(), var(), Header()) handles utility and command processing.
+- **`src/ui/progress.test.ts`**: Source file progress.test.ts (Methods: describe(), it(), PassThrough(), on()) exports primary project types and helper functions.
+- **`src/ui/progress.ts`** (Exports: `ScanProgress, ScanProgressBarOptions, ScanProgressBar`): Class ScanProgressBar in progress.ts (Methods: update(), max(), round(), repeat()) manages module operations and interface contracts.
+- **`src/ui/server.ts`** (Exports: `UiServerOptions, UiServer, startUiServer`): The primary purpose of this code file is to establish a simple HTML server using the `http` package. The server has four HTTP methods: GET, POST, PUT, and DELETE. The memory is defined as an example of neuron memory for performance tuning. The configuration file defines port number and closed delay
+
+### 🧩 e2e (`test/e2e`)
+Primary e2e module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`test/e2e/adversarial-corpus.ts`** (Exports: `AdversarialFamily, AdversarialCase, buildFiller`): Adversarial retrieval corpus. The baseline recall pillar scores 1.0 because its distractors are only lexically noisy — templated strings that share vocabulary but are semantically unrelated, which hybrid search separates trivially. A metric pinned at its ceiling can detect a regression but can never show an improvement, and it predicts nothing about real retrieval quality. These cases are built to be genuinely hard, in four families: lexical-decoy  the wrong answer shares MORE query keywords than the right one, so keyword scoring alone picks the decoy paraphrase     near-miss neighbours that are topically identical but answer a different question contradiction  an outdated memory superseded by a newer one; the newer must win multi-hop      the query names none of the gold's salient terms and must be bridged conceptually
+- **`test/e2e/adversarial-recall.test.ts`**: Pillar 7 — Adversarial Retrieval Quality. Runs the real embedder against hard negatives engineered to beat the gold answer on keyword overlap, topical proximity, or staleness. Unlike the baseline recall pillar this is expected to sit below ceiling: the point is a metric with headroom that can move in both directions when retrieval changes. Thresholds are therefore deliberately loose — this pillar earns its keep as a tracked score, not as a tripwire.
+- **`test/e2e/benchmark-suite.test.ts`**: Neuron Deep E2E Benchmark & Correctness Suite. This suite is deliberately NOT a unit test. It exercises the real production pipeline end to end — the real ONNX embedder and the real Qwen1.5-0.5B code summarizer — and records latency distributions alongside its assertions. IMPORTANT: vitest sets NODE_ENV=test, and both summarizer.preloadModel() and summarizer.summarizeFile() short-circuit on that value. Left alone, the whole suite would silently benchmark a string-heuristic fallback instead of the product, which is why the previous revision "passed" its SLAs by ~40x while completing in seconds. Pillar 6 exists to keep that regression from reappearing. ESM hoists the imports below above these assignments, which is fine: both flags are read at call time (inside summarizeFile / NeuronMemory.open), not at module evaluation, so setting them here still takes effect for every test.
+- **`test/e2e/concurrency-stress.test.ts`**: Pillar 8 — Multi-Process Contention & Crash Recovery. Spawns real OS processes against one SQLite file. The original concurrency pillar ran `Promise.all` over a single in-process NeuronMemory handle, which shares one connection and one WAL writer — it can never produce cross-process lock contention, torn writes, or a dirty WAL, so "0 failures" there said nothing about multi-agent safety. Checks, in order of severity: 1. lost writes    — every committed record must be readable afterwards 2. lock handling  — SQLITE_BUSY is acceptable if surfaced, not if it eats data 3. crash recovery — SIGKILL mid-write must leave a readable, uncorrupted store
+- **`test/e2e/enrichment-corpus.ts`** (Exports: `ImportanceLabel, LabelledEntry, CategoryCase`): The polarized corpus for the enrichment pillar. Discrimination is measured against entries that are unambiguous at both ends, so the corpus design supplies the labels and no human labelling session is required. There is deliberately no middle tier: whether a "4" is objectively a 4 is out of scope, but whether a note about irreversible data loss outranks a note about tab width is not a judgement call.
+- **`test/e2e/enrichment.test.ts`**: Pillars 10-12 — Write-side enrichment. Pillar 10 was Importance Inference & Prune Safety and measured both halves. The inference half is gone: it measured the judgement as noise (discrimination -0.5 then +0.167, per-entry stability 0.5, a production-data-loss note rated `1`), the job shipped `off` on that evidence, and ticket 26 removed it. The prune-safety half is kept and is now the whole pillar, because ticket 23 left the underlying hazard live: the entry default and the `neuron memory prune` ceiling are both 3 and the comparison is inclusive. Runs against the real Qwen1.5-0.5B model. It is disabled under NODE_ENV=test, so this suite is the only place these jobs can be measured at all.
+- **`test/e2e/metrics.ts`** (Exports: `PillarMetrics, percentile, MetricsRecorder`): Latency/throughput recorder for the E2E benchmark suite. The suite is both a correctness gate and a benchmark, so every pillar records real measurements here rather than only asserting pass/fail. The collected numbers are written to a metrics file that the runner merges into its scorecard — the runner never has to infer results by scraping stdout.
+- **`test/e2e/synthetic-generator.ts`** (Exports: `SyntheticGeneratorOptions, generateSyntheticPolyglotWorkspace`): Class SyntheticClass in synthetic-generator.ts (Methods: generateSyntheticPolyglotWorkspace(), rmSync(), mkdirSync(), writeFileSync()) manages module operations and interface contracts.
+- **`test/e2e/tier.ts`** (Exports: `BenchTier, byTier`): Benchmark tiering. The same pillar definitions run at two very different intensities: sanity — a fast pre-merge gate. Every pillar still executes end to end against the real pipeline, but at the smallest workload that can still fail meaningfully. Target: a couple of minutes. full   — the adversarial benchmark. Large corpora, deep sweeps, real multi-process contention, and hard negatives designed to drive scores off their ceiling. Target: long enough to hurt. Tier is selected with NEURON_BENCH_TIER; anything other than 'full' is treated as sanity so a bare `vitest run` on these files stays quick.
 
 ---
 id: fe17bb3e-e195-4489-9048-3e5bf5f978a5
