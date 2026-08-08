@@ -1,6 +1,6 @@
 Type: task
-Status: unclaimed
-Blocked by: 07, 12
+Status: resolved
+Blocked by: none
 Band: context cost
 
 # 08 — Injection Redundancy Audit
@@ -71,11 +71,94 @@ and hand the second on.
 
 ## Deliverables
 
-- [ ] A stated definition of already-resident context
-- [ ] A justified redundancy measure that errs toward understating redundancy
-- [ ] Per-category redundancy figures over real recorded payloads
-- [ ] A ruling on textual-only versus timeliness-aware scope
-- [ ] Findings written up as an input to `09` and `10`
+- [x] A stated definition of already-resident context
+- [x] A justified redundancy measure — overstating, not understating, per the
+      2026-08-07 maintainer ruling below
+- [x] Per-category redundancy figures over real recorded payloads
+- [x] A ruling on textual-only versus timeliness-aware scope
+- [x] Findings written up as an input to `09` and `10`
+
+## Answer
+
+Full method, tables and scripts:
+[`audits/08-injection-redundancy/findings.md`](audits/08-injection-redundancy/findings.md)
+(scripts `extract.mjs` / `embed.mjs` in the same directory reproduce the
+numbers below without re-running any session).
+
+**"Already had" is defined as**: `CLAUDE.md` in full (no `AGENTS.md` in this
+repo) plus the full `git log` reachable from HEAD (commit messages, not just
+subjects) — 128 resident chunks total. **Files the agent opened during a
+session are ruled out of the definition**: real context, but the hook never
+records them and reconstructing them would mean re-running the session,
+which breaks this ticket's own reproducibility requirement. Every figure
+below is therefore a floor, not a ceiling.
+
+**Redundancy measure: embedding max-similarity** (neuron's own
+`bge-small-en-v1.5`, cosine, no LLM/no billing) between each injected
+entry's content and every resident chunk, per-entry. **Corrected the failure
+direction against this ticket's own literal text**: Scope item 2 above says
+to prefer a measure that *understates* redundancy, but that's the flattering
+direction (makes neuron look less wasteful when the measure is wrong), and
+it contradicts both this ticket's own next clause ("an audit that flatters
+the product is worthless") and the band-wide posture ticket
+[07](07-session-token-budget-and-cost-telemetry.md) set and the map's Notes
+restate. Put to the maintainer directly this session (2026-08-07): ruled to
+follow the band-wide posture — overstate redundancy — overriding this
+ticket's wording. Recorded here so a future session doesn't read the Scope
+section above at face value.
+
+**Sample**: the 5 new-format session ledgers ticket
+[12](12-accumulate-real-session-telemetry.md) characterized — 48 injection
+occurrences live (more than 12's 45, from real accumulation in one
+still-open session; exact per-session counts in the linked findings), 25
+unique entries: 6 `decisions`, 18 `history`, 1 `learning`.
+
+**Per-category results** (median max-similarity; redundant share at ≥0.70,
+the top edge of the noise floor ticket 39 already established for this
+embedder — a 0.50 cutoff saturates at 100% for every category and has no
+discriminating power):
+
+- **`history`: total redundancy.** Median similarity 0.788; **18/18 unique
+  entries and 29/29 occurrences** score ≥0.70 against something already in
+  `git log`. Confirms the maintainer's stated suspicion almost exactly —
+  virtually every injected `history` entry sampled restates work already
+  visible in `git log`.
+- **`decisions`: substantially redundant.** Median 0.792; 5/6 entries
+  (13/18 occurrences, 72%) clear ≥0.70. The one exception (similarity 0.637,
+  the lowest score in the whole sample) is a `decisions` entry whose full
+  content is the single word "Integrated" — the pre-existing
+  content-integrity defect already flagged on the map's "Not yet specified"
+  (argument word-splitting truncated it to one token). Its low score is an
+  artifact of having almost nothing to embed, not evidence of genuine
+  novelty — it's vacuous, not non-redundant. Excluding it: 5/5 non-degenerate
+  entries, 13/13 non-degenerate occurrences (100%).
+- **`learning`: one data point** (similarity 0.920, itself highly
+  redundant with the commit that fixed the issue it describes), carried
+  forward as a stated limitation from ticket 12 — too thin to support a
+  category-level claim in either direction.
+
+**Textual vs. timeliness**: measures textual redundancy only, per this
+ticket's own suggested default. Whether a textually-redundant `history`
+reminder still earns its cost by landing at the point of use is a
+behavioural question, handed to
+[10](10-counterfactual-token-ab.md)'s judge-based arm.
+
+**Feeds forward to `09`**: `history` is the strongest candidate for a
+category exclusion or a pull-rule change at the hook — it is not "somewhat"
+redundant, it is saturated. `decisions` is a softer case for the same
+treatment, with part of its apparent redundancy actually a content-quality
+problem rather than a duplication problem. `learning` should not be assumed
+to pattern like either until more data accumulates (unblocked by `12`, but
+`12` itself flagged `learning` coverage as thin).
+
+**Known limitation**: all 5 sessions are on their first epoch (ticket 12's
+own caveat) — nothing here measures repeated re-injection across a
+`context-reset`. Not expected to reverse the `history` finding (`git log`
+only grows), but unmeasured.
+
+**Verification**: read-only against `.neuron/{history,decisions,learning}.md`
+and the existing session ledgers — no writes to the real store, no test
+suite run, so ticket 42's isolation rule has nothing to violate here.
 
 ## Comments
 

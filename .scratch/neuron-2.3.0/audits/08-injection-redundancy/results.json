@@ -1,0 +1,652 @@
+[
+  {
+    "id": "c2d1928c-3e58-40a5-b478-6e3c955e89b0",
+    "category": "decisions",
+    "content": "Integrated",
+    "injectionCount": 5,
+    "maxSim": 0.6370295624977133,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs: add harness integration spec and tickets (06-08)",
+    "top3": [
+      {
+        "sim": 0.637,
+        "source": "git-log",
+        "text": "docs: add harness integration spec and tickets (06-08)"
+      },
+      {
+        "sim": 0.6316,
+        "source": "git-log",
+        "text": "test: add hybrid search integration test suite (ticket 04)"
+      },
+      {
+        "sim": 0.6123,
+        "source": "git-log",
+        "text": "feat: add FTS5 schema migration (v4) with external content tables and sync triggers"
+      }
+    ]
+  },
+  {
+    "id": "a2606013-e06b-469c-850c-c49b619bd302",
+    "category": "decisions",
+    "content": "Packaged Agent Memory Benchmark evaluation infrastructure into top-level benchmarks/ directory with a Node.js orchestrator (benchmarks/runner.js) and package.json CLI entrypoints. Configured npm run bench:sanity for fast 20-query PR regression checks, npm run bench:full for overnight 589-query evaluations, and npm run bench:view to launch the web dashboard. The orchestrator automatically rebuilds TypeScript sources, purges stale output artifacts to prevent score corruption, compresses run outputs, and updates the manifest.",
+    "injectionCount": 5,
+    "maxSim": 0.7142733171210158,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "benchmarks: package the LongMemEval harness and publish retrieval results\n\nVendors neuron's AMB adapter into benchmarks/longmemeval/ so the harness\nis reproduci",
+    "top3": [
+      {
+        "sim": 0.7143,
+        "source": "git-log",
+        "text": "benchmarks: package the LongMemEval harness and publish retrieval results\n\nVendors neuron's AMB adap"
+      },
+      {
+        "sim": 0.6996,
+        "source": "git-log",
+        "text": "test(2.2.0-rc5): isolate CLI tests from the real .neuron store (ticket 42)\n\nSeveral execSync-based C"
+      },
+      {
+        "sim": 0.6876,
+        "source": "git-log",
+        "text": "feat(scanner): extract symbols from parsed ASTs instead of regex\n\nReplaces the line-oriented regex m"
+      }
+    ]
+  },
+  {
+    "id": "b642b6d7-f3eb-45f5-9a6c-887919c6d57f",
+    "category": "decisions",
+    "content": "Implemented Zod schema validation for neuron.yaml configuration in src/config/neuronYaml.ts (replacing neuronrc naming). Configured storage.mode schema to support vector-only, md-only, dual, and split modes, defaulting storage.path to .neuron for flat Markdown storage inside project repositories. All 63 unit tests passed across 13 test files.",
+    "injectionCount": 5,
+    "maxSim": 0.7930195510680946,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "feat(2.2.0): md storage default (ticket 31) + relevance gate design (tickets 11, 27, 40)\n\nTicket 31 flips storage.mode's default from vector-only to md, matchin",
+    "top3": [
+      {
+        "sim": 0.793,
+        "source": "git-log",
+        "text": "feat(2.2.0): md storage default (ticket 31) + relevance gate design (tickets 11, 27, 40)\n\nTicket 31 "
+      },
+      {
+        "sim": 0.758,
+        "source": "git-log",
+        "text": "docs: focus README on selling points, split out command reference\n\nSplits the 250-line README into a"
+      },
+      {
+        "sim": 0.7555,
+        "source": "git-log",
+        "text": "feat: Add neuron.yaml configuration, unified memories SQLite table v5, and N dynamic categories supp"
+      }
+    ]
+  },
+  {
+    "id": "e9c50f12-af20-453d-80f1-704a707ec508",
+    "category": "history",
+    "content": "Wayfinder pickup session on the neuron-2.2.0 map: claimed the frontier's first unblocked ticket, 36 (Configurable Frontmatter Schema), and ran a full /grilling session with the maintainer through all seven of its open design questions plus two that surfaced mid-session (SQLite vector-only parity via auto-migration, and the neuron doctor validation-surface question, which the maintainer wants folded into neuron status --check/--repair with only enum-field centroid inference allowed, never free-text fabrication). Resolved ticket 36, wrote ADR 0013 documenting the decision, and graduated four implementation tickets (43-46) rather than pre-slicing further. Rewired ticket 34 (cut rc5) and ticket 32 (repositioned README) to block on the new implementation tickets instead of the now-resolved grilling ticket, and appended the resolution as a Decisions-so-far entry on map.md. Left ticket 36's file with a full Answer section; the next wayfinder session should pick up the new frontier, which now includes 43 as the first unblocked implementation ticket.",
+    "injectionCount": 4,
+    "maxSim": 0.8321104063457075,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs(wayfinder): narrow neuron-2.2.0 to a 3-pillar cut, split off harness expansion\n\nRedraws neuron-2.2.0's destination to a fast, focused major release close t",
+    "top3": [
+      {
+        "sim": 0.8321,
+        "source": "git-log",
+        "text": "docs(wayfinder): narrow neuron-2.2.0 to a 3-pillar cut, split off harness expansion\n\nRedraws neuron-"
+      },
+      {
+        "sim": 0.8207,
+        "source": "git-log",
+        "text": "docs(wayfinder): rename neuron-harness-expansion to neuron-2.3.0, charter config + context-cost band"
+      },
+      {
+        "sim": 0.8141,
+        "source": "git-log",
+        "text": "docs(wayfinder): rule ticket 08 out of scope, unblock 09\n\nConsolidation dedupe is ruled out of 2.2.0"
+      }
+    ]
+  },
+  {
+    "id": "f8f53cda-d5eb-4e67-a453-03e1d072894a",
+    "category": "history",
+    "content": "Queried and listed next queued up tickets across agent-memory-cli and md-file-management features",
+    "injectionCount": 2,
+    "maxSim": 0.7343239888115695,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "chore: open ticket 05-bge-query-instruction-prefix",
+    "top3": [
+      {
+        "sim": 0.7343,
+        "source": "git-log",
+        "text": "chore: open ticket 05-bge-query-instruction-prefix"
+      },
+      {
+        "sim": 0.7336,
+        "source": "git-log",
+        "text": "feat: implement md-file-management module (v2.0.0-rc2)"
+      },
+      {
+        "sim": 0.7185,
+        "source": "git-log",
+        "text": "docs: update README.md to showcase recent CLI features and value proposition"
+      }
+    ]
+  },
+  {
+    "id": "f4379b5f-e5ed-4c08-8850-02dd717bc7b3",
+    "category": "history",
+    "content": "Added standard MIT License file and pushed to GitHub",
+    "injectionCount": 2,
+    "maxSim": 0.8116501228834127,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "Add MIT License",
+    "top3": [
+      {
+        "sim": 0.8117,
+        "source": "git-log",
+        "text": "Add MIT License"
+      },
+      {
+        "sim": 0.7034,
+        "source": "git-log",
+        "text": "docs: add keywords/topics to package.json to match GitHub topics"
+      },
+      {
+        "sim": 0.6774,
+        "source": "git-log",
+        "text": "chore: add .env to .gitignore and update latest build changes"
+      }
+    ]
+  },
+  {
+    "id": "bd990979-ca27-4b41-be54-a989492b4436",
+    "category": "history",
+    "content": "Committed and pushed CLI, embedder, and models refactoring changes to GitHub",
+    "injectionCount": 2,
+    "maxSim": 0.8412741596416536,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "refactor: remove fallback embedder, separate models, and modularize CLI commands",
+    "top3": [
+      {
+        "sim": 0.8413,
+        "source": "git-log",
+        "text": "refactor: remove fallback embedder, separate models, and modularize CLI commands"
+      },
+      {
+        "sim": 0.769,
+        "source": "git-log",
+        "text": "docs: log git post-commit hook, deduplication, multi-embedder, completion, and conflict detection is"
+      },
+      {
+        "sim": 0.7433,
+        "source": "git-log",
+        "text": "chore: add .env to .gitignore and update latest build changes"
+      }
+    ]
+  },
+  {
+    "id": "0e7cfe8a-19c1-4188-af90-c48ce144bfa9",
+    "category": "history",
+    "content": "Bumped package version to 2.0.0-rc1, committed changes, tagged git release v2.0.0-rc1, and pushed commits and tags to GitHub.",
+    "injectionCount": 2,
+    "maxSim": 0.7861206366971105,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "release_v2.1.0-rc2",
+    "top3": [
+      {
+        "sim": 0.7861,
+        "source": "git-log",
+        "text": "release_v2.1.0-rc2"
+      },
+      {
+        "sim": 0.7617,
+        "source": "git-log",
+        "text": "chore: bump version to 1.3.4"
+      },
+      {
+        "sim": 0.761,
+        "source": "git-log",
+        "text": "chore: bump version to 1.3.3"
+      }
+    ]
+  },
+  {
+    "id": "2d7ac47a-20f1-4496-a8c7-77a7d2331100",
+    "category": "history",
+    "content": "Bumped version to 1.1.3 and published to npm with public access (--access public), and pushed commits and tag v1.1.3 to GitHub.",
+    "injectionCount": 2,
+    "maxSim": 0.7855739815818604,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "chore: bump version to 1.3.4",
+    "top3": [
+      {
+        "sim": 0.7856,
+        "source": "git-log",
+        "text": "chore: bump version to 1.3.4"
+      },
+      {
+        "sim": 0.7829,
+        "source": "git-log",
+        "text": "chore: bump version to 1.3.3"
+      },
+      {
+        "sim": 0.7185,
+        "source": "git-log",
+        "text": "chore: add .env to .gitignore and update latest build changes"
+      }
+    ]
+  },
+  {
+    "id": "4b2407e9-5c14-4132-8334-ceee9764bb1b",
+    "category": "history",
+    "content": "Logged issue 09 (Pre-Command Memory Lookup) and issue 10 (Importance Prototype) in local issue tracker; cleaned codebase",
+    "injectionCount": 2,
+    "maxSim": 0.7597384982613551,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs: log git post-commit hook, deduplication, multi-embedder, completion, and conflict detection issue tickets",
+    "top3": [
+      {
+        "sim": 0.7597,
+        "source": "git-log",
+        "text": "docs: log git post-commit hook, deduplication, multi-embedder, completion, and conflict detection is"
+      },
+      {
+        "sim": 0.7493,
+        "source": "git-log",
+        "text": "docs: log Web UI dashboard, import/export, git sync, and analytics tasks into .scratch issue tracker"
+      },
+      {
+        "sim": 0.7352,
+        "source": "git-log",
+        "text": "feat: pre-command memory lookup (neuron exec), closed-loop feedback, and importance demotion lock"
+      }
+    ]
+  },
+  {
+    "id": "19b5a452-8c42-4ea6-88f3-5915a230d20b",
+    "category": "history",
+    "content": "Bumped version to 1.1.1, published to npm registry, and pushed git commit and tag v1.1.1 to GitHub.",
+    "injectionCount": 2,
+    "maxSim": 0.7908076177171247,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "chore: bump version to 1.3.4",
+    "top3": [
+      {
+        "sim": 0.7908,
+        "source": "git-log",
+        "text": "chore: bump version to 1.3.4"
+      },
+      {
+        "sim": 0.7834,
+        "source": "git-log",
+        "text": "chore: bump version to 1.3.3"
+      },
+      {
+        "sim": 0.7302,
+        "source": "git-log",
+        "text": "chore: add .env to .gitignore and update latest build changes"
+      }
+    ]
+  },
+  {
+    "id": "501588d7-2af5-444a-a351-3bb9aec1e641",
+    "category": "history",
+    "content": "Pushed ticket-17 neuron ui dashboard to GitHub — commit f56f3ad on main",
+    "injectionCount": 2,
+    "maxSim": 0.7555834681255198,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "feat(ui): update neuron dashboard to dynamically support N categories (v2.0.0-rc2)",
+    "top3": [
+      {
+        "sim": 0.7556,
+        "source": "git-log",
+        "text": "feat(ui): update neuron dashboard to dynamically support N categories (v2.0.0-rc2)"
+      },
+      {
+        "sim": 0.7388,
+        "source": "git-log",
+        "text": "docs: log Web UI dashboard, import/export, git sync, and analytics tasks into .scratch issue tracker"
+      },
+      {
+        "sim": 0.7242,
+        "source": "git-log",
+        "text": "feat: add `neuron ui` web dashboard (#17)\n\n- Add `src/ui/server.ts`: native node:http server with GE"
+      }
+    ]
+  },
+  {
+    "id": "e10a7f24-f163-4b4b-8689-f518864d6568",
+    "category": "history",
+    "content": "Pulled latest commits from GitHub, bumped package version to 1.2.2, pushed commit and tag v1.2.2 to GitHub, and published @kovartravis/neuron@1.2.2 to npm",
+    "injectionCount": 1,
+    "maxSim": 0.7664357227386173,
+    "bestMatchSource": "CLAUDE.md",
+    "bestMatchText": "## Memory Store Protocol (`@kovartravis/neuron`)",
+    "top3": [
+      {
+        "sim": 0.7664,
+        "source": "CLAUDE.md",
+        "text": "## Memory Store Protocol (`@kovartravis/neuron`)"
+      },
+      {
+        "sim": 0.7502,
+        "source": "git-log",
+        "text": "release: v2.1.0 — architecture scanning & drift detection\n\nPromotes 2.1.0-rc5 to stable and packages"
+      },
+      {
+        "sim": 0.7397,
+        "source": "git-log",
+        "text": "docs: update neuron-memory skill with md storage & sync docs; bump to 2.0.0-rc3"
+      }
+    ]
+  },
+  {
+    "id": "fbb178c4-04e7-4866-9434-5a195e036327",
+    "category": "history",
+    "content": "Updated package.json version to 2.1.0-rc2.1 and verified all 152 unit tests pass. Staged all changes and committed release commit v2.1.0-rc2.1. Created git tag v2.1.0-rc2.1 and successfully pushed main branch and tags to GitHub repository.",
+    "injectionCount": 1,
+    "maxSim": 0.7514491250391931,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "v2.1.0-rc2.1",
+    "top3": [
+      {
+        "sim": 0.7514,
+        "source": "git-log",
+        "text": "v2.1.0-rc2.1"
+      },
+      {
+        "sim": 0.7328,
+        "source": "git-log",
+        "text": "release_v2.1.0-rc2"
+      },
+      {
+        "sim": 0.709,
+        "source": "git-log",
+        "text": "release-v2.0.0-rc4"
+      }
+    ]
+  },
+  {
+    "id": "cd1cd4b2-1138-43ed-b677-2925c3d35109",
+    "category": "history",
+    "content": "Stashed local changes, pulled latest commits from origin/main, resolved merge conflicts in package.json and package-lock.json for Termux compatibility, popped stash, and verified TypeScript build.",
+    "injectionCount": 1,
+    "maxSim": 0.7162658002929576,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "fix-package-json-prepare-script",
+    "top3": [
+      {
+        "sim": 0.7163,
+        "source": "git-log",
+        "text": "fix-package-json-prepare-script"
+      },
+      {
+        "sim": 0.7114,
+        "source": "git-log",
+        "text": "docs: log git post-commit hook, deduplication, multi-embedder, completion, and conflict detection is"
+      },
+      {
+        "sim": 0.7037,
+        "source": "git-log",
+        "text": "chore: mark ticket 01-fts5-schema-migration-triggers as resolved"
+      }
+    ]
+  },
+  {
+    "id": "c336bef4-fb6b-4209-982c-f3bd362e3d3a",
+    "category": "history",
+    "content": "Pulled the latest changes from GitHub, fast-forwarding to main branch.",
+    "injectionCount": 1,
+    "maxSim": 0.7106130014433303,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs: log git post-commit hook, deduplication, multi-embedder, completion, and conflict detection issue tickets",
+    "top3": [
+      {
+        "sim": 0.7106,
+        "source": "git-log",
+        "text": "docs: log git post-commit hook, deduplication, multi-embedder, completion, and conflict detection is"
+      },
+      {
+        "sim": 0.6909,
+        "source": "git-log",
+        "text": "Initial commit"
+      },
+      {
+        "sim": 0.6903,
+        "source": "git-log",
+        "text": "chore: add .env to .gitignore and update latest build changes"
+      }
+    ]
+  },
+  {
+    "id": "b00188a3-d77a-4eec-8f51-6099ef3c8d70",
+    "category": "history",
+    "content": "Charted the context-cost band on the neuron-2.3.0 wayfinder map in response to the maintainer's question about proving neuron is token-worthwhile. Wrote four tickets: 07 (session-scoped token budget plus per-session cost telemetry reported through neuron status, with the compaction-reset ruling as its crux), 08 (offline injection-redundancy audit measuring what share of injected tokens restate CLAUDE.md or git log, reported per category, no LLM), 09 (shrink the ~600-token resident protocol block, with disclosing an irreducible floor as a legitimate resolution), and 10 (counterfactual token A/B with a reasoned decision not to run it as a valid resolution, and the inverted-cosine risk arm reported as headline not footnote). Wired 01 and 02 as blocked by 07, 08 by 07, 09 by 08, 10 by 08 and 09, and the cut 04 by all nine. Updated the map's destination to three bands, added Notes recording the measured cost model and that no existing benchmark measures token economics, and added a fog patch for what happens if the finding is unfavourable. Frontier is now 05 and 07.",
+    "injectionCount": 1,
+    "maxSim": 0.8619488556615278,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs(wayfinder): rename neuron-harness-expansion to neuron-2.3.0, charter config + context-cost bands\n\nRepoints every neuron-2.2.0 link (issues 15, 16, 19, 20, ",
+    "top3": [
+      {
+        "sim": 0.8619,
+        "source": "git-log",
+        "text": "docs(wayfinder): rename neuron-harness-expansion to neuron-2.3.0, charter config + context-cost band"
+      },
+      {
+        "sim": 0.829,
+        "source": "git-log",
+        "text": "feat(2.3.0): session token budget and cost telemetry (ticket 07)\n\nPer-epoch (not per-session) char b"
+      },
+      {
+        "sim": 0.8253,
+        "source": "git-log",
+        "text": "docs(wayfinder): narrow neuron-2.2.0 to a 3-pillar cut, split off harness expansion\n\nRedraws neuron-"
+      }
+    ]
+  },
+  {
+    "id": "4f0da669-1401-4453-83f6-2d5c7b95f8e9",
+    "category": "history",
+    "content": "Implemented ticket 07: replaced MEMORY_STORE_BLOCK with prose-only template referencing neuron-memory skill by name; added .agents/skills/ to package.json files array; updated init test. All 10 tests green.",
+    "injectionCount": 1,
+    "maxSim": 0.8498220673693446,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "update-neuron-memory-skill",
+    "top3": [
+      {
+        "sim": 0.8498,
+        "source": "git-log",
+        "text": "update-neuron-memory-skill"
+      },
+      {
+        "sim": 0.8361,
+        "source": "git-log",
+        "text": "docs: update neuron-memory skill with md storage & sync docs; bump to 2.0.0-rc3"
+      },
+      {
+        "sim": 0.8186,
+        "source": "git-log",
+        "text": "docs: extract memory store instructions to neuron-memory skill"
+      }
+    ]
+  },
+  {
+    "id": "855d13c8-41a6-4414-99f5-b961a9106cf1",
+    "category": "decisions",
+    "content": "Ticket 08 (Injection Redundancy Audit) cannot sample real session data yet: ticket 07's per-session telemetry format (rollEpoch, chars/turns/history in src/harnesses/ledger.ts) had never run against a committed build, and the two pre-existing real ledger files for this repo predate the rewrite (old injectedIds-only format, 2 sessions, 5 entries, skewed away from history). Ruling: ship ticket 07's code now and wait for real usage to accumulate telemetry, rather than reconstructing evidence from past queries or widening 'real' to mean this map's own wayfinder sessions — the latter two would let 08 proceed immediately but at the cost of the audit being honest about its evidence source, and the band's stated failure-direction preference throughout neuron-2.3.0 is to err toward the more defensible, harder-to-dispute measurement. Ticket 12 formalizes the wait as a blocking ticket with its own adequacy threshold (session/epoch count plus confirmed history-category coverage), rather than leaving 08 claimed indefinitely on an informal note.",
+    "injectionCount": 1,
+    "maxSim": 0.7919044235536292,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs(wayfinder): defer ticket 25, record the 24 verdict, grill-prep ticket 08\n\nTicket 25 is deferred by maintainer decision; the ticket and map said the\nopposit",
+    "top3": [
+      {
+        "sim": 0.7919,
+        "source": "git-log",
+        "text": "docs(wayfinder): defer ticket 25, record the 24 verdict, grill-prep ticket 08\n\nTicket 25 is deferred"
+      },
+      {
+        "sim": 0.7903,
+        "source": "git-log",
+        "text": "docs(wayfinder): rule ticket 08 out of scope, unblock 09\n\nConsolidation dedupe is ruled out of 2.2.0"
+      },
+      {
+        "sim": 0.7882,
+        "source": "git-log",
+        "text": "docs: close ticket 05 with ADR 0010, file ticket 22 as top priority\n\nRecords the seven guardrails se"
+      }
+    ]
+  },
+  {
+    "id": "f9851e32-b105-4455-b1ef-5b029c3e5f16",
+    "category": "history",
+    "content": "Published tickets 07 and 08 for spec 06 (init harness integration): bundle skill file + harness auto-detection and scaffolding.",
+    "injectionCount": 1,
+    "maxSim": 0.8727482076642717,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs: add harness integration spec and tickets (06-08)",
+    "top3": [
+      {
+        "sim": 0.8727,
+        "source": "git-log",
+        "text": "docs: add harness integration spec and tickets (06-08)"
+      },
+      {
+        "sim": 0.7549,
+        "source": "git-log",
+        "text": "feat(2.2.0-rc3): recall adapter architecture, multi-harness resolution (ticket 11)\n\nResolves ticket "
+      },
+      {
+        "sim": 0.7167,
+        "source": "git-log",
+        "text": "fix(init): detect harnesses from project root only, not home dir"
+      }
+    ]
+  },
+  {
+    "id": "384124c4-71e1-4d6c-b2bf-54d93d34efba",
+    "category": "decisions",
+    "content": "Chartered a context-cost band (tickets 07-10) on the neuron-2.3.0 map to answer whether neuron's recall hook is worth the context it consumes, and blocked the harness band (01, 02) on it by maintainer decision 2026-08-04. The framing finding is that gross token-equivalence is not a winnable claim - injected tokens cost what they cost - so the band targets three narrower claims in ascending order of cost to prove: a bounded and disclosed per-session cost, an injection that is not mostly restating already-resident context, a net-negative resident footprint, and only then a counterfactual task A/B. The measurement gates the adapter work because building two more best-effort adapters before the cost question is answered widens the surface rather than the value, and ticket 03's disclosure surface has a context-cost column it cannot fill until ticket 07 produces the number. Nothing existing measures this: benchmark pillars 1-9 and the LongMemEval work both measure retrieval quality, not token economics.",
+    "injectionCount": 1,
+    "maxSim": 0.8209212995797439,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs(wayfinder): rename neuron-harness-expansion to neuron-2.3.0, charter config + context-cost bands\n\nRepoints every neuron-2.2.0 link (issues 15, 16, 19, 20, ",
+    "top3": [
+      {
+        "sim": 0.8209,
+        "source": "git-log",
+        "text": "docs(wayfinder): rename neuron-harness-expansion to neuron-2.3.0, charter config + context-cost band"
+      },
+      {
+        "sim": 0.805,
+        "source": "git-log",
+        "text": "feat(2.2.0-rc5): declarable field schema (ticket 43) + relevance gate decontamination (ticket 41)\n\nT"
+      },
+      {
+        "sim": 0.8027,
+        "source": "git-log",
+        "text": "feat(enrichment): infer tags, category and importance on memory add\n\nResolves wayfinder ticket 06. `"
+      }
+    ]
+  },
+  {
+    "id": "17008d3e-f5a8-4cca-b3ee-38c432daf1e2",
+    "category": "history",
+    "content": "Added comprehensive, user-friendly README.md using the beads project as an example, and pushed updates to GitHub",
+    "injectionCount": 1,
+    "maxSim": 0.8821042356610608,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "Add user-friendly README with beads example",
+    "top3": [
+      {
+        "sim": 0.8821,
+        "source": "git-log",
+        "text": "Add user-friendly README with beads example"
+      },
+      {
+        "sim": 0.8641,
+        "source": "git-log",
+        "text": "docs: update README.md to showcase recent CLI features and value proposition"
+      },
+      {
+        "sim": 0.8153,
+        "source": "git-log",
+        "text": "Rewrite README to match beads style and structure"
+      }
+    ]
+  },
+  {
+    "id": "9754dda9-0d4e-4b21-939d-0a659da980cd",
+    "category": "history",
+    "content": "Ran /wayfinder to chart the neuron 2.2.0 release map after publishing v2.1.0. Conducted a grilling session covering destination, rc slicing, grammar distribution, missing-grammar behaviour, LLM job selection, recall mechanism, compatibility disclosure, recall rc splitting, and the fate of the 4-step protocol block. Created .scratch/neuron-2.2.0/map.md plus 21 child tickets in issues/, wired the blocking graph, and verified it (frontier is tickets 01 and 10; ticket 10 harness research is AFK and unblocked from day one so it can run parallel with rc1). Superseded .scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md by splitting it into new tickets 01-03 and marked the 2.1.0 map complete. Surfaced one gap the old ticket 06 missed: existing users' 2.1.0 regex-derived drift baselines will manufacture phantom drift across all four buckets when compared against 2.2.0 AST scans, which breaks 'neuron scan --check' in CI for anyone gating on it; this is now ticket 03.",
+    "injectionCount": 1,
+    "maxSim": 0.8551241468772206,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs(wayfinder): narrow neuron-2.2.0 to a 3-pillar cut, split off harness expansion\n\nRedraws neuron-2.2.0's destination to a fast, focused major release close t",
+    "top3": [
+      {
+        "sim": 0.8551,
+        "source": "git-log",
+        "text": "docs(wayfinder): narrow neuron-2.2.0 to a 3-pillar cut, split off harness expansion\n\nRedraws neuron-"
+      },
+      {
+        "sim": 0.8541,
+        "source": "git-log",
+        "text": "release: v2.1.0 — architecture scanning & drift detection\n\nPromotes 2.1.0-rc5 to stable and packages"
+      },
+      {
+        "sim": 0.8441,
+        "source": "git-log",
+        "text": "docs(wayfinder): rename neuron-harness-expansion to neuron-2.3.0, charter config + context-cost band"
+      }
+    ]
+  },
+  {
+    "id": "e8b009df-9882-43d2-94b8-14b693c4d752",
+    "category": "learning",
+    "content": "The .agents to .claude migration in commit 5f2f093 silently dropped 21 agent skills because only neuron-memory was re-created under the new path while the entire .agents/skills tree was staged for deletion. Recovery is straightforward since the files remain in git history: extract with 'git archive <pre-deletion-sha> .agents/skills | tar -x -C <tmpdir>' then copy each directory to .claude/skills/, deliberately skipping any skill that has since been modified in place (neuron-memory had gained the 2.1.0 drift protocol and must not be overwritten by the older copy). Always grep the restored tree for stale '.agents/' path references before committing, and confirm the npm tarball is unchanged since package.json 'files' lists .claude/skills/neuron-memory/ specifically rather than the whole skills directory. Lesson: when renaming a directory that a harness auto-discovers, diff the before/after file listings rather than assuming a rename was complete.",
+    "injectionCount": 1,
+    "maxSim": 0.9195567576518406,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "chore: restore agent skills under .claude/skills/\n\nThe .agents -> .claude migration in 5f2f093 dropped 21 skills that were never\nre-added under the new path: as",
+    "top3": [
+      {
+        "sim": 0.9196,
+        "source": "git-log",
+        "text": "chore: restore agent skills under .claude/skills/\n\nThe .agents -> .claude migration in 5f2f093 dropp"
+      },
+      {
+        "sim": 0.7858,
+        "source": "git-log",
+        "text": "fix: ship only neuron-memory skill in npm tarball, not all skills"
+      },
+      {
+        "sim": 0.7628,
+        "source": "git-log",
+        "text": "release: v2.1.0 — architecture scanning & drift detection\n\nPromotes 2.1.0-rc5 to stable and packages"
+      }
+    ]
+  },
+  {
+    "id": "73a48c77-08c1-4a6b-952d-d9b818fc2c8f",
+    "category": "decisions",
+    "content": "Ticket 06 (write-side enrichment) design settled by grilling on 2026-08-01; spec at .scratch/write-side-enrichment/spec.md. Measured on an Apple Silicon iMac with warm disk cache: Qwen1.5-0.5B q4 costs 3205ms to load per process and ~183ms per inference, while bge-small-en-v1.5 q8 costs 177ms to load and ~4ms per embed — an 18x load gap — and the embedder is ALREADY loaded on the write path because transact() computes vectors before insert. Since every CLI invocation is its own node process with no daemon, a generation-model load is amortised over exactly one inference, making it 87% of total cost. Consequently tags moved off the LLM entirely: ADR 0010 section 4 already forbade the model from minting tags, which makes tagging a ranking problem rather than a generation one, so tags are now selected by cosine against tag CENTROIDS (the mean embedding of entries carrying that tag, computed from the existing embedding column) over a closed vocabulary of neuron.yaml-declared tags plus store tags with >=3 entries. The >=3 floor is a requirement of the centroid method rather than a tuning knob, because a singleton tag's centroid is identical to its single entry.",
+    "injectionCount": 1,
+    "maxSim": 0.90071547903681,
+    "bestMatchSource": "git-log",
+    "bestMatchText": "docs(wayfinder): grill ticket 06, publish the enrichment spec, file ticket 23\n\nTicket 06 asked whether the 0.5B model could infer --tags, --importance and\n--cat",
+    "top3": [
+      {
+        "sim": 0.9007,
+        "source": "git-log",
+        "text": "docs(wayfinder): grill ticket 06, publish the enrichment spec, file ticket 23\n\nTicket 06 asked wheth"
+      },
+      {
+        "sim": 0.7791,
+        "source": "git-log",
+        "text": "release: v2.2.0-rc2 — write-side enrichment, LLM job list unchanged\n\nNone of the three LLM jobs this"
+      },
+      {
+        "sim": 0.7768,
+        "source": "git-log",
+        "text": "feat(enrichment): infer tags, category and importance on memory add\n\nResolves wayfinder ticket 06. `"
+      }
+    ]
+  }
+]

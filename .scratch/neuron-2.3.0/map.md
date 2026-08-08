@@ -19,11 +19,15 @@ ticket `04`. Two bands are chartered today:
 3. **Context cost** — a defensible answer to *"why would I plug in a hook that
    eats my context?"*: the per-session cost bounded and disclosed, the
    injection's redundancy measured, the resident footprint shrunk, and — if it
-   earns its cost — a counterfactual A/B (`07`–`10`).
+   earns its cost — a counterfactual A/B (`07`–`10`), now extended by a
+   second, more specific A/B on `08`'s own finding (`14`) and published as a
+   repeatable benchmark suite rather than left as tracker findings (`15`).
 
 Reaching the end means every ticket here is resolved, what neuron *claims*
 matches what it *does* for each shipped harness, each config shape and each
-token claim, and `2.3.0` is cut and published.
+token claim, `2.3.0` ships with a published, re-runnable benchmark suite
+showing neuron's measured effect (favorable or not) versus raw harness, and
+`2.3.0` is cut and published.
 
 ## Notes
 
@@ -79,9 +83,25 @@ token claim, and `2.3.0` is cut and published.
   (surfaced by `07`) is unblocked — it can be worked independently of `08`.
   `08` itself surfaced `12` on 2026-08-04, mid-pickup: its own Scope assumed
   real per-session telemetry that did not yet exist (`07` was unclaimed code,
-  never committed, so no session had run under its format), so `08` now also
-  waits on `12` judging whether enough has accumulated since `07` shipped.
-  See `08`'s own Comments for the full finding.
+  never committed, so no session had run under its format), so `08` waited
+  on `12` judging whether enough had accumulated since `07` shipped. `12`
+  resolved 2026-08-07 — enough accumulated (see Decisions so far) — so `08`
+  is unblocked and its Scope/Open-question decisions (definition of "already
+  had," redundancy measure, textual-vs-timeliness ruling) remain exactly as
+  open as `08`'s own Comments left them.
+- **The epic's destination was elevated 2026-08-07**, in the same session
+  that resolved `08`: the maintainer asked to come out of this map with a
+  *published, repeatable benchmark suite* proving (or honestly disclaiming)
+  neuron's improvement over raw harness, not just an internal tracker
+  finding on `10`. Two tickets graduated straight from `08`'s finding without
+  a fog stop, since both were already sharp: `14` (a second, narrower A/B —
+  does a hook-injected git-log search beat the agent invoking `git log`
+  itself, the direct product implication of `08`'s ~100%-redundant-`history`
+  finding) and `15` (publish `10`'s and `14`'s findings into `benchmarks/`,
+  wired as a real blocker of `04` since it's a deliverable, not fog). `14`
+  and `15` both block on `10` rather than duplicate its harness — `10`'s own
+  Comments now flag that its harness must be built reusably for exactly this
+  reason.
 - **[13 — `neuron status --check`/`--repair`](issues/13-status-check-repair.md)
   arrived 2026-08-05**, continued from
   [neuron-2.2.0's ticket 46](../neuron-2.2.0/issues/46-status-check-repair.md)
@@ -137,6 +157,16 @@ token claim, and `2.3.0` is cut and published.
   zero unresolved against `.neuron/`). `learning` coverage is thin (1 id)
   and carried to `08` as a stated limitation, not a reason to keep waiting.
   `08` is unblocked.
+- **[08 — Injection Redundancy Audit](issues/08-injection-redundancy-audit.md)**
+  — `history` redundancy against `git log` is total (18/18 entries, 29/29
+  occurrences ≥0.70 embedding similarity, the noise floor ticket 39
+  established for this embedder); `decisions` is substantially redundant
+  (72–83%, with the one exception being a vacuous single-word entry, not a
+  genuinely novel one); `learning` stays a one-data-point limitation.
+  Corrected the ticket's own stated failure direction from understating to
+  overstating redundancy, per maintainer ruling, to match the band-wide
+  posture `07` set. Textual redundancy only; timeliness handed to `10`.
+  Unblocks `09`, and its `history` finding is `09`'s strongest input.
 
 ## Not yet specified
 
