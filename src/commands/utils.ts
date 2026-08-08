@@ -115,6 +115,12 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     harness?: string[];
     /** Raw values for config-declared fields (ticket 43), keyed by the field's config key (e.g. `reviewedBy`). Interpreted and validated in `NeuronMemory.transact()`. */
     fields?: Record<string, string>;
+    /** `memory add` ticket 17 / ADR 0015: the id of the entry this write reverses. */
+    supersedes?: string;
+    /** `memory add` ticket 17 / ADR 0015: explicit override confirming this write is not a reversal, skipping the similarity gate without linking anything. */
+    notAReversal?: boolean;
+    /** `memory query`/`list` ticket 17 / ADR 0015: include hard-excluded superseded rows. */
+    includeSuperseded?: boolean;
   };
 } {
   const positionals: string[] = [];
@@ -144,6 +150,9 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let hookTarget: string | undefined;
   let uninstallHooks: boolean | undefined;
   let harness: string[] | undefined;
+  let supersedes: string | undefined;
+  let notAReversal: boolean | undefined;
+  let includeSuperseded: boolean | undefined;
   const fields: Record<string, string> = {};
   const fieldFlagIndex = new Map(declaredFields.map(f => [f.flag, f.key]));
 
@@ -248,6 +257,12 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       if (val) {
         harness = val.split(',').map(s => s.trim()).filter(Boolean);
       }
+    } else if (arg === '--supersedes') {
+      supersedes = args[++i];
+    } else if (arg === '--not-a-reversal') {
+      notAReversal = true;
+    } else if (arg === '--include-superseded') {
+      includeSuperseded = true;
     } else if (arg.startsWith('-') && arg.length > 1) {
       // Previously fell through to `positionals`, where it was silently
       // discarded by every caller. A mistyped flag must not look like success.
@@ -281,6 +296,11 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     process.exit(1);
   }
 
+  if (supersedes && notAReversal) {
+    console.error('Error: --supersedes and --not-a-reversal are mutually exclusive');
+    process.exit(1);
+  }
+
   return {
     positionals,
     options: {
@@ -310,7 +330,10 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       hookTarget,
       uninstallHooks,
       harness,
-      fields: Object.keys(fields).length > 0 ? fields : undefined
+      fields: Object.keys(fields).length > 0 ? fields : undefined,
+      supersedes,
+      notAReversal,
+      includeSuperseded,
     }
   };
 }
@@ -444,7 +467,18 @@ Options:
                                  Entries written without --importance default
                                  to 3, so a bare prune deletes nearly all
                                  history older than --days. There is no undo.
-  --limit <number>               Limit returned results`;
+  --limit <number>               Limit returned results
+  --supersedes <id>              (add) Mark <id> as superseded by this new
+                                 entry. Also required to resolve the write-time
+                                 supersession gate: 'add' hard-blocks when the
+                                 content looks like a near-duplicate of an
+                                 existing entry, printing the candidate id.
+  --not-a-reversal                (add) Explicit override confirming this write
+                                 is not a reversal, skipping the gate without
+                                 marking anything superseded.
+  --include-superseded            (query, list) Include entries hard-excluded
+                                 by default because a later entry supersedes
+                                 them. Superseded rows are never deleted.`;
 
 /**
  * `MEMORY_HELP` plus a per-category listing of this project's declared

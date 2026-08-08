@@ -16,7 +16,7 @@ export interface MdStorageAdapterOptions {
  * into `fields`. Everything else found in a frontmatter block is a
  * user-defined declared field (ticket 43) and is read into `Memory.fields`.
  */
-const RESERVED_FRONTMATTER_KEYS = new Set(['id', 'createdAt', 'importance', 'tags', 'taskId', 'scope']);
+const RESERVED_FRONTMATTER_KEYS = new Set(['id', 'createdAt', 'importance', 'tags', 'taskId', 'scope', 'supersededBy', 'supersededAt']);
 
 export class MdStorageAdapter {
   readonly storagePath: string;
@@ -130,6 +130,17 @@ export class MdStorageAdapter {
       || (existingIndex >= 0 ? existingEntries[existingIndex].createdAt : undefined)
       || new Date().toISOString();
 
+    // A brand-new entry is never born superseded, so an upsert only ever
+    // preserves an existing mark rather than setting one — the write-time
+    // gate marks the OLD row via `updateEntry`, not this path (ticket 17 /
+    // ADR 0015).
+    const supersededBy = entry.supersededBy !== undefined
+      ? entry.supersededBy
+      : (existingIndex >= 0 ? existingEntries[existingIndex].supersededBy : null) ?? null;
+    const supersededAt = entry.supersededAt !== undefined
+      ? entry.supersededAt
+      : (existingIndex >= 0 ? existingEntries[existingIndex].supersededAt : null) ?? null;
+
     const fullMemory: Memory = {
       id: memoryId,
       category,
@@ -139,6 +150,8 @@ export class MdStorageAdapter {
       importance: entry.importance !== undefined ? entry.importance : 3,
       taskId: entry.taskId !== undefined ? entry.taskId : null,
       createdAt,
+      supersededBy,
+      supersededAt,
       fields: entry.fields,
     };
 
@@ -178,6 +191,8 @@ export class MdStorageAdapter {
       importance: entry.importance !== undefined ? entry.importance : current.importance,
       taskId: entry.taskId !== undefined ? entry.taskId : current.taskId,
       createdAt: entry.createdAt !== undefined ? entry.createdAt : current.createdAt,
+      supersededBy: entry.supersededBy !== undefined ? entry.supersededBy : current.supersededBy,
+      supersededAt: entry.supersededAt !== undefined ? entry.supersededAt : current.supersededAt,
       // Per-key merge, not a full replace: an update that only touches one
       // declared field must not clobber the entry's other declared fields,
       // matching how tags/importance/taskId are already preserved when a
@@ -262,6 +277,15 @@ export class MdStorageAdapter {
 
     if (memory.taskId !== undefined) {
       frontmatterObj.taskId = memory.taskId;
+    }
+
+    // Only emitted when set (ticket 17 / ADR 0015) — unlike `taskId` above,
+    // this is a rare, additive relationship, and writing `supersededBy: null`
+    // into every entry's frontmatter would be pure noise on every store that
+    // has never used it.
+    if (memory.supersededBy) {
+      frontmatterObj.supersededBy = memory.supersededBy;
+      if (memory.supersededAt) frontmatterObj.supersededAt = memory.supersededAt;
     }
 
     // Declared fields (ticket 43) get their own frontmatter keys, sorted so
@@ -426,6 +450,17 @@ export class MdStorageAdapter {
         ? (frontmatter.taskId === null ? null : String(frontmatter.taskId))
         : undefined;
 
+      // Ticket 17 / ADR 0015: absent means live, matching the SQLite side's
+      // NULL default — never minted or repaired when missing, unlike id/
+      // createdAt/importance above, since "no supersession mark" is a valid,
+      // common, non-degraded state rather than a missing-data defect.
+      const supersededBy = frontmatter.supersededBy !== undefined && frontmatter.supersededBy !== null
+        ? String(frontmatter.supersededBy)
+        : null;
+      const supersededAt = frontmatter.supersededAt !== undefined && frontmatter.supersededAt !== null
+        ? String(frontmatter.supersededAt)
+        : null;
+
       // Any other frontmatter key is a declared field (ticket 43) — or, on a
       // hand-edited file, a field not yet declared in `neuron.yaml` at all.
       // Read permissively either way ("read and report, never refuse" — ADR
@@ -447,6 +482,8 @@ export class MdStorageAdapter {
         importance,
         taskId,
         createdAt,
+        supersededBy,
+        supersededAt,
         fields: Object.keys(fields).length > 0 ? fields : undefined,
       });
     }

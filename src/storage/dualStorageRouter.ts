@@ -111,6 +111,8 @@ export class DualStorageRouter {
             importance: m.importance,
             taskId: m.taskId,
             fields: m.fields,
+            supersededBy: m.supersededBy,
+            supersededAt: m.supersededAt,
           });
         } catch {
           mdUpdated = false;
@@ -278,7 +280,11 @@ export class DualStorageRouter {
   private async bootstrapSeed(requested: string[]): Promise<void> {
     const categories = [...new Set([...requested, ...this.vectorDb.listStoredCategories()])];
     for (const category of categories) {
-      const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT });
+      // `includeSuperseded: true` — this is a store-management read, not a
+      // retrieval one; a superseded row must seed into markdown too, or the
+      // seed silently drops it the way ticket 31's undeclared-category bug
+      // once dropped rows the mirror never visited (see the comment above).
+      const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT, includeSuperseded: true });
       for (const entry of vecEntries) {
         await this.mdAdapter.writeEntry(category, {
           id: entry.id,
@@ -287,6 +293,8 @@ export class DualStorageRouter {
           importance: entry.importance,
           taskId: entry.taskId ?? undefined,
           createdAt: entry.createdAt,
+          supersededBy: entry.supersededBy,
+          supersededAt: entry.supersededAt,
           fields: entry.fields,
         });
       }
@@ -296,7 +304,13 @@ export class DualStorageRouter {
 
   private async reconcileCategory(category: string): Promise<void> {
     const mdEntries = await this.mdAdapter.readCategory(category);
-    const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT });
+    // `includeSuperseded: true` for the same reason as `bootstrapSeed`: the
+    // mirror must see a superseded row on either side, or it either deletes
+    // a hand-marked vector row it can no longer see (mdMap still has it,
+    // vecMap silently wouldn't) or never pushes a hand-marked markdown edit
+    // into the index (see the `superseded_by` addition to `computeMemoryHash`
+    // below, which is what makes the latter case detected at all).
+    const vecEntries = await this.vectorDb.query({ categories: [category], limit: RECONCILE_QUERY_LIMIT, includeSuperseded: true });
 
     const mdMap = new Map(mdEntries.map(m => [m.id, m]));
     const vecMap = new Map(vecEntries.map(m => [m.id, m]));
@@ -316,6 +330,8 @@ export class DualStorageRouter {
           importance: mdEntry.importance,
           taskId: mdEntry.taskId ?? undefined,
           createdAt: mdEntry.createdAt,
+          supersededBy: mdEntry.supersededBy,
+          supersededAt: mdEntry.supersededAt,
           fields: mdEntry.fields,
         }]);
       } catch (err) {

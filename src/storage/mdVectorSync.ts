@@ -37,7 +37,14 @@ export function computeMemoryHash(memory: Memory): string {
   const tags = (memory.tags || []).join(',');
   const importance = memory.importance ?? 3;
   const taskId = memory.taskId || '';
-  const payload = `${content}|${tags}|${importance}|${taskId}`;
+  // `supersededBy` is included (ticket 17 / ADR 0015) so a hand-edit that
+  // only adds a supersession mark — e.g. the two known-reversed pairs this
+  // repo's own store hand-fixes — is detected as a change and reconciled,
+  // not silently skipped because content/tags/importance/taskId are
+  // otherwise unchanged. `supersededAt` is deliberately left out: it never
+  // changes independently of `supersededBy`.
+  const supersededBy = memory.supersededBy || '';
+  const payload = `${content}|${tags}|${importance}|${taskId}|${supersededBy}`;
   return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
@@ -96,7 +103,11 @@ export async function syncMdWithVector(
 
       let dbMemories: Memory[] = [];
       try {
-        dbMemories = await vectorDb.query({ categories: [category], limit: 10000 });
+        // `includeSuperseded: true` — this is a store-management sync, not a
+        // retrieval read, so it must see superseded rows on the vector side
+        // too, or they look absent from `dbMap` and get treated as "only in
+        // markdown" / re-created (ticket 17 / ADR 0015).
+        dbMemories = await vectorDb.query({ categories: [category], limit: 10000, includeSuperseded: true });
       } catch (err: any) {
         result.errors.push({ category, error: `Database query error: ${err.message}` });
         continue;
@@ -120,6 +131,8 @@ export async function syncMdWithVector(
           importance: mdEntry.importance ?? 3,
           taskId: mdEntry.taskId ?? undefined,
           createdAt: mdEntry.createdAt,
+          supersededBy: mdEntry.supersededBy,
+          supersededAt: mdEntry.supersededAt,
           fields: mdEntry.fields,
         }]);
       };

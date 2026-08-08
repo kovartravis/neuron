@@ -77,6 +77,34 @@ export async function handleMemoryCommand(
       console.error('Error: content is required for memory add');
       process.exit(1);
     }
+
+    // Ticket 17 / ADR 0015: the write-time supersession gate. `--supersedes`
+    // resolves it by naming the reversal target directly; `--not-a-reversal`
+    // resolves it by confirming the near-duplicate is not one. Either skips
+    // the embedding-similarity shortlist below. The target is validated
+    // *before* the new entry is written, so a bad `--supersedes` id fails
+    // clean rather than leaving an orphaned new entry with no old one marked.
+    let supersedesTarget: Awaited<ReturnType<typeof memory.findById>> = null;
+    if (options.supersedes) {
+      supersedesTarget = await memory.findById(options.supersedes);
+      if (!supersedesTarget) {
+        console.error(`Error: --supersedes target "${options.supersedes}" not found`);
+        process.exit(1);
+      }
+    } else if (!options.notAReversal) {
+      const candidate = await memory.findSupersessionCandidate(content);
+      if (candidate) {
+        console.error(
+          `Error: this write looks like it may supersede an existing entry ` +
+            `(similarity ${candidate.similarity.toFixed(3)}):`
+        );
+        console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
+        console.error(`  If this is a reversal, re-run with --supersedes ${candidate.id}`);
+        console.error(`  If it is not, re-run with --not-a-reversal`);
+        process.exit(1);
+      }
+    }
+
     const res = await memory.transact([
       {
         op: 'upsert',
@@ -88,6 +116,19 @@ export async function handleMemoryCommand(
         fields: options.fields,
       },
     ]);
+
+    if (supersedesTarget) {
+      await memory.transact([
+        {
+          op: 'update',
+          category: supersedesTarget.category,
+          id: supersedesTarget.id,
+          supersededBy: res[0].id,
+          supersededAt: new Date().toISOString(),
+        },
+      ]);
+    }
+
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'query') {
     // A read harms nothing and retrying is free, so an unquoted query is joined
@@ -103,13 +144,13 @@ export async function handleMemoryCommand(
     // `rejected` (ticket 41 / ADR 0012) lets an empty `results` mean "the
     // relevance gate rejected N candidates" rather than being indistinguishable
     // from an empty store.
-    const { results, rejected } = await memory.queryGated({ text: queryText, categories, limit: options.limit });
+    const { results, rejected } = await memory.queryGated({ text: queryText, categories, limit: options.limit, includeSuperseded: options.includeSuperseded });
     console.log(JSON.stringify({ results, project: projectName, query: queryText, rejected }));
   } else if (subCommand === 'list') {
     // Was `options.category` only, so `--categories a,b` parsed successfully
     // and silently had no filtering effect — `query` already reads both.
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
-    const results = await memory.query({ categories, limit: options.limit });
+    const results = await memory.query({ categories, limit: options.limit, includeSuperseded: options.includeSuperseded });
     console.log(JSON.stringify(results));
   } else if (subCommand === 'delete') {
     const id = positionals[0];

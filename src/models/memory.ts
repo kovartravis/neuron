@@ -10,6 +10,13 @@ export interface MemoryQuery {
   /** @deprecated Use `categories` or `category` instead. Kept for backward compatibility. */
   kind?: MemoryKind;
   limit?: number;
+  /**
+   * Include rows with `supersededBy` set (ticket 17 / ADR 0015). Default
+   * `false`: superseded rows hard-exclude from every read path, matching
+   * ADR 0010 §6's dedupe precedent. Query-only — `neuron exec`'s injection
+   * path never sets this, keeping its existing minimal-injection posture.
+   */
+  includeSuperseded?: boolean;
 }
 
 export interface Memory {
@@ -34,6 +41,15 @@ export interface Memory {
    * so a value set here is not yet guaranteed to survive a pure-vector row.
    */
   fields?: Record<string, string>;
+  /**
+   * Ticket 17 / ADR 0015: the id of the entry this one was marked superseded
+   * by, or `null`/undefined if it is live. Set only via the write-time gate's
+   * `--supersedes` resolution — never on creation. One-way, no undo: a wrong
+   * mark is corrected by a new forward-linking entry, not by clearing this.
+   */
+  supersededBy?: string | null;
+  /** Timestamp `supersededBy` was set, or `null`/undefined if it is live. */
+  supersededAt?: string | null;
 }
 
 /**
@@ -44,9 +60,9 @@ export interface Memory {
  * — enrichment fills it, or the write fails naming the cause.
  */
 export type MemoryMutation =
-  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null; fields?: Record<string, string>;
+  | { op: 'upsert'; category?: string; id?: string; content: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null; fields?: Record<string, string>; supersededBy?: string | null; supersededAt?: string | null;
       /** @deprecated Use `category` instead. */ kind?: string; }
-  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null; fields?: Record<string, string>;
+  | { op: 'update'; category: string; id: string; content?: string; tags?: string[]; importance?: number; taskId?: string; createdAt?: string; enrichedAt?: string | null; fields?: Record<string, string>; supersededBy?: string | null; supersededAt?: string | null;
       /** @deprecated Use `category` instead. */ kind?: string; }
   | { op: 'delete'; category: string; id: string;
       /** @deprecated Use `category` instead. */ kind?: string; };

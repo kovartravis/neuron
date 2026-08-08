@@ -167,6 +167,7 @@ export function isValidColumnIdentifier(name: string): boolean {
 export const RESERVED_COLUMN_NAMES = [
   'id', 'project_id', 'category', 'content', 'tags', 'embedding',
   'importance', 'task_id', 'created_at', 'updated_at', 'enriched_at',
+  'superseded_by', 'superseded_at',
 ];
 
 /**
@@ -184,6 +185,7 @@ export const RESERVED_FLAG_NAMES = [
   '--force', '--type', '--title', '--help', '-h',
   '--yes', '--no-hooks', '--overwrite-hooks', '--keep-hooks', '--hook-target',
   '--uninstall-hooks', '--harness',
+  '--supersedes', '--not-a-reversal', '--include-superseded',
 ];
 
 export interface DeclaredFieldFlag {

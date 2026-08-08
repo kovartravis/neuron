@@ -490,6 +490,26 @@ export class NeuronMemory {
       })();
       currentVersion = 7;
     }
+
+    // --- Migration v8: memory supersession (ticket 17 / ADR 0015) ---
+    // Additive-only, both columns default NULL on existing rows: a row is
+    // live unless `superseded_by` says otherwise. No backfill needed — the
+    // two known-reversed pairs in this repo's own store are hand-fixed
+    // separately (ADR 0015 Decision 5), not migrated.
+    if (currentVersion < 8) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          ALTER TABLE memories ADD COLUMN superseded_by TEXT;
+          ALTER TABLE memories ADD COLUMN superseded_at TEXT;
+          CREATE INDEX IF NOT EXISTS idx_memories_superseded
+            ON memories (project_id) WHERE superseded_by IS NOT NULL;
+        `);
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '8');
+        this.db.pragma('user_version = 8');
+      })();
+      currentVersion = 8;
+    }
   }
 
   /**
@@ -623,6 +643,11 @@ export class NeuronMemory {
       : '';
     const categoryParams = categoryFilter ?? [];
 
+    // Ticket 17 / ADR 0015: hard-exclude superseded rows from every read path
+    // by default. Rows are never deleted — `includeSuperseded` (query only)
+    // or a direct id lookup (`findById`) still reach them.
+    const supersededClause = q.includeSuperseded ? '' : 'AND superseded_by IS NULL';
+
     if (q.text) {
       const queryVec = await this.embedder.embedQuery(q.text);
 
@@ -631,9 +656,9 @@ export class NeuronMemory {
 
       // --- Semantic rank list ---
       const rows = (this.db.prepare(`
-        SELECT id, category, content, tags, embedding, importance, task_id, created_at${this.fieldSelectSql()}
+        SELECT id, category, content, tags, embedding, importance, task_id, created_at, superseded_by, superseded_at${this.fieldSelectSql()}
         FROM memories
-        WHERE project_id = ? ${categoryClause}
+        WHERE project_id = ? ${categoryClause} ${supersededClause}
       `).all(this.projectId, ...categoryParams) as any[]);
 
       // Compute semantic similarities and sort descending → rank position
@@ -658,7 +683,7 @@ export class NeuronMemory {
           const ftsRows = (this.db.prepare(`
             SELECT m.id FROM memories_fts f
             JOIN memories m ON m.rowid = f.rowid
-            WHERE f.memories_fts MATCH ? AND m.project_id = ? ${categoryClause}
+            WHERE f.memories_fts MATCH ? AND m.project_id = ? ${categoryClause} ${supersededClause}
             ORDER BY rank
           `).all(ftsQuery, this.projectId, ...categoryParams) as any[]);
           ftsRows.forEach((r, i) => ftsRank.set(r.id, i + 1));
@@ -692,6 +717,8 @@ export class NeuronMemory {
           importance: row.importance,
           taskId: row.task_id ?? null,
           createdAt: row.created_at,
+          supersededBy: row.superseded_by ?? null,
+          supersededAt: row.superseded_at ?? null,
           fields: this.extractFields(row)
         });
       }
@@ -701,9 +728,9 @@ export class NeuronMemory {
     } else {
       // No text query — list mode
       const stmt = this.db.prepare(`
-        SELECT id, category, content, tags, importance, task_id, created_at${this.fieldSelectSql()}
+        SELECT id, category, content, tags, importance, task_id, created_at, superseded_by, superseded_at${this.fieldSelectSql()}
         FROM memories
-        WHERE project_id = ? ${categoryClause}
+        WHERE project_id = ? ${categoryClause} ${supersededClause}
         ORDER BY rowid ASC
       `);
       const rows = stmt.all(this.projectId, ...categoryParams) as any[];
@@ -717,11 +744,75 @@ export class NeuronMemory {
           importance: row.importance,
           taskId: row.task_id ?? null,
           createdAt: row.created_at,
+          supersededBy: row.superseded_by ?? null,
+          supersededAt: row.superseded_at ?? null,
           fields: this.extractFields(row)
         });
       }
       return results.slice(0, limit);
     }
+  }
+
+  /**
+   * Fetch a single row by id, unfiltered by supersession — the "direct id
+   * lookup" ADR 0015 Decision 2 promises as the escape hatch for a
+   * superseded row (never deleted, just hard-excluded from `query`/`exec`).
+   * In `md`/`split` mode this forces a reconcile first (via `router.query`)
+   * so a hand-edited markdown file (e.g. the supersession hand-fix in ADR
+   * 0015 Decision 5) is visible before the raw SQLite read below.
+   */
+  public async findById(id: string): Promise<Memory | null> {
+    if (!this.db) return null;
+    await this.router.query({ limit: 0 });
+    const row = this.db.prepare(`
+      SELECT id, category, content, tags, importance, task_id, created_at, superseded_by, superseded_at${this.fieldSelectSql()}
+      FROM memories WHERE id = ? AND project_id = ?
+    `).get(id, this.projectId) as any;
+    if (!row) return null;
+    return {
+      id: row.id,
+      category: row.category,
+      kind: row.category,
+      content: row.content,
+      tags: JSON.parse(row.tags),
+      importance: row.importance,
+      taskId: row.task_id ?? null,
+      createdAt: row.created_at,
+      supersededBy: row.superseded_by ?? null,
+      supersededAt: row.superseded_at ?? null,
+      fields: this.extractFields(row)
+    };
+  }
+
+  /**
+   * The write-time supersession gate (ticket 17 / ADR 0015 Decision 1):
+   * shortlist the single closest existing, non-superseded entry by raw
+   * embedding cosine, across every category — the CLI calls this before a
+   * category is even known (category inference runs later, inside
+   * `enrichUpsert`), so there is no category to scope the search to yet.
+   * Returns `null` below `SUPERSESSION_SIMILARITY_THRESHOLD`; the embedder
+   * only shortlists, it never decides whether the relationship is a real
+   * reversal — that stays the agent's call via `--supersedes`.
+   */
+  public async findSupersessionCandidate(
+    content: string
+  ): Promise<{ id: string; category: string; content: string; similarity: number } | null> {
+    if (!this.db) return null;
+    await this.router.query({ limit: 0 });
+    const embedding = await this.embedder.embed(content);
+    const rows = this.db.prepare(`
+      SELECT id, category, content, embedding FROM memories
+      WHERE project_id = ? AND superseded_by IS NULL
+    `).all(this.projectId) as any[];
+
+    let best: { id: string; category: string; content: string; similarity: number } | null = null;
+    for (const row of rows) {
+      const similarity = dotProduct(embedding, toFloat32(row.embedding));
+      if (similarity >= SUPERSESSION_SIMILARITY_THRESHOLD && (!best || similarity > best.similarity)) {
+        best = { id: row.id, category: row.category, content: row.content, similarity };
+      }
+    }
+    return best;
   }
 
   /**
@@ -1047,6 +1138,13 @@ export class NeuronMemory {
             if (m.taskId !== undefined) { sets.push('task_id = ?'); params.push(m.taskId); }
             if (m.createdAt !== undefined) { sets.push('created_at = ?'); params.push(m.createdAt); }
             if (m.enrichedAt !== undefined) { sets.push('enriched_at = ?'); params.push(m.enrichedAt); }
+            // Ticket 17 / ADR 0015: reached both by the CLI's `--supersedes`
+            // resolution (`op: 'update'`, only these two fields set) and by
+            // reconcile mirroring a hand-edited markdown row (`op: 'upsert'`
+            // on an id that already exists, going through this same shared
+            // branch — see the `exists` check above).
+            if (m.supersededBy !== undefined) { sets.push('superseded_by = ?'); params.push(m.supersededBy); }
+            if (m.supersededAt !== undefined) { sets.push('superseded_at = ?'); params.push(m.supersededAt); }
             // Declared category fields (ticket 44): `m.fields` at this point
             // is already the fully-enforced partial patch from
             // `enforceFieldSchema` — an untouched field simply isn't a key
@@ -1301,6 +1399,15 @@ function dotProduct(a: Float32Array, b: Float32Array): number {
 
 const DEGRADATION_KEY_PREFIX = 'enrichment_degraded:';
 const RELEVANCE_GATE_REJECTED_KEY = 'relevance_gate_rejected_total';
+
+/**
+ * Write-time supersession gate threshold (ticket 17 / ADR 0015 Decision 1),
+ * calibrated against ticket 27/39's measured same-topic band rather than a
+ * fresh number: real near-duplicate cosines cluster near 1.0 with almost no
+ * intermediate range, so a floor this close to 1.0 still separates a genuine
+ * same-topic reversal candidate from merely-related entries.
+ */
+export const SUPERSESSION_SIMILARITY_THRESHOLD = 0.97;
 
 /**
  * Category is a non-nullable column that determines storage routing, so no

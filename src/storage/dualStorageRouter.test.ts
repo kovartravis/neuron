@@ -488,4 +488,33 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
       warnSpy.mockRestore();
     });
   });
+
+  describe('Ticket 17 / ADR 0015: supersession hand-fix reconciles from markdown to the vector index', () => {
+    it('a hand-edit that only adds supersededBy to the markdown frontmatter propagates to the vector index on the next command', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+      await router.transact([
+        { op: 'upsert', category: 'decisions', id: 'old-ruling', content: 'the collision is a bug' },
+        { op: 'upsert', category: 'decisions', id: 'new-ruling', content: 'the collision is deliberate' },
+      ]);
+
+      // Hand-fix, per ADR 0015 Decision 5: a direct one-off edit to the
+      // frontmatter, bypassing the write-time gate entirely (it never ran).
+      await mdAdapter.updateEntry('decisions', {
+        id: 'old-ruling',
+        supersededBy: 'new-ruling',
+        supersededAt: '2026-08-08T00:00:00.000Z',
+      });
+
+      // Default query must now hard-exclude the hand-marked row...
+      const defaultResults = await router.query({ category: 'decisions' });
+      expect(defaultResults.find(m => m.id === 'old-ruling')).toBeUndefined();
+
+      // ...but the vector index must actually have the mark, not just
+      // markdown — includeSuperseded reaches through to the reconciled row.
+      const withSuperseded = await router.query({ category: 'decisions', includeSuperseded: true });
+      const reconciled = withSuperseded.find(m => m.id === 'old-ruling');
+      expect(reconciled?.supersededBy).toBe('new-ruling');
+      expect(reconciled?.supersededAt).toBe('2026-08-08T00:00:00.000Z');
+    });
+  });
 });

@@ -582,6 +582,8 @@ Just some content, no frontmatter at all.
         importance: 4,
         taskId: 'task-42',
         createdAt: '2026-07-28T12:00:00.000Z',
+        supersededBy: null,
+        supersededAt: null,
       });
 
       // Fully-specified entries need no repair, so readCategory must not
@@ -630,6 +632,8 @@ Just some content, no frontmatter at all.
         importance: 5,
         taskId: 'task-77',
         createdAt: '2026-07-28T12:00:00.000Z',
+        supersededBy: null,
+        supersededAt: null,
       });
     });
 

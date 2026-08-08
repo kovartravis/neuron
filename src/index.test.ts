@@ -65,15 +65,19 @@ describe('NeuronMemory DB Migrations', () => {
     seedDb.pragma('user_version = 6');
     seedDb.close();
 
-    // Opening the legacy database through NeuronMemory must run the v7 migration.
+    // Opening the legacy database through NeuronMemory must run the v7
+    // migration, and now also v8 (ticket 17 / ADR 0015 supersession columns)
+    // since `initialize()` always walks a database up to the latest version.
     const memory = new NeuronMemory({ dbPath, projectRoot: tempDir, projectName: 'legacy-project' });
     const db = memory.getDb();
 
-    expect(db.pragma('user_version', { simple: true })).toBe(7);
+    expect(db.pragma('user_version', { simple: true })).toBe(8);
 
     const memoriesCols = (db.pragma('table_info(memories)') as any[]).map((c: any) => c.name);
     expect(memoriesCols).not.toContain('scope');
     expect(memoriesCols).not.toContain('is_manual_scope');
+    expect(memoriesCols).toContain('superseded_by');
+    expect(memoriesCols).toContain('superseded_at');
 
     expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='query_logs'").get()).toBeUndefined();
     expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='learning_query_matches'").get()).toBeUndefined();
