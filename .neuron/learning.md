@@ -2148,3 +2148,27 @@ tags:
 taskId: null
 ---
 Fix for scaffold.ts generating a deprecated config key: NEURON_YAML_TEMPLATE (src/config/scaffold.ts) still emitted pullRules.default.minScore: 0.35 after tickets 39/41 deprecated minScore as structurally inert (ADR 0012) — the deprecation only added a stderr warning path in neuronYaml.ts, it never touched the generator that ships the key into every fresh project. Symptom: any project bootstrapped via 'neuron init' on rc3+ would print '[neuron warning] pullRules.default.minScore is deprecated' on its very first subsequent command, since the raw parsed config has the key set explicitly. Root cause verified by grepping the codebase for minScore call sites and confirming validateNeuronYaml's warning fires only when the raw YAML sets the key, then running the actual generated template through the parser and observing the warning. Fix: delete the 'minScore: 0.35' line from the pullRules.default block in NEURON_YAML_TEMPLATE, extend the template's own doc comment to name minScore alongside the existing llm.enrichment.importance trap it already warned about, and add two regression tests in scaffold.test.ts — one asserting the template string never contains 'minScore', one asserting validateNeuronYaml raises zero stderr writes when parsing the template. This repo's own hand-written neuron.yaml still carries the stale key and was deliberately left alone, since it predates the deprecation and is out of scope for a template-generation fix.
+
+---
+id: 09cc83bf-725e-4f17-8e3d-11e7cee75cfd
+createdAt: 2026-08-08T11:58:51.820Z
+importance: 4
+tags:
+  - failure-fix
+  - longmemeval
+  - adr
+taskId: null
+---
+Fix for a long-running Node harness losing all data on timeout: benchmarks/token-ab/run.mjs (and any similar all-sessions-then-write orchestrator) only calls fs.writeFileSync(results.json) once, after every session in the plan finishes -- so running it via a foreground Bash tool call that hits the default 2-minute timeout kills the process mid-run with zero results persisted, even though the API calls already succeeded and were billed. Verified twice on 2026-08-08 while re-running ticket 10's counterfactual A/B for ticket 18: two separate foreground invocations were each killed at 2 minutes after 9-10 of 12 sessions had actually completed (visible in the captured stdout log), losing all of that session data and leaving orphaned git worktrees under the OS tmpdir that had to be found via 'git worktree list' and cleaned up by hand ('git worktree remove --force <dir>' then 'git worktree prune'). Resolution: always launch this class of script (anything with real spend and a single end-of-run write) with run_in_background true, or redirect to a log file and poll, never as a plain foreground call that can hit the harness's own timeout. Edge case: a killed run's real API cost is still incurred and billed even though no results file exists to account for it -- if this happens, recover the per-session pass/fail/token/cost numbers from the captured stdout log text rather than treating the spend as unaccounted.
+
+---
+id: dff743f7-f9c5-442c-9d3a-b1efc1dfd521
+createdAt: 2026-08-08T11:58:52.177Z
+importance: 4
+tags:
+  - failure-fix
+  - git
+  - release
+taskId: null
+---
+Fix for benchmarks/token-ab/run.mjs's fixture builder silently testing pre-fix code: fixtures.mjs calls 'git worktree add --detach HEAD', which reads the last commit, not the working tree -- so if the change under test (e.g. ticket 17's memory-supersession implementation) is still uncommitted, a live A/B re-run against that fixture measures the OLD behaviour and would have reproduced the original regression even though the fix existed on disk. Caught 2026-08-08 before spending anything live, via 'git diff --stat HEAD -- .neuron/decisions.md' showing 229 deleted lines still uncommitted. Resolution: before trusting any git-worktree-based fixture (this harness or a future one), diff the target paths against HEAD, not just 'git status', to confirm the fixture will actually see the change being tested; commit first if it doesn't.

@@ -62,3 +62,14 @@ is where the truth surfaces.
 - [ ] README compatibility matrix with a fallback row, superseding the minimal two-row note
 - [ ] Plain-language explanation of the fidelity levels
 - [ ] Verified-as-of version and date recorded on the matrix
+
+## Comments
+
+**2026-08-08, added by ticket 18's resolution:** Ticket 18 re-ran ticket
+10's counterfactual A/B after the memory-supersession fix (ticket 17) and
+found the regression that originally motivated this disclosure work is now
+fixed (0% memory-arm failure vs 33% control on the regressed 2-task
+subset, up from 67% before the fix). Not directly load-bearing for this
+ticket's harness-fidelity scope, but relevant context if this ticket's
+disclosure work ever touches recall-quality claims alongside fidelity
+claims. Full detail: `.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`.

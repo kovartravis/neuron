@@ -288,6 +288,32 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   were written for real via the new `--supersedes` flow (dogfooding),
   rather than fabricating links between two pre-existing entries. Unblocks
   `18`.
+- **[18 — Re-run Counterfactual A/B After Supersession](issues/18-rerun-counterfactual-ab-post-supersession.md)
+  resolved 2026-08-08 — confirmed fixed, not just improved.** Ticket 17's
+  implementation had to be committed to `HEAD` first (it was fully
+  uncommitted, and the harness's fixtures build from `git worktree add
+  HEAD`, not the working tree — see the ticket's own Comments). Live
+  12-session re-run (Claude Sonnet 5, $1.11) on the 2-task subset that
+  actually regressed in `10` (`prune-default-collision`,
+  `pruning-ab-verdict`; the other two tasks were saturated 3/3 on both arms
+  and mechanically unaffected by supersession): memory-arm failure dropped
+  from `10`'s 67% (recomputed on this subset) to **0%**, beating control's
+  unchanged 33%. Both named regression repeats individually resolve
+  correctly, not just the aggregate. A grading-heuristic gap in
+  `benchmarks/token-ab/tasks.mjs`'s negation detection (missed "not *a*
+  bug" and "rather than a bug") was found and fixed mid-resolution, then
+  all 12 captured answers re-graded offline at zero extra spend — same move
+  `10` made for its own negation bug. Also disclosed: two earlier attempts
+  at this run were killed by an operator mistake (2-minute foreground
+  timeout, no partial-results recovery), costing ~$2.10 in unrecovered real
+  spend on top of this run's $1.11 (~$3.21 total this session against `10`'s
+  $20 approved budget). Full findings, including the caveat that this is a
+  2-task subset rather than `10`'s full N=4, at
+  `.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`.
+  Fed forward to `03`, `04`, `15`, and back onto `10` itself (now marked
+  superseded by this result). Unblocks `04`'s `18` dependency (many of `04`'s
+  other blockers remain open; `15` stays blocked on `14`, unaffected by this
+  resolution).
 
 ## Not yet specified
 

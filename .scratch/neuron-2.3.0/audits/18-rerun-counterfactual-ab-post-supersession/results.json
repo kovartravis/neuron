@@ -1,0 +1,289 @@
+{
+  "generatedAt": "2026-08-08T11:52:38.984Z",
+  "model": "claude-sonnet-5",
+  "dryRun": false,
+  "taskCount": 2,
+  "repeats": 3,
+  "sessionCount": 12,
+  "totalCostUsd": 1.1103,
+  "summary": {
+    "armStats": {
+      "memory": {
+        "sessions": 6,
+        "passed": 6,
+        "failed": 0,
+        "failureRate": 0,
+        "tokens": {
+          "mean": 52130,
+          "median": 43627,
+          "p95": 54641,
+          "min": 37547,
+          "max": 87337
+        },
+        "costUsd": 0.705
+      },
+      "control": {
+        "sessions": 6,
+        "passed": 4,
+        "failed": 2,
+        "failureRate": 0.3333333333333333,
+        "tokens": {
+          "mean": 27474,
+          "median": 26151,
+          "p95": 33549,
+          "min": 17460,
+          "max": 35145
+        },
+        "costUsd": 0.4053
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": -24656,
+    "spread": 49790,
+    "noMeasuredDifference": true
+  },
+  "results": [
+    {
+      "task": "prune-default-collision",
+      "arm": "memory",
+      "sessionLabel": "prune-default-collision-memory-r0",
+      "turns": 4,
+      "wallMs": 25480,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The default importance and prune threshold both equal 3 (inclusive comparison), and per the maintainer's explicit 2026-08-01 decision this collision is deliberate design (not a bug to fix).",
+      "tokens": {
+        "input": 38279,
+        "output": 1345,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 39624,
+      "answerText": "# Default importance / prune-threshold collision\n\n**Numeric value:** 3 — both the default memory entry `importance` (src/index.ts: `importance = m.importance ?? 3`) and the default `maxPruneImportance` prune threshold are set to `3`, and the prune SQL uses an inclusive comparison (`importance <= ?`), so any entry left at the default importance is prune-eligible.\n\n**Verdict: Intentional / not a bug.**\n\nThis was explicitly raised as a hazard (tracked as ticket 23) and the maintainer explicitly ruled on it:\n\n> \"Maintainer decision 2026-08-01: the default-importance-3 / default-maxPruneImportance-3 collision ticket 23 framed as a hazard is deliberate, not a bug to be fixed by separating the defaults. History should clear out by default unless an entry is explicitly marked important enough to survive a prune.\"\n\nThe rationale is that history-category memory is meant to clear out by default unless a user explicitly marks an entry as important enough to survive pruning (e.g. via `--importance`). The maintainer directed that if the per-category prune config work is ever revisited, only two adjacent issues should be fixed — the automatic-trigger question, and the fact that the `decisions` category (ADRs) inadvertently shares the same importance-3 default with no category-scoped protection — but the collision/inclusive-comparison itself is explicitly **not** to be \"resolved\" by separating the defaults.\n\nNote also that automatic pruning was ultimately removed from 2.2.0 (tickets 24/26), so pruning is currently manual-only (`neuron memory prune`); the collision therefore has no live automatic effect today, but it remains a deliberately-kept design choice for the manual prune path rather than a bug awaiting a fix.\n",
+      "passed": true,
+      "gradeDetail": "value=true intentional=true callsItABug=false"
+    },
+    {
+      "task": "prune-default-collision",
+      "arm": "memory",
+      "sessionLabel": "prune-default-collision-memory-r1",
+      "turns": 4,
+      "wallMs": 20544,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The importance/prune-threshold default collision (both 3, inclusive comparison) is documented as deliberate maintainer design (\"history should clear out by default\"), not a bug to fix.",
+      "tokens": {
+        "input": 42149,
+        "output": 1478,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 43627,
+      "answerText": "# Default importance / prune-threshold collision\n\n**Numeric value:** 3 — both the default `importance` for a memory entry and the default\n`maxPruneImportance` prune-eligibility threshold are 3, and the prune comparison is\ninclusive (`importance <= maxPruneImportance`), so an entry left at its default\nimportance is prune-eligible by default.\n\n**Verdict: intentional / not a bug.**\n\nPer the maintainer decision recorded in `.neuron/decisions.md` (2026-08-01, regarding\nticket 23's \"hazard\" framing): the importance-3 / maxPruneImportance-3 collision is\n**deliberate, not a bug to be fixed by separating the defaults**. The stated rationale\nis that history should clear out by default unless an entry is explicitly marked\nimportant enough to survive a prune — i.e., the inclusive `<=` at equal defaults is the\nintended \"prune unless proven important\" behavior, not an accidental off-by-one/edge-case\ndefect.\n\nCaveats from the same record: if per-category prune config (ticket 25) were ever\nrevisited, the things that *would* need fixing are (a) whether pruning should trigger\nautomatically at all, and (b) the accidental exposure of the `decisions` category (ADRs\nsitting at the same importance-3 default with no category-scoped protection) — but the\ncollision itself is explicitly \"not to be resolved by separating the defaults.\"\nAlso note ticket 25 (which would have carried the collision-fix scope) was later pushed\noff entirely, and automatic pruning was removed from 2.2.0 after ticket 24's A/B test\nshowed no safe importance-based judgement to prune with; pruning remains manual-only\n(`neuron memory prune`), so today the collision has no live automatic effect. A separate\ncounterfactual A/B (ticket 10) found that a memory-augmented agent incorrectly asserted\nthis collision was \"a bug\" in 3/3 repeats, contradicting the maintainer's actual ruling —\nconfirming this ANSWER should rely on the explicit decision record, not surface-level\n\"looks like a bug\" reasoning.\n",
+      "passed": true,
+      "gradeDetail": "value=true intentional=true callsItABug=false"
+    },
+    {
+      "task": "prune-default-collision",
+      "arm": "memory",
+      "sessionLabel": "prune-default-collision-memory-r2",
+      "turns": 5,
+      "wallMs": 28927,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The default importance and prune-threshold value is 3, and the maintainer explicitly ruled this inclusive collision deliberate design (not a bug), intended to make history prune by default unless an entry's importance is explicitly raised.",
+      "tokens": {
+        "input": 85666,
+        "output": 1671,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 87337,
+      "answerText": "# Default importance / prune-threshold collision\n\n**Numeric value:** 3\n\nA memory entry's default `importance` is 3, and the default prune-eligibility\nthreshold (`maxPruneImportance`) is also 3. The prune comparison is inclusive\n(`importance <= maxPruneImportance`), so an entry left at its default\nimportance is, by default, prune-eligible.\n\n**Verdict: Intentional / not a bug.**\n\nPer the maintainer's explicit 2026-08-01 ruling (recorded in\n`.neuron/decisions.md`): \"the default-importance-3 / default-maxPruneImportance-3\ncollision ticket 23 framed as a hazard is deliberate, not a bug to be fixed\nby separating the defaults.\" The design intent is that memory/history should\nclear out by default unless an entry is explicitly marked important enough\nto survive a prune (i.e., raised above the default) — the collision is the\nmechanism that enforces \"opt in to being kept,\" not an oversight.\n\nThe maintainer did identify two adjacent things that *would* need fixing if\nthe related ticket (25, per-category prune config) were ever revived: (1) the\nautomatic-trigger question, and (2) the accidental exposure of the\n`decisions` category, since ADRs sit at the same importance-3 default with\nno category-scoped protection. But explicitly: \"the collision itself is not\nto be 'resolved' by separating the defaults.\"\n\nNote also that automatic pruning was ultimately never shipped (ticket 24's\nA/B showed LLM-based importance judgment falsely deleted ground-truth\nunrecoverable entries, including ADRs), and ticket 25 (the per-category\nconfig/collision-fix ticket) was later pushed off entirely. So today pruning\nis manual-only (`neuron memory prune`), and this default collision has no\nlive automatic effect — but it remains deliberate design, not a bug, per the\nmaintainer's ruling.\n\n(A later internal A/B test on this project noted that an LLM agent\nincorrectly called this collision \"a bug\" in 3/3 trials despite this\nrecorded ruling — underscoring that the deliberate-design verdict is the\ncorrect, maintainer-confirmed answer.)\n",
+      "passed": true,
+      "gradeDetail": "value=true intentional=true callsItABug=false"
+    },
+    {
+      "task": "prune-default-collision",
+      "arm": "control",
+      "sessionLabel": "prune-default-collision-control-r0",
+      "turns": 3,
+      "wallMs": 22403,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The collision (default importance = 3 = default prune ceiling, compared inclusively) is explicitly documented in the CHANGELOG and ADR 0012 as deliberate maintainer design, not a bug.",
+      "tokens": {
+        "input": 26405,
+        "output": 1186,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 27591,
+      "answerText": "# Verdict: Intentional (not a bug)\n\n**Numeric value:** `3` — this is both the default `importance` value an entry\ngets when written without `--importance`, and the default ceiling for\n`neuron memory prune` (`--importance 3`). The prune comparison is inclusive\n(`importance <= 3`), so an entry with the default importance of 3 is\nprune-eligible by default.\n\n**Verdict: intentional / not a bug.**\n\nThis collision is explicitly documented and defended by the maintainers in\nmultiple places (CHANGELOG.md, ADR 0012 \"the relevance gate ships\", and the\nneuron-memory SKILL.md), not something that slipped through unnoticed:\n\n- CHANGELOG.md states directly: \"An omitted `--importance` stores `3`. That\n  is also the default ceiling for ... This is [deliberate maintainer\n  decision],\" and instructs users to \"Pass `--importance 4` or `5`\" on\n  anything that must survive a bare prune.\n- ADR 0012 explicitly calls out \"importance 3 == default prune ceiling 3,\n  compared inclusively\" as a known, measured behavior (Pillar 10: 9 of 12\n  entries deleted at the default), used as part of the reasoning for keeping\n  `importance` as a prune-only field rather than removing it outright.\n- SKILL.md documents the same fact as guidance to agents/users: because the\n  comparison is inclusive, every entry written without `--importance` is\n  prune-eligible by default, and explicitly instructs passing `--importance 4`\n  or `5` at write time as \"the *only* thing that protects an entry\" from a\n  bare prune.\n\nThe design intent is that `neuron memory prune` with no flags is meant to be\nan aggressive/DANGER default (\"nearly everything\") unless the caller\ndeliberately marks entries as more important (4 or 5) at write time. The\ncollision is a known, load-bearing part of that design rather than an\noversight to be patched.\n",
+      "passed": true,
+      "gradeDetail": "value=true intentional=true callsItABug=false"
+    },
+    {
+      "task": "prune-default-collision",
+      "arm": "control",
+      "sessionLabel": "prune-default-collision-control-r1",
+      "turns": 5,
+      "wallMs": 27809,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The default importance and default maxPruneImportance are both 3 with an inclusive <= comparison, and per the repo's own ticket 25 and maintainer verdict.md, this is treated as a real, unfixed data-loss bug/hazard that should be fixed, not deliberate design.",
+      "tokens": {
+        "input": 33286,
+        "output": 1859,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 35145,
+      "answerText": "# Answer\n\n**Numeric value:** `3` — both the default entry `importance` and the default\n`maxPruneImportance` prune threshold are `3`.\n\n**Verdict: BUG / should be fixed.**\n\nThe comparison in `src/index.ts` (`category = 'history' AND created_at < ? AND\nimportance <= ?`, with `maxPruneImportance` defaulting to `3` in\n`src/commands/memory.ts:110-112`) is inclusive (`<=`), and since entries default\nto `importance = 3` when no `--importance` is passed, essentially every\nunannotated history entry is prune-eligible once it ages out (30 days).\nMaintainer's own project store shows 155/157 history entries sitting at the\ndefault importance 3, meaning a bare `neuron memory prune` would delete\nvirtually all of them with no undo.\n\nThis is explicitly documented in the repo's own tickets/postmortems as a real,\nunfixed hazard, not intentional design:\n\n- Ticket 25 (`.scratch/neuron-2.2.0/issues/25-prune-config-and-collision-fix.md`)\n  calls it \"**the hazard**\" and states plainly: \"default entry importance is\n  `3`; default `maxPruneImportance` is `3` ...; the comparison is inclusive.\n  The `CLAUDE.md` step-4 protocol passes no `--importance`, so 155 of this\n  project's 157 history entries sit at 3 and a bare `neuron memory prune`\n  deletes essentially all of them once they pass 30 days. There is no undo.\"\n- The maintainer's verdict document (`.scratch/configurable-pruning/verdict.md`)\n  confirms: \"Ticket 25 should scope itself to closing the collision (e.g.\n  raising the default `maxPruneImportance` below the default entry importance,\n  or requiring an explicit threshold with no default).\"\n- Ticket 25's own header, added after a later deferral, reiterates: \"The live\n  hazard ... is still real and still unfixed ... so a bare `neuron memory\n  prune` remains destructive.\"\n\nSo while the *ticket to implement the fix* (25) was deferred by the maintainer\nfor scheduling/scope reasons on 2026-08-01, the collision itself is\nunambiguously treated as an unintentional, dangerous bug/data-loss hazard that\nthe maintainer wants closed (by making the threshold strictly less than the\ndefault importance, or requiring an explicit non-defaulted threshold) — it is\nnot deliberate design.\n",
+      "passed": false,
+      "gradeDetail": "value=true intentional=true callsItABug=true"
+    },
+    {
+      "task": "prune-default-collision",
+      "arm": "control",
+      "sessionLabel": "prune-default-collision-control-r2",
+      "turns": 5,
+      "wallMs": 22160,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The default importance and default maxPruneImportance both equal 3 with an inclusive <= comparison, and this is treated by maintainers (ticket 23) as a real data-loss bug/hazard that must be fixed (ticket 25 ships the fix), not intentional design.",
+      "tokens": {
+        "input": 32099,
+        "output": 1450,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 33549,
+      "answerText": "# Default importance / prune-threshold collision\n\n**Numeric value:** `3` — the default entry `importance` is `3`, and the default\n`maxPruneImportance` prune-eligibility threshold is also `3`. The prune check is\n`importance <= maxPruneImportance` (inclusive), so `3 <= 3` is true.\n\n**Verdict: Bug / should be fixed.**\n\nTicket 23 (\"Configurable Automatic Pruning\") explicitly calls this a \"live\ndata-loss hazard\": because the comparison is inclusive and the default value\nequals the default threshold, \"every history entry written at default\nimportance is prune-eligible.\" Since the standard history-write path (the\nCLAUDE.md protocol's step-4 command) never passes `--importance`, every such\nentry lands exactly on this collision and becomes eligible for a real `DELETE`\n(no supersession flag, no undo) once it ages past the prune window.\n\nTicket 06 deliberately declined to \"paper over\" the problem with a clamp on\ninferred importance — but that was a decision about *where* the fix belongs\n(in the prune-config ticket, not the enrichment/inference path), not a\ndecision that the collision itself is acceptable. Ticket 23 lists resolving\nthe \"default-importance / default-threshold collision\" as required scope\n(option: move the threshold below the default, make the prune comparison\nexclusive, or require an explicit threshold with no default), and ticket 25\n(\"Prune Config & Collision Fix\") is the follow-up ticket that ships the actual\nfix. So this is treated by the maintainers as a genuine bug/hazard to be\nclosed, not as intentional design.\n",
+      "passed": false,
+      "gradeDetail": "value=true intentional=true callsItABug=true"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "memory",
+      "sessionLabel": "pruning-ab-verdict-memory-r0",
+      "turns": 4,
+      "wallMs": 26684,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Automatic pruning did not ship in neuron 2.2.0 (it was removed after failing its A/B ship bar, leaving only manual `neuron memory prune`), and wayfinder ticket 25 (per-category prune config) was pushed off entirely by explicit maintainer decision rather than shipping its reduced config-schema/collision-fix scope.",
+      "tokens": {
+        "input": 52593,
+        "output": 2048,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 54641,
+      "answerText": "# Automatic pruning in neuron 2.2.0 and the fate of wayfinder ticket 25\n\n## Did automatic pruning ship in 2.2.0?\n\n**No, automatic pruning was NOT shipped in neuron 2.2.0.** Pruning remains\nmanual-only via `neuron memory prune`; there is no automatic trigger and no\nper-category prune configuration surface.\n\n### Why\n\nTicket 23 (configurable automatic pruning) was split into tickets 24 (the\npruning A/B experiment) and 25 (per-category prune config + default-collision\nfix). The ship bar committed in advance was that automatic pruning had to\n*beat* a no-prune control, not merely match it; a double-null result would\nremove the feature from 2.2.0 entirely rather than ship it disabled.\n\nTicket 24's A/B ran two importance-judgement arms:\n- A1, a recoverability binary: false-deleted 2 of 11 ground-truth-unrecoverable entries.\n- A2, a recalibrated 1-5 importance scale re-shot on real exemplars: false-deleted 4 of 11.\n\nBoth arms shared a miss on a decisions-category ADR that reads like ordinary\ntechnical prose, showing that content-only judgement — even by an improved\nprompt — cannot reliably distinguish an architectural decision record from a\nroutine, safely-prunable note. This disqualified both candidate arms before\nthe second planned experiment could even run, which is treated as evidence\nat least as strong as the pre-committed double-null removal criterion.\n\nAs a result, automatic pruning was **removed from 2.2.0** rather than shipped\nor shipped-disabled. Ticket 06's existing `importance: off` default for the\nLLM enrichment stands unchanged (no ADR reversal needed).\n\n## What became of ticket 25 (per-category prune config)?\n\nTicket 25 was **pushed off / shelved entirely**, not implemented in any form.\n\nTicket 24's own resolution had initially said ticket 25 would still ship a\nreduced scope — just the config-schema and the default-importance /\ndefault-maxPruneImportance collision fix, per ticket 25's own pre-written\ncontingency for a disqualifying A/B outcome.\n\nThat plan was itself later superseded by an explicit maintainer decision\n(2026-08-01, recorded as decision `a0de113f-a0b7-47f1-a102-0d952824b61f`,\nwhich supersedes `44eca269-...`): ticket 25 (per-category prune config plus\nthe default-collision fix) is **pushed off entirely for now**. Pruning stays\nat the manual `neuron memory prune` command, unchanged — no automatic\ntrigger and no per-category config surface were added in 2.2.0. The\nmaintainer's instruction was explicit: \"Do not restart ticket 25 work\nwithout the maintainer raising it again.\"\n\nSeparately, the maintainer clarified (in decision `3f2c0a2b-...`, which\nsupersedes the original ticket-23 ADR) that the default-importance-3 /\ndefault-maxPruneImportance-3 collision is intentional design, not a bug —\nhistory should clear out by default unless an entry is explicitly marked\nimportant enough to survive a prune. If ticket 25 is ever revived, only the\nautomatic-trigger question and the accidental exposure of the `decisions`\ncategory (ADRs sitting at the same importance-3 default with no\ncategory-scoped protection) would need fixing; the collision itself is not\nmeant to be \"resolved\" by separating the defaults. Since pruning remains\nmanual-only, this default currently has no live automatic effect.\n\n## Bottom line\n\n- Automatic pruning: **not shipped** in 2.2.0 (removed after failing its A/B ship bar; manual `neuron memory prune` is the only pruning path).\n- Ticket 25 (per-category prune config): **shelved/pushed off entirely**, superseding the earlier plan to ship a reduced config-schema/collision-fix scope; no work is to resume on it without explicit maintainer sign-off.\n",
+      "passed": true,
+      "gradeDetail": "notShipped=true falseShippedClaim=false ticket25Deferred=true"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "memory",
+      "sessionLabel": "pruning-ab-verdict-memory-r1",
+      "turns": 4,
+      "wallMs": 23438,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Automatic pruning was not shipped in neuron 2.2.0 (both importance-judgement A/B arms false-deleted ground-truth-critical entries, killing the feature outright), and ticket 25 (per-category prune config) was ultimately pushed off entirely — superseding an earlier plan to ship its config-schema/collision-fix scope — so pruning remains manual-only with no per-category config.",
+      "tokens": {
+        "input": 36038,
+        "output": 1509,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 37547,
+      "answerText": "# Automatic pruning in neuron 2.2.0 / Wayfinder ticket 25\n\n**Automatic pruning did NOT ship in neuron 2.2.0.**\n\nTicket 23 (configurable automatic pruning) was split into tickets 24 and 25.\nTicket 24 ran an A/B on candidate importance-judgement mechanisms for\ndeciding what's safe to prune: a recoverability binary (false-deleted 2 of\n11 ground-truth-unrecoverable entries) and a recalibrated 1-5 importance\nscale (false-deleted 4 of 11) — with a shared miss being a decisions-category\nADR that reads like ordinary prose. This showed content-only judgement\ncannot reliably distinguish an architectural decision record from a routine\nnote, collapsing the planned second experiment (\"no safe judgement to prune\nwith\"). As a result, automatic pruning was removed from 2.2.0 outright\nrather than shipped, shipped-disabled, or deferred pending more data — the\nproject's pre-committed bar required pruning to beat a no-prune control, and\nit never got the chance to be measured against it because both judgement\narms were disqualified first.\n\n**Ticket 25 (per-category prune config): ultimately pushed off entirely, not\nshipped even in reduced form.**\n\nTicket 24's original resolution said ticket 25 would still ship a reduced\nscope — just the config-schema and the default-importance/default-prune-\nthreshold collision fix — per its own pre-written contingency for this\noutcome. However, a later maintainer decision (2026-08-01, recorded after\nticket 24) **superseded that plan**: ticket 25 was pushed off entirely, with\nno config-schema work and no collision fix shipped. Pruning remains\nmanual-only via `neuron memory prune`, with no automatic trigger and no\nper-category configuration surface. The maintainer's note explicitly says\n\"Do not restart ticket 25 work without the maintainer raising it again.\"\n\n(Notably, a later token A/B test on the memory system itself found that an\nagent citing ticket 24's original \"ships scoped-down\" resolution, without\nfinding this later superseding entry, gave an incorrect answer about ticket\n25's fate — which is exactly the discrepancy this question is checking for.)\n\nThe importance-3 / prune-threshold-3 default collision that ticket 23 first\nflagged is considered deliberate design (history should clear out by default\nunless explicitly marked important), not a bug — but since pruning has no\nautomatic trigger, this default currently has no live automatic effect; it\nonly matters when a user manually runs `neuron memory prune`.\n",
+      "passed": true,
+      "gradeDetail": "notShipped=true falseShippedClaim=false ticket25Deferred=true"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "memory",
+      "sessionLabel": "pruning-ab-verdict-memory-r2",
+      "turns": 4,
+      "wallMs": 24129,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Automatic pruning did NOT ship in neuron 2.2.0 (both A/B candidate importance-judgement mechanisms in ticket 24 were disqualified by false-deletes, triggering the pre-committed double-null removal rule), and ticket 25 (per-category prune config) was pushed off entirely rather than shipped even in reduced scope, leaving pruning manual-only via `neuron memory prune` until the maintainer revisits it.",
+      "tokens": {
+        "input": 48127,
+        "output": 1876,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 50003,
+      "answerText": "# Automatic Pruning and Wayfinder Ticket 25 — 2.2.0 Outcome\n\n## Did automatic pruning ship in neuron 2.2.0?\n\n**No.** Automatic pruning was NOT shipped in 2.2.0. Pruning remains a manual-only\noperation via `neuron memory prune`, with no automatic trigger and no per-category\nconfiguration surface.\n\nThe path to this outcome:\n\n1. **Ticket 23** (configurable automatic pruning) was resolved by splitting the work\n   into tickets 24 (pruning A/B) and 25 (per-category prune config). It set a hard\n   ship bar up front: pruning must *beat* a no-prune control, not just match it — a\n   \"double null\" result would remove automatic pruning from 2.2.0 entirely rather\n   than ship it disabled.\n2. **Ticket 24's A/B test** ran two importance-judgement candidates: a recoverability\n   binary (false-deleted 2 of 11 ground-truth-unrecoverable entries) and a recalibrated\n   1–5 importance scale (false-deleted 4 of 11). Both candidates were disqualified in\n   Experiment 1 before Experiment 2 (measuring recall-quality benefit) could even run.\n   One shared false-delete was an architectural decision record (ADR) that reads like\n   ordinary technical prose — demonstrating that content-only LLM judgement cannot\n   reliably distinguish an ADR from a routine, safely-pruned note.\n3. Because both candidate judgement mechanisms were disqualified, there was no safe\n   basis on which to prune automatically, so **automatic pruning was removed from\n   2.2.0** per the pre-committed double-null rule. Ticket 06's existing\n   `importance: off` default enrichment behavior stood unchanged.\n\n## What became of ticket 25 (per-category prune config)?\n\nTicket 25 was **pushed off entirely** — not shipped, not partially shipped.\n\nInitially, following the ticket 24 A/B verdict, the plan was for ticket 25 to ship a\nreduced scope: just its config-schema and a fix for a default-value collision (the\ndefault `importance: 3` colliding with the default `maxPruneImportance: 3`, which\nwould make ADRs in the `decisions` category prunable by default with no\ncategory-scoped protection).\n\nHowever, a later maintainer decision **superseded that reduced-scope plan** and\npushed ticket 25 off completely for now:\n- No per-category prune configuration was added.\n- No automatic trigger was added.\n- The default-importance/default-maxPruneImportance collision was left as-is\n  (deliberate, not to be \"fixed\" by separating the defaults, per the maintainer),\n  though it currently has no live effect since pruning stays manual-only.\n- The explicit instruction on record is: do not restart ticket 25 work without the\n  maintainer raising it again.\n\nRevisit conditions noted for reconsidering automatic pruning in the future: a\nmaterially better model, or a design that structurally excludes the `decisions`\ncategory from importance inference so ADRs can't be judged prunable by content alone.\n\n**Bottom line:** neuron 2.2.0 ships with pruning unchanged from before — manual only\nvia `neuron memory prune` — with no automatic pruning and no per-category prune\nconfig (ticket 25 shelved/pushed off, pending a future maintainer decision).\n",
+      "passed": true,
+      "gradeDetail": "notShipped=true falseShippedClaim=false ticket25Deferred=true"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "control",
+      "sessionLabel": "pruning-ab-verdict-control-r0",
+      "turns": 4,
+      "wallMs": 29695,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Automatic pruning was not shipped in neuron 2.2.0 (ticket 24's A/B test disqualified both LLM-judgement arms for false-deleting unrecoverable entries), and ticket 25 (per-category prune config/collision fix) was deferred by explicit maintainer decision on 2026-08-01—after nearly being implemented by mistake due to stale docs—leaving the underlying prune hazard still unfixed.",
+      "tokens": {
+        "input": 23175,
+        "output": 1770,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 24945,
+      "answerText": "# Automatic pruning in neuron 2.2.0, and the fate of ticket 25\n\n**Automatic pruning did NOT ship in neuron 2.2.0.**\n\nThe decision was driven by ticket `24`, an A/B test evaluating whether an\nLLM-judgement-based automatic/model-driven pruning mechanism could reliably\ntell recoverable from unrecoverable memory entries. Both tested arms (A1\n\"recoverability binary\" and A2 \"recalibrated 1-5 scale\") were **disqualified**:\nthey produced false-deletes of ground-truth-unrecoverable entries (2 of 11 and\n4 of 11 respectively), which is unacceptable for a feature with hard deletes\nand no undo. As a result, ticket 24's verdict removed automatic pruning from\nthe 2.2.0 scope — `neuron memory prune` remains a manual, explicit command\nonly, not something triggered automatically off reads/writes.\n\n## Ticket 25 (per-category prune config, importance-collision fix)\n\nTicket 25 — which was to add per-category `prune` configuration in\n`neuron.yaml`, fix the default-importance/default-threshold collision (both\ndefault to `3`, comparison inclusive, so a bare `neuron memory prune` would\ndelete almost all `history` entries), and document/expose pruning setup via\nthe `neuron-memory` skill — was **deferred by explicit maintainer decision on\n2026-08-01, after ticket 24 landed**. It was NOT implemented in 2.2.0.\n\nNotably, this deferral caused a near-miss: a later session, working purely\nfrom the wayfinder map/ticket text and a `neuron memory query` that surfaced\nticket 23's ADR and ticket 24's verdict (both of which, at the text level,\nstill said \"25 ships regardless of 24's outcome\"), almost re-implemented\nticket 25 by mistake, because the maintainer's deferral decision existed only\nverbally/in scratch memory and had not yet been written into the ticket or\nthe map. This was caught and documented as a process learning (the need to\nrecord maintainer decisions, not just agent actions), and both the ticket\nfile and the wayfinder map were subsequently updated (commit `917ac98`,\n\"docs(wayfinder): defer ticket 25, record the 24 verdict, grill-prep ticket\n08\") to explicitly mark ticket 25 as `Status: deferred — maintainer decision\n2026-08-01, do not implement`.\n\nImportantly, the underlying hazard ticket 25 was meant to fix (destructive\ndefault `neuron memory prune` behavior due to the importance-threshold\ncollision) is explicitly noted as **still real and unfixed** even though the\nticket itself is deferred — deferring the ticket did not defer the hazard.\n\n## Summary\n- Automatic pruning: **not shipped** in 2.2.0 (killed by ticket 24's A/B\n  disqualification of both LLM-judgement arms).\n- Ticket 25: **deferred/not implemented**, by maintainer decision on\n  2026-08-01, after nearly being implemented by mistake due to stale\n  documentation; the prune-collision hazard it addressed remains open.\n",
+      "passed": true,
+      "gradeDetail": "notShipped=true falseShippedClaim=false ticket25Deferred=true"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "control",
+      "sessionLabel": "pruning-ab-verdict-control-r1",
+      "turns": 5,
+      "wallMs": 15067,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Automatic pruning was evaluated but not shipped in neuron 2.2.0 (removed after false-deleting ground-truth-unrecoverable entries in testing); ticket 25's per-category prune config fix was likewise deferred by deliberate maintainer decision, leaving the default-importance-ceiling prune hazard unfixed.",
+      "tokens": {
+        "input": 16177,
+        "output": 1283,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 17460,
+      "answerText": "# Automatic pruning in neuron 2.2.0\n\n**Automatic pruning did not ship in 2.2.0.** Per the CHANGELOG, both candidate\njudgement methods evaluated for it (a recoverability binary and a recalibrated\n1–5 importance scale) false-deleted ground-truth-unrecoverable entries in\npre-committed testing (2 of 11 and 4 of 11 respectively), including a\n`decisions`-category ADR that read like ordinary prose. As a result it was\nexplicitly **\"Removed from 2.2.0\"** (tickets 23 and 24).\n\n# Ticket 25 (per-category prune config)\n\nTicket 25 (`25-prune-config-and-collision-fix.md`, per-category prune\nconfiguration) was **not implemented — it was deferred by deliberate\nmaintainer decision**, not fixed. The underlying hazard it was meant to\naddress remains live and unfixed in 2.2.0: `neuron memory prune`'s default\nimportance ceiling (3) is the same value every entry gets by default when\nwritten without an explicit `--importance`, so a bare `neuron memory prune`\nstill deletes nearly everything older than its `--days` window. The\ndocumented workaround is to pass `--importance 4` or `5` on anything that\nmust survive a prune.\n",
+      "passed": true,
+      "gradeDetail": "notShipped=true falseShippedClaim=false ticket25Deferred=true"
+    },
+    {
+      "task": "pruning-ab-verdict",
+      "arm": "control",
+      "sessionLabel": "pruning-ab-verdict-control-r2",
+      "turns": 5,
+      "wallMs": 32151,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Automatic pruning was not shipped in neuron 2.2.0 (ticket 24's A/B test verdict was to remove it), and wayfinder ticket 25 (per-category prune config) was deferred/not implemented by maintainer decision on 2026-08-01, despite artifacts suggesting it would ship regardless of ticket 24's outcome.",
+      "tokens": {
+        "input": 24249,
+        "output": 1902,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 26151,
+      "answerText": "# Automatic pruning in neuron 2.2.0, and the fate of wayfinder ticket 25\n\n**Automatic pruning did NOT ship in neuron 2.2.0.**\n\nThe decision was made via ticket 24 (\"Pruning A/B: Does Automatic Pruning Earn\nIts Place in 2.2.0?\"), which ran a formal A/B test (see\n`.scratch/configurable-pruning/ab-test-plan.md` and\n`.scratch/configurable-pruning/verdict.md`). Ticket 24's status is \"resolved\"\nwith the explicit result: **\"remove automatic pruning from 2.2.0.\"** Manual\npruning (`neuron memory prune`) remains available, but no automatic/scheduled\npruning behavior was included in the 2.2.0 release.\n\n## What happened to ticket 25 (per-category prune config)\n\nTicket 25 (\"Per-Category Prune Config, the Importance Collision Fix, and the\nSetup Skill\") was originally scoped to ship *regardless* of ticket 24's\nverdict, since it was framed as fixing an existing hazard (the destructive\ndefault `neuron memory prune` behavior caused by an importance-threshold\ncollision) independent of whether automatic pruning shipped.\n\nHowever, ticket 25 was ultimately **deferred by the maintainer on 2026-08-01**\nand is marked \"do not implement.\" Its status field reads:\n\n> Status: deferred — maintainer decision 2026-08-01, do not implement\n\nNotably, there was a near-miss: a later session almost re-implemented ticket\n25 by mistake, because every durable artifact (the ticket-23 ADR, the\nticket-24 verdict) still said the per-category config \"ships regardless\" —\nthe deferral decision existed only in the maintainer's head and in scratch\nmemory, not recorded in the ticket file or the `neuron` memory store itself.\nThis was later corrected/documented directly in the ticket file, along with a\n\"lesson learned\" that maintainer decisions reversing planned tickets need to be\nexplicitly recorded, since the write-side protocol only records what the agent\ndid, not what the maintainer decided.\n\nImportant caveat noted in the ticket: deferring ticket 25 does **not** defer\nthe underlying hazard it was meant to fix — the default importance (3) equals\nthe default `maxPruneImportance` (3) with an inclusive comparison, so a bare\n`neuron memory prune` is still destructive (affecting entries from\n2026-08-10 onward). That hazard remains unfixed as of the deferral.\n\n## Summary\n- Automatic pruning: **not shipped** in neuron 2.2.0 (explicitly rejected via the ticket-24 A/B test verdict).\n- Ticket 25 (per-category prune config): **deferred/not implemented** by maintainer decision on 2026-08-01, despite earlier plans that it would ship regardless of ticket 24's outcome. The underlying destructive-prune-default hazard it addressed remains unfixed.\n",
+      "passed": true,
+      "gradeDetail": "notShipped=true falseShippedClaim=false ticket25Deferred=true"
+    }
+  ],
+  "regradedAt": "2026-08-08T11:55:08.647Z",
+  "regradeNote": "Re-graded offline from captured answerText after fixing a negation-heuristic gap in tasks.mjs (not a X / rather than a X) discovered on this run; no additional API spend."
+}

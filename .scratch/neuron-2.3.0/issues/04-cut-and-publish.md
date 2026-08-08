@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: 01, 02, 03, 05, 06, 07, 08, 09, 10, 11, 13
+Blocked by: 01, 02, 03, 05, 06, 07, 08, 09, 10, 11, 13, 15, 18
 
 # 04 — Cut and Publish 2.3.0
 
@@ -65,3 +65,17 @@ writing the CHANGELOG rather than assuming these six tickets are all of it.
 - [ ] Real pre-`2.3.0` config upgraded with no data loss, per old spelling
 - [ ] Verified harness versions recorded
 - [ ] Unit + E2E suites green
+
+## Comments
+
+**2026-08-08, added by ticket 18's resolution:** Ticket 18 (blocking this
+ticket) resolved: the memory-supersession fix (ticket 17) confirmed to fix
+ticket 10's regression (0% memory-arm failure vs 33% control on the
+regressed 2-task subset, up from 67% before the fix, on a live 12-session
+re-run — see `.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`).
+Ticket 18 re-ran only 2 of ticket 10's original 4 tasks (the other two were
+already saturated 3/3 on both arms and mechanically unaffected by
+supersession) — whoever cuts this release should judge whether that
+2-task/12-session subset is sufficient evidence or whether the full N=4
+frame should be re-confirmed before publishing a claim. This ticket is now
+unblocked on the `18` dependency.
