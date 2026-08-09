@@ -1336,3 +1336,15 @@ Primary e2e module containing core application capabilities.
 - **`test/e2e/metrics.ts`** (Exports: `PillarMetrics, percentile, MetricsRecorder`): Latency/throughput recorder for the E2E benchmark suite. The suite is both a correctness gate and a benchmark, so every pillar records real measurements here rather than only asserting pass/fail. The collected numbers are written to a metrics file that the runner merges into its scorecard — the runner never has to infer results by scraping stdout.
 - **`test/e2e/synthetic-generator.ts`** (Exports: `SyntheticGeneratorOptions, generateSyntheticPolyglotWorkspace`): Class SyntheticClass (Methods: generateSyntheticPolyglotWorkspace(), rmSync(), mkdirSync(), writeFileSync()).
 - **`test/e2e/tier.ts`** (Exports: `BenchTier, byTier`): Benchmark tiering. The same pillar definitions run at two very different intensities: sanity — a fast pre-merge gate. Every pillar still executes end to end against the real pipeline, but at the smallest workload that can still fail meaningfully. Target: a couple of minutes. full   — the adversarial benchmark. Large corpora, deep sweeps, real multi-process contention, and hard negatives designed to drive scores off their ceiling. Target: long enough to hurt. Tier is selected with NEURON_BENCH_TIER; anything other than 'full' is treated as sanity so a bare `vitest run` on these files stays quick.
+
+---
+id: 5c997296-45ec-4ae0-872b-56c18de46b7c
+createdAt: 2026-08-09T19:19:31.788Z
+importance: 4
+tags:
+  - adr
+  - md-storage
+  - rc2
+taskId: null
+---
+Ticket 38 (neuron-2.3.0, md parser stray-dash cascading data loss) design rationale: reconcileCategory's delete-mirror step in dualStorageRouter.ts gets a non-blocking warning, not a hard tripwire, when a single reconcile pass is about to delete an unusually large fraction (>=20% of a category's rows, with a 5-row floor to avoid noise on tiny categories) of a category's vector rows. ADR 0011 Consequence 2 already settled 'no tripwire, no --force' for this delete step deliberately, reasoning that markdown is authoritative by construction and '.neuron/' is git-recoverable; ticket 38's own root cause (a one-off duplicated-content write, not a systemic formatter bug, closed at the read side by hardening the frontmatter block matcher) supplied evidence for making the class of failure LOUD, not evidence for reopening the settled 'no tripwire' ruling itself, so the two were kept orthogonal. This is deliberately a different posture than ticket 24's (neuron-2.2.0) LLM-judged-deletion false-delete disqualification, which killed model-judged content deletion outright because there was no independent trustworthy source to check against -- here the mechanism is mechanical sync against markdown, which IS the trustworthy source by ADR 0011's own design, so the fix is visibility (MASS_DELETE_WARN_FRACTION stderr warning) rather than a block.

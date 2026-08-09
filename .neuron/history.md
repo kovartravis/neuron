@@ -3272,3 +3272,15 @@ tags:
 taskId: "36"
 ---
 Worked ticket 36 (Verify the Publish Workflow Against a Real Push, neuron-2.3.0): unblocked by ticket 34's merge to main, which triggered publish.yml for the first time. Run 1 failed build-and-test with node:sqlite requiring Node >=22.13 against the workflow's pinned Node 20 -- fixed by bumping to Node 22 and adding an engines field to package.json (commit e9157a1, pushed to main). Run 2 confirmed the fix: build-and-test passed for real, and the publish job ran and failed cleanly at npm publish with ENEEDAUTH since no NPM_TOKEN secret exists yet -- no side effects, nothing published. Ticket stays claimed, not resolved: Scope items covering NPM_TOKEN provisioning, a real stable-version push, an unbumped-push skip check, and branch-protection-rejection verification remain blocked on the maintainer provisioning credentials.
+
+---
+id: bc446638-5085-4735-b7e8-0ff40469f38d
+createdAt: 2026-08-09T19:19:42.718Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "38"
+---
+Wayfinder pickup on the neuron-2.3.0 map: skipped the two lowest-numbered frontier tickets (20, 22 -- verify Copilot/Cursor real installs) since both are HITL-blocked on real subscriptions/installs this session doesn't have, and claimed the next AFK-workable frontier ticket, 38 (MdStorageAdapter's frontmatter parser silently drops entries after a stray '---' in body content). Root-caused the corruption to a one-off duplicated-content write in commit 08fbdda (not a systemic formatter bug), hardened parseMarkdownDetailed with a two-pointer delimiter-pairing scan so a malformed body can never cascade into dropping unrelated later entries, added a non-blocking mass-deletion warning to reconcileCategory (kept orthogonal to ADR 0011's settled 'no tripwire' ruling), and repaired this repo's own corrupted decisions.md entry (75/75 now parse cleanly). Landed as two separate commits per this repo's own convention: 2377509 (the actual ticket-38 fix, minimal .neuron/decisions.md diff) and 0bbaee9 (a purely-additive chore refreshing the architecture blueprint card to ticket 28's index+module-card format, a side effect of relinking the global neuron binary to this session's rebuild in order to test the fix against real neuron exec commands). Full suite 599/600 green (the one failure is Pillar 8's known pre-existing concurrency flake, already noted on ticket 34). Resolved ticket 38, appended Decisions-so-far entry to map.md. Frontier is now 20, 22 (still HITL-blocked), 30, 32.
