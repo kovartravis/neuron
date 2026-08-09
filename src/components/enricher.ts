@@ -173,10 +173,12 @@ export interface CategoryInferenceResult {
 }
 
 /**
- * The seam enrichment is injected through. Mirrors
- * `SummarizerOptions.forceFallback` — ADR 0010 §7 names that as the A/B
- * mechanism, and a stub implementing this interface is how tests assert on
- * stored metadata without loading a 500M-parameter model.
+ * The seam enrichment is injected through. `forceFallback` follows the same
+ * naming ADR 0010 §7 established as the A/B mechanism (originally shared with
+ * `SmolLM2Summarizer`'s own `forceFallback`, removed by ticket 26 once
+ * architecture-card summarization stopped calling a model at all) — a stub
+ * implementing this interface is how tests assert on stored metadata without
+ * loading a 500M-parameter model.
  */
 export interface EnrichmentModel {
   inferCategory(input: CategoryInferenceInput): Promise<CategoryInferenceResult>;

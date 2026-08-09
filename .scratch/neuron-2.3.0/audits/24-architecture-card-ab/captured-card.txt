@@ -53,22 +53,32 @@ Primary benchmarks module containing core application capabilities.
 Primary longmemeval module containing core application capabilities.
 
 **Key Components & Export Contracts:**
-- **`benchmarks/longmemeval/neuron.py`** (Exports: `NeuronMemoryProvider`): This code file defines a memory provider class for(neuron) that uses SQLitewal mode, FTS5 full-text indexing, local BGE vector embeddings, and Reciprocal Rank Fusion (RRF). The constructor initializes a memory provider instance and ensures that it can obtain a proc using the Popen
-- **`benchmarks/longmemeval/relevance_gate_eval.py`** (Exports: `eval_floor, eval_full_gate, reject, pctl`): Source file relevance_gate_eval.py (Methods: leg(), prose(), fix(), result()) exports primary project types and helper functions.
-- **`benchmarks/longmemeval/retrieval_eval.py`**: Memory benchmarking of a single-neuron LeMMA model. The model needs to put any gold evidence before the reader. Only a zero-level call costs no API quota (for local CPU). N is set to the number of queries loaded by the dataset "longmemeval". After loading the
+- **`benchmarks/longmemeval/neuron.py`** (Exports: `NeuronMemoryProvider`): Methods: NeuronMemoryProvider(), embeddings(), Fusion(), __init__().
+- **`benchmarks/longmemeval/relevance_gate_eval.py`** (Exports: `eval_floor, eval_full_gate, reject, pctl`): Methods: leg(), prose(), fix(), result().
+- **`benchmarks/longmemeval/retrieval_eval.py`**: Methods: len(), int(), max(), get_dataset().
 
 ### 🧩 src (`src`)
 Primary src module containing core application capabilities.
 
 **Key Components & Export Contracts:**
-- **`src/cli.test.ts`**: Source file cli.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
-- **`src/cli.ts`**: Source file cli.ts (Methods: main(), slice(), log(), exit()) exports primary project types and helper functions.
-- **`src/db.test.ts`**: Source file db.test.ts (Methods: describe(), it(), openDatabase(), expect()) exports primary project types and helper functions.
-- **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase`): The `createNodeSqliteWrapper` function is used to establish a connection with a SQLite database using Node.js, without loading it as a module. It initializes a DatabaseSync instance, creates a new transaction on the database (if provided), executes SQL queries within the transaction and returns a single row value
+- **`src/cli.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
+- **`src/cli.ts`**: Methods: main(), slice(), log(), exit().
+- **`src/db.test.ts`**: Methods: describe(), it(), openDatabase(), expect().
+- **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase`): Function createNodeSqliteWrapper (Methods: createRequire(), createNodeSqliteWrapper(), mkdirSync(), require()).
 - **`src/enrichment.test.ts`**: Write-side enrichment, asserted at the transaction entry point — what ends up in the store. That was once two seams; the query seam carried the enrichment backlog's drain guarantee, and ticket 26 removed the only deferred job, so a read has no enrichment behaviour left to assert. Nothing here asserts how a tag was chosen. The category strategy in particular was A/B'd precisely because its winner was unknown, so tests that pinned the mechanism would have been rewritten by the experiment they existed to support.
 - **`src/fieldSchema.test.ts`**: Declarable per-category frontmatter fields (ticket 43 / ADR 0013), asserted at the `transact()` choke point — required-but-missing, defaults, enum membership, and the reject-undeclared-field guard — plus the markdown round-trip that makes a written field value durable. Storage: SQLite column support for `vector`-storage categories shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column migration and round-trip coverage. These tests use `storage.mode: md` where the markdown round-trip is meaningful.
-- **`src/index.supersession.test.ts`**: Source file index.supersession.test.ts (Methods: primitives(), vecAt(), Float32Array(), describe()) exports primary project types and helper functions.
-- **`src/index.test.ts`**: Source file index.test.ts (Methods: describe(), it(), NeuronMemory(), getDb()) exports primary project types and helper functions.
+- **`src/index.supersession.test.ts`**: Methods: primitives(), vecAt(), Float32Array(), describe().
+- **`src/index.test.ts`**: Methods: describe(), it(), NeuronMemory(), getDb().
 - **`src/index.ts`** (Exports: `NeuronMemory`): Resolve a `category` from a mutation/query, supporting the deprecated `kind` field. Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
-- **`sr
+- **`src/sqliteFieldSchema.test.ts`**: SQLite additive auto-migration for declared category fields (ticket 44 / ADR 0013) — the `vector`-storage counterpart to `fieldSchema.test.ts`'s markdown round-trip. Covers the migration mechanics (additive, idempotent, never `DROP COLUMN`) and the write-then-query round trip through real SQLite columns rather than frontmatter.
+
+### 🧩 commands (`src/commands`)
+Primary commands module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/commands/exec.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
+- **`src/commands/exec.ts`** (Exports: `handleExecCommand`): Function handleExecCommand (Methods: handleExecCommand(), indexOf(), slice(), error()).
+- **`src/commands/feedback.test.ts`**: Methods: describe(), join(), it(), buildGitHubIssueUrl().
+- **`src/commands/feedback.ts`** (Exports: `buildGitHubIssueUrl, handleFeedbackCommand`): Function buildGitHubIssueUrl (Methods: buildGitHubIssueUrl(), URLSearchParams(), set(), toString()).
+- **`src/commands/history.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirS
 ...[truncated]

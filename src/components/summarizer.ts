@@ -1,54 +1,17 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import crypto from 'node:crypto';
-import envPaths from 'env-paths';
 import { fidelityFromComponents, formatFidelitySection } from '../scanner/fidelity.js';
 import { getTextGenerator } from './generator.js';
 
-export interface SummarizerOptions {
-  forceFallback?: boolean;
-  onProgress?: (progress: { phase: string; percent?: number }) => void;
-}
-
 export class SmolLM2Summarizer {
-  private cache: Map<string, string> = new Map();
-  private cacheFilePath: string;
   private generator: any = null;
-  private isInitializing: boolean = false;
-
-  constructor() {
-    const appPaths = envPaths('neuron', { suffix: '' });
-    const cacheDir = path.join(appPaths.data, 'cache');
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
-    }
-    this.cacheFilePath = path.join(cacheDir, 'scan_summaries.json');
-    this.loadCache();
-  }
-
-  public sanitizeSummary(text: string): string {
-    if (!text) return '';
-    let clean = text;
-
-    if (clean.includes('<|im_start|>assistant')) {
-      clean = clean.split('<|im_start|>assistant').pop() || clean;
-    }
-
-    clean = clean
-      .replace(/<\|im_start\|>(?:system|user|assistant)?/gi, '')
-      .replace(/<\|im_end\|>/gi, '')
-      .replace(/^\s*(?:system|user|assistant)\b\s*/gi, '')
-      .replace(/Summarize the primary purpose of this code file in 1 concise sentence\.?/gi, '')
-      .replace(/File:\s*[^\n]+\s*Code:\s*/gi, '')
-      .trim();
-
-    return clean;
-  }
 
   /**
-   * Delegates to the process-wide loader so a scan and write-side enrichment
-   * running in the same process share one ~3.2s model load rather than paying
-   * for it twice.
+   * Delegates to the process-wide loader so write-side enrichment (which
+   * calls `getTextGenerator()` directly, `enricher.ts`) and anything else
+   * warming the model in the same process share one load rather than paying
+   * for it twice. Kept on this class only because `neuron init` already
+   * calls `preloadModel()` here to warm enrichment's model ahead of time
+   * (ticket 26 removed this class's own use of it \u2014 per-file architecture
+   * summaries are deterministic now, not model-generated).
    */
   private async getGenerator(onProgress?: (progress: { phase: string; percent?: number }) => void) {
     if (this.generator) return this.generator;
@@ -61,82 +24,18 @@ export class SmolLM2Summarizer {
     await this.getGenerator(onProgress);
   }
 
-  private loadCache() {
-    if (fs.existsSync(this.cacheFilePath)) {
-      try {
-        const raw = fs.readFileSync(this.cacheFilePath, 'utf8');
-        const parsed = JSON.parse(raw);
-        Object.entries(parsed).forEach(([k, v]) => {
-          if (typeof v === 'string') {
-            const cleaned = this.sanitizeSummary(v);
-            if (
-              cleaned &&
-              cleaned.length > 5 &&
-              !/^(?:system|user|assistant)\b/i.test(cleaned) &&
-              !/[\u4e00-\u9fa5]/.test(cleaned)
-            ) {
-              this.cache.set(k, cleaned);
-            }
-          }
-        });
-      } catch (e) {}
-    }
-  }
-
-  private saveCache() {
-    try {
-      const obj: Record<string, string> = {};
-      this.cache.forEach((v, k) => {
-        obj[k] = v;
-      });
-      fs.writeFileSync(this.cacheFilePath, JSON.stringify(obj, null, 2), 'utf8');
-    } catch (e) {}
-  }
-
-  private computeHash(content: string): string {
-    return crypto.createHash('sha256').update(content).digest('hex');
-  }
-
-  async summarizeFile(
-    filePath: string,
-    content: string,
-    options: SummarizerOptions = {}
-  ): Promise<string> {
-    const contentHash = this.computeHash(content);
-    const cacheKey = `${filePath}:${contentHash}`;
-
-    if (!options.forceFallback && this.cache.has(cacheKey)) {
-      const cached = this.cache.get(cacheKey)!;
-      const sanitizedCached = this.sanitizeSummary(cached);
-      if (sanitizedCached && sanitizedCached.length > 5 && !/^(?:system|user|assistant)\b/i.test(sanitizedCached)) {
-        return sanitizedCached;
-      }
-    }
-
-    if (!options.forceFallback && process.env.NODE_ENV !== 'test') {
-      try {
-        const generator = await this.getGenerator(options.onProgress);
-        if (generator) {
-          const prompt = `<|im_start|>system\nSummarize the primary purpose of this code file in 1 concise English sentence. Respond ONLY in English. Do not use Chinese characters.\n<|im_end|>\n<|im_start|>user\nFile: ${filePath}\nCode:\n${content.slice(0, 1000)}\n<|im_end|>\n<|im_start|>assistant\n`;
-          const output = await generator(prompt, { max_new_tokens: 60, return_full_text: false });
-          if (output && output[0] && output[0].generated_text) {
-            const generatedText: string = output[0].generated_text;
-            const assistantAnswer = this.sanitizeSummary(generatedText);
-            if (
-              assistantAnswer &&
-              assistantAnswer.length > 10 &&
-              !/[\u4e00-\u9fa5]/.test(assistantAnswer)
-            ) {
-              this.cache.set(cacheKey, assistantAnswer);
-              this.saveCache();
-              return assistantAnswer;
-            }
-          }
-        }
-      } catch (e) {}
-    }
-
-
+  /**
+   * Per-file purpose text for the architecture card. Deterministic only
+   * (ticket 26): a local 0.5B model previously generated this via a prompt
+   * per file, which was both the card's dominant cost (~50,000 of a real
+   * ~53,000-character card) and its main quality problem \u2014 real examples
+   * from this repo's own store included garbled and non-English output.
+   * Falls back through JSDoc-comment extraction, then an AST-signature
+   * description; no model call, no cache (both existed only to amortize the
+   * removed model call \u2014 a deterministic string computation doesn't need
+   * either).
+   */
+  summarizeFile(filePath: string, content: string): string {
     // Header JSDoc comment extraction
     const headerCommentMatch = content.match(/\/\*\*[\s\S]*?\*\//);
     if (headerCommentMatch) {
@@ -147,25 +46,24 @@ export class SmolLM2Summarizer {
         .filter(Boolean)
         .join(' ');
       if (cleanComment.length > 5) {
-        this.cache.set(cacheKey, cleanComment);
-        this.saveCache();
         return cleanComment;
       }
     }
 
     // Deterministic AST signature fallback
-    const fallbackSummary = this.generateFallbackSummary(filePath, content);
-    this.cache.set(cacheKey, fallbackSummary);
-    this.saveCache();
-    return fallbackSummary;
+    return this.generateFallbackSummary(content);
   }
 
-  private generateFallbackSummary(filePath: string, content: string): string {
-    const filename = path.basename(filePath);
+  /**
+   * Terse by design: the caller (`synthesizeArchitecture`) already renders
+   * the filename as the entry's bold header and the export list separately
+   * (`Exports: ...`), so repeating either here is pure redundancy — this
+   * only adds what isn't already shown, the method signatures.
+   */
+  private generateFallbackSummary(content: string): string {
     const classMatch = content.match(/export\s+class\s+([A-Za-z0-9_]+)/);
     const fnMatch = content.match(/export\s+(?:async\s+)?function\s+([A-Za-z0-9_]+)/);
 
-    // Extract method names
     const methodNames: string[] = [];
     const methodMatches = content.matchAll(/(?:async\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)/g);
     for (const m of methodMatches) {
@@ -177,12 +75,12 @@ export class SmolLM2Summarizer {
     const methodStr = uniqueMethods.length > 0 ? ` (Methods: ${uniqueMethods.join(', ')})` : '';
 
     if (classMatch) {
-      return `Class ${classMatch[1]} in ${filename}${methodStr} manages module operations and interface contracts.`;
+      return `Class ${classMatch[1]}${methodStr}.`;
     }
     if (fnMatch) {
-      return `Function ${fnMatch[1]} in ${filename}${methodStr} handles utility and command processing.`;
+      return `Function ${fnMatch[1]}${methodStr}.`;
     }
-    return `Source file ${filename}${methodStr} exports primary project types and helper functions.`;
+    return uniqueMethods.length > 0 ? `Methods: ${uniqueMethods.join(', ')}.` : 'No exported symbols detected.';
   }
 
 

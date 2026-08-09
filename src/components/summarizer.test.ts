@@ -6,26 +6,26 @@ import { SmolLM2Summarizer } from './summarizer.js';
 describe('SmolLM2Summarizer & Content Cache', () => {
   const summarizer = new SmolLM2Summarizer();
 
-  it('generates a 1-sentence purpose summary for a source file and caches it', async () => {
+  it('extracts a JSDoc header comment as the file purpose, deterministically (ticket 26: no model call)', () => {
     const filePath = 'src/storage/dualStorageRouter.ts';
     const code = `/** Handles dual storage reads and writes across Markdown and SQLite */\nexport class DualStorageRouter {}\n`;
 
-    const summary1 = await summarizer.summarizeFile(filePath, code);
+    const summary1 = summarizer.summarizeFile(filePath, code);
 
     expect(typeof summary1).toBe('string');
     expect(summary1.length).toBeGreaterThan(10);
     expect(summary1).toContain('storage');
 
-    // Second call should hit the content hash cache instantly
-    const summary2 = await summarizer.summarizeFile(filePath, code);
+    // Same input, no model, no cache — must be byte-identical every call.
+    const summary2 = summarizer.summarizeFile(filePath, code);
     expect(summary2).toBe(summary1);
   });
 
-  it('falls back gracefully to AST signature purpose if LLM pipeline is offline or mock mode', async () => {
+  it('falls back to an AST signature purpose when there is no header comment', () => {
     const filePath = 'src/components/embedder.ts';
     const code = `export class TransformersEmbedder {\n  embed(text: string) {}\n}\n`;
 
-    const summary = await summarizer.summarizeFile(filePath, code, { forceFallback: true });
+    const summary = summarizer.summarizeFile(filePath, code);
 
     expect(summary).toContain('TransformersEmbedder');
     expect(summary).toContain('embed');

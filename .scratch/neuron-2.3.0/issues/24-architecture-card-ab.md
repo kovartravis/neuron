@@ -130,4 +130,14 @@ tasks as live Claude Code subagent sessions instead of a scripted harness,
 or stop here); maintainer chose to stop for this session. Left unresolved,
 not closed — the harness is ready to run as soon as either path is chosen.
 
+**`captured-card.txt` refreshed post-[26](26-shrink-architecture-card-drop-llm.md)**,
+2026-08-08: re-captured via a real `neuron hook claude-code session-start`
+invocation after `26` shrank and de-LLM'd the card (54,924 → 49,243 bytes;
+still truncated at the 6,000-char injection cap, but reaching further into
+the file list before cutting off). Both tasks' grading targets
+(`DEPENDENCIES`, `SUBSYSTEM_PATHS` in `tasks.mjs`) are drawn from the
+card's header/dependency-contract/subsystem-map section, which sits before
+any per-file detail and is unaffected by `26`'s changes — no task-file
+changes needed, just the refreshed fixture content.
+
 ## Comments

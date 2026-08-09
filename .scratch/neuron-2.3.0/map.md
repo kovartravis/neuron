@@ -319,6 +319,29 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   frontier list below since a claimed ticket never is, but it's the first
   thing to pick back up once an execution path is chosen. Frontier is now
   `05`, `13`, `14`, `19`, `20`, `21`, `22`.
+- **[26 — Shrink the Architecture Card: Drop the LLM, Deterministic Per-File
+  Purpose Only](issues/26-shrink-architecture-card-drop-llm.md) surfaced and
+  resolved 2026-08-08**, at the maintainer's direct request immediately
+  after `25` — sequenced to run *before* `24`'s A/B so it tests the shrunk
+  card, not the old one. Removed `summarizeFile()`'s per-file 0.5B-model
+  call entirely (`src/components/summarizer.ts`), which was both the card's
+  dominant cost (~50,000 of a real ~53,000-character card) and its main
+  quality problem — confirmed real garbled/non-English output in this
+  repo's own store. Deleted the now-pointless disk cache alongside it;
+  `neuron init`'s model preload stays, since write-side enrichment
+  (`enricher.ts`) still uses the same shared loader independently.
+  **Measured honestly in two steps, not assumed**: removing the LLM alone
+  barely helped (54,924 → 53,487 bytes, ~2.6%) — the deterministic
+  fallback template was nearly as verbose as the model's prose. A second
+  pass at the maintainer's explicit follow-up request, tightening that
+  template to stop repeating the filename/exports the caller already
+  renders, got a real reduction: 54,924 → 49,243 bytes (~10.3%). Still far
+  past the 6,000-char budget — `25`'s truncation stays necessary, now
+  truncating less, and the remaining size is legitimate hand-written JSDoc
+  content, not noise, so left alone rather than cut further. This repo's
+  own `.neuron/decisions.md` regenerated via a real `neuron scan`; `24`'s
+  `captured-card.txt` refreshed to match. `npm test` 559/559 both before
+  and after the tightening pass.
 
 ## Decisions so far
 
