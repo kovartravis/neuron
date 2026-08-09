@@ -10,7 +10,7 @@ The process of bootstrapping a project to support agentic memory store workflows
 
 ### harness adapter (`src/harnesses/`)
 
-The interface (`HarnessAdapter`: `detect`/`capability`/`install`/`uninstall`/`verify`) between neuron and a coding agent's harness, letting `neuron init` wire a deterministic recall hook rather than relying on an instruction the agent may or may not follow. Capability is a `lifecyclePoint → supportRecord` map, not a single label — the `deterministic`/`best-effort`/`instruction-only` fidelity shown to users is derived from that map for display and never stored. Shipped for Claude Code and Codex CLI in 2.2.0-rc3; see [ADR 0014](docs/adr/0014-recall-adapter-architecture.md).
+The interface (`HarnessAdapter`: `detect`/`capability`/`install`/`uninstall`/`verify`) between neuron and a coding agent's harness, letting `neuron init` wire a hook rather than relying on an instruction the agent may or may not follow. Capability is a `lifecyclePoint → supportRecord` map, not a single label — the `deterministic`/`best-effort`/`instruction-only` fidelity shown to users is derived from that map for display and never stored. Shipped for Claude Code and Codex CLI (both `deterministic`) in 2.2.0-rc3, and for GitHub Copilot CLI and Cursor (both `best-effort` — no per-turn hook point, so query-time recall still falls back to instructions) in 2.3.0; see [ADR 0014](docs/adr/0014-recall-adapter-architecture.md).
 
 ### protocol block (`src/config/protocolBlock.ts`)
 

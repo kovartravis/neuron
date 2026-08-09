@@ -2,6 +2,72 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.3.0-rc2] - 2026-08-09
+
+Interim release candidate — most of the [neuron-2.3.0
+map](.scratch/neuron-2.3.0/map.md) remains open (real-install verification
+for both new harness adapters, the compatibility-disclosure surface, the
+benchmark-suite publication band). This tag is an installable checkpoint of
+everything that landed on trunk since `v2.3.0-rc1`, audited directly from
+`git log v2.3.0-rc1..HEAD` rather than assumed from the map's nominal band
+structure.
+
+- **Cursor adapter.** `neuron init` now wires a `best-effort` hook into
+  Cursor: `session-start` and `context-reset` are wired, `pre-prompt` is
+  not (Cursor's `beforeSubmitPrompt` is permission-only, no context field),
+  so query-time recall on Cursor still falls back to the instruction
+  protocol. **Not yet verified against a real Cursor installation** — do
+  not read this as parity with the Copilot CLI row, which already has that
+  verification.
+- **Per-category storage path and mode, `split` removed as its own mode.**
+  `storage.path`/`storage.mode` are now settable at the top level and
+  overridable per category (`categories.<name>.path` /
+  `categories.<name>.storage`). `split` is deleted as a distinct mode — it
+  now aliases to `md`, joining `vector-only` (→ `vector`), `md-only`, and
+  `dual` as deprecated spellings that still parse with a one-time stderr
+  warning, never auto-migrated. **Upgrade note:** a `neuron.yaml` naming its
+  mode explicitly is unaffected in behavior; only the accepted spelling set
+  changed. See [ADR 0016](docs/adr/0016-per-category-storage-vocabulary.md).
+- **Architecture card: per-epoch re-injection, stable-id fetch, smaller
+  payload.** The card now re-injects on the first `pre-prompt` of each
+  session epoch (previously only at session start, so it never returned
+  after a context compaction) and is fetched by its own stable id first, so
+  it can no longer be crowded out of a category's top-N query results. Its
+  generation dropped the per-file LLM summarization call entirely in favor
+  of a tightened deterministic template, and injection now structurally
+  compresses the card to fit its budget (whole modules, in fixed order,
+  rather than an arbitrary text truncation) instead of silently cutting off
+  after however many subsystems happen to fit first. **This is not the
+  final shape** — compressing a single monolithic card was rejected
+  mid-band as not solving the underlying scaling problem on a large repo,
+  and is being replaced by an index-plus-per-module-card model (tickets
+  `28`–`30` on the map above), not yet landed.
+- **`neuron status --check`/`--repair`.** Reports (and, with `--repair`,
+  fixes) live entries missing a *currently*-required frontmatter field —
+  `--repair` applies a configured `default:` first, then centroid-based
+  inference for enum-typed fields only, and leaves free-text/low-evidence
+  fields `unresolved` rather than fabricating a value. Both exit `1` on
+  remaining non-compliance, matching `scan --check`'s CI-gate posture.
+- **`neuron memory list`/`query` default ordering and limit fix.** `list`
+  mode was silently ordering oldest-first; it now orders most-recent-first,
+  matching the already-deprecated `listHistory` wrapper it had regressed
+  behind. `list` mode's default limit is now `20` (previously shared
+  `query` mode's `5`, despite answering a different question — "show me
+  recent entries" vs. "find entries matching this text"). A real, if minor,
+  user-visible behavior change for anyone relying on the old defaults.
+- **Repo infrastructure:** a GitHub Actions workflow now handles npm
+  publishing on push to `main` (dist-tag chosen from `package.json`'s own
+  version string; skips a push that doesn't bump the version; gated by a
+  GitHub Environment for reviewer approval). Not a package-runtime change —
+  noted here only because it's the mechanism that will publish future `rc`
+  and stable tags going forward.
+
+No claims from the git-log-recall or SWE-bench-synthetic-fixture benchmark
+harnesses (both built this cycle) — neither has a live run yet.
+
+`npm publish --tag rc` is left to the maintainer, same as every prior `rc`
+cut on this and the 2.2.0 map.
+
 ## [2.2.0] - 2026-08-05
 
 **Your memory is markdown now, by default.** `storage.mode` defaults to `md`:

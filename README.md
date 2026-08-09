@@ -97,10 +97,10 @@ agent to follow, no dependence on it choosing to look.
 | Claude Code | Deterministic (hook-based, every turn) |
 | OpenAI Codex CLI | Deterministic (hook-based, every turn) |
 | GitHub Copilot CLI | Best-effort — guarantees the architecture card at session start; Copilot has no per-turn hook point, so query-time recall still falls back to instructions |
+| Cursor | Best-effort — session-start and context-reset hooks are wired, but Cursor has no per-turn hook point, so query-time recall still falls back to instructions; not yet verified against a real Cursor installation |
 
 Any other harness falls back to an instruction in `CLAUDE.md`/`AGENTS.md`
-asking the agent to query the store itself. Cursor support is on the
-roadmap.
+asking the agent to query the store itself.
 
 ## 📁 What it looks like in your repo
 

@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: none
 Band: 2.3.0-rc2
 
@@ -108,12 +108,78 @@ needs the fidelity table and prose to stop stating something false).
 
 ## Deliverables
 
-- [ ] `2.3.0-rc2` version-bumped, committed, tagged `v2.3.0-rc2`, and pushed
-- [ ] CHANGELOG entry covering the real trunk diff since `rc1`, with the
+- [x] `2.3.0-rc2` version-bumped, committed, tagged `v2.3.0-rc2`, and pushed
+- [x] CHANGELOG entry covering the real trunk diff since `rc1`, with the
       Cursor/architecture-card caveats stated plainly
-- [ ] README's stale "Cursor support is on the roadmap" line corrected
-- [ ] `docs/COMMANDS.md` / `CONTEXT.md` / the packaged `neuron-memory` skill
+- [x] README's stale "Cursor support is on the roadmap" line corrected
+- [x] `docs/COMMANDS.md` / `CONTEXT.md` / the packaged `neuron-memory` skill
       audited against the same diff, updated where stale
-- [ ] Unit + E2E suites green
-- [ ] `npm publish --tag rc` left explicitly to the maintainer, called out
+- [x] Unit + E2E suites green
+- [x] `npm publish --tag rc` left explicitly to the maintainer, called out
       in the Answer
+
+## Answer
+
+Audited `git log v2.3.0-rc1..HEAD` directly (17 commits, including two this
+session committed first: ticket 35's resolution/ADR 0017/the `neuron-2.4.0`
+charter, and ticket 21's `publish.yml` GitHub Action) rather than trusting
+the map's nominal band structure, per this ticket's own Context.
+
+**CHANGELOG** — new `## [2.3.0-rc2]` section: Cursor adapter (explicitly
+caveated `best-effort`, not real-install-verified, unlike the already-
+verified Copilot row); per-category storage path/mode with `split` deleted
+and all four old spellings (`vector-only`/`split`/`md-only`/`dual`) still
+parsing as deprecated aliases; the architecture-card band (per-epoch
+re-injection, stable-id fetch, LLM removed, structural compression) with an
+explicit note that ticket `27`'s compression was mid-band rejected and is
+being replaced by tickets `28`-`30`, not yet landed; `neuron status
+--check`/`--repair`; the `memory list`/`query` default-ordering and
+default-limit fix, called out as a real user-visible behavior change, not
+folded silently into the status entry; and the new publish-automation
+workflow, noted as repo infrastructure rather than a package-runtime
+change. Explicitly did not claim anything from tickets `14`/`19` — neither
+has a live run.
+
+**README** — the stale "Cursor support is on the roadmap" line
+(README.md:102-103) replaced with a Cursor row in the recall-fidelity
+table, modeled on the existing Copilot CLI row's wording rather than
+inventing new framing: best-effort, session-start/context-reset wired,
+no per-turn hook, not yet verified against a real install.
+
+**Doc audit (Scope item 4):** `docs/COMMANDS.md`'s `neuron status` section
+already covered `13` correctly (verified, not assumed — matching `09`'s own
+"verify rather than edit" precedent when a claim checks out). The packaged
+skill's harness-hook skip-condition (`SKILL.md:256-261`) was checked against
+Copilot/Cursor and found still accurate — it correctly scopes "skip manual
+querying" to harnesses with a *deterministic* hook, which neither Copilot
+nor Cursor has, so it doesn't misrepresent them by omission. **Found a real
+stale claim, not previously flagged**: `CONTEXT.md`'s own `harness adapter`
+glossary entry said adapters were "Shipped for Claude Code and Codex CLI in
+2.2.0-rc3" full stop — no longer true once Copilot (`01`) and Cursor (`02`)
+shipped adapters too. Corrected to name both eras and both fidelity tiers
+(`deterministic` for the first two, `best-effort` for the newer two) rather
+than just adding names to the old sentence.
+
+**Verification:** `npm test` 580/580 (`neuron exec -- npm test`); `neuron
+exec -- npx tsc --noEmit` clean; `neuron exec -- npm run test:e2e` 12/13
+pillars green, Pillar 8 (multi-process contention) red — confirmed via the
+tracker's own extensive prior record (`neuron-2.2.0`'s map and multiple rc
+tickets) as a long-standing, pre-existing SQLite write-lock-contention flake
+unrelated to any change in this band, not a new regression.
+
+**Committed as four separate commits** rather than one: two catching up
+prior-session work that had landed uncommitted before this ticket started
+(ticket `35`'s resolution/ADR/`neuron-2.4.0` charter; ticket `21`'s
+`publish.yml`), one recording both sessions' history/decisions entries to
+`.neuron/`, and this ticket's own version-bump/CHANGELOG/README/doc-audit/
+benchmark-report commit — tagged `v2.3.0-rc2` and pushed.
+
+**At the maintainer's explicit direction this session** (to unblock ticket
+`36`'s real verification of the new publish workflow, which only fires on
+`main`), `feat/2.3.0` was also merged into `main` as part of this cut —
+earlier than this map's own "merge to main at epic end" cadence, called out
+here as a deliberate, maintainer-directed exception, not a silent departure
+from it. Detail in the map's own Notes entry for this ticket.
+
+`npm publish --tag rc` is deliberately not run — left to the maintainer,
+same as `rc1` and every prior `rc` cut on this and the `neuron-2.2.0` map.

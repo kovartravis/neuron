@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-08-05T19:36:19.946Z",
+  "timestamp": "2026-08-09T17:52:00.227Z",
   "tier": "sanity",
-  "suiteDurationMs": 27994,
+  "suiteDurationMs": 25573,
   "pillars": [
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "samples": 18,
-      "p50Ms": 426.96,
-      "p95Ms": 4282.55,
-      "p99Ms": 7863.91,
-      "minMs": 12.21,
-      "maxMs": 8759.25,
-      "meanMs": 1207.23,
-      "totalMs": 21730.16,
-      "throughputPerSec": 0.83,
+      "p50Ms": 227.88,
+      "p95Ms": 3538,
+      "p99Ms": 12075.86,
+      "minMs": 4.5,
+      "maxMs": 14210.33,
+      "meanMs": 1262.57,
+      "totalMs": 22726.34,
+      "throughputPerSec": 0.79,
       "extra": {
         "cases": 9,
         "accuracy": {
@@ -29,7 +29,7 @@
             "cat-history-2: expected history, got (hard error)",
             "cat-history-3: expected history, got (hard error)",
             "cat-decisions-1: expected decisions, got (hard error)",
-            "cat-decisions-2: expected decisions, got learning",
+            "cat-decisions-2: expected decisions, got (hard error)",
             "cat-decisions-3: expected decisions, got (hard error)"
           ],
           "centroid": []
@@ -39,14 +39,14 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "samples": 16,
-      "p50Ms": 5.87,
-      "p95Ms": 9.77,
-      "p99Ms": 14.85,
-      "minMs": 3.89,
-      "maxMs": 16.12,
-      "meanMs": 6.32,
-      "totalMs": 101.05,
-      "throughputPerSec": 158.34,
+      "p50Ms": 2.7,
+      "p95Ms": 7.15,
+      "p99Ms": 7.52,
+      "minMs": 2.17,
+      "maxMs": 7.61,
+      "meanMs": 3.43,
+      "totalMs": 54.82,
+      "throughputPerSec": 291.88,
       "extra": {
         "corpusSize": 158,
         "cases": 8,
