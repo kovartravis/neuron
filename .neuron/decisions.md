@@ -921,3 +921,27 @@ tags:
 taskId: null
 ---
 Chartered ticket 34 (Cut and Publish 2.3.0-rc2) on the neuron-2.3.0 wayfinder map, 2026-08-09, at the maintainer's request to snapshot everything on trunk since v2.3.0-rc1 into a real interim release candidate with docs audited against actual behavior. Modeled directly on neuron-2.2.0 ticket 09's own rc2 cut: because there's no per-band branch in this workflow, whatever is on trunk when an rc tag is cut is what ships, so the CHANGELOG must be written from git log v2.3.0-rc1..HEAD directly rather than assumed from the map's nominal band structure. Scoped in: the Cursor adapter (ticket 02, explicitly caveated as not yet real-install-verified), the storage vocabulary change (tickets 05/06), architecture-card work through ticket 27 (with ticket 27's own mid-band rejection by the maintainer and supersession by tickets 28-30 stated plainly, not glossed over), neuron status --check/--repair (ticket 13), and the memory list/query default fix (ticket 31). Explicitly scoped out: no benchmark findings from tickets 14/19, since neither has a live run yet. This is an interim rc, not the final 2.3.0 cut (ticket 04), so it is not wired as a blocker of 04. Found while charting: README.md's recall-fidelity section still says Cursor support is on the roadmap even though ticket 02 shipped a working CursorAdapter two commits after rc1 - a live instance of the exact claims-must-match-behavior gap this whole map exists to close - folded into ticket 34's scope alongside an audit of docs/COMMANDS.md, CONTEXT.md, and the packaged neuron-memory skill against the same trunk diff.
+
+---
+id: 6c1eb2e4-5969-4483-b26c-201d726ced1d
+createdAt: 2026-08-09T17:34:45.411Z
+importance: 5
+tags:
+  - llm
+  - enrichment
+  - memory
+taskId: null
+---
+ADR 0017: category declaration authority resolved advisory-but-self-maintaining — an undeclared category auto-appends a minimal categories.<name>: {} block to neuron.yaml on its first write (via yaml's comment-preserving Document API, not plain overwrite), rather than being validated/rejected or left permanently undeclared. Inferred-category strictness (centroid/model paths) stays hard-constrained to the declared set, deliberately asymmetric with explicit --category, since inference shouldn't invent a category from embedding proximity while an explicit flag is a trusted human override. Existing undeclared categories backfill via an extended neuron status --repair rather than a standalone migration script; one hook point (NeuronMemory.transact(), src/index.ts:828) covers both neuron memory add and neuron scan since both already funnel through it.
+
+---
+id: c4d2223a-b582-4f85-94f5-1ef7f68ba21a
+createdAt: 2026-08-09T17:42:12.718Z
+importance: 4
+tags:
+  - release
+  - git
+  - npm
+taskId: null
+---
+Ticket 21 (Automated npm Publish GitHub Action, neuron-2.3.0): the workflow trigger is push-to-main only (never pull_request/pull_request_target, to avoid running with repo secrets against fork-controlled branches), and dist-tag selection only recognizes -rcN prereleases (bare X.Y.Z -> latest, -rcN -> rc, anything else fails the job loudly rather than guessing) -- both maintainer calls made via AskUserQuestion rather than assumed. Split into two jobs specifically for security: build-and-test runs unconstrained on every push, while publish (needs: build-and-test, gated by environment: npm-publish) only runs npm publish/git tag -- so a required-reviewer approval on the environment (once the maintainer creates it and adds NPM_TOKEN as an environment secret) happens after test results are visible, not before. Branch protection on main (who can push/merge at all) was explicitly left for the maintainer to configure themselves via GitHub settings rather than set via gh api this session -- the environment gate is a second, independent layer on top of that, not a substitute for it. Real end-to-end verification split into ticket 36 since neither NPM_TOKEN nor the npm-publish environment exist yet.

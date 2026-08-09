@@ -3224,3 +3224,27 @@ tags:
 taskId: null
 ---
 Wayfinder session on ticket 19 (Synthetic-Fixture Counterfactual A/B) concluded: after the effort:'medium' pilot exposed that check()'s identifiesFix gate tests for a proposed fix no task prompt ever actually asked for, the maintainer chose to rewrite the prompts rather than drop the gate or leave it open. Added an explicit "...and how would you fix it?" clause to all four task prompts in swebench-tasks.mjs -- both live (matplotlib-24265-seaborn-alias, django-11019-media-merge-order) and retired (astropy-12907-separability, django-11133-memoryview), for consistency even though the retired pair isn't run by default. check() logic itself is unchanged, only the prompt text. npm test 580/580. Deliberately not re-run live this session -- the medium-effort pilot's captured "failed" answers were generated under the old prompt and won't retroactively pass, so confirming the fix needs a fresh pilot, which is the natural next pickup rather than a fourth live-spend round in one session. Total session spend: 0.92 USD of the 5 USD cap (4.08 USD remaining). Ticket 19 stays claimed, not resolved; next step is npm run bench:swebench-ab:pilot with either effort level against the four now-updated prompts.
+
+---
+id: 4a1e7096-174b-4548-b578-09d91f5da642
+createdAt: 2026-08-09T17:34:56.789Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Wayfinder pickup session on neuron-2.3.0: frontier's first-in-order ticket (20, verify Copilot adapter) turned out to need a real GitHub Copilot CLI install/subscription this session doesn't have, and 22 has the same shape for Cursor; at the maintainer's request, graduated fog item 'is categories authoritative or advisory' into a fresh grilling ticket (35) instead of taking a build/verify task off the frontier. Ran a full grilling session covering the core advisory-vs-validate fork, the inferred-vs-explicit category strictness asymmetry, this repo's own scan.category alias, backfill migration, block shape, and the concrete single hook point (NeuronMemory.transact, traced via code search rather than assumed). Landed on advisory-but-self-maintaining: an undeclared category auto-declares itself in neuron.yaml on first write via a new comment-preserving Document-API round-trip writer, existing gaps backfilled through an extended neuron status --repair. Wrote ADR 0017. Mid-session the maintainer redirected the resulting implementation off neuron-2.3.0 (already accumulating toward its rc2 cut) onto a freshly chartered neuron-2.4.0 map, seeded with ticket 01 (implement ADR 0017) as its first, unblocked ticket. Ticket 35 itself resolves on neuron-2.3.0's own map; neuron-2.3.0's frontier is otherwise unchanged (20, 21, 22, 28, 32, 34).
+
+---
+id: 431a13ee-a825-41c5-aea7-e0c2b42bf5c9
+createdAt: 2026-08-09T17:42:05.005Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - release
+taskId: neuron-2.3.0
+---
+Wayfinder pickup on the neuron-2.3.0 map: skipped frontier tickets 20/22 (need real harness installs) per maintainer instruction, claimed ticket 21 (GitHub Action: Automated npm Publish on Push to Main). Grilled two open Scope decisions via AskUserQuestion (only -rcN prereleases get a dist-tag, anything else fails loudly; failure visibility stays GitHub Actions UI only) and built .github/workflows/publish.yml: a build-and-test job that always runs npm ci/npm test and resolves version+dist-tag+already-published, feeding a separate publish job gated by environment: npm-publish. Mid-session the maintainer asked what stops someone from opening a branch and publishing; answered that the push-to-main trigger already excludes branches/PRs and the real gate is branch protection (maintainer configuring themselves) plus the new environment approval gate (inert until the npm-publish environment and NPM_TOKEN are created). Split real-run verification into ticket 36 since NPM_TOKEN/environment don't exist yet; ticket 21 stays claimed, not resolved, blocked by 36. Frontier is now 20, 22, 28, 32, 34, 36.
