@@ -1122,3 +1122,15 @@ tags:
 taskId: null
 ---
 Grilled a new idea for neuron-2.3.0 (2026-08-09): future session work should be reliably discoverable for downstream synthesis tasks like writing the README, since today an agent only sees whatever fits the hook's per-epoch injection budget. Modeled on tickets 28-30's architecture-card index+detail-card split, but a different mechanism: instead of making detail reachable via ordinary relevance recall, the hook actively teaches the agent the neuron memory query surface exists via a conditional, per-turn, literal ready-to-run command (e.g. neuron memory query "<prompt text>" --limit 12), fired only when a cheap FTS COUNT shows the existing pre-prompt recall left a real counted gap versus what got injected -- never a static repeated note, which would hit the same redundancy ticket 08 measured against history. No session-start equivalent (ruled out as resident-but-unearned content). Store-wide scope, matching the existing pre-prompt query. Graduated three tickets: 31 (fix two independent pre-existing bugs in neuron memory list/query defaults -- oldest-first ordering, and a limit default shared between list mode and text-query mode despite answering different questions), 32 (the hint itself, blocked by 31), and 33 (measure whether the hint actually gets used and helps, blocked by 32, motivated by ticket 10's finding that the memory arm sometimes performed worse than no memory at all).
+
+---
+id: 3abdaac4-3159-45ad-b218-ef00b93efcc4
+createdAt: 2026-08-09T13:07:19.196Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+Ticket 19's synthetic counterfactual-A/B harness sources its two tasks from real SWE-bench Lite instances (astropy__astropy-12907, django__django-11133) pinned at their pre-fix base commit, rather than a hand-authored fake repo or the real SWE-bench execution harness. Pinning to base_commit gives 'answer structurally absent from the repo' for free since the fix was merged later, and borrowing only the repo/issue/gold-patch (not Docker or hidden-test execution) keeps grading a deterministic /ANSWER.md keyword check with no LLM judge, consistent with ticket 10's own no-judge rule. Task prompts are stripped to symptom-level text rather than the raw GitHub issue, because several candidate instances' real issue text already named the fix location or content -- reproducing ticket 10's own documented-answer confound was the exact failure this ticket exists to avoid, so prompt-leak became a selection/stripping criterion, not an afterthought. This is a supplement to the real-repo run (tickets 10/18), not a replacement -- the real-repo arm still measures behavior on an actual messy project that no synthetic fixture can stand in for.

@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: 10
 Band: context cost
 
@@ -85,4 +85,77 @@ recall hook's shape).
 
 ## Comments
 
-(none yet)
+**2026-08-09, session in progress (not yet a resolution):** Claimed. Live
+execution needs `ant auth login` (a browser OAuth flow only the maintainer
+can complete) — credentials in this environment are expired and the
+maintainer confirmed at pickup they can't log in this session ("I can't do
+this one right now, no login"). Same operational blocker ticket 10 hit on
+its own first pickup; following that precedent, built and dry-run-validated
+the harness rather than leaving the ticket untouched, so a future session
+can go straight to a live pilot once credentials are available.
+
+**Built, reusing ticket 10's harness per Scope item 1** — no new
+orchestration duplicated:
+
+- `report.mjs` (new): extracted `summarize`/`percentile`/`costUsd`/`PRICE`/
+  `withConcurrency` out of `run.mjs` so a second pillar could reuse them
+  instead of re-deriving them, generalized to take `{tasks, k, arms,
+  treatmentArm, controlArm}` instead of hardcoding `['memory','control']`.
+  `run.mjs` itself now imports from here — refactor only, verified
+  byte-identical dry-run behavior before and after, and the full suite
+  (578/578) still passes since nothing in `src/` touches this directory.
+- `grading.mjs` (new): extracted `containsAll`/`containsAny`/
+  `hasUnnegatedKeyword`/the negation heuristic out of `tasks.mjs`, so the
+  new task set doesn't duplicate the same negation-detection logic ticket
+  18's resolution already had to fix twice.
+- `gitlog-search.mjs` (new): the "minimal prototype" hook-injection
+  surface Scope item 3 asks for — generic `git log --grep` keyword search
+  (OR-matched, top 6 commits by recency) formatted as an injected note,
+  including an honest "may be incomplete, verify yourself" caveat rather
+  than presenting it as authoritative.
+- `gitlog-tasks.mjs` (new): 3 tasks, each grounded in a real fact
+  recoverable ONLY from this repo's own git history (not `.neuron/`
+  memory), each declaring the keyword terms its `gitlog` arm searches on:
+  `isolation-gap-fixed-twice` (has a recurring bug class been fixed more
+  than once — yes, ticket 42 then ticket 23), `reconcile-data-loss-fix`
+  (what did ticket 06 find and fix in `DualStorageRouter`'s reconcile
+  path), `session-budget-granularity` (is the recall hook's char budget
+  per-session or per-epoch, and what's the default). Every task's grading
+  verified against both a gold answer (passes) and a plausible wrong
+  answer (correctly fails) before wiring the orchestrator, same discipline
+  ticket 10 used.
+- `run-gitlog-ab.mjs` (new): orchestrator. Both arms reuse
+  `fixtures.mjs`'s existing `'control'` shape verbatim (clean worktree,
+  `.neuron/` removed, full git history present on both) — the `gitlog` arm
+  then layers `gitlog-search.mjs`'s injected note on top via the same
+  `fixture.systemNote` mechanism ticket 10's memory arm used, so
+  `session.mjs` needed zero changes.
+
+**A real search-quality risk found while tuning query terms, worth
+recording:** an early draft of the `reconcile-data-loss-fix` query
+surfaced a decoy — commit `7be60c2e` ("...the two entries this session
+added while resolving ticket 14...") — which is a **different** ticket 14,
+from `neuron-2.2.0`'s map (Protocol Block Rewrite), not this one. Ticket
+numbers are not unique across this repo's own concurrent wayfinder maps,
+so a naive keyword/number search can return a same-numbered-but-wrong
+ticket with high apparent relevance. Not fixed in the search itself
+(`gitlog-search.mjs` stays generic, per Scope item 3's "do not over-build"
+instruction) — instead the affected task's query terms were retuned to
+class/behavior-specific keywords (`DualStorageRouter`, `reseed`, `strict
+mirror`) that don't collide, and the injected note's own "may be
+incomplete — verify yourself" caveat is the honest disclosure of this
+failure mode for terms that do collide. Whoever eventually reads the live
+run's risk-arm cases should check whether any failure traces back to a
+cross-map ticket-number collision like this one, since it's a distinct
+failure mode from ordinary keyword noise.
+
+**Budget, stated but not yet approved-and-spent:** matching ticket 10's
+shape (Sonnet 5 intro pricing, `effort: low`), 3 tasks × 2 arms × k=3
+repeats = 18 sessions, well under ticket 10's own 24-session/$5.20 actual —
+expect low-single-digit dollars. Not run. **Not resolving this ticket
+yet** — Deliverable 1 ("either a completed A/B, or a recorded argument for
+why it was not run") isn't satisfied by a built-but-unrun harness, same
+distinction ticket 10's own first-pickup comment drew. Whoever picks this
+back up: `node benchmarks/token-ab/run-gitlog-ab.mjs --k=1` as a cheap
+pilot first, per ticket 10's own precedent, before spending the full
+budget.

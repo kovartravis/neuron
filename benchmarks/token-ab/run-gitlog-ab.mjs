@@ -1,33 +1,47 @@
 #!/usr/bin/env node
 /**
- * Orchestrator for ticket 10 (Counterfactual Token A/B).
+ * Orchestrator for ticket 14 (Git-Log Recall: Hook-Injected Search vs
+ * Agent-Invoked `git log`). Reuses ticket 10's harness verbatim (Scope item
+ * 1): same fixture builder (`fixtures.mjs`), same session runner
+ * (`session.mjs`), same reporting/aggregation (`report.mjs`). The only new
+ * pieces are the task set (`gitlog-tasks.mjs`) and the minimal
+ * hook-injection prototype (`gitlog-search.mjs`).
  *
- * For each task x arm x repeat: build a fresh git-worktree fixture, run one
- * agent session against it, grade the session's ANSWER.md, tear the fixture
- * down. Writes a results.json + prints token distributions, failure rates,
- * and the risk arm (tasks the memory arm got wrong that control got right) —
- * exactly the deliverables ticket 10's Scope and Verification sections ask
- * for. No LLM judge anywhere: grading is the deterministic checks in
- * tasks.mjs.
+ * Both arms are the SAME fixture shape ticket 10's 'control' arm used: a
+ * clean git-worktree checkout with .neuron/ removed and no system note by
+ * default (this ticket tests git-log recall, independent of the memory
+ * store entirely — both arms have full, identical git history available
+ * via ordinary `git log`/`git show`/`git grep` bash calls).
  *
- * Cost/runtime were stated and approved before this harness ran anything:
- * Claude Sonnet 5 at intro pricing, 4 tasks x 2 arms x 3 repeats = 24
- * sessions, effort 'low', estimated well under $5 and well under $20.
+ *   agent   — gets nothing extra. Must run `git log` (or friends) itself if
+ *             it decides history is relevant.
+ *   gitlog  — gets a hook-injected git-log search result up front, in the
+ *             system prompt, mirroring the existing recall hook's
+ *             session-start injection shape. The search itself
+ *             (gitlog-search.mjs) is generic keyword matching against the
+ *             task's own declared `gitLogQuery` terms, not hand-picked
+ *             winning content.
+ *
+ * Cost/runtime must be stated and approved before this is run live —
+ * ticket 14 Scope item 6, same discipline ticket 10 Scope item 6 used.
+ * This harness is dry-run-validated only as of ticket 14's first pickup;
+ * see the ticket's own Comments for the live-run credential/budget status.
  *
  * Usage:
- *   node benchmarks/token-ab/run.mjs              # the real run (needs ANTHROPIC_API_KEY / ant profile)
- *   node benchmarks/token-ab/run.mjs --dry-run     # exercises fixtures + grading only, no API calls, no spend
- *   node benchmarks/token-ab/run.mjs --k=1         # override repeat count (e.g. a cheap pilot)
- *   node benchmarks/token-ab/run.mjs --concurrency=3
- *   node benchmarks/token-ab/run.mjs --tasks=id1,id2   # only run a task subset (e.g. a regression re-check)
- *   node benchmarks/token-ab/run.mjs --out=path/relative/to/repo/root  # write results elsewhere (default: ticket 10's own dir)
+ *   node benchmarks/token-ab/run-gitlog-ab.mjs              # the real run (needs ANTHROPIC_API_KEY / ant profile)
+ *   node benchmarks/token-ab/run-gitlog-ab.mjs --dry-run     # exercises fixtures + search + grading only, no API calls, no spend
+ *   node benchmarks/token-ab/run-gitlog-ab.mjs --k=1         # override repeat count (e.g. a cheap pilot)
+ *   node benchmarks/token-ab/run-gitlog-ab.mjs --concurrency=3
+ *   node benchmarks/token-ab/run-gitlog-ab.mjs --tasks=id1,id2
+ *   node benchmarks/token-ab/run-gitlog-ab.mjs --out=path/relative/to/repo/root  # default: ticket 14's own audit dir
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TASKS as ALL_TASKS } from './tasks.mjs';
+import { TASKS as ALL_TASKS } from './gitlog-tasks.mjs';
 import { buildFixture, cleanupFixture, pruneStaleWorktrees } from './fixtures.mjs';
+import { searchGitLog, formatGitLogNote } from './gitlog-search.mjs';
 import { runSession, MODEL } from './session.mjs';
 import { costUsd, summarize, withConcurrency } from './report.mjs';
 
@@ -47,12 +61,24 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
 const OUT_DIR = path.join(
   REPO_ROOT,
   args.find(a => a.startsWith('--out='))?.split('=')[1] ??
-    '.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab'
+    '.scratch/neuron-2.3.0/audits/14-git-log-hook-vs-agent-log-ab'
 );
 
-const ARMS = ['memory', 'control'];
-const TREATMENT_ARM = 'memory';
-const CONTROL_ARM = 'control';
+const ARMS = ['gitlog', 'agent'];
+const TREATMENT_ARM = 'gitlog';
+const CONTROL_ARM = 'agent';
+
+function buildGitlogFixture(task, arm, sessionTag) {
+  // Reuse ticket 10's 'control' shape verbatim: clean worktree, .neuron
+  // removed, no system note by default. Only the 'gitlog' arm then layers
+  // an injected note on top.
+  const fixture = buildFixture('control', sessionTag);
+  if (arm === 'gitlog') {
+    const entries = searchGitLog(fixture.dir, task.gitLogQuery);
+    fixture.systemNote = formatGitLogNote(entries, task.gitLogQuery);
+  }
+  return fixture;
+}
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -67,7 +93,7 @@ async function main() {
     }
   }
 
-  console.log(`Ticket 10 counterfactual token A/B — ${DRY_RUN ? 'DRY RUN (no API calls)' : `LIVE (${MODEL})`}`);
+  console.log(`Ticket 14 git-log recall A/B — ${DRY_RUN ? 'DRY RUN (no API calls)' : `LIVE (${MODEL})`}`);
   console.log(`${TASKS.length} tasks x ${ARMS.length} arms x ${K} repeats = ${plan.length} sessions\n`);
 
   let client = null;
@@ -77,14 +103,17 @@ async function main() {
   }
 
   const results = await withConcurrency(plan, DRY_RUN ? 1 : CONCURRENCY, async ({ task, arm, sessionLabel }) => {
-    const fixture = buildFixture(arm, sessionLabel);
+    const fixture = buildGitlogFixture(task, arm, sessionLabel);
     try {
       if (DRY_RUN) {
-        // Exercise fixture + grading plumbing without spending anything.
+        // Exercise fixture + search + grading plumbing without spending anything.
         const answerPath = path.join(fixture.dir, 'ANSWER.md');
         fs.writeFileSync(answerPath, `[dry-run placeholder for ${sessionLabel}]`);
         const graded = task.check(fs.readFileSync(answerPath, 'utf8'));
-        console.log(`  [dry-run] ${sessionLabel}: fixture ok, .neuron present=${fs.existsSync(path.join(fixture.dir, '.neuron'))}, grade=${JSON.stringify(graded)}`);
+        console.log(
+          `  [dry-run] ${sessionLabel}: fixture ok, .neuron present=${fs.existsSync(path.join(fixture.dir, '.neuron'))}, ` +
+            `noteChars=${fixture.systemNote?.length ?? 0}, grade=${JSON.stringify(graded)}`
+        );
         return {
           task: task.id,
           arm,
@@ -138,14 +167,14 @@ async function main() {
     );
   }
   console.log(
-    `\nToken diff (control - memory): ${summary.tokenDiff}  |  spread: ${summary.spread}  |  ` +
+    `\nToken diff (${CONTROL_ARM} - ${TREATMENT_ARM}): ${summary.tokenDiff}  |  spread: ${summary.spread}  |  ` +
       `no-measured-difference: ${summary.noMeasuredDifference}`
   );
   if (summary.riskCases.length) {
-    console.log(`\n⚠️  RISK ARM: memory arm got these wrong while control got them right:`);
+    console.log(`\n⚠️  RISK ARM: ${TREATMENT_ARM} arm got these wrong while ${CONTROL_ARM} got them right:`);
     for (const c of summary.riskCases) console.log(`  - ${c.task} (repeat ${c.repeat})`);
   } else {
-    console.log('\nRisk arm: none — memory arm never lost a repeat that control won.');
+    console.log(`\nRisk arm: none — ${TREATMENT_ARM} arm never lost a repeat that ${CONTROL_ARM} won.`);
   }
   console.log(`\nTotal cost: $${report.totalCostUsd}`);
   console.log(`Results written to ${path.join(OUT_DIR, 'results.json')}`);

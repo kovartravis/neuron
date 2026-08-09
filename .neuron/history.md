@@ -3164,3 +3164,15 @@ tags:
 taskId: null
 ---
 Wayfinder session continued after resolving ticket 13: ran a full /grilling session with the maintainer (10 sequential decisions) sparked by a postscript question about making future session work discoverable for downstream synthesis (README-writing was the trigger example). Landed on a per-prompt, count-gated, literal ready-to-run neuron memory query command injected into the pre-prompt hook payload -- not a static hint, not a session-start addition, and not the same redundancy shape ticket 08 already ruled out. Graduated tickets 31 (query/list default bugs -- oldest-first ordering, shared limit default), 32 (the hint itself, blocked by 31), and 33 (measure real usage/benefit, blocked by 32, matching this map's 11-to-24 and 17-to-18 proof-of-value-split precedent) onto the neuron-2.3.0 map rather than spinning up a new map. Appended a Notes entry to map.md documenting the reasoning. No code written this half of the session -- planning only, per wayfinder's plan-don't-do default. Frontier is now 14, 19, 20, 21, 22, 28, 31.
+
+---
+id: 2ebad7e3-5481-4e46-ba1f-db4515251b4f
+createdAt: 2026-08-09T13:07:07.891Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "19"
+---
+Wayfinder pickup on the neuron-2.3.0 map: claimed ticket 19 (Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets), the first frontier ticket. Ran a full /grilling session resolving all six Scope items: supplement (not replace) the real-repo run from tickets 10/18; pivoted from a hand-authored fake repo to real SWE-bench Lite instances (astropy__astropy-12907, django__django-11133) at the maintainer's suggestion, borrowing only their repos/issues/gold-patches (no Docker, no hidden-test execution) with tasks reshaped to diagnose-and-describe questions graded by deterministic keyword checks; memory arm gets a fabricated CLAUDE.md-shaped prior-fix-recorded entry; prompts stripped to symptom-level after rejecting several candidate instances whose issue text already leaked the fix; live-fetch with no vendored cache; a difficulty-calibration pilot required before full spend; and a hard $5 budget cap (scaled from an initial $15 float) enforced in code, N=2 x k=2, 12 sessions worst case. Built and dry-run-validated the full harness (swebench-instances.mjs, swebench-tasks.mjs, swebench-fixtures.mjs, run-swebench-ab.mjs) end to end including a real live git fetch of both repos at their pinned commits, and verified grading against gold/wrong/near-miss answers. Hit the same expired-ant-credential wall tickets 10 and 14's first pickups did, so left ticket 19 claimed and open rather than resolved -- the live pilot (npm run bench:swebench-ab:pilot) is the next step for a session with working credentials. npm test 578/578 unaffected.

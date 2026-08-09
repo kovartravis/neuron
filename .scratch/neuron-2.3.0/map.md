@@ -456,6 +456,58 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   `hook.ts` pre-prompt path `08`/`09`/`11` already own (all three already
   resolved, so no live blocking from them). Frontier is now `14`, `19`,
   `20`, `21`, `22`, `28`, `31`.
+- **[14 — Git-Log Recall: Hook-Injected Search vs Agent-Invoked `git
+  log`](issues/14-git-log-hook-vs-agent-log-ab.md) claimed and built, not
+  resolved, 2026-08-09.** Hit the same credential blocker ticket 10's first
+  pickup did (`ant auth login` needs a browser the maintainer couldn't get
+  to this session), so followed that same precedent: built and
+  dry-run-validated the harness rather than leaving the ticket idle.
+  Extracted `report.mjs` and `grading.mjs` out of ticket 10's `run.mjs`/
+  `tasks.mjs` so this second pillar reuses rather than duplicates (Scope
+  item 1) — refactor-only, full suite still 578/578. New `gitlog-tasks.mjs`
+  (3 git-history-only tasks), `gitlog-search.mjs` (the minimal
+  hook-injection prototype: generic `git log --grep` keyword search), and
+  `run-gitlog-ab.mjs` (orchestrator, both arms built on `fixtures.mjs`'s
+  existing `'control'` shape). All three tasks' grading verified against
+  gold/wrong answers. **Found mid-session:** ticket numbers collide across
+  this repo's own concurrent wayfinder maps (a git-log search surfaced a
+  decoy commit about a *different* ticket 14, from `neuron-2.2.0`), which
+  is now disclosed in the ticket's own injected-note caveat rather than
+  hidden. `14` stays claimed and open — not resolved, not in the frontier —
+  until a session with working `ant` credentials runs the live pilot.
+  Frontier is now `19`, `20`, `21`, `22`, `28`, `31`.
+- **[19 — Run the Counterfactual A/B on Synthetic Repos with Synthetic
+  Memory Sets](issues/19-synthetic-fixture-counterfactual-ab.md) claimed
+  and built, not resolved, 2026-08-09.** Grilled all six Scope items with
+  the maintainer: supplement the real-repo run (10/18), not replace it;
+  pivoted from a hand-authored fake repo to real SWE-bench Lite instances
+  at the maintainer's suggestion (a pinned pre-fix commit gets "answer
+  structurally absent" for free); explicitly not running the real SWE-bench
+  harness (no Docker/hidden-test execution) — only borrowing its
+  repos/issues/gold-patches, with the task reshaped from "produce a patch"
+  to "diagnose and describe the fix," graded by the same deterministic
+  `/ANSWER.md` keyword-check `grading.mjs` machinery 10/14 already use;
+  memory arm gets a fabricated CLAUDE.md-shaped "prior fix recorded" entry;
+  task prompts stripped to symptom-level (several candidate instances
+  rejected during selection for leaking the fix in their own issue text —
+  the exact confound this ticket exists to close); live-fetch with no
+  vendored cache; a difficulty-calibration pilot (`--pilot`, control-only)
+  required before any full-A/B spend, targeting ticket 10's own observed
+  17-33% control-failure range; and a hard $5 budget cap (scaled down from
+  an initial $15 float once the maintainer's real available spend
+  surfaced), enforced in code after every session, not just estimated up
+  front — N=2 instances x k=2 repeats, 12 sessions worst case. Hit the same
+  credential wall tickets 10 and 14's first pickups did (expired `ant`
+  OAuth token, no browser to re-auth) — built and dry-run-validated both
+  modes end to end instead of leaving the ticket idle, including a real
+  live fetch of astropy/django at the two pinned commits. New
+  `swebench-instances.mjs`/`swebench-tasks.mjs`/`swebench-fixtures.mjs`/
+  `run-swebench-ab.mjs`, reusing `session.mjs`/`report.mjs`/`grading.mjs`/
+  `fixtures.mjs`'s `MEMORY_NOTE` rather than duplicating them. Grading
+  verified against gold, plausible-wrong, and near-miss answers on both
+  tasks. `npm test` 578/578 unaffected. Stays claimed, not resolved, until
+  a session with working credentials runs `npm run bench:swebench-ab:pilot`
+  first, then the full A/B. Frontier is now `20`, `21`, `22`, `28`, `31`.
 
 ## Decisions so far
 
