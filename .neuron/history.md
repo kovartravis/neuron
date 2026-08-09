@@ -3128,3 +3128,15 @@ tags:
 taskId: "06"
 ---
 Pushed ticket-06 storage mode override / split removal (neuron-2.3.0) to GitHub -- commit 08fbdda on feat/2.3.0.
+
+---
+id: df31902c-aba7-4186-a2dc-95f1c6b447f4
+createdAt: 2026-08-09T00:12:40.963Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Resolved wayfinder ticket 23 (neuron-2.3.0): fixed init.test.ts's missing package.json isolation guard, first in the named harness-idempotent-test case, then found 4 more identical gaps in the file's first four tests via a full per-test audit of every execSync/spawnSync CLI test file. All five fixed; npm test run twice consecutively (552/552 both times) confirmed .neuron/ stays byte-identical. Ticket resolved, map updated, frontier now 11/13/14/19/20/21/22.

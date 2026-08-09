@@ -25,6 +25,7 @@ describe('CLI Command: init', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'init-test-project');
     fs.mkdirSync(initTempDir, { recursive: true });
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
@@ -45,6 +46,7 @@ describe('CLI Command: init', () => {
     const initTempDir = path.join(tempDbDir, 'harness-agents-test');
     const agentsDir = path.join(initTempDir, '.agents');
     fs.mkdirSync(agentsDir, { recursive: true });
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
@@ -63,6 +65,7 @@ describe('CLI Command: init', () => {
     const initTempDir = path.join(tempDbDir, 'harness-multi-test');
     fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
     fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
@@ -83,6 +86,7 @@ describe('CLI Command: init', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-fallback-test');
     fs.mkdirSync(initTempDir, { recursive: true });
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
@@ -173,6 +177,7 @@ describe('CLI Command: init', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const initTempDir = path.join(tempDbDir, 'harness-idempotent-test');
     fs.mkdirSync(path.join(initTempDir, '.agents'), { recursive: true });
+    fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 

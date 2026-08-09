@@ -469,8 +469,26 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   that ticket 42's own commit never touched this file, consistent with its
   Answer's (in this one case incorrect) claim the file was already safe.
   Not wired as a blocker of `04` — a test-infrastructure correctness gap,
-  not a release dependency. Frontier is now `11`, `13`, `14`, `19`, `20`,
-  `21`, `22`, `23`.
+  not a release dependency.
+- **[23 — `init.test.ts`'s "harness-idempotent-test" Case Still Pollutes the
+  Real `.neuron` Store](issues/23-init-test-harness-idempotent-isolation-gap.md)
+  resolved 2026-08-08.** The named test wasn't the only gap: `init.test.ts`
+  has no global `beforeEach` planting `package.json` the way every other CLI
+  test file does, so each test manages isolation individually — and the
+  file's first four tests (`'should support the init command...'`,
+  `'copies skill to existing .agents/ directory...'`, `'copies skill to all
+  detected harness dirs...'`, `'falls back to .agents/skills/...'`) had the
+  identical gap, unnoticed until this ticket's Scope item 2 forced a
+  per-test grep across all 10 `execSync`/`spawnSync`-using CLI test files
+  rather than a file-level skim (the exact mistake ticket 42's original
+  audit made). All five fixed with the same one-line guard. The other nine
+  files audited clean: six already isolate every test via a shared
+  `beforeEach` or per-`describe` setup, and `feedback.test.ts`/
+  `scan.test.ts`/`status.test.ts` run at the real repo root by design but
+  never write (URL-builder, `--dry-run`, and a read-only status command
+  respectively — verified against source, not assumed). `npm test` run
+  twice consecutively, 552/552 both times, `.neuron/` byte-identical.
+  Frontier is now `11`, `13`, `14`, `19`, `20`, `21`, `22`.
 
 ## Not yet specified
 
