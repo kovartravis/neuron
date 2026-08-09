@@ -84,6 +84,12 @@ export class SmolLM2Summarizer {
   }
 
 
+  /**
+   * Ticket 28: returns the small, always-injectable index plus one
+   * separately-addressable markdown block per module, instead of one
+   * monolithic card — so the *stored* representation scales with repo size
+   * instead of needing ever-more aggressive compression at injection time.
+   */
   async synthesizeArchitecture(scanData: {
     project: string;
     manifest: {
@@ -99,7 +105,7 @@ export class SmolLM2Summarizer {
       components: Array<{ file: string; purpose: string; exports: string[]; fidelity?: string }>;
     }>;
     dependencyGraph?: Record<string, string[]>;
-  }): Promise<{ summary: string; markdown: string }> {
+  }): Promise<{ summary: string; index: string; modules: Array<{ path: string; markdown: string }> }> {
     const projectName = scanData.manifest.name || scanData.project;
     const techStackStr = scanData.manifest.techStack.join(', ') || 'TypeScript';
 
@@ -113,7 +119,7 @@ export class SmolLM2Summarizer {
       ...(scanData.manifest.devDependencies || [])
     ].sort();
 
-    let md = `# 🏛️ Repository Architectural Blueprint: ${projectName}
+    let index = `# 🏛️ Repository Architectural Blueprint: ${projectName}
 
 ## 🚀 System Purpose & Tech Stack
 ${overviewSummary}
@@ -128,11 +134,19 @@ ${projectName}
 ${scanData.modules.map((m, idx) => `${idx === scanData.modules.length - 1 ? '└──' : '├──'} ${m.name} (${m.path})`).join('\n')}
 \`\`\`
 
-## 📦 Primary Subsystems & Module Boundaries
+## 📦 Primary Subsystems
 `;
 
+    // Deliberately no backticks inside the bold module-name markers, so this
+    // list line can never collide with parseBaselineBlueprint's file-line
+    // regex in diff.ts, which requires backticks *inside* the bold markers.
     scanData.modules.forEach(mod => {
-      md += `\n### 🧩 ${mod.name} (\`${mod.path}\`)\n`;
+      const fileCount = mod.components.length;
+      index += `- **${mod.name}** — \`${mod.path}\` (${fileCount} file${fileCount === 1 ? '' : 's'})\n`;
+    });
+
+    const modules = scanData.modules.map(mod => {
+      let md = `### 🧩 ${mod.name} (\`${mod.path}\`)\n`;
       md += `${mod.purpose}\n\n`;
       if (mod.components.length > 0) {
         md += `**Key Components & Export Contracts:**\n`;
@@ -144,11 +158,13 @@ ${scanData.modules.map((m, idx) => `${idx === scanData.modules.length - 1 ? '└
           md += `- **\`${c.file}\`**${exportsStr}: ${c.purpose}\n`;
         });
       }
+      return { path: mod.path, markdown: md };
     });
 
     return {
       summary: overviewSummary,
-      markdown: md
+      index,
+      modules
     };
   }
 }

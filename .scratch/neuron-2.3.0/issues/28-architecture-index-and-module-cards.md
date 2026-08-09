@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: context cost
 
@@ -93,8 +93,65 @@ answered, no open design questions left for whoever claims this):
 
 ## Deliverables
 
-- [ ] `moduleCardId` added alongside `blueprintCardId`
-- [ ] `synthesizeArchitecture` returns index + per-module markdown separately
-- [ ] `ingestScanResults` upserts all of them in one transaction
-- [ ] Stale module cards deleted when a module disappears from the scan
-- [ ] Tests for determinism (multi-entry) and stale-cleanup
+- [x] `moduleCardId` added alongside `blueprintCardId`
+- [x] `synthesizeArchitecture` returns index + per-module markdown separately
+- [x] `ingestScanResults` upserts all of them in one transaction
+- [x] Stale module cards deleted when a module disappears from the scan
+- [x] Tests for determinism (multi-entry) and stale-cleanup
+
+## Answer
+
+Built exactly to Scope, no open design questions. `src/scanner/ingest.ts`:
+`moduleCardId(category, modulePath)` (same derived-hash pattern as
+`blueprintCardId`, now `sha256('neuron:architecture-module:...')`);
+`parseModuleListFromIndex` reads the index's `## 📦 Primary Subsystems`
+list back into `{name, path}` pairs via a dedicated regex that requires no
+backticks inside the bold module-name markers, so it can never collide with
+`parseBaselineBlueprint`'s file-line regex in `diff.ts`. `synthesizeArchitecture`
+(`summarizer.ts`) now returns `{ summary, index, modules }` — `index` is the
+small always-injectable card (system purpose, fidelity, dependencies,
+subsystem map, one-line-per-module list); `modules` is
+`Array<{path, markdown}>`, one full `### 🧩 name (path)` +
+`**Key Components & Export Contracts:**` block per module, exactly the
+content that used to be inlined. `ingestScanResults` upserts index + all
+module cards in one `memory.transact()` call, and deletes stale module
+cards (a module removed from the repo) by diffing the *previous* index's
+parsed module list against the current scan's module paths — verified with
+a real determinism test (two scans, byte-identical index+module content)
+and a real stale-cleanup test (remove a module's directory, re-scan, its
+card is gone, the surviving module's card is untouched).
+
+**Landed together with [29](29-diff-baseline-reassembly.md) in this same
+session**, not sequentially as separately chartered, because `28` alone
+breaks `scan --diff`/`--check` — verified concretely: `getArchitecturalDrift`'s
+old baseline fetch (`memory.query({categories, text: 'Repository
+Architectural Blueprint'}).find(...)`) matches on a `'scan'` tag that both
+the index *and every module card* now carry, so it could resolve to the
+wrong entry, and even when it resolves to the index, the index alone lacks
+the per-file/export detail `parseBaselineBlueprint` needs — every module
+would report as spuriously "removed." The map's own Notes already
+anticipated this ("28 and 29 ship together in effect") and 29's scope was
+small and fully specified, so resolving both kept the test suite green
+rather than landing 28 with a known, disclosed regression. Full detail on
+`29`'s own file.
+
+**Real-world verification surfaced an unrelated, pre-existing bug**
+(filed as [38](38-md-parser-loses-entries-on-stray-dashes.md), not fixed
+here): a real `neuron scan` against this repo's own store confirmed the
+index+module split and byte-identical re-scan determinism worked correctly,
+but `neuron scan --check` afterward hit a data-integrity defect already
+present in `.neuron/decisions.md` on `main` (a stray `---` inside one
+entry's body, predating this session, silently drops ~40% of that
+category from the SQLite mirror on every reconcile). Confirmed via `git
+diff` that no committed content was lost (markdown is the source of truth
+and was untouched); reverted this session's own experimental writes
+(`git checkout -- .neuron/`) and let a reconcile restore the pre-session
+baseline. `28`'s own correctness is verified by the test suite (`npm test`,
+584/584) against clean synthetic fixtures, immune to that unrelated bug —
+see `38` for the finding.
+
+`npm test`: 584/584 (3 new tests in `ingest.test.ts` — index+module split,
+determinism, stale-cleanup — plus 1 new regression test in `diff.test.ts`
+for `29`'s category-crowding fix, offset by updates to 3 pre-existing
+`ingest.test.ts` tests and 2 `summarizer.test.ts` tests for the new return
+shape rather than a net count change). `tsc --noEmit` clean.

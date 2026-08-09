@@ -1,11 +1,33 @@
 import { describe, it, expect } from 'vitest';
+import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import {
   parseBaselineBlueprint,
   calculateArchitecturalDiff,
   formatArchitecturalDiffMarkdown,
+  getArchitecturalDrift,
 } from './diff.js';
 import { ScanResult } from './analyzer.js';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
+import { NeuronMemory } from '../index.js';
+import { ingestScanResults } from './ingest.js';
+
+/**
+ * Ticket 28 split `synthesizeArchitecture`'s output into an index plus
+ * per-module markdown (what actually gets stored). These round-trip tests
+ * exercise `parseBaselineBlueprint`, which still expects the pre-28
+ * monolithic shape — the same reassembly `reassembleBaseline` (ingest.ts)
+ * does from storage for ticket 29, done here directly from the summarizer's
+ * output instead of via a memory store.
+ */
+async function synthesizeMonolithicMarkdown(
+  summarizer: SmolLM2Summarizer,
+  scanData: ScanResult
+): Promise<string> {
+  const { index, modules } = await summarizer.synthesizeArchitecture(scanData);
+  return [index, ...modules.map(m => m.markdown)].join('\n');
+}
 
 describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
   const sampleBaselineMarkdown = [
@@ -196,7 +218,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('reports zero drift when diffing a scan against its own generated card', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(wideScan);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, wideScan);
 
       const diff = calculateArchitecturalDiff(wideScan, markdown);
 
@@ -210,7 +232,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('records every component in the card, not just the first few', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(wideScan);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, wideScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       expect(parsed.exports).toHaveLength(12);
@@ -219,7 +241,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('round-trips the dependency contract so dependency shifts are detectable', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(wideScan);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, wideScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       expect(parsed.hasDependencySection).toBe(true);
@@ -308,7 +330,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
       };
 
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(mixedScan);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, mixedScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       expect(parsed.fidelity.default).toBe('ast/2');
@@ -319,7 +341,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
 
     it('round-trips fidelity so a scan does not drift against its own card', async () => {
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, sampleCurrentScan);
 
       const parsed = parseBaselineBlueprint(markdown);
       const diff = calculateArchitecturalDiff(sampleCurrentScan, markdown);
@@ -380,7 +402,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
       };
 
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(goDegraded);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, goDegraded);
 
       const diff = calculateArchitecturalDiff(rustDegraded, markdown);
       expect(diff.needsRebaseline).toBe(true);
@@ -402,7 +424,7 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
     it('still reports real drift when both sides share a fidelity', async () => {
       // The refusal must not swallow genuine drift at matching fidelity.
       const summarizer = new SmolLM2Summarizer();
-      const { markdown } = await summarizer.synthesizeArchitecture(sampleCurrentScan);
+      const markdown = await synthesizeMonolithicMarkdown(summarizer, sampleCurrentScan);
 
       const withNewExport: ScanResult = {
         ...sampleCurrentScan,
@@ -420,6 +442,57 @@ describe('Architectural Drift Engine (src/scanner/diff.ts)', () => {
       expect(diff.exportChanges).toContainEqual({
         file: 'src/gamma/index.ts', symbol: 'GammaExtra', type: 'added',
       });
+    });
+  });
+
+  describe('baseline fetch survives category crowding (ticket 29)', () => {
+    // Ticket 28 split the single blueprint card into an index (ticket 25's
+    // stable-id fix already covers) plus N per-module cards. This confirms
+    // getArchitecturalDrift's own baseline fetch — moved from a ranked query
+    // to findById(blueprintCardId(category)) — survives the same crowding
+    // scenario ticket 25's own test reproduces for hook.ts.
+    it('finds the index by stable id even when other entries in the same category outrank it', async () => {
+      const tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-diff-crowd-test-')));
+      fs.writeFileSync(
+        path.join(tmpDir, 'package.json'),
+        JSON.stringify({ name: 'crowd-project', dependencies: { typescript: '^5.0.0' } }),
+        'utf8'
+      );
+      fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, 'src', 'index.ts'),
+        'export class AppRunner { start() { return true; } }\n',
+        'utf8'
+      );
+
+      const memory = new NeuronMemory({
+        dbPath: path.join(tmpDir, 'memory.db'),
+        projectRoot: tmpDir,
+        projectName: 'crowd-project',
+      });
+
+      try {
+        await ingestScanResults(memory, { projectDir: tmpDir, category: 'architecture' });
+
+        // Planted after the real cards, so a recency-ordered ranked query
+        // would push the index out of a small `limit` window.
+        const decoys = Array.from({ length: 12 }, (_, i) => ({
+          op: 'upsert' as const,
+          category: 'architecture',
+          content: `Repository Architectural Blueprint decoy entry number ${i}`,
+          tags: ['decoy'],
+          importance: 3,
+        }));
+        await memory.transact(decoys);
+
+        const diff = await getArchitecturalDrift(memory, tmpDir);
+
+        expect(diff.isMissingBaseline).toBeFalsy();
+        expect(diff.hasDrift).toBe(false);
+      } finally {
+        await memory.close();
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
     });
   });
 });

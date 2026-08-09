@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { NeuronMemory } from '../index.js';
-import { ingestScanResults } from './ingest.js';
+import { ingestScanResults, blueprintCardId, moduleCardId } from './ingest.js';
 
 describe('Architecture Scan Ingestion (ingestScanResults)', () => {
   let tmpDir: string;
@@ -48,15 +48,18 @@ describe('Architecture Scan Ingestion (ingestScanResults)', () => {
     expect(result.category).toBe('decisions');
     expect(result.summary).toContain('test-ingest-project');
 
-    // Verify memory query returns the ingested card
+    // Verify memory query returns the ingested index plus its one module card
+    // (ticket 28: the blueprint is now split, not a single entry).
     const queried = await memory.query({
       categories: ['decisions'],
       limit: 5,
     });
 
-    expect(queried.length).toBe(1);
-    expect(queried[0].content).toContain('Repository Architectural Blueprint: test-ingest-project');
-    expect(queried[0].tags).toContain('architecture');
+    expect(queried.length).toBe(2);
+    const index = queried.find(e => e.content?.startsWith('# 🏛️ Repository Architectural Blueprint'));
+    expect(index).toBeDefined();
+    expect(index!.content).toContain('Repository Architectural Blueprint: test-ingest-project');
+    expect(index!.tags).toContain('architecture');
   });
 
   it('should support custom category ingest override', async () => {
@@ -72,8 +75,8 @@ describe('Architecture Scan Ingestion (ingestScanResults)', () => {
       limit: 5,
     });
 
-    expect(queried.length).toBe(1);
-    expect(queried[0].content).toContain('test-ingest-project');
+    expect(queried.length).toBe(2);
+    expect(queried.some(e => e.content?.includes('test-ingest-project'))).toBe(true);
   });
 
   it('never creates a duplicate card on repeat ingestion, even when other entries in the category outrank it semantically (ticket 37)', async () => {
@@ -107,8 +110,67 @@ describe('Architecture Scan Ingestion (ingestScanResults)', () => {
       limit: 20,
     });
 
+    // Index + its one module card, still just one of each — not duplicated
+    // by the second ingest (ticket 28: two entries share the 'architecture'
+    // tag now, not one).
     const blueprintCards = queried.filter(e => e.tags?.includes('architecture'));
-    expect(blueprintCards.length).toBe(1);
+    expect(blueprintCards.length).toBe(2);
+  });
+
+  describe('index + per-module cards (ticket 28)', () => {
+    beforeEach(() => {
+      fs.mkdirSync(path.join(tmpDir, 'lib'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, 'lib', 'util.ts'),
+        `export function helper() { return 1; }`,
+        'utf8'
+      );
+    });
+
+    it('stores a small index (no per-file detail) plus one card per module', async () => {
+      await ingestScanResults(memory, { projectDir: tmpDir, category: 'decisions' });
+
+      const index = await memory.findById(blueprintCardId('decisions'));
+      expect(index).not.toBeNull();
+      expect(index!.content).toContain('# 🏛️ Repository Architectural Blueprint');
+      expect(index!.content).toContain('- **src** — `src` (1 file)');
+      expect(index!.content).toContain('- **lib** — `lib` (1 file)');
+      expect(index!.content).not.toContain('Key Components & Export Contracts');
+
+      const srcModule = await memory.findById(moduleCardId('decisions', 'src'));
+      const libModule = await memory.findById(moduleCardId('decisions', 'lib'));
+      expect(srcModule).not.toBeNull();
+      expect(srcModule!.content).toContain('Key Components & Export Contracts');
+      expect(libModule).not.toBeNull();
+      expect(libModule!.content).toContain('helper');
+    });
+
+    it('produces byte-identical index and module card content across two scans with no changes', async () => {
+      await ingestScanResults(memory, { projectDir: tmpDir, category: 'decisions' });
+      const first = await memory.query({ categories: ['decisions'], limit: 20 });
+
+      await ingestScanResults(memory, { projectDir: tmpDir, category: 'decisions' });
+      const second = await memory.query({ categories: ['decisions'], limit: 20 });
+
+      const byId = (entries: typeof first) =>
+        Object.fromEntries(entries.map(e => [e.id, e.content]));
+      expect(byId(second)).toEqual(byId(first));
+      expect(second.length).toBe(first.length);
+    });
+
+    it('deletes a module card when its module disappears from a re-scan', async () => {
+      await ingestScanResults(memory, { projectDir: tmpDir, category: 'decisions' });
+      const libId = moduleCardId('decisions', 'lib');
+      expect(await memory.findById(libId)).not.toBeNull();
+
+      fs.rmSync(path.join(tmpDir, 'lib'), { recursive: true, force: true });
+      await ingestScanResults(memory, { projectDir: tmpDir, category: 'decisions' });
+
+      expect(await memory.findById(libId)).toBeNull();
+      // The surviving module's card is untouched, not just the removed one skipped.
+      const srcId = moduleCardId('decisions', 'src');
+      expect(await memory.findById(srcId)).not.toBeNull();
+    });
   });
 });
 

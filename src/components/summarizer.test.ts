@@ -31,7 +31,7 @@ describe('SmolLM2Summarizer & Content Cache', () => {
     expect(summary).toContain('embed');
   });
 
-  it('Pass 2: synthesizes full system architecture memory card from module summaries', async () => {
+  it('Pass 2: synthesizes an index plus one markdown block per module (ticket 28)', async () => {
     const mockScanData = {
       project: 'neuron',
       manifest: { name: '@kovartravis/neuron', techStack: ['nodejs', 'typescript'] },
@@ -47,12 +47,15 @@ describe('SmolLM2Summarizer & Content Cache', () => {
 
     const card = await summarizer.synthesizeArchitecture(mockScanData);
 
-    expect(card.markdown).toContain('# 🏛️ Repository Architectural Blueprint: @kovartravis/neuron');
-    expect(card.markdown).toContain('Dual storage routing');
+    expect(card.index).toContain('# 🏛️ Repository Architectural Blueprint: @kovartravis/neuron');
+    expect(card.index).toContain('- **storage** — `src/storage` (1 file)');
+    expect(card.modules).toHaveLength(1);
+    expect(card.modules[0].path).toBe('src/storage');
+    expect(card.modules[0].markdown).toContain('Dual storage routing');
     expect(card.summary.length).toBeGreaterThan(20);
   });
 
-  it('produces byte-identical markdown across two runs on unchanged input (ticket 37)', async () => {
+  it('produces byte-identical index and module markdown across two runs on unchanged input (ticket 37)', async () => {
     const mockScanData = {
       project: 'neuron',
       manifest: { name: '@kovartravis/neuron', techStack: ['nodejs', 'typescript'] },
@@ -70,7 +73,8 @@ describe('SmolLM2Summarizer & Content Cache', () => {
     await new Promise(resolve => setTimeout(resolve, 5));
     const second = await summarizer.synthesizeArchitecture(mockScanData);
 
-    expect(second.markdown).toBe(first.markdown);
+    expect(second.index).toBe(first.index);
+    expect(second.modules).toEqual(first.modules);
   });
 });
 

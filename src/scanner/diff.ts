@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { NeuronMemory } from '../index.js';
 import { scanProjectTopology, ScanResult } from './analyzer.js';
-import { ingestScanResults } from './ingest.js';
+import { ingestScanResults, reassembleBaseline } from './ingest.js';
 import { loadNeuronConfig } from '../config/neuronYaml.js';
 import {
   computeProjectFingerprint,
@@ -374,19 +374,14 @@ export async function getArchitecturalDrift(
   let baselineId: string | undefined = undefined;
 
   try {
-    const baselineEntries = await memory.query({
-      categories: [category],
-      text: 'Repository Architectural Blueprint',
-      limit: 10,
-    });
-
-    const match = baselineEntries.find(e =>
-      e.content?.includes('# 🏛️ Repository Architectural Blueprint:') || e.tags?.includes('scan')
-    );
-
-    if (match) {
-      baselineCard = match.content;
-      baselineId = match.id;
+    // Ticket 29: findById on the index's stable id, not a ranked query —
+    // the same category-crowding fix ticket 25 applied to hook.ts's own
+    // baseline fetch. reassembleBaseline then stitches the index and each
+    // module's card back into the shape parseBaselineBlueprint expects.
+    const reassembled = await reassembleBaseline(memory, category);
+    if (reassembled) {
+      baselineCard = reassembled.content;
+      baselineId = reassembled.id;
     }
   } catch (e) {
     // Default to empty baseline if memory query fails

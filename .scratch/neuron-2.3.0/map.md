@@ -715,6 +715,54 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   remainder, both left to the maintainer rather than forced artificially.
   `36` and `21` both stay claimed, not resolved, at the maintainer's own
   discretion to close.
+- **Scoped the remaining route to `2.3.0` and graduated [37 — Cut and
+  Publish 2.3.0-rc3](issues/37-cut-rc3.md), 2026-08-09.** [04 — Cut and
+  Publish](issues/04-cut-and-publish.md) itself has only four blockers left
+  open — `01`/`02` (adapters built, each waiting on a real-install
+  verification: `20`, `22`), `03` (waits on both), and `15` (waits on `14`'s
+  live-credentialed pilot) — all HITL and outside this session's reach
+  (real Copilot CLI/Cursor installs, a re-authed `ant` session). Everything
+  else open on this map (`19`, `21`/`36`, `24`, `28`-`30`, `32`/`33`) is not
+  wired as a blocker of `04` at all. Presented the maintainer two forks — cut
+  an interim rc3 now (thin: only publish-workflow infra has changed since
+  `rc2`) versus push straight for the full `04` cut — and the maintainer
+  chose neither immediately: **`37` gates the next rc on `28`-`30` (the
+  architecture index+module-card restructure) and `32` (the discovery-command
+  hint) landing first**, so the rc actually carries new content the way
+  `rc2` did over `rc1`. `37` is independent of `04`'s own blockers and can
+  resolve in either order relative to it — whichever HITL step clears first.
+  Frontier is unchanged: `20`, `22`, `28`, `32`.
+- **[28 — Architecture Index + Module Cards](issues/28-architecture-index-and-module-cards.md)
+  resolved 2026-08-09, together with [29 — Diff Baseline
+  Reassembly](issues/29-diff-baseline-reassembly.md) in the same session**,
+  not sequentially — landing `28` alone leaves `scan --diff`/`--check`
+  broken (verified concretely, not just theorized: the old baseline-fetch
+  ranked query matches on a `'scan'` tag every module card now also carries,
+  and even a correct match — the index alone — lacks the per-file/export
+  detail the parser needs), and `29`'s reassembly fix was small, fully
+  specified, and explicitly this map's own "required companion, not an
+  optional follow-up." Both resolved rather than landing `28` with a known,
+  disclosed regression. Frontier is now `20`, `22`, `30`, `32` — `30`
+  (injection fetches index only) is unblocked by `28`'s resolution but not
+  picked up this session.
+- **Real-world verification of `28`/`29` surfaced an unrelated, pre-existing
+  bug, filed as [38 — `MdStorageAdapter`'s Parser Silently Drops Entries
+  After a Stray `---`](issues/38-md-parser-loses-entries-on-stray-dashes.md),
+  not fixed this session.** A real `neuron scan` + `scan --check` against
+  this repo's own store hit a data-integrity defect already committed on
+  `main` (confirmed via `git show HEAD`, predates this session by at least a
+  day): one `.neuron/decisions.md` entry has a stray `---` inside its body,
+  which throws off the frontmatter parser's pairing for every entry after
+  it — 109 real entries, only 68 parsed — and `reconcileCategory`'s
+  vector-mirror delete step then silently drops the unparsed ~40% from
+  SQLite on every reconcile. **Not data loss**: `git diff` confirmed zero
+  committed entries were ever removed from the markdown file itself (the
+  source of truth), only the derived SQLite index degrades. This session's
+  own experimental writes were reverted (`git checkout -- .neuron/`) and a
+  reconcile restored the pre-session baseline before continuing — `28`/`29`'s
+  own correctness is verified by the test suite (584/584) against clean
+  synthetic fixtures, unaffected by this unrelated bug. Not wired as a
+  blocker of anything; unclaimed, unblocked, sized for its own session.
 
 ## Decisions so far
 
@@ -994,6 +1042,19 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   verification. Full detail, including the `autoRescanIfDriftDetected`
   merge trap hit and recovered from, and the discovery of an active branch-
   protection ruleset on `main`, in this map's own Notes.
+- **[28 — Architecture Index + Module Cards](issues/28-architecture-index-and-module-cards.md)**
+  — the monolithic blueprint card is now an always-small index (module list
+  + project metadata) plus one separately-addressable markdown card per
+  module, upserted in one transaction; stale module cards (a module removed
+  from the repo) are deleted on re-scan. Follow mechanism is ordinary
+  pre-prompt relevance recall — no new fetch API. 584/584 tests.
+- **[29 — Reassemble the Diff Baseline from the Index + Module
+  Cards](issues/29-diff-baseline-reassembly.md)** — `getArchitecturalDrift`
+  now fetches the index by stable id (`findById`, fixing a second instance
+  of ticket 25's category-crowding bug) and reassembles it with each module
+  card back into the legacy monolithic shape, so `parseBaselineBlueprint`/
+  `calculateArchitecturalDiff` need zero changes. Resolved together with
+  `28` in the same session — see that entry above for why.
 
 ## Not yet specified
 

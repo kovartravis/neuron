@@ -276,7 +276,12 @@ export async function scanProjectTopology(
     modules: modulesList,
     dependencyGraph,
     architectureSummary: archSynthesis.summary,
-    architectureMarkdown: archSynthesis.markdown,
+    // Ticket 28: synthesizeArchitecture now returns index + per-module
+    // markdown separately (what actually gets stored). This field stays a
+    // single string for display (`scan --dry-run`) by reassembling them in
+    // the pre-28 monolithic order — a plain concatenation, not the parsed
+    // reassembly `reassembleBaseline` (ingest.ts) does from storage.
+    architectureMarkdown: [archSynthesis.index, ...archSynthesis.modules.map(m => m.markdown)].join('\n'),
     symbols,
     parserFidelity
   };

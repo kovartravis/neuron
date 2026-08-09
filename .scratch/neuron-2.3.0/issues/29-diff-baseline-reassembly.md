@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 28
 Band: context cost
 
@@ -77,8 +77,52 @@ injection path, still live here. Fix both at once: switch this fetch to
 
 ## Deliverables
 
-- [ ] Reassembly helper: index + module cards → legacy monolithic shape
-- [ ] `getArchitecturalDrift` uses reassembly + `findById`, not a ranked query
-- [ ] `parseBaselineBlueprint`/`calculateArchitecturalDiff` unchanged
-- [ ] `scan --diff`/`--check` verified against this repo's real post-`28` store
-- [ ] Regression test for the crowding-bug fix on the baseline fetch
+- [x] Reassembly helper: index + module cards → legacy monolithic shape
+- [x] `getArchitecturalDrift` uses reassembly + `findById`, not a ranked query
+- [x] `parseBaselineBlueprint`/`calculateArchitecturalDiff` unchanged
+- [x] `scan --diff`/`--check` verified against this repo's real post-`28` store
+- [x] Regression test for the crowding-bug fix on the baseline fetch
+
+## Answer
+
+Resolved together with [28](28-architecture-index-and-module-cards.md) in
+the same session — see that ticket's Answer for why, and the map's own
+Notes for why it was already anticipated. Implemented exactly per Scope:
+`reassembleBaseline(memory, category)` lives in `src/scanner/ingest.ts`
+(not `diff.ts`, avoiding the circular import Scope item 1 flagged — `diff.ts`
+already imports from `ingest.ts`, never the reverse) — fetches the index by
+`findById(blueprintCardId(category))`, parses its module list via the same
+`parseModuleListFromIndex` `28` added, fetches each module card by
+`findById(moduleCardId(category, path))`, and concatenates index + each
+found module's markdown. A missing module card is skipped, not thrown —
+matches Scope item 1's "loss surfaces as lower-fidelity diff, not a crash."
+`getArchitecturalDrift` (`diff.ts`) now calls this instead of the old
+`memory.query({categories, text: 'Repository Architectural Blueprint',
+limit: 10}).find(...)` ranked lookup — which Scope's Context correctly
+predicted was now unsafe for a second reason beyond ticket 25's original
+crowding bug: post-28, both the index *and every module card* share the
+`'scan'` tag the old `.find()` matched on, so it could resolve to the wrong
+entry even before crowding. `parseBaselineBlueprint`/`calculateArchitecturalDiff`
+themselves: genuinely zero changes, confirmed by every pre-existing
+`diff.test.ts` assertion passing unmodified in behavior (only their setup
+changed, from `synthesizeArchitecture(...).markdown` to a local
+`synthesizeMonolithicMarkdown` helper reconstructing the same monolithic
+shape from the new `{index, modules}` return — necessary because those
+tests call the summarizer directly, not through storage).
+
+Verified against a real post-split store: `neuron scan` then `neuron scan
+--check` on this repo reported "In Sync" correctly for the unchanged case
+(confirmed via the full round-trip: index + 14 module cards reassembled
+back to a diffable baseline with zero drift). Real drift (a newly exported
+symbol) was also correctly detected through the reassembled baseline — see
+[28](28-architecture-index-and-module-cards.md)'s Answer for the caveat
+that deeper real-store exploration surfaced an unrelated pre-existing bug
+([38](38-md-parser-loses-entries-on-stray-dashes.md)), not anything in this
+ticket's own reassembly logic. New regression test in `diff.test.ts`:
+plants an index at its stable id, floods the category with 12 decoy
+entries ranked above it, confirms `getArchitecturalDrift`'s `findById`-based
+fetch still finds it and reports no drift — the same crowding scenario
+ticket 25's own test reproduces for `hook.ts`.
+
+`npm test`: 584/584 (see [28](28-architecture-index-and-module-cards.md)'s
+Answer for the full count breakdown). `tsc --noEmit` clean.
