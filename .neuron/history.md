@@ -3248,3 +3248,27 @@ tags:
 taskId: neuron-2.3.0
 ---
 Wayfinder pickup on the neuron-2.3.0 map: skipped frontier tickets 20/22 (need real harness installs) per maintainer instruction, claimed ticket 21 (GitHub Action: Automated npm Publish on Push to Main). Grilled two open Scope decisions via AskUserQuestion (only -rcN prereleases get a dist-tag, anything else fails loudly; failure visibility stays GitHub Actions UI only) and built .github/workflows/publish.yml: a build-and-test job that always runs npm ci/npm test and resolves version+dist-tag+already-published, feeding a separate publish job gated by environment: npm-publish. Mid-session the maintainer asked what stops someone from opening a branch and publishing; answered that the push-to-main trigger already excludes branches/PRs and the real gate is branch protection (maintainer configuring themselves) plus the new environment approval gate (inert until the npm-publish environment and NPM_TOKEN are created). Split real-run verification into ticket 36 since NPM_TOKEN/environment don't exist yet; ticket 21 stays claimed, not resolved, blocked by 36. Frontier is now 20, 22, 28, 32, 34, 36.
+
+---
+id: 3ed18ffd-65dc-4c7c-8a7b-08f03fe03b42
+createdAt: 2026-08-09T18:06:46.130Z
+importance: 3
+tags:
+  - release
+  - 2.2.0
+  - wayfinder
+taskId: "34"
+---
+Resolved ticket 34 (Cut and Publish 2.3.0-rc2, neuron-2.3.0): audited git log v2.3.0-rc1..HEAD directly, wrote the CHANGELOG entry, fixed README's stale Cursor line, found and fixed a genuinely stale CONTEXT.md harness-adapter claim, verified 580/580 unit + tsc clean + 12/13 e2e (Pillar 8 a known pre-existing flake), tagged v2.3.0-rc2 and pushed. At the maintainer's explicit direction, also merged feat/2.3.0 into main early (a deliberate one-time exception to this map's merge-at-epic-end cadence) specifically to unblock ticket 36's real-push verification of the new publish workflow. Hit and recovered from the documented autoRescanIfDriftDetected merge trap, and discovered main already has an active GitHub ruleset ("Protect", id 20346327) that an earlier session's check missed by only querying the legacy branch-protection endpoint.
+
+---
+id: 624620c1-920a-4a2a-b163-39f264df0b3c
+createdAt: 2026-08-09T18:06:51.666Z
+importance: 3
+tags:
+  - release
+  - failure-fix
+  - wayfinder
+taskId: "36"
+---
+Worked ticket 36 (Verify the Publish Workflow Against a Real Push, neuron-2.3.0): unblocked by ticket 34's merge to main, which triggered publish.yml for the first time. Run 1 failed build-and-test with node:sqlite requiring Node >=22.13 against the workflow's pinned Node 20 -- fixed by bumping to Node 22 and adding an engines field to package.json (commit e9157a1, pushed to main). Run 2 confirmed the fix: build-and-test passed for real, and the publish job ran and failed cleanly at npm publish with ENEEDAUTH since no NPM_TOKEN secret exists yet -- no side effects, nothing published. Ticket stays claimed, not resolved: Scope items covering NPM_TOKEN provisioning, a real stable-version push, an unbumped-push skip check, and branch-protection-rejection verification remain blocked on the maintainer provisioning credentials.

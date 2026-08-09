@@ -2265,3 +2265,15 @@ tags:
 taskId: null
 ---
 Found while testing ticket 19's SWE-bench harness at effort:'medium': benchmarks/token-ab/swebench-tasks.mjs's check() functions have an identifiesFix gate that requires the answer to state a literal code-shaped fix (e.g. 'wrap library in a dict subclass'), but every task prompt in the file only asks 'which mechanism is responsible... and what exactly is wrong with it' -- it never asks the model to propose a fix. At effort:'low' the model happened to volunteer fix-shaped phrasing anyway, so the gate silently passed; at effort:'medium' the model wrote a more discursive design-flaw explanation ('should have been applied uniformly', 'factored into a shared helper') that is equally correct but doesn't hit the keyword list, so the gate failed two answers that were actually right (verified by hand). General lesson: when a deterministic check() gate tests for content the prompt never actually requested, it is not testing a real signal, only whether the model happened to phrase things a particular way -- and that phrasing can shift with something as unrelated as an effort-level change. Before trusting a check() gate, re-read the exact prompt it's grading against and confirm the gate corresponds to something the prompt actually asked for.
+
+---
+id: 3441264f-73cc-4323-882d-172ad15faa7d
+createdAt: 2026-08-09T18:06:39.292Z
+importance: 4
+tags:
+  - failure-fix
+  - release
+  - sqlite
+taskId: null
+---
+Fix for GitHub Actions publish.yml build-and-test failure 'Error: No such built-in module: node:sqlite': the workflow (ticket 21, neuron-2.3.0) pinned node-version '20' in both jobs, but src/db.ts's createNodeSqliteWrapper uses node:sqlite's DatabaseSync, which requires Node >=22.5.0 and wasn't usable without the --experimental-sqlite flag until 22.13.0/23.4.0 -- invisible locally because dev machines run Node 24. Root cause only surfaced on the first real CI run (ticket 36), since ticket 21's own YAML syntax check and manual dist-tag review never executed the test suite under the pinned runtime. Fix: bump node-version to '22' in both the build-and-test and publish jobs of .github/workflows/publish.yml, and add "engines": {"node": ">=22.13.0"} to package.json to document the real minimum so this doesn't regress silently. Edge case: actions/checkout@v4 and actions/setup-node@v4 themselves log an unrelated 'Node 20 is being deprecated' warning about the action runtime, not the node-version input -- that warning is noise, not something to chase.

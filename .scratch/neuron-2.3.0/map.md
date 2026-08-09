@@ -640,6 +640,55 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   Push](issues/36-verify-publish-workflow-real-run.md) (`21`'s `Blocked by`
   now includes `36`), the same split-verification-from-build move `20`/`22`
   used for `01`/`02`. Frontier is now `20`, `22`, `28`, `32`, `34`, `36`.
+- **[34 — Cut and Publish 2.3.0-rc2](issues/34-cut-rc2.md) resolved
+  2026-08-09**, picked up at the maintainer's direct instruction ("I have a
+  ticket out there for rc-2 cut. Lets cut rc2 and merge to main") given
+  specifically to unblock [36 — Verify the Publish Workflow Against a Real
+  Push](issues/36-verify-publish-workflow-real-run.md), which needs the new
+  `publish.yml` on `main` (its trigger) to test for real. Full CHANGELOG/
+  README/doc-audit detail in the ticket's own Answer — one genuinely new
+  stale-doc find beyond the already-known Cursor line: `CONTEXT.md`'s
+  `harness adapter` glossary entry still said adapters shipped only "for
+  Claude Code and Codex CLI," not yet updated for Copilot/Cursor. **At the
+  maintainer's explicit direction, `feat/2.3.0` was also merged into
+  `main`** — earlier than this map's own "merge at epic end" cadence,
+  called out as a deliberate one-time exception, not a departure from the
+  policy itself. Merging hit the documented `autoRescanIfDriftDetected`
+  trap (a `neuron exec`-wrapped command run against `main`'s pre-merge
+  tree silently rewrote `.neuron/decisions.md`'s architecture card
+  mid-merge, blocking the fast-forward): recovered by discarding the
+  incidental rescan with a plain, unwrapped `git checkout --
+  .neuron/decisions.md` (deliberately bypassing `neuron exec` to avoid
+  re-triggering the same side effect) and completing the fast-forward with
+  plain `git merge --ff-only`, safe here specifically because the merge was
+  about to wholesale-replace that file with `feat/2.3.0`'s own already-
+  correct version anyway. The push to `main` also surfaced that this
+  repo's branch protection is live — an active GitHub ruleset named
+  "Protect" (id `20346327`, created 2026-08-03) — correcting an earlier,
+  incomplete read from ticket `21`'s session that checked only the legacy
+  `branches/main/protection` endpoint (404) and missed the newer Rulesets
+  API where the real rule lives.
+- **[36 — Verify the Publish Workflow Against a Real Push](issues/36-verify-publish-workflow-real-run.md)
+  claimed and partially worked 2026-08-09**, unblocked the moment `34`'s
+  merge put `publish.yml` on `main` for the first time. The first real
+  trigger ([run 31327652836](https://github.com/kovartravis/neuron/actions/runs/31327652836))
+  failed `build-and-test` with a genuine, previously-undetected bug, not a
+  workflow mistake: `src/db.ts`'s `node:sqlite` fallback needs Node
+  ≥22.13.0 (unflagged `DatabaseSync`), but the workflow pinned Node 20 —
+  invisible locally since dev runs Node 24. Fixed by bumping both jobs to
+  Node 22 and adding `"engines": {"node": ">=22.13.0"}` to `package.json`
+  to document the real minimum (commit `e9157a1`, pushed straight to
+  `main` as a direct, narrowly-scoped follow-on to the same verification
+  task). The retriggered [run 31327940336](https://github.com/kovartravis/neuron/actions/runs/31327940336)
+  confirmed the fix: `build-and-test` passed for real, and `publish` ran
+  (no `npm-publish` environment exists yet to gate it) and failed cleanly
+  at `npm publish` with `ENEEDAUTH` — no `NPM_TOKEN`, so nothing was
+  published and no tag was created, exactly the safe failure mode
+  expected. Full Scope-item-by-item status in the ticket's own Answer;
+  `36` stays claimed, not resolved — Scope items 1 (provision `NPM_TOKEN`),
+  3 (real stable push), 4 (unbumped-push skip), and 5 (branch-protection
+  rejection) remain unexercised, all downstream of the same HITL
+  provisioning step. Frontier is now `20`, `22`, `28`, `32`.
 
 ## Decisions so far
 
@@ -908,6 +957,17 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   **Implementation graduates onto a new map,
   [neuron-2.4.0](../neuron-2.4.0/map.md), not this one** — see this map's
   own Notes for the redirect rationale.
+- **[34 — Cut and Publish 2.3.0-rc2](issues/34-cut-rc2.md)** — `v2.3.0-rc2`
+  tagged and pushed; CHANGELOG/README/doc-audit against the real
+  `v2.3.0-rc1..HEAD` diff (one new stale-doc find: `CONTEXT.md`'s harness-
+  adapter glossary entry); 580/580 unit, `tsc` clean, 12/13 e2e (Pillar 8 a
+  known pre-existing flake). At the maintainer's direct instruction,
+  `feat/2.3.0` was also merged into `main` early — a deliberate one-time
+  exception to this map's own merge-at-epic-end cadence — specifically to
+  unblock [36](issues/36-verify-publish-workflow-real-run.md)'s real-push
+  verification. Full detail, including the `autoRescanIfDriftDetected`
+  merge trap hit and recovered from, and the discovery of an active branch-
+  protection ruleset on `main`, in this map's own Notes.
 
 ## Not yet specified
 
