@@ -586,6 +586,60 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   against the same trunk diff. Not wired as a blocker of `04` — an interim
   snapshot, not a release dependency. Frontier is now `20`, `21`, `22`,
   `28`, `32`, `34`.
+- **[35 — Is `categories` Authoritative or
+  Advisory?](issues/35-categories-authoritative-or-advisory.md) graduated,
+  claimed, and resolved 2026-08-09**, at the maintainer's direct request to
+  work a ticket needing real grilling rather than the mechanical frontier
+  order (`20`/`22` need real harness installs this session doesn't have;
+  `21`/`28`/`32`/`34` are fully-specified build/verify tasks with no open
+  design questions). Pulled from this map's own fog (itself inherited from
+  [neuron-2.2.0's fog](../neuron-2.2.0/map.md#not-yet-specified)). Resolved
+  advisory-but-self-maintaining: an undeclared category auto-declares
+  itself in `neuron.yaml` on first write rather than being rejected or
+  left permanently undeclared. Full decision in [ADR
+  0017](../../docs/adr/0017-category-declaration-authority.md). **Mid-session
+  structural redirect**: once the design grew real scope (comment-preserving
+  `neuron.yaml` round-trip writes, a `status --repair` backfill), the
+  maintainer moved the *implementation* off this map onto a freshly
+  chartered [neuron-2.4.0](../neuron-2.4.0/map.md) rather than graduating
+  a same-map ticket — this map's own posture (catch-all, nearing an rc2
+  cut) didn't need to absorb it. Frontier is unchanged: `20`, `21`, `22`,
+  `28`, `32`, `34`.
+- **[21 — GitHub Action: Automated npm Publish on Push to
+  Main](issues/21-github-action-automated-publish.md) built, not resolved,
+  2026-08-09**, picked up at the maintainer's direct request to skip `20`
+  and `22` (both need real harness installs this session doesn't have).
+  Grilled Scope items 2 and 7 via `AskUserQuestion` first: only `-rcN`
+  prerelease versions are recognized (anything else fails the workflow
+  loudly rather than guessing a dist-tag), and failure visibility stays
+  GitHub's own Actions UI with no added notification step. Built
+  `.github/workflows/publish.yml` (`push`-to-`main`-only trigger, never
+  `pull_request`/`pull_request_target`): a `build-and-test` job that always
+  runs `npm ci && npm test` and resolves the version/dist-tag/already-
+  published outputs, followed by a `publish` job (`needs: build-and-test`,
+  gated `if: already_published == 'false'`) that publishes and then tags
+  the release commit, guarded so an existing git tag warns instead of
+  re-tagging. **Mid-session, the maintainer separately asked what stops
+  someone from opening a branch and publishing** — answered (opening a
+  branch alone does nothing, since the trigger is push-to-`main`
+  specifically; the real gate is branch protection on `main`, a GitHub
+  repo-settings concern outside this file, which the maintainer chose to
+  configure themselves rather than have set via `gh api` this session) and
+  acted on by splitting `publish` into its own job gated by
+  `environment: npm-publish`, a second independent layer that can require
+  reviewer approval on the specific act of exposing `NPM_TOKEN` and running
+  `npm publish` — inert until the maintainer creates that environment and
+  adds a reviewer, since `environment:` protection rules live in repo
+  Settings, not this file. Auth (`NPM_TOKEN` provisioning) stays HITL, with
+  exact npmjs.com/GitHub steps for both the plain-repo-secret and
+  environment-scoped-secret variants documented in the ticket's own Answer.
+  YAML syntax checked with `pyyaml`; the four-case dist-tag regex checked
+  by hand in `bash`. **Not run live** — no `NPM_TOKEN` and no `npm-publish`
+  environment exist yet, so nothing here has been exercised against a real
+  push. Split into [36 — Verify the Publish Workflow Against a Real
+  Push](issues/36-verify-publish-workflow-real-run.md) (`21`'s `Blocked by`
+  now includes `36`), the same split-verification-from-build move `20`/`22`
+  used for `01`/`02`. Frontier is now `20`, `22`, `28`, `32`, `34`, `36`.
 
 ## Decisions so far
 
@@ -838,6 +892,22 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   covered before. `npm test` 580/580, `tsc --noEmit` clean; `test:e2e`
   skipped — grepped, every e2e call site already passes explicit `text` and
   `limit`. Unblocks `32`. Frontier is now `20`, `21`, `22`, `28`, `32`.
+- **[35 — Is `categories` Authoritative or
+  Advisory?](issues/35-categories-authoritative-or-advisory.md)** —
+  advisory, not validated, but self-maintaining: the first write to an
+  undeclared category auto-appends a minimal `categories.<name>: {}` block
+  to `neuron.yaml` (via the `yaml` package's comment-preserving `Document`
+  API, not a plain overwrite). Inferred-category strictness stays
+  unchanged (deliberately asymmetric with explicit `--category`); this
+  repo's own `scan.category: decisions` alias reverts to the real
+  `'architecture'` default; existing undeclared categories backfill via an
+  extended `neuron status --repair`; one hook point
+  (`NeuronMemory.transact()`, `src/index.ts:828`) covers both `memory add`
+  and `neuron scan` since both already funnel through it. Full design in
+  [ADR 0017](../../docs/adr/0017-category-declaration-authority.md).
+  **Implementation graduates onto a new map,
+  [neuron-2.4.0](../neuron-2.4.0/map.md), not this one** — see this map's
+  own Notes for the redirect rationale.
 
 ## Not yet specified
 
@@ -908,19 +978,6 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
 - **Cross-harness testing strategy.** This map's two adapters (plus the two
   already shipped) need verification against real harness installations.
   Whether that is CI-automatable or stays manual is unknown.
-- **Is `categories` authoritative or advisory?** `05` and `06` both make
-  per-category config *more* load-bearing — a category's path and its storage
-  mode both become things only `neuron.yaml` knows. That sharpens, but does
-  not answer, the question already fogged on
-  [neuron-2.2.0](../neuron-2.2.0/map.md#not-yet-specified) as *"an undeclared
-  category is written but never mirrored"*: nothing validates `--category`
-  against the config, so a store routinely holds categories the config never
-  declares (`neuron scan`'s `architecture` being the standing example) and
-  steady-state reconcile runs on the declared set only. After `05`, an
-  undeclared category has no declared path either. Not ticketed here because
-  the decision is a behaviour change across every command and belongs to
-  whichever map resolves it first — but a session working `05` or `06` should
-  read that patch before assuming the declared set is the whole store.
 - **What the cost band does if the answer is bad.** `07`–`10` are charted as
   if the finding will be favourable enough to disclose. If it isn't — if the
   hook costs materially more than it returns — the response is a product

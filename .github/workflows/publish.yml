@@ -1,0 +1,115 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      dist_tag: ${{ steps.version.outputs.dist_tag }}
+      pkg_name: ${{ steps.version.outputs.pkg_name }}
+      tag: ${{ steps.version.outputs.tag }}
+      already_published: ${{ steps.check.outputs.already_published }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and test
+        run: npm test
+
+      - name: Resolve version and dist-tag
+        id: version
+        run: |
+          set -euo pipefail
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          PKG_NAME="$(node -p "require('./package.json').name")"
+
+          if [[ "$PKG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            DIST_TAG="latest"
+          elif [[ "$PKG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
+            DIST_TAG="rc"
+          else
+            echo "::error::Unrecognized version format '$PKG_VERSION' -- only a bare MAJOR.MINOR.PATCH (-> latest dist-tag) or MAJOR.MINOR.PATCH-rcN (-> rc dist-tag) is supported. Refusing to guess a dist-tag for anything else (e.g. -beta, -alpha)."
+            exit 1
+          fi
+
+          echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "pkg_name=$PKG_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag=v$PKG_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version is already published
+        id: check
+        run: |
+          set -euo pipefail
+          PKG_REF="${{ steps.version.outputs.pkg_name }}@${{ steps.version.outputs.version }}"
+          if npm view "$PKG_REF" version >/dev/null 2>&1; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "## Skipped: $PKG_REF is already on npm" >> "$GITHUB_STEP_SUMMARY"
+            echo "package.json's version wasn't bumped by this push, so there is nothing new to publish." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: build-and-test
+    if: needs.build-and-test.outputs.already_published == 'false'
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to npm
+        run: npm publish --tag ${{ needs.build-and-test.outputs.dist_tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Tag release commit
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.build-and-test.outputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::warning::Git tag $TAG already exists -- npm publish succeeded but the tag was left as-is."
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Published ${{ needs.build-and-test.outputs.pkg_name }}@${{ needs.build-and-test.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "dist-tag: \`${{ needs.build-and-test.outputs.dist_tag }}\`, git tag: \`${{ needs.build-and-test.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
