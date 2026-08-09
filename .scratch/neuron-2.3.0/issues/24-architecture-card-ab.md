@@ -1,6 +1,6 @@
 Type: task
 Status: claimed
-Blocked by: none
+Blocked by: 28, 29, 30
 Band: context cost
 
 # 24 — Architecture Card A/B: With vs Without
@@ -147,5 +147,17 @@ repo's 14 subsystems in complete file+export detail plus an honest omission
 note, rather than an arbitrary partial-subsystem cutoff. Dry-run re-verified
 after the refresh; both tasks' grading targets still sit in the always-
 included header section, unaffected.
+
+**Re-blocked on [28](28-architecture-index-and-module-cards.md),
+[29](29-diff-baseline-reassembly.md) and
+[30](30-injection-fetches-index-only.md)**, 2026-08-08: the maintainer
+rejected `27`'s compression as not actually solving the scaling problem —
+a fixed-size card still can't hold unbounded content as the repo grows, it
+just delays the cutoff. `28`/`29`/`30` replace the monolithic card with an
+index + per-module-cards model instead. This ticket's harness and task
+design don't need to change (both tasks read from the header/subsystem-map
+section, which the index preserves), but `captured-card.txt` will need one
+more refresh once `30` lands, against whatever the index-only injection
+actually looks like.
 
 ## Comments

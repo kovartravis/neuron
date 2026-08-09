@@ -366,6 +366,40 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   note naming what's omitted. `scan --diff`/`--check` confirmed unaffected.
   9 new unit tests plus the existing hook-level coverage; `npm test`
   568/568. `24`'s `captured-card.txt` refreshed again to match.
+- **`27` rejected by the maintainer as not actually solving the scaling
+  problem, 2026-08-08**: "This is a fairly small repo though so on a large
+  repo how is this supposed to work ... I don't see how this could work as
+  neuron grows or its in a larger repo." Correct — a fixed-size single card
+  still can't hold unbounded content no matter how tightly it's compressed;
+  `27` only delays the cutoff, it doesn't remove it. The maintainer proposed
+  the real fix: reference points that point at detail without containing
+  it, so the agent can reach the detail on demand rather than needing it
+  all pushed up front. Grilled via `AskUserQuestion` to two decisions: the
+  "follow the path" mechanism reuses *existing* pre-prompt relevance
+  recall (per-module cards become ordinary queryable entries — no new
+  lookup mechanism), and the storage model is single-source-of-truth (the
+  monolithic blueprint is retired outright, not kept alongside a derived
+  index). Chartered as three sequenced tickets rather than one
+  session-sized ticket, then re-blocked `24` on all three at the
+  maintainer's direct request, so the A/B tests the real final mechanism:
+  [28 — Architecture Card: Split into an Index Entry + Per-Module Detail
+  Cards](issues/28-architecture-index-and-module-cards.md) (the data model:
+  new `moduleCardId`, `synthesizeArchitecture` returns index + per-module
+  markdown separately, stale module cards deleted on removal); [29 —
+  Reassemble the Diff Baseline from the Index + Module
+  Cards](issues/29-diff-baseline-reassembly.md), blocked by `28` (keeps
+  `scan --diff` working by reconstructing the legacy monolithic shape at
+  read time rather than teaching the parser a new format — also fixes a
+  second live instance of `25`'s category-crowding bug, found while
+  scoping this, in `getArchitecturalDrift`'s own baseline fetch); [30 —
+  Injection Fetches Only the Index; Module Cards Surface via Ordinary
+  Recall](issues/30-injection-fetches-index-only.md), blocked by `28`
+  (`hook.ts` fetches just the small index; `27`'s `compressArchitectureCard`
+  either adapts to the new shape or is retired, decided from a real
+  measurement, not assumed). `27`'s own lessons (stable-id fetch, never cut
+  silently) carry forward into `30`, applied to the new artifact — not
+  wasted, just no longer the whole answer. Frontier is now `13`, `14`,
+  `19`, `20`, `21`, `22`, `28`.
 
 ## Decisions so far
 
