@@ -9,12 +9,25 @@
  * vendor a cache, so the published benchmark suite doesn't ship a stale
  * copy of someone else's source tree.
  *
- *   memory  — .neuron/learning.md present, containing the task's fabricated
- *             "prior fix recorded" entry plus filler entries, plus the same
- *             MEMORY_NOTE system-prompt pointer fixtures.mjs's memory arm
- *             uses (reused, not re-derived).
- *   control — no .neuron/ directory, no system note. Must diagnose from
- *             source alone, same as a real SWE-bench solver would.
+ *   memory    — .neuron/learning.md present, containing the task's fabricated
+ *               "prior fix recorded" entry plus filler entries, plus the same
+ *               MEMORY_NOTE system-prompt pointer fixtures.mjs's memory arm
+ *               uses (reused, not re-derived). Models neuron-as-FILES: the
+ *               agent must decide to go read the store.
+ *   injection — everything the memory arm has, PLUS the entries rendered into
+ *               the system prompt unconditionally, mirroring what neuron's
+ *               session-start hook actually does. Models neuron-as-INSTALLED.
+ *   control   — no .neuron/ directory, no system note. Must diagnose from
+ *               source alone, same as a real SWE-bench solver would.
+ *
+ * The memory/injection split exists because they answer different questions
+ * and give different numbers. neuron ships as a HOOK: `neuron hook` fires at
+ * session start and injects retrieved entries into context whether or not the
+ * agent would ever have thought to look, paying its token cost up front on
+ * every session. The `memory` arm cannot measure that bargain — it measures
+ * whether an agent that is merely TOLD a store exists chooses to open it,
+ * which is a fact about MEMORY_NOTE's wording, not about token economics.
+ * Only the `injection` arm tests the claim the product actually makes.
  *
  * Fetches a single commit shallow via `git fetch --depth 1 origin <sha>`
  * rather than cloning full history - GitHub's smart-HTTP server supports
@@ -44,8 +57,38 @@ function buildLearningMd(task) {
   return `# Category: learning\n\n${body}`;
 }
 
+/**
+ * Mirrors src/harnesses/payload.ts's SESSION_START_CHAR_BUDGET. Duplicated as
+ * a literal rather than imported because that module is TypeScript and this
+ * harness runs under bare `node`, not tsx — if the source constant moves, this
+ * one has to move with it, which is why the source is named here explicitly.
+ */
+const SESSION_START_CHAR_BUDGET = 6000;
+
+/**
+ * Reproduces payload.ts's formatMemoryEntry + buildPayload for the fixture's
+ * fabricated entries: one `- [category] content` line each, whole entries only
+ * (never truncated mid-content), packed under the session-start budget. The
+ * fixture's three entries are far below 6000 chars, so nothing is dropped in
+ * practice — the budget is applied anyway so the arm stays faithful if the
+ * entry set ever grows.
+ */
+function buildInjectionNote(task) {
+  const entries = [FILLER_LEARNING_ENTRIES[0], task.memoryEntry, FILLER_LEARNING_ENTRIES[1]];
+  const header = '## Project Memory (recalled)';
+  const lines = [];
+  let used = header.length + 1;
+  for (const content of entries) {
+    const line = `- [learning] ${content}`;
+    if (used + line.length + 1 > SESSION_START_CHAR_BUDGET) continue;
+    lines.push(line);
+    used += line.length + 1;
+  }
+  return `${MEMORY_NOTE}\n\n${header}\n${lines.join('\n')}`;
+}
+
 export function buildSwebenchFixture(arm, task, sessionTag) {
-  if (arm !== 'memory' && arm !== 'control') {
+  if (arm !== 'memory' && arm !== 'injection' && arm !== 'control') {
     throw new Error(`unknown arm: ${arm}`);
   }
   const { cloneUrl, baseCommit } = task.instance;
@@ -65,10 +108,13 @@ export function buildSwebenchFixture(arm, task, sessionTag) {
   fs.rmSync(path.join(dir, '.git'), { recursive: true, force: true });
 
   let systemNote = null;
-  if (arm === 'memory') {
+  if (arm === 'memory' || arm === 'injection') {
     fs.mkdirSync(path.join(dir, '.neuron'), { recursive: true });
     fs.writeFileSync(path.join(dir, '.neuron', 'learning.md'), buildLearningMd(task), 'utf8');
-    systemNote = MEMORY_NOTE;
+    // Both arms keep the store on disk and the protocol pointer; only the
+    // injection arm additionally pays the up-front cost of putting the
+    // entries themselves in context, the way the real session-start hook does.
+    systemNote = arm === 'injection' ? buildInjectionNote(task) : MEMORY_NOTE;
   }
 
   return { dir, parent, systemNote };

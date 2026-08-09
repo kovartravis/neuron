@@ -105,7 +105,7 @@ means.
 **2026-08-08, added during ticket 18's pickup:** A dry-run sanity check of
 `benchmarks/token-ab/run.mjs` (confirming the harness still works before
 ticket 18's live re-run) overwrote this ticket's own
-`.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/results.json` with
+`benchmarks/token-ab/results/10-counterfactual-token-ab/results.json` with
 dry-run zeros — the script writes to a fixed output path regardless of
 `--dry-run`, and that path was never git-tracked, so the original file (raw
 per-session `answerText` and per-session token breakdowns backing this
@@ -192,7 +192,7 @@ path), then the full 24-session `--k=3` run completed for **$5.20** total
 **Result: no measured token difference, and the memory arm's failure rate
 was higher than control's (33% vs 17%), not lower.** Full numbers, per-task
 breakdown, and root-cause analysis in
-`.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/findings.md`; raw
+`benchmarks/token-ab/results/10-counterfactual-token-ab/findings.md`; raw
 per-session data (including every `answerText`) in `results.json` in the
 same directory. Headline: on the two tasks where the arms diverged, the
 memory arm was wrong more often — both times because a *superseded* entry
@@ -232,7 +232,7 @@ of what was found and why (the root-cause analysis is exactly what motivated
 ADR 0015), but any future reader citing this ticket's 33%/17% headline
 number as neuron's current behaviour would be citing a fixed bug as if it
 were still live. Full detail:
-`.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`.
+`benchmarks/token-ab/results/18-rerun-counterfactual-ab-post-supersession/findings.md`.
 
 **2026-08-08, added at ticket 19's creation:** This ticket's own
 "Methodological caveat for whoever reuses this harness" section (the

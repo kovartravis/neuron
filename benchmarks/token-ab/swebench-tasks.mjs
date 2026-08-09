@@ -25,7 +25,7 @@
  * to run the real SWE-bench harness, just borrow its scenarios").
  */
 
-import { containsAny, hasUnnegatedKeyword } from './grading.mjs';
+import { containsAny, hasUnnegatedKeyword, normalizeForMatch } from './grading.mjs';
 import { SWEBENCH_INSTANCES } from './swebench-instances.mjs';
 
 // Filler/distractor entries in the same shape as the real payload, so the
@@ -44,7 +44,14 @@ export const FILLER_LEARNING_ENTRIES = [
     "locale ('en-US') to the date formatter at the export boundary.",
 ];
 
-export const TASKS = [
+// Retired 2026-08-09: the pilot (after a grading-bug fix — see ticket 19's
+// Comments) came back 0/4 failures on these two, outside the 15-40%
+// difficulty-calibration band on the too-easy side. Kept, not deleted, for
+// provenance and because RETIRED_TASKS is still valid input to `check()`/
+// `runSession` if a future session wants to widen back to N=4. Not part of
+// the default `TASKS` export, so a plain `npm run bench:swebench-ab*` no
+// longer spends on them.
+export const RETIRED_TASKS = [
   {
     id: 'astropy-12907-separability',
     instance: SWEBENCH_INSTANCES['astropy-12907'],
@@ -60,8 +67,8 @@ export const TASKS = [
       'separability_matrix(m.Pix2Sky_TAN() & cm) - nesting the same two Linear1D models ' +
       'inside a compound model first - incorrectly shows them as no longer separable. ' +
       'Investigate the source in this repository and determine: which function is ' +
-      'responsible for the bug, and what exactly is wrong with it? Write your answer to ' +
-      '/ANSWER.md, then call finish_task.',
+      'responsible for the bug, what exactly is wrong with it, and how would you fix it? ' +
+      'Write your answer to /ANSWER.md, then call finish_task.',
     memoryEntry:
       'Fix for separability_matrix giving wrong results on nested CompoundModels: ' +
       'nesting compound models (e.g. `Pix2Sky_TAN() & (Linear1D(10) & Linear1D(5))`) ' +
@@ -79,7 +86,7 @@ export const TASKS = [
       'baseCommit: `grep -n cright separable.py` shows the buggy `= 1` line, no mention ' +
       "of the fix (base commit predates the real fix's merge).",
     check(answerText) {
-      const t = answerText.toLowerCase();
+      const t = normalizeForMatch(answerText);
       const mentionsFunction = /_?cstack/i.test(t);
       const identifiesConstant = containsAny(t, [
         'constant 1',
@@ -122,8 +129,8 @@ export const TASKS = [
       'of `bytes`, and the resulting HttpResponse content comes out wrong. Passing a ' +
       '`bytes` object directly to HttpResponse works correctly; passing an equivalent ' +
       '`memoryview` object does not. Investigate the source in this repository and ' +
-      'determine: which function is responsible, and exactly what is wrong with it? ' +
-      'Write your answer to /ANSWER.md, then call finish_task.',
+      'determine: which function is responsible, exactly what is wrong with it, and how ' +
+      'would you fix it? Write your answer to /ANSWER.md, then call finish_task.',
     memoryEntry:
       'Fix for HttpResponse mangling memoryview content from PostgreSQL BinaryField ' +
       'results: HttpResponse(value).content came out wrong when value was a memoryview ' +
@@ -140,7 +147,7 @@ export const TASKS = [
       'django/http/response.py at baseCommit: `grep -in memoryview response.py` returns ' +
       'zero hits (base commit predates the real fix\'s merge).',
     check(answerText) {
-      const t = answerText.toLowerCase();
+      const t = normalizeForMatch(answerText);
       const mentionsFunction = /make_bytes/i.test(t);
       const mentionsCheck = t.includes('isinstance');
       const mentionsFix = containsAny(t, [
@@ -153,11 +160,203 @@ export const TASKS = [
         'or memoryview',
         'memoryview) to',
         'and memoryview',
+        'handle memoryview',
+        'handles memoryview',
+        'handling memoryview',
+        'support memoryview',
+        'supports memoryview',
+        'bytes(memoryview',
+        'isinstance(value, memoryview)',
       ]);
       const passed = mentionsFunction && mentionsCheck && mentionsFix;
       return {
         passed,
         detail: `mentionsFunction=${mentionsFunction} mentionsCheck=${mentionsCheck} mentionsFix=${mentionsFix}`,
+      };
+    },
+  },
+];
+
+// Added 2026-08-09, replacing RETIRED_TASKS above after the pilot (post
+// grading-bug fix) came back 0/4 failures on those two - too easy. Picked
+// from princeton-nlp/SWE-bench_Lite by patch complexity (multi-hunk, an
+// algorithmic root cause rather than a single wrong-value line), diversified
+// away from astropy/django's separable.py/response.py so this isn't the
+// same two files again. Both verified against their real baseCommit content
+// (fetched directly from GitHub, not inferred from the patch alone) per the
+// same rigor RETIRED_TASKS' sourceNotes used.
+export const TASKS = [
+  {
+    id: 'matplotlib-24265-seaborn-alias',
+    instance: SWEBENCH_INSTANCES['matplotlib-24265'],
+    prompt:
+      "Consider this code, run against matplotlib's style subsystem in this repository:\n\n" +
+      '```python\n' +
+      "import matplotlib.pyplot as plt\n" +
+      "plt.style.use('seaborn-colorblind')       # works, with a deprecation warning\n" +
+      "the_rc = plt.style.library['seaborn-colorblind']  # raises KeyError\n" +
+      '```\n\n' +
+      "`plt.style.use('seaborn-colorblind')` works fine (it prints a deprecation warning " +
+      "about the style being renamed, then applies it). But directly indexing " +
+      "`plt.style.library['seaborn-colorblind']` raises `KeyError: 'seaborn-colorblind'` " +
+      'even though nothing else in the process has changed between the two calls. ' +
+      'Investigate the source in this repository and determine: which mechanism is ' +
+      'responsible for this inconsistency between the two access paths, what exactly ' +
+      'is wrong with it, and how would you fix it? Write your answer to /ANSWER.md, ' +
+      'then call finish_task.',
+    memoryEntry:
+      "Fix for KeyError when directly indexing matplotlib.style.library with a deprecated " +
+      "seaborn style name (e.g. plt.style.library['seaborn-colorblind']): plt.style.use(...) " +
+      "already worked for the same name (with a deprecation warning) because use()'s internal " +
+      'fix_style() helper translates the old seaborn-* names to their renamed ' +
+      "seaborn-v0_8-* equivalents before looking them up. But the module-level library dict " +
+      'itself is populated only with the new seaborn-v0_8-* keys and was never taught the ' +
+      'same translation, so any code indexing plt.style.library[...] directly (bypassing ' +
+      'use()) hits a plain KeyError on the old name. Resolution: wrap library in a small ' +
+      'dict subclass (_StyleLibrary) whose __getitem__ applies the same seaborn-name ' +
+      'translation and deprecation warning before falling through to the normal dict lookup, ' +
+      'so both access paths behave consistently.',
+    sourceNotes:
+      "Original GitHub issue text (verbatim reproduction case) only reports " +
+      "plt.style.library['seaborn-colorblind'] raising KeyError - never mentions use(), " +
+      "fix_style, or that use() and library disagree; confirmed by reading the full issue " +
+      'before stripping. Verified against baseCommit ' +
+      '(`e148998d9bed9d1b53a91587ad48f9bb43c7737f`, fetched directly from GitHub): `library ' +
+      '= None` at module scope, populated by `reload_library()` called at import time, so ' +
+      "library is a plain dict of the (already-renamed) style directory's contents by the " +
+      "time user code touches it; fix_style()'s old inline seaborn-alias list (visible in " +
+      'the diff as removed lines) already existed at baseCommit inside use(), confirming ' +
+      "use() already remapped the alias while library[...] didn't - the asymmetry the task " +
+      'asks about, not a fix that had not landed yet. `grep -n _StyleLibrary core.py` at ' +
+      'baseCommit returns zero hits (the fix\'s own class name is absent, as expected).',
+    check(answerText) {
+      const t = normalizeForMatch(answerText);
+      const mentionsMechanism = /library/i.test(t) && /(use\(\)|style\.use|fix_style)/i.test(t);
+      const identifiesAsymmetry = containsAny(t, [
+        /library[\s\S]{0,120}(doesn'?t|does not|isn'?t|is not|never|nothing|no)[\s\S]{0,40}(translat|remap|alias)/i,
+        /(translat|remap|alias)[\s\S]{0,120}(doesn'?t|does not|isn'?t|is not|never|nothing|no)[\s\S]{0,40}library/i,
+        /nothing[\s\S]{0,40}(translat|remap|alias)[\s\S]{0,60}library/i,
+        /library[\s\S]{0,60}(bypass|skip)/i,
+        'use() remaps',
+        'use() translates',
+        'only applied in use',
+        'only happens in use',
+      ]);
+      const identifiesFix = containsAny(t, [
+        'getitem',
+        '__getitem__',
+        'subclass',
+        'intercept',
+        'override the lookup',
+        'custom dict',
+        'apply the same',
+        'same translation',
+        'same remap',
+        'also translate',
+        'also remap',
+        'wrap the library',
+        'wrap library',
+      ]);
+      const passed = mentionsMechanism && identifiesAsymmetry && identifiesFix;
+      return {
+        passed,
+        detail: `mentionsMechanism=${mentionsMechanism} identifiesAsymmetry=${identifiesAsymmetry} identifiesFix=${identifiesFix}`,
+      };
+    },
+  },
+  {
+    id: 'django-11019-media-merge-order',
+    instance: SWEBENCH_INSTANCES['django-11019'],
+    prompt:
+      "Consider this repository's form-media combination logic. Given three widgets:\n\n" +
+      '```python\n' +
+      'class ColorPicker(forms.Widget):\n' +
+      '    class Media:\n' +
+      "        js = ['color-picker.js']\n\n" +
+      'class SimpleTextWidget(forms.Widget):\n' +
+      '    class Media:\n' +
+      "        js = ['text-editor.js']\n\n" +
+      'class FancyTextWidget(forms.Widget):\n' +
+      '    class Media:\n' +
+      "        js = ['text-editor.js', 'text-editor-extras.js', 'color-picker.js']\n\n" +
+      'class MyForm(forms.Form):\n' +
+      '    background_color = forms.CharField(widget=ColorPicker())\n' +
+      '    intro = forms.CharField(widget=SimpleTextWidget())\n' +
+      '    body = forms.CharField(widget=FancyTextWidget())\n' +
+      '```\n\n' +
+      "Combining these three widgets' media (`MyForm().media`) should be able to resolve the " +
+      "JS files into the order `text-editor.js, text-editor-extras.js, color-picker.js` - the " +
+      "only real ordering constraint FancyTextWidget states. Instead it raises a " +
+      "MediaOrderConflictWarning claiming text-editor-extras.js and text-editor.js are in " +
+      "conflicting order (they are not - FancyTextWidget lists them in the same relative " +
+      "order both times), and the final combined order it produces violates FancyTextWidget's " +
+      "own ordering. Investigate the source in this repository and determine: which function " +
+      'is responsible for combining these lists, what exactly is wrong with its approach, ' +
+      'and how would you fix it? Write your answer to /ANSWER.md, then call finish_task.',
+    memoryEntry:
+      'Fix for spurious MediaOrderConflictWarning when merging 3+ Django form Media objects: ' +
+      'combining ColorPicker/SimpleTextWidget/FancyTextWidget media raised a ' +
+      'MediaOrderConflictWarning between files that were never actually in conflict, and ' +
+      'produced a final JS order that violated the real constraint. Root cause: Media.merge() ' +
+      '(django/forms/widgets.py) only ever merges two lists at a time, called pairwise as each ' +
+      "widget's media is added to the running total via __add__ - so by the time a third list " +
+      'arrives, the running merged list has already lost track of which relative orderings ' +
+      'came from which original list, and a later pairwise merge can misread an artifact of an ' +
+      'earlier merge as a real conflict between the wrong pair of files. Resolution: replaced ' +
+      'the pairwise merge with a real dependency graph over ALL input lists at once, then a ' +
+      'topological sort (django.utils.topological_sort.stable_topological_sort) to produce the ' +
+      'final order - a conflict is now only reported on an actual cycle in that graph, built ' +
+      'once from every list rather than accumulated through a chain of two-at-a-time merges.',
+    sourceNotes:
+      'Original GitHub issue text (the ColorPicker/SimpleTextWidget/FancyTextWidget ' +
+      'reproduction, reused near-verbatim above since it is example code describing symptom, ' +
+      'not implementation) never names merge, Media, topological sort, or any internal ' +
+      'mechanism - confirmed by reading the full issue before stripping the prompt down to ' +
+      'the repro plus the observed-vs-expected behavior. Verified against baseCommit ' +
+      '(`93e892bb645b16ebaf287beb5fe7f3ffe8d10408`, fetched directly from GitHub): ' +
+      '`grep -n topological django/forms/widgets.py` at baseCommit returns zero hits, and the ' +
+      'diff\'s removed lines confirm Media.merge(list_1, list_2) at baseCommit takes exactly ' +
+      'two positional lists (the pairwise signature the task asks about), not the *lists ' +
+      'variadic form the fix introduces.',
+    check(answerText) {
+      const t = normalizeForMatch(answerText);
+      const mentionsFunction = /\bmerge\b/i.test(t) && /media/i.test(t);
+      const identifiesRootCause = containsAny(t, [
+        'pairwise',
+        'two lists at a time',
+        'two at a time',
+        'only compares two',
+        'only merges two',
+        'combining pairs',
+        'merged one pair at a time',
+        'lost transitive',
+        'lost the dependency',
+        'does not consider all',
+        "doesn't consider all",
+        'no global order',
+        'not a true dependency',
+        'no dependency graph',
+        'called pairwise',
+        'chain of merges',
+        'accumulated through',
+        'running merged list',
+      ]);
+      const identifiesFix = containsAny(t, [
+        'topological sort',
+        'topological',
+        'dependency graph',
+        'treat as a graph',
+        'build a graph',
+        'graph-based',
+        'consider all lists together',
+        'merge all lists at once',
+        'single pass over all',
+        'all lists at once',
+      ]);
+      const passed = mentionsFunction && identifiesRootCause && identifiesFix;
+      return {
+        passed,
+        detail: `mentionsFunction=${mentionsFunction} identifiesRootCause=${identifiesRootCause} identifiesFix=${identifiesFix}`,
       };
     },
   },

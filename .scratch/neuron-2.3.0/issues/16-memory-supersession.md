@@ -26,7 +26,7 @@ measured: in a real 24-session A/B, the memory arm's failure rate was
 same shape — a `.neuron/decisions.md` entry recording an earlier ticket's
 resolution outcompeted the *separate, later* entry that reverses it. Neither
 entry is wrong on its own; nothing marks the first one as superseded. See
-`.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/findings.md` for
+`benchmarks/token-ab/results/10-counterfactual-token-ab/findings.md` for
 the two concrete cases.
 
 **This is explicitly not automatic pruning.** Ticket 24

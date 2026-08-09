@@ -115,7 +115,7 @@ function runBash(command, cwdRef) {
   };
 }
 
-export async function runSession({ client, task, arm, fixture, sessionLabel }) {
+export async function runSession({ client, task, arm, fixture, sessionLabel, effort = 'low' }) {
   const cwdRef = { cwd: fixture.dir };
   const system = buildSystem(fixture.dir, fixture.systemNote);
   const messages = [{ role: 'user', content: task.prompt }];
@@ -141,7 +141,7 @@ export async function runSession({ client, task, arm, fixture, sessionLabel }) {
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 4096,
-      output_config: { effort: 'low' },
+      output_config: { effort },
       system,
       tools: [BASH_TOOL, FINISH_TOOL],
       messages,

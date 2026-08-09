@@ -12,6 +12,25 @@ export function containsAny(text, patterns) {
   return patterns.some(p => (p instanceof RegExp ? p.test(text) : text.includes(p)));
 }
 
+// A prose answer wraps at ~80 chars and uses markdown emphasis (`code`,
+// **bold**) around exactly the tokens a keyword check is looking for -
+// found 2026-08-09 grading ticket 19's SWE-bench pilot, where "the constant
+// `1`" split across a line wrap (literal "constant\n`1`") so a plain
+// substring check for "constant 1" missed a correct answer four different
+// ways across two tasks. Strip backtick/asterisk emphasis and collapse all
+// whitespace (including newlines) to single spaces before any keyword
+// check runs, so phrase matching survives both wrap points and emphasis.
+// Deliberately does NOT strip underscores - unlike backtick/asterisk,
+// underscore is load-bearing inside the code identifiers these tasks grade
+// on (make_bytes, _cstack), not just markdown italics, and stripping it
+// silently broke identifier matches when first tried here.
+export function normalizeForMatch(text) {
+  return text
+    .toLowerCase()
+    .replace(/[`*]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
 // A first pass at this harness graded "this is *not* intentional design" as
 // saying "intentional" — a plain substring match doesn't see the negation
 // a few words earlier. This checks a window before each occurrence of

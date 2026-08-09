@@ -2229,3 +2229,39 @@ tags:
 taskId: null
 ---
 Fix for ui.test.ts's /api/learnings order assertion breaking after changing NeuronMemory.queryVector's list-mode SQL from ORDER BY rowid ASC to DESC (ticket 31, neuron-2.3.0): the test asserted the old oldest-first order on a two-entry list-mode fetch through the UI server's /api/learnings endpoint, which passes an explicit limit but no ordering override, so it inherited the fix and started failing. Root cause: the endpoint's default ordering was never independently tested for direction, so the ordering bug had a second, un-flagged blast-radius surface beyond the CLI paths the ticket scoped. Resolution: updated the assertion to expect the corrected newest-first order (src/commands/ui.test.ts) rather than loosening it or reverting the fix. Edge case: any test elsewhere that asserts on list-mode (no-text query) ordering with more than one seeded entry needs the same check — grep for multi-entry list-mode fetches before trusting a green suite after an ordering change.
+
+---
+id: f8bf86d3-b85a-4f72-9beb-ac000cac9cc4
+createdAt: 2026-08-09T14:32:12.387Z
+importance: 4
+tags:
+  - failure-fix
+  - exec
+  - adr
+taskId: null
+---
+Fix for false-negative grading in benchmarks/token-ab/swebench-tasks.mjs's check() functions: ticket 19's --pilot run reported 100% control-arm failure (4/4) on both SWE-bench tasks, appearing to fail the 15-40% difficulty-calibration gate on the too-hard side. Root cause verified by hand: the model's prose answers were correct in all 4 sessions but wrapped at ~80 chars and used markdown emphasis, so keyword phrases like 'constant 1' literally split across a line break ('constant\n`1`') or were separated by ``/** markers, and a plain substring/lowercase check can't span either. Resolution: added normalizeForMatch() to grading.mjs (strips backtick/asterisk emphasis and collapses all whitespace including newlines to single spaces before any keyword check), applied it in swebench-tasks.mjs's check() functions, and broadened django's mentionsFix keyword list for a few correct-but-differently-worded phrasings ('handle memoryview', 'isinstance(value, memoryview)', etc). Edge case: normalizeForMatch deliberately does NOT strip underscores, since identifiers like make_bytes and _cstack use them structurally, not as markdown italics -- stripping underscores too was tried first and silently broke the mentionsFunction check for both tasks.
+
+---
+id: a05b9030-20dd-4388-807e-3c7406415507
+createdAt: 2026-08-09T14:43:43.299Z
+importance: 4
+tags:
+  - failure-fix
+  - exec
+  - longmemeval
+taskId: null
+---
+Fix for benchmarks/token-ab/run-swebench-ab.mjs's --dry-run mode silently destroying real captured results: running 'npm run bench:swebench-ab:pilot:dry-run' to validate a fixture change against a NEW task pair overwrote the SAME results.json path a prior LIVE run had just written (.scratch/neuron-2.3.0/audits/19-synthetic-fixture-counterfactual-ab/pilot/results.json), destroying $0.14 of real captured API answers and a regrade note with no backup. Root cause: OUT_DIR in run-swebench-ab.mjs is keyed only on --pilot vs full, not on dry-run vs live or on which task set is active, so any dry-run invocation against the same mode unconditionally clobbers the last live run's artifact. Caught immediately (not silently) because the full answerText for all 4 sessions had already been printed to the working conversation and the console log with exact turns/tokens/cost per session still existed at the background task's own output file, so the artifact was reconstructed byte-faithful on the parts that mattered (answers, verdicts, total cost) with an explicit note on the parts that were not recoverable (per-session token breakdown, wall-clock time). General rule: before running --dry-run against a harness whose OUT_DIR you've already spent real money populating, cp the existing results.json aside first, or check whether the harness scopes dry-run output to a separate path — it does not, here.
+
+---
+id: 57047865-1b9e-4c84-9af1-0fe861853bd6
+createdAt: 2026-08-09T14:55:54.035Z
+importance: 4
+tags:
+  - exec
+  - failure-fix
+  - adr
+taskId: null
+---
+Found while testing ticket 19's SWE-bench harness at effort:'medium': benchmarks/token-ab/swebench-tasks.mjs's check() functions have an identifiesFix gate that requires the answer to state a literal code-shaped fix (e.g. 'wrap library in a dict subclass'), but every task prompt in the file only asks 'which mechanism is responsible... and what exactly is wrong with it' -- it never asks the model to propose a fix. At effort:'low' the model happened to volunteer fix-shaped phrasing anyway, so the gate silently passed; at effort:'medium' the model wrote a more discursive design-flaw explanation ('should have been applied uniformly', 'factored into a shared helper') that is equally correct but doesn't hit the keyword list, so the gate failed two answers that were actually right (verified by hand). General lesson: when a deterministic check() gate tests for content the prompt never actually requested, it is not testing a real signal, only whether the model happened to phrase things a particular way -- and that phrasing can shift with something as unrelated as an effort-level change. Before trusting a check() gate, re-read the exact prompt it's grading against and confirm the gate corresponds to something the prompt actually asked for.

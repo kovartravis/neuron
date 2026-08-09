@@ -47,7 +47,7 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
 const OUT_DIR = path.join(
   REPO_ROOT,
   args.find(a => a.startsWith('--out='))?.split('=')[1] ??
-    '.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab'
+    'benchmarks/token-ab/results/10-counterfactual-token-ab'
 );
 
 const ARMS = ['memory', 'control'];

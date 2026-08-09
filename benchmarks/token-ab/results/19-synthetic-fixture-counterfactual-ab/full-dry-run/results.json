@@ -1,0 +1,216 @@
+{
+  "generatedAt": "2026-08-09T16:21:34.305Z",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "arms": [
+    "injection",
+    "control"
+  ],
+  "treatmentArm": "injection",
+  "dryRun": true,
+  "pilot": false,
+  "taskCount": 2,
+  "repeats": 2,
+  "sessionCount": 8,
+  "sessionsSkippedByCap": 0,
+  "hardCapUsd": 5,
+  "totalCostUsd": 0,
+  "summary": {
+    "armStats": {
+      "injection": {
+        "sessions": 4,
+        "passed": 0,
+        "failed": 4,
+        "failureRate": 1,
+        "tokens": {
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "costUsd": 0
+      },
+      "control": {
+        "sessions": 4,
+        "passed": 0,
+        "failed": 4,
+        "failureRate": 1,
+        "tokens": {
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "costUsd": 0
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": 0,
+    "spread": 0,
+    "noMeasuredDifference": false
+  },
+  "results": [
+    {
+      "task": "matplotlib-24265-seaborn-alias",
+      "arm": "injection",
+      "sessionLabel": "matplotlib-24265-seaborn-alias-injection-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "matplotlib-24265-seaborn-alias",
+      "arm": "injection",
+      "sessionLabel": "matplotlib-24265-seaborn-alias-injection-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "matplotlib-24265-seaborn-alias",
+      "arm": "control",
+      "sessionLabel": "matplotlib-24265-seaborn-alias-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "matplotlib-24265-seaborn-alias",
+      "arm": "control",
+      "sessionLabel": "matplotlib-24265-seaborn-alias-control-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "django-11019-media-merge-order",
+      "arm": "injection",
+      "sessionLabel": "django-11019-media-merge-order-injection-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "django-11019-media-merge-order",
+      "arm": "injection",
+      "sessionLabel": "django-11019-media-merge-order-injection-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "django-11019-media-merge-order",
+      "arm": "control",
+      "sessionLabel": "django-11019-media-merge-order-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "django-11019-media-merge-order",
+      "arm": "control",
+      "sessionLabel": "django-11019-media-merge-order-control-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    }
+  ]
+}

@@ -60,7 +60,7 @@ both now resolve correctly, not just that the aggregate rate improved.
 
 - [x] Re-run results (full or task-subset) recorded alongside ticket 10's
       original findings, same location convention
-      (`.scratch/neuron-2.3.0/audits/`)
+      (`benchmarks/token-ab/results/`)
 - [x] Explicit comparison against ticket 10's 33%/17% baseline
 - [x] Updated finding fed into [03](03-compatibility-disclosure.md) and
       [04](04-cut-and-publish.md)
@@ -72,7 +72,7 @@ both now resolve correctly, not just that the aggregate rate improved.
 
 **Confirmed: ticket 17's supersession fix resolves ticket 10's regression.**
 Full findings at
-`.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`.
+`benchmarks/token-ab/results/18-rerun-counterfactual-ab-post-supersession/findings.md`.
 
 Ran a deliberate 2-task subset — `prune-default-collision` and
 `pruning-ab-verdict`, the two tasks that actually regressed in ticket 10 (the

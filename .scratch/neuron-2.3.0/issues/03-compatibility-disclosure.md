@@ -72,4 +72,4 @@ fixed (0% memory-arm failure vs 33% control on the regressed 2-task
 subset, up from 67% before the fix). Not directly load-bearing for this
 ticket's harness-fidelity scope, but relevant context if this ticket's
 disclosure work ever touches recall-quality claims alongside fidelity
-claims. Full detail: `.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`.
+claims. Full detail: `benchmarks/token-ab/results/18-rerun-counterfactual-ab-post-supersession/findings.md`.

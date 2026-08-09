@@ -3188,3 +3188,39 @@ tags:
 taskId: "31"
 ---
 Resolved ticket 31 (Fix neuron memory Query/List Default Ordering and Limits) on the neuron-2.3.0 wayfinder map. NeuronMemory.queryVector's list-mode branch (src/index.ts) changed ORDER BY rowid ASC to DESC (recency, matching the deprecated listHistory wrapper) and split its default limit from text-query mode's shared 'q.limit ?? 5' into its own 'q.limit ?? 20'. Verified hook.ts's fetchArchitectureCardPayload category-fill fallback (explicit limit, inherits ordering fix only) and dualStorageRouter.ts/mdVectorSync.ts (both already pass explicit limits) are unaffected or improved, not regressed. Found and fixed a live instance of the same ordering bug in src/commands/ui.test.ts's /api/learnings test, which asserted the old oldest-first order. Added two new tests to src/index.test.ts covering list-mode ordering and the list-vs-text default-limit divergence, since neither was covered before. npm test 580/580, tsc --noEmit clean. Prior session's uncommitted work on tickets 14 and 19 (git-log and SWE-bench A/B harnesses, both blocked on expired ant OAuth credentials) was committed first, at the maintainer's request, before starting this ticket. Ticket 20 (Copilot real-install verification) was the actual first-in-line frontier ticket but is HITL requiring the maintainer's own GitHub Copilot subscription/auth, which this session cannot provide; the maintainer chose to skip to ticket 31 instead and leave 20 unclaimed for a session worked with them live. Unblocks ticket 32 (per-prompt discovery-command hint). New frontier: 20, 21, 22, 28, 32.
+
+---
+id: 79a407f8-0dfc-464b-bd95-4aa18d16f910
+createdAt: 2026-08-09T14:33:37.974Z
+importance: 3
+tags:
+  - 2.3.0
+  - wayfinder
+  - ticket-19
+taskId: null
+---
+Wayfinder pickup on the neuron-2.3.0 map: picked up ticket 19 (Synthetic-Fixture Counterfactual A/B), which had been claimed-and-built-but-not-resolved since 2026-08-08, blocked only on live Anthropic credentials. A live ant OAuth token was available this session, clearing that wall. Ran npm run bench:swebench-ab:pilot for real (4 sessions, $0.14) -- it initially scored 100% control-arm failure on both SWE-bench-sourced tasks (astropy-12907-separability, django-11133-memoryview), which the harness itself flagged as outside the 15-40% difficulty-calibration target band. Inspecting the captured answers found all 4 were actually correct diagnoses; the deterministic keyword grader was the thing that failed, because markdown line-wraps and emphasis split phrases like 'constant 1' across a literal newline or emphasis markers, so a plain substring check missed them. Fixed via a new normalizeForMatch() helper in benchmarks/token-ab/grading.mjs (strips backtick/asterisk, collapses whitespace -- deliberately not underscore, which is load-bearing in identifiers like make_bytes/_cstack), re-graded the same 4 captured answers offline at zero extra spend (same move ticket 18 made for its own grading bug), and re-verified the corrected checker still rejects hand-written wrong and near-miss answers so the fix isn't just loosened. npm test 580/580 unaffected. Corrected pilot result: 0/4 failures -- still outside the target band, now too easy rather than too hard. Did not spend on the full 8-session A/B since the calibration gate still doesn't pass; whether the fix is harder SWE-bench instances or reconsidering the diagnose-and-describe task shape is left as an open question for the maintainer, since instance selection was already a grilled Scope item 5 decision. Ticket 19 stays claimed, not resolved. Updated the ticket's own Comments, the pilot's results.json (regradedAt/regradeNote, same convention ticket 18 used), and map.md's Notes. $0.14 of the $5 approved cap spent.
+
+---
+id: 118c40da-fda9-4de8-801e-e080580ba51e
+createdAt: 2026-08-09T14:56:10.130Z
+importance: 3
+tags:
+  - 2.3.0
+  - wayfinder
+  - ticket-19
+taskId: null
+---
+Wayfinder continuation on ticket 19 (Synthetic-Fixture Counterfactual A/B), same session as the credential-wall pickup: after the first pilot's grading fix showed 0/4 failures (too easy), swapped in two harder SWE-bench instances (matplotlib-24265, django-11019, picked by patch complexity and verified against real baseCommit content) at the maintainer's direction -- also 0/4, an accidental --dry-run overwrote the prior real results.json (recovered byte-faithful, recorded as a learning entry), 8/8 correct diagnoses total across two independently-chosen pairs. At the maintainer's further direction, made effort a parameter in the shared session.mjs (default 'low' preserves tickets 10/14/18) and re-ran the same pair at effort:'medium': mixed result, django-11019 still 2/2 pass, matplotlib-24265 flipped to 2/2 fail -- but hand-inspection showed both 'failed' answers were actually correct and more thorough, exposing that check()'s identifiesFix gate tests for a proposed fix no task prompt in the file (including the original retired pair) ever actually asks for; it only passed historically because models happened to volunteer fix-shaped phrasing. Stopped after three live-spend rounds (0.92 USD of the 5 USD cap) rather than patching a fourth time unilaterally, since each round surfaced a new judgment call (a real grading bug, a too-easy signal, then a prompt/grading design gap) -- checked in with the maintainer instead. npm test 580/580 throughout. All three pilot runs archived separately under .scratch/neuron-2.3.0/audits/19-synthetic-fixture-counterfactual-ab/ (pilot-retired-astropy-django, pilot-low-effort-mpl-django11019, pilot-medium-effort-mpl-django11019). Ticket 19 stays claimed, not resolved; the open question is now whether to drop the identifiesFix gate, rewrite prompts to explicitly ask for a fix, or pursue a different calibration lever entirely.
+
+---
+id: 68257ee4-e576-4e2a-ba9a-707903cbeaf9
+createdAt: 2026-08-09T15:00:03.194Z
+importance: 3
+tags:
+  - 2.3.0
+  - wayfinder
+  - ticket-19
+taskId: null
+---
+Wayfinder session on ticket 19 (Synthetic-Fixture Counterfactual A/B) concluded: after the effort:'medium' pilot exposed that check()'s identifiesFix gate tests for a proposed fix no task prompt ever actually asked for, the maintainer chose to rewrite the prompts rather than drop the gate or leave it open. Added an explicit "...and how would you fix it?" clause to all four task prompts in swebench-tasks.mjs -- both live (matplotlib-24265-seaborn-alias, django-11019-media-merge-order) and retired (astropy-12907-separability, django-11133-memoryview), for consistency even though the retired pair isn't run by default. check() logic itself is unchanged, only the prompt text. npm test 580/580. Deliberately not re-run live this session -- the medium-effort pilot's captured "failed" answers were generated under the old prompt and won't retroactively pass, so confirming the fix needs a fresh pilot, which is the natural next pickup rather than a fourth live-spend round in one session. Total session spend: 0.92 USD of the 5 USD cap (4.08 USD remaining). Ticket 19 stays claimed, not resolved; next step is npm run bench:swebench-ab:pilot with either effort level against the four now-updated prompts.

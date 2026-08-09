@@ -46,7 +46,7 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
 }
 const OUT_DIR = path.join(
   REPO_ROOT,
-  args.find(a => a.startsWith('--out='))?.split('=')[1] ?? '.scratch/neuron-2.3.0/audits/24-architecture-card-ab'
+  args.find(a => a.startsWith('--out='))?.split('=')[1] ?? 'benchmarks/architecture-card-ab/results/24-architecture-card-ab'
 );
 
 const ARMS = ['card', 'no-card'];

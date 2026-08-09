@@ -84,7 +84,7 @@ retrieval bug rather than a finding about the feature's value.
 
 - [ ] `benchmarks/architecture-card-ab/` harness (fixtures + tasks, reusing
       `token-ab/session.mjs` verbatim)
-- [ ] Results recorded under `.scratch/neuron-2.3.0/audits/24-architecture-card-ab/`
+- [ ] Results recorded under `benchmarks/architecture-card-ab/results/24-architecture-card-ab/`
 - [ ] README updated with the finding, if favorable
 
 ## Answer
@@ -101,7 +101,7 @@ purpose (14 primary modules), the full dependency contract (12 packages:
 dependency map (all 14 subsystem paths), and per-file export contracts for
 the `benchmarks`, `longmemeval`, and part of the `src` subsystems before the
 truncation point. Saved verbatim to
-`.scratch/neuron-2.3.0/audits/24-architecture-card-ab/captured-card.txt` for
+`benchmarks/architecture-card-ab/results/24-architecture-card-ab/captured-card.txt` for
 the harness to read rather than re-embedding in this file.
 
 **Harness built and dry-run validated** 2026-08-08:

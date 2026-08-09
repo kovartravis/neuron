@@ -1,0 +1,46 @@
+split=lite submissions_with_results=84/84
+instances_solved_by_at_least_one=265
+
+--- rarest solved (bottom 25) ---
+  1   1.2% django__django-13768
+  1   1.2% sympy__sympy-19007
+  1   1.2% django__django-11742
+  1   1.2% matplotlib__matplotlib-22711
+  1   1.2% astropy__astropy-14182
+  1   1.2% django__django-13265
+  1   1.2% django__django-15252
+  1   1.2% django__django-15738
+  1   1.2% pydata__xarray-4248
+  1   1.2% sphinx-doc__sphinx-8273
+  1   1.2% sympy__sympy-13043
+  1   1.2% sympy__sympy-13437
+  1   1.2% django__django-11910
+  1   1.2% django__django-13220
+  1   1.2% matplotlib__matplotlib-18869
+  1   1.2% matplotlib__matplotlib-25079
+  1   1.2% scikit-learn__scikit-learn-10508
+  1   1.2% scikit-learn__scikit-learn-10949
+  1   1.2% sphinx-doc__sphinx-8474
+  1   1.2% django__django-16229
+  1   1.2% sympy__sympy-12236
+  1   1.2% sympy__sympy-11897
+  1   1.2% pytest-dev__pytest-5221
+  1   1.2% matplotlib__matplotlib-25433
+  1   1.2% django__django-11905
+
+--- probed instances ---
+ 44  52.4% astropy__astropy-12907
+ 76  90.5% django__django-11133
+  5   6.0% matplotlib__matplotlib-24265
+  0   0.0% django__django-11019
+Lite instances: 300; submissions: 84; never solved by any: 35
+
+sympy (17): sympy__sympy-11400, sympy__sympy-11870, sympy__sympy-12171, sympy__sympy-13146, sympy__sympy-14024, sympy__sympy-14308, sympy__sympy-14317, sympy__sympy-15308, sympy__sympy-16106, sympy__sympy-16281, sympy__sympy-17630, sympy__sympy-19254, sympy__sympy-20322, sympy__sympy-20639, sympy__sympy-21171, sympy__sympy-23191, sympy__sympy-24102
+django (8): django__django-11019, django__django-11564, django__django-11630, django__django-14667, django__django-14730, django__django-15695, django__django-16816, django__django-16820
+sphinx-doc (3): sphinx-doc__sphinx-7686, sphinx-doc__sphinx-7738, sphinx-doc__sphinx-8282
+scikit-learn (2): scikit-learn__scikit-learn-11040, scikit-learn__scikit-learn-25638
+astropy (1): astropy__astropy-7746
+matplotlib (1): matplotlib__matplotlib-22835
+pallets (1): pallets__flask-5063
+pydata (1): pydata__xarray-4493
+pylint-dev (1): pylint-dev__pylint-7228

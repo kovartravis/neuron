@@ -67,6 +67,17 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
 - **This map carries execution**, matching `neuron-2.2.0`'s own posture
   (and, before it, `architecture-scans-2.1.0`'s) — tickets are worked one at
   a time, ending with a cut-and-publish ticket.
+- **Benchmark evidence (harness code, `results.json`, `findings.md`) lives
+  under each harness's own `results/` directory, not `.scratch/`** — moved
+  2026-08-09 from `.scratch/neuron-2.3.0/audits/` to
+  `benchmarks/token-ab/results/`, `benchmarks/architecture-card-ab/results/`,
+  and `benchmarks/results/` (for the one standalone script, ticket `08`).
+  `.scratch/` is the issue tracker (maps and tickets); it should hold
+  narrative and decisions, not the code and data that produced them. Tickets
+  still link out to the evidence, they just no longer store it inline. Only
+  `.neuron/*.md` is exempt — the append-only memory log's own citations of
+  the old path are historical fact as of when they were written and are
+  deliberately left unrewritten.
 - **Three bands; the context-cost band gated the harness band.** `01`–`03`
   touch `src/harnesses/`; `05`–`06` touch `src/config/` and `src/storage/`;
   `07`–`12` measure and bound what the hook costs a session. The config band
@@ -508,6 +519,53 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   tasks. `npm test` 578/578 unaffected. Stays claimed, not resolved, until
   a session with working credentials runs `npm run bench:swebench-ab:pilot`
   first, then the full A/B. Frontier is now `20`, `21`, `22`, `28`, `31`.
+- **[19 — Synthetic-Fixture Counterfactual A/B](issues/19-synthetic-fixture-counterfactual-ab.md)
+  picked back up 2026-08-09** once a live `ant` OAuth token cleared the
+  credential wall that left it claimed-but-not-resolved. Ran the `--pilot`
+  for real ($0.14, 4 sessions) — it reported 100% control-arm failure on
+  both tasks, but that reading was a grading bug, not genuine difficulty:
+  the model's answers were correct in all 4 sessions, and `check()`'s
+  keyword matching missed them because markdown line-wraps and emphasis
+  split phrases like `'constant 1'` across a literal newline. Fixed
+  (`normalizeForMatch()` in `grading.mjs`), re-verified against wrong/
+  near-miss answers so the fix isn't just loosened, `npm test` 580/580
+  unaffected. **Corrected result: 0/4 failures — still outside the 15–40%
+  target band, now too easy rather than too hard.** At the maintainer's
+  direction, swapped in two harder instances (`matplotlib-24265`,
+  `django-11019`, chosen by patch complexity — the dataset has no
+  difficulty field — and verified against real `baseCommit` content, not
+  just the diff) and re-ran the pilot live: **also 4/4 pass, $0.31.** Two
+  independently-chosen pairs, 8/8 correct diagnoses total — the too-easy
+  signal now looks like it may be structural to the "diagnose and
+  describe" task shape itself (Scope item 3's own tradeoff), not a
+  property of any one instance. Did not attempt a third swap; that fork
+  (harder instances again vs. reconsidering task shape/effort level) is
+  now a maintainer call. **Mid-session mistake, caught and recovered:** a
+  `--dry-run` invocation against the new pair overwrote the first pair's
+  real `results.json` (the harness doesn't scope output by dry-run vs
+  live) — reconstructed byte-faithful from the console log and the
+  already-printed conversation transcript, archived separately, recorded
+  as a `learning` entry. $0.45 of the $5 cap spent total. **Continued same
+  session at the maintainer's direction: raised effort to `'medium'`**
+  (made a `session.mjs` parameter, default `'low'` preserves tickets
+  10/14/18's behavior) on the same pair. Mixed result: `django-11019`
+  still 2/2 pass; `matplotlib-24265` flipped to 2/2 fail — but both
+  "failed" answers are actually correct and more thorough on inspection,
+  exposing a second, more structural gap: `check()`'s `identifiesFix` gate
+  tests for a proposed fix the task prompt never actually asks for, true
+  of every task in this file including the retired pair, only masked
+  historically because models tend to volunteer fix-shaped phrasing
+  anyway. Did not patch a third time this session — three live-spend
+  rounds have each surfaced a new judgment call, so checked in rather than
+  continuing unilaterally. $0.92 of the $5 cap spent. **Maintainer
+  decision: rewrite the prompts, keep the gate** — added an explicit "and
+  how would you fix it?" clause to all four task prompts (both live and
+  retired, for consistency); `check()` logic itself unchanged. `npm test`
+  580/580. Not re-run live this session — the medium-effort pilot's two
+  "failed" answers were captured under the old prompt, so confirming the
+  fix needs a fresh pilot, left as the next pickup rather than a fourth
+  live-spend round. $4.08 of the $5 cap remains. Stays claimed, not
+  resolved.
 - **[34 — Cut and Publish 2.3.0-rc2](issues/34-cut-rc2.md) graduated
   2026-08-09** at the maintainer's direct request, immediately after `31`'s
   resolution — a real interim release tag, not the final `04` cut (which
@@ -583,7 +641,7 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   reverses it — a live instance of the "confidently-wrong retrieval" and
   "write-side capture gap" fog items below, not a new problem. Full
   numbers and root-cause analysis in
-  `.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/findings.md`.
+  `benchmarks/token-ab/results/10-counterfactual-token-ab/findings.md`.
   **This is not a favorable finding** — `03`'s disclosure and `04`'s
   claim-versus-behaviour audit inherit it as-is, not rounded toward "no
   effect." Unblocks `14` (which reuses this ticket's harness verbatim per
@@ -641,7 +699,7 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   spend on top of this run's $1.11 (~$3.21 total this session against `10`'s
   $20 approved budget). Full findings, including the caveat that this is a
   2-task subset rather than `10`'s full N=4, at
-  `.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`.
+  `benchmarks/token-ab/results/18-rerun-counterfactual-ab-post-supersession/findings.md`.
   Fed forward to `03`, `04`, `15`, and back onto `10` itself (now marked
   superseded by this result). Unblocks `04`'s `18` dependency (many of `04`'s
   other blockers remain open; `15` stays blocked on `14`, unaffected by this

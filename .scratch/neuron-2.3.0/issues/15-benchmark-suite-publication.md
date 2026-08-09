@@ -76,7 +76,7 @@ memory-arm failure vs 33% control, on a 2-task/12-session subset. Whoever
 resolves this ticket should publish the corrected story — "found a real
 regression, fixed it, verified the fix" — not ticket 10's original number
 standing alone. Both `findings.md` files
-(`.scratch/neuron-2.3.0/audits/10-counterfactual-token-ab/` and
+(`benchmarks/token-ab/results/10-counterfactual-token-ab/` and
 `.../18-rerun-counterfactual-ab-post-supersession/`) are the primary record;
 note ticket 18 only re-ran 2 of ticket 10's original 4 tasks (the other two
 were saturated 3/3 and mechanically unaffected by supersession) — decide

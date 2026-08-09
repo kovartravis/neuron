@@ -61,7 +61,7 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
 const OUT_DIR = path.join(
   REPO_ROOT,
   args.find(a => a.startsWith('--out='))?.split('=')[1] ??
-    '.scratch/neuron-2.3.0/audits/14-git-log-hook-vs-agent-log-ab'
+    'benchmarks/token-ab/results/14-git-log-hook-vs-agent-log-ab'
 );
 
 const ARMS = ['gitlog', 'agent'];

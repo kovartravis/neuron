@@ -27,7 +27,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const CARD_PATH = fileURLToPath(new URL('../../.scratch/neuron-2.3.0/audits/24-architecture-card-ab/captured-card.txt', import.meta.url));
+const CARD_PATH = fileURLToPath(new URL('../../benchmarks/architecture-card-ab/results/24-architecture-card-ab/captured-card.txt', import.meta.url));
 
 const CARD_TEXT = fs.readFileSync(CARD_PATH, 'utf8');
 

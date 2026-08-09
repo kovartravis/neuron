@@ -375,16 +375,54 @@ resolves it, then excludes the superseded row from recall by default.
 Re-running the two tasks that actually regressed: memory-arm failure
 dropped from 67% to **0%**, beating the control's unchanged 33%.
 
-**What this isn't yet:** a re-run across the harness's full original task
-set (only the two regressed tasks have been re-confirmed post-fix), or a
-synthetic-fixture run that rules out the control arm quietly knowing an
-answer from this repo's own docs — both are open work. The harness is real
-and runnable, not a one-off script we deleted after:
+**Then we built a cleaner instrument and measured the token claim
+properly — and this time it's a win.** The earlier runs dogfooded this
+repo, where the control arm could stumble onto an answer in ordinary docs.
+So we rebuilt the fixture on **real SWE-bench Lite instances**: actual
+matplotlib and Django checkouts pinned to a commit *before* the real fix
+landed, where the answer is structurally absent. Same agent, same task,
+same deterministic grader — the only difference is whether neuron's
+session-start hook put a relevant memory in context.
+
+| Task | Without neuron | With neuron | Reduction |
+|---|---|---|---|
+| `matplotlib-24265` | 26,076 tokens | **6,933** | **73.4%** |
+| `django-11019` | 12,458 tokens | **9,354** | 24.9% |
+| **Pooled** | **19,267** | **8,144** | **57.7%** |
+
+**16 of 16 sessions answered correctly in both arms** — the saving isn't
+bought with worse answers. On `matplotlib-24265` the two arms separate
+completely (Mann-Whitney U=0, exact p=0.029): every neuron session finished
+in exactly 2 turns, every control session took 4–5. Cost per run halved,
+$0.46 → $0.22.
+
+Worth knowing what that number is and isn't. It measures the value of a
+**correct** recall — the fixture injects a relevant entry, so real-world
+benefit still depends on retrieval quality against a full store. `django-11019`'s
+24.9% doesn't reach significance on its own. And at 4 repeats this design
+resolves a ~50% effect, not a 20% one. Full numbers, statistics, and the
+caveats we're still chasing are in
+[`findings.md`](benchmarks/token-ab/results/19-synthetic-fixture-counterfactual-ab/findings.md).
+
+One more result we'd rather publish than bury: measured as **files alone**
+— store on disk, agent free to ignore it — the same task landed at 12,552
+tokens, roughly half the benefit, because the agent sometimes just didn't
+look. Recall being *enforced* rather than *requested* is doing real work
+here, and it's why the hook exists.
+
+**The harness is real and runnable**, not a one-off script we deleted
+after. It's documented in
+[`benchmarks/token-ab/README.md`](benchmarks/token-ab/README.md), including
+how to add tasks and how to avoid the ways it has misled us:
 
 ```bash
-npm run bench:token-ab:dry-run   # no spend, sanity-checks the harness
-npm run bench:token-ab           # the real thing — costs real API spend
+npm run bench:swebench-ab:dry-run                        # free — validates fixtures + grading
+npm run bench:swebench-ab -- --k=4 --effort=low --cap=2.0  # the run above: ~$0.70, ~15 min
 ```
+
+Every session's full answer text, token breakdown, and per-gate grade is
+written to `results.json`, so you can re-grade our verdicts offline without
+spending anything — and disagree with them.
 
 ## 🖥️ Local dashboard
 

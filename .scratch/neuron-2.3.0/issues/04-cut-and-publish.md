@@ -72,7 +72,7 @@ writing the CHANGELOG rather than assuming these six tickets are all of it.
 ticket) resolved: the memory-supersession fix (ticket 17) confirmed to fix
 ticket 10's regression (0% memory-arm failure vs 33% control on the
 regressed 2-task subset, up from 67% before the fix, on a live 12-session
-re-run — see `.scratch/neuron-2.3.0/audits/18-rerun-counterfactual-ab-post-supersession/findings.md`).
+re-run — see `benchmarks/token-ab/results/18-rerun-counterfactual-ab-post-supersession/findings.md`).
 Ticket 18 re-ran only 2 of ticket 10's original 4 tasks (the other two were
 already saturated 3/3 on both arms and mechanically unaffected by
 supersession) — whoever cuts this release should judge whether that

@@ -19,14 +19,22 @@
  * ANSWER.md-and-deterministic-check shape ticket 10/14 already use.
  *
  * Two modes:
- *   --pilot   Control-arm-only difficulty calibration. Must be run BEFORE
- *             the full A/B: if the stripped prompt is so easy the control
- *             arm passes near 100% of the time, there's no headroom for
- *             memory to show an effect; if it's near 0%, the bug may not be
- *             diagnosable from a symptom-level description at all either
- *             way. Target: control failure rate in ticket 10's own observed
- *             17-33% range.
+ *   --pilot   Control-arm-only probe. Originally a difficulty calibration
+ *             gated on a 15-40% control failure rate, borrowed from ticket
+ *             10's observed range. THAT GATE IS RETIRED: the outcome measure
+ *             here is TOKENS, not pass rate, and under a token measure a 0%
+ *             control failure rate is the DESIRED state — both arms reaching
+ *             a correct answer is what makes the comparison apples-to-apples,
+ *             since a session that gives up early looks artificially cheap.
+ *             Pass/fail is a validity filter, not the metric. The pilot
+ *             remains useful as a cheap "do the fixtures and prompts still
+ *             work" probe before spending on both arms.
  *   (default) Full A/B, both arms.
+ *
+ * Arms: see swebench-fixtures.mjs. `injection` (default treatment) models
+ * neuron as it actually ships — session-start hook injection, paid up front.
+ * `memory` models the store merely existing on disk. They give different
+ * numbers; pick deliberately.
  *
  * Budget (approved, see ticket 19's Answer): $5 hard cap, checked after
  * every session - the run stops launching new sessions the moment
@@ -42,6 +50,12 @@
  *   node benchmarks/token-ab/run-swebench-ab.mjs --k=2                # override repeat count
  *   node benchmarks/token-ab/run-swebench-ab.mjs --cap=5              # override the hard cost cap (USD)
  *   node benchmarks/token-ab/run-swebench-ab.mjs --tasks=id1,id2
+ *   node benchmarks/token-ab/run-swebench-ab.mjs --effort=medium      # model reasoning effort (default low)
+ *   node benchmarks/token-ab/run-swebench-ab.mjs --arms=memory,control  # discovery arm instead of injection
+ *   node benchmarks/token-ab/run-swebench-ab.mjs --out=my-run         # results subdirectory name
+ *
+ * Full operator documentation, including how to add a task and how to read
+ * the scorecard without being misled by it: benchmarks/token-ab/README.md
  */
 
 import fs from 'node:fs';
@@ -60,6 +74,7 @@ const PILOT = args.includes('--pilot');
 const K = Number(args.find(a => a.startsWith('--k='))?.split('=')[1] ?? 2);
 const CONCURRENCY = Number(args.find(a => a.startsWith('--concurrency='))?.split('=')[1] ?? 1);
 const HARD_CAP_USD = Number(args.find(a => a.startsWith('--cap='))?.split('=')[1] ?? 5);
+const EFFORT = args.find(a => a.startsWith('--effort='))?.split('=')[1] ?? 'low';
 const TASK_FILTER = args.find(a => a.startsWith('--tasks='))?.split('=')[1]?.split(',');
 const TASKS = TASK_FILTER ? ALL_TASKS.filter(t => TASK_FILTER.includes(t.id)) : ALL_TASKS;
 if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
@@ -67,15 +82,32 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
   const missing = TASK_FILTER.filter(id => !found.has(id));
   throw new Error(`--tasks referenced unknown task id(s): ${missing.join(', ')}`);
 }
+// `--out=` names the results subdirectory. The `-dry-run` suffix is NOT
+// cosmetic: OUT_DIR used to key on --pilot alone, so a dry run validating a
+// fixture change silently overwrote the results.json a real, paid run had just
+// written — and did exactly that once on this ticket, destroying $0.14 of
+// captured answers. A dry run must never be able to land on a live run's path.
+const OUT_NAME = args.find(a => a.startsWith('--out='))?.split('=')[1] ?? (PILOT ? 'pilot' : 'full');
 const OUT_DIR = path.join(
   REPO_ROOT,
-  '.scratch/neuron-2.3.0/audits/19-synthetic-fixture-counterfactual-ab',
-  PILOT ? 'pilot' : 'full'
+  'benchmarks/token-ab/results/19-synthetic-fixture-counterfactual-ab',
+  DRY_RUN ? `${OUT_NAME}-dry-run` : OUT_NAME
 );
 
-const ARMS = PILOT ? ['control'] : ['memory', 'control'];
-const TREATMENT_ARM = 'memory';
+// Which arms to run. `memory` models neuron-as-files (agent must choose to
+// read .neuron/); `injection` models neuron-as-installed (session-start hook
+// puts the entries in context unconditionally, paying their cost up front).
+// Only `injection` tests the claim the shipped product makes, so it is the
+// default treatment; `memory` stays selectable because the discovery question
+// is real and was measured separately. See swebench-fixtures.mjs's header.
 const CONTROL_ARM = 'control';
+const ARMS = PILOT
+  ? [CONTROL_ARM]
+  : (args.find(a => a.startsWith('--arms='))?.split('=')[1]?.split(',') ?? ['injection', CONTROL_ARM]);
+const TREATMENT_ARM = ARMS.find(a => a !== CONTROL_ARM) ?? CONTROL_ARM;
+for (const arm of ARMS) {
+  if (!['memory', 'injection', CONTROL_ARM].includes(arm)) throw new Error(`--arms referenced unknown arm: ${arm}`);
+}
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -91,7 +123,7 @@ async function main() {
 
   console.log(
     `Ticket 19 SWE-bench-sourced synthetic-fixture A/B — ${PILOT ? 'PILOT (control-only, difficulty calibration)' : 'FULL A/B'} — ` +
-      `${DRY_RUN ? 'DRY RUN (no API calls)' : `LIVE (${MODEL}), hard cap $${HARD_CAP_USD}`}`
+      `${DRY_RUN ? 'DRY RUN (no API calls)' : `LIVE (${MODEL}, effort=${EFFORT}), hard cap $${HARD_CAP_USD}`}`
   );
   console.log(`${TASKS.length} tasks x ${ARMS.length} arm(s) x ${K} repeats = ${plan.length} sessions planned\n`);
 
@@ -136,7 +168,7 @@ async function main() {
         };
       }
       console.log(`  -> ${sessionLabel}`);
-      const result = await runSession({ client, task, arm, fixture, sessionLabel });
+      const result = await runSession({ client, task, arm, fixture, sessionLabel, effort: EFFORT });
       const sessionCost = costUsd(result.tokens);
       spentUsd += sessionCost;
       console.log(
@@ -164,6 +196,9 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     model: MODEL,
+    effort: EFFORT,
+    arms: ARMS,
+    treatmentArm: TREATMENT_ARM,
     dryRun: DRY_RUN,
     pilot: PILOT,
     taskCount: TASKS.length,
@@ -202,14 +237,15 @@ async function main() {
       );
     }
     console.log(
-      `\nToken diff (control - memory): ${summary.tokenDiff}  |  spread: ${summary.spread}  |  ` +
-        `no-measured-difference: ${summary.noMeasuredDifference}`
+      `\nToken diff (control - ${TREATMENT_ARM}): ${summary.tokenDiff}  |  spread: ${summary.spread}  |  ` +
+        `no-measured-difference: ${summary.noMeasuredDifference}` +
+        `\n  ^ pooled across tasks with different baselines — check the per-task numbers in results.json before trusting this line`
     );
     if (summary.riskCases.length) {
-      console.log(`\n⚠️  RISK ARM: memory arm got these wrong while control got them right:`);
+      console.log(`\n⚠️  RISK ARM: ${TREATMENT_ARM} arm got these wrong while control got them right:`);
       for (const c of summary.riskCases) console.log(`  - ${c.task} (repeat ${c.repeat})`);
     } else {
-      console.log('\nRisk arm: none — memory arm never lost a repeat that control won.');
+      console.log(`\nRisk arm: none — ${TREATMENT_ARM} arm never lost a repeat that control won.`);
     }
   }
 
