@@ -702,6 +702,19 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   Trusted Publisher on npmjs.com) supersedes the original "provision
   `NPM_TOKEN`" framing in both tickets' own Scope. Full detail in each
   ticket's own addendum.
+- **`2.3.0-rc2` published for real, 2026-08-09** — once the maintainer
+  registered the Trusted Publisher, [run
+  31328784737](https://github.com/kovartravis/neuron/actions/runs/31328784737)
+  went green end to end with no token anywhere in the workflow.
+  Independently verified against the live registry (not just the
+  checkmark): `npm view @kovartravis/neuron dist-tags` shows `rc:
+  '2.3.0-rc2'`, and git tag `v2.3.0-rc2` is on `origin`. This is real,
+  first-ever evidence the whole `publish.yml` mechanism works — `36`'s
+  own Scope items 1 and 2 are now fully confirmed; items 3 (a real stable
+  push) and 5 (a genuinely rejected non-exempt push) are the only
+  remainder, both left to the maintainer rather than forced artificially.
+  `36` and `21` both stay claimed, not resolved, at the maintainer's own
+  discretion to close.
 
 ## Decisions so far
 

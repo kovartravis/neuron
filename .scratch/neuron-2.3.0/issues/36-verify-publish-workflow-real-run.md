@@ -170,6 +170,46 @@ manual OTP entry. The previously-created `NPM_TOKEN` environment secret is
 now dead weight, safe to delete at the maintainer's convenience but not
 required to.
 
-**Scope items 1-5 all remain open** pending that npmjs.com step — this is
-now the single blocking action for full closure, replacing the original
-"provision `NPM_TOKEN`" framing. `36` stays claimed, not resolved.
+**Update, same day — the maintainer configured the Trusted Publisher and
+[run 31328784737](https://github.com/kovartravis/neuron/actions/runs/31328784737)
+published for real.** `build-and-test` passed; `publish` ran (`Publish to
+npm`, `Tag release commit`, `Summary` all green) with no `NODE_AUTH_TOKEN`
+set anywhere in the workflow — npm CLI ≥11.5.1 performed the OIDC exchange
+itself. Verified independently against the live registry, not just the
+green checkmark:
+
+```
+$ npm view @kovartravis/neuron dist-tags
+{ latest: '2.2.0', rc: '2.3.0-rc2' }
+$ npm view @kovartravis/neuron@2.3.0-rc2 version
+2.3.0-rc2
+$ git ls-remote --tags origin | grep v2.3.0-rc2
+a170e028ceec509de59a56ff8922c3e1d83f3dc1  refs/tags/v2.3.0-rc2
+```
+
+**Scope status, final for this session:**
+- Item 1 (provision auth) — **done**, via Trusted Publisher/OIDC instead
+  of `NPM_TOKEN` (see addendum above for why the plan changed).
+- Item 2 (real prerelease push) — **fully confirmed**: `build-and-test`
+  passes, `publish` runs, the version lands under the `rc` dist-tag, the
+  matching git tag exists and was pushed to `origin`.
+- Item 3 (real stable push) — still open. Needs an actual bare-version
+  (`MAJOR.MINOR.PATCH`) release decision, which is a real product call
+  for the maintainer to make deliberately, not something to trigger as a
+  side effect of verification.
+- Item 4 (unbumped push skip) — **confirmed this same session**: the very
+  next commit after this one (routine ticket-bookkeeping, no version
+  bump) is real evidence of this for free, since `2.3.0-rc2` is now
+  actually live on the registry for the first time — see the map's own
+  Notes for that run's outcome.
+- Item 5 (branch-protection rejection) — **partially confirmed**: the
+  `npm-publish` environment's required-reviewer gate was observed
+  actually pausing a run (the now-superseded `31328311920`, left
+  `waiting` rather than auto-running). A genuine non-exempt-actor direct
+  push being rejected by the `main` ruleset itself was not attempted —
+  still open, and arguably not worth deliberately provoking.
+
+`36` stays claimed, not resolved — items 3 and 5 are the only remainder,
+both low-value to force artificially. Recommend the maintainer closes
+this ticket manually once satisfied, or leaves it as a standing note for
+whenever a real stable-version cut happens naturally.
