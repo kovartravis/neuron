@@ -2,9 +2,9 @@ import { NeuronMemory } from '../index.js';
 import { loadConfig } from '../config/neuronYaml.js';
 import { withTimeout } from '../components/timeout.js';
 import { blueprintCardId } from '../scanner/ingest.js';
+import { compressArchitectureCard } from '../scanner/compressCard.js';
 import {
   buildPayload,
-  formatMemoryEntry,
   filterUnseen,
   loadEpochState,
   remainingEpochBudget,
@@ -17,8 +17,6 @@ import {
   LifecyclePoint,
 } from '../harnesses/index.js';
 
-const TRUNCATION_MARKER = '\n...[truncated]';
-
 interface CardPayload {
   text: string;
   includedIds: string[];
@@ -30,13 +28,14 @@ interface CardPayload {
  * a generic ranked query can rank it out of a `limit`-sized window once
  * enough other entries share the category, exactly `ingest.ts`'s own comment
  * warns about, and exactly what this repo's own `scan.category: decisions`
- * config reproduces. Truncated (not dropped) if it alone exceeds `cap` — a
- * single large document loses `buildPayload`'s whole-entry-drop semantics,
- * which exist for ranked lists of many small entries, not one document.
- * Whatever budget is left after the card goes to the existing top-N-in-
- * category query, excluding the card's own id so it never appears twice —
- * additive, since a category shared with general decision-log content (this
- * repo's own setup) is a deliberate config choice, not a bug to route around.
+ * config reproduces. Structurally compressed to `cap` if it exceeds it
+ * (ticket 27, `compressArchitectureCard`) — every module gets a chance to
+ * appear, in decreasing detail, rather than truncating raw text at whatever
+ * byte offset the budget happens to land on. Whatever budget is left after
+ * the card goes to the existing top-N-in-category query, excluding the
+ * card's own id so it never appears twice — additive, since a category
+ * shared with general decision-log content (this repo's own setup) is a
+ * deliberate config choice, not a bug to route around.
  */
 async function fetchArchitectureCardPayload(memory: NeuronMemory, category: string, cap: number): Promise<CardPayload> {
   if (cap <= 0) return { text: '', includedIds: [] };
@@ -47,11 +46,10 @@ async function fetchArchitectureCardPayload(memory: NeuronMemory, category: stri
 
   const blueprint = await memory.findById(blueprintCardId(category));
   if (blueprint) {
-    const formatted = formatMemoryEntry(blueprint);
-    const chunk =
-      formatted.length <= remaining
-        ? formatted
-        : formatted.slice(0, Math.max(0, remaining - TRUNCATION_MARKER.length)) + TRUNCATION_MARKER;
+    const prefix = `- [${blueprint.category}] `;
+    const budget = Math.max(0, remaining - prefix.length);
+    const compressed = compressArchitectureCard(blueprint.content, budget);
+    const chunk = compressed ? `${prefix}${compressed}` : '';
     if (chunk.length > 0) {
       parts.push(chunk);
       includedIds.push(blueprint.id);

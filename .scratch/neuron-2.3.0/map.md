@@ -342,6 +342,30 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   own `.neuron/decisions.md` regenerated via a real `neuron scan`; `24`'s
   `captured-card.txt` refreshed to match. `npm test` 559/559 both before
   and after the tightening pass.
+- **[27 — Structurally Compress the Architecture Card at Injection
+  Time](issues/27-structural-card-compression.md) surfaced and resolved
+  2026-08-08**, immediately after `26` — the maintainer rejected `26`'s
+  result outright ("the architecture needs to be compressible"): 49,243
+  bytes against a 6,000-char budget still meant truncation cut off after
+  ~2 of 14 subsystems, arbitrarily, by document order. Unlocked by finding
+  that `parseBaselineBlueprint` (`diff.ts`, the only consumer needing the
+  card *complete*, for `scan --diff`) only ever parses file path + `Exports:`
+  off each line — purpose/prose text is never read by anything — so an
+  *injected* rendering can drop it freely without ever desyncing drift
+  detection, as long as the stored card stays untouched. New
+  `src/scanner/compressCard.ts` (`compressArchitectureCard`) parses the card
+  into header + per-module file lists, then lays sections back out against
+  the budget in fixed order (header whole, then each module whole/partial/
+  omitted) rather than truncating raw text at an arbitrary offset — and
+  reserves a fixed budget for the omission note *before* laying out
+  anything, so a cut is never silent (an earlier draft of this same ticket's
+  own code let the note itself get dropped when there was no room left;
+  caught by its own test suite, not by inspection). Real measured result on
+  this repo: the injected card now **fits whole** (5,970 of 6,000 chars),
+  covering 7 of 14 subsystems in complete file+export detail plus an honest
+  note naming what's omitted. `scan --diff`/`--check` confirmed unaffected.
+  9 new unit tests plus the existing hook-level coverage; `npm test`
+  568/568. `24`'s `captured-card.txt` refreshed again to match.
 
 ## Decisions so far
 

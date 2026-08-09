@@ -140,4 +140,12 @@ card's header/dependency-contract/subsystem-map section, which sits before
 any per-file detail and is unaffected by `26`'s changes — no task-file
 changes needed, just the refreshed fixture content.
 
+**`captured-card.txt` refreshed again post-[27](27-structural-card-compression.md)**,
+2026-08-08: `27` replaced raw truncation with real structural compression —
+the injected card now fits whole (5,970 of 6,000 chars) with 7 of this
+repo's 14 subsystems in complete file+export detail plus an honest omission
+note, rather than an arbitrary partial-subsystem cutoff. Dry-run re-verified
+after the refresh; both tasks' grading targets still sit in the always-
+included header section, unaffected.
+
 ## Comments
