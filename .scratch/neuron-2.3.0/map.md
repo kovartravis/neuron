@@ -508,6 +508,26 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   tasks. `npm test` 578/578 unaffected. Stays claimed, not resolved, until
   a session with working credentials runs `npm run bench:swebench-ab:pilot`
   first, then the full A/B. Frontier is now `20`, `21`, `22`, `28`, `31`.
+- **[34 — Cut and Publish 2.3.0-rc2](issues/34-cut-rc2.md) graduated
+  2026-08-09** at the maintainer's direct request, immediately after `31`'s
+  resolution — a real interim release tag, not the final `04` cut (which
+  stays blocked on `01`, `02`, `03`, `15` and the rest). Modeled on
+  [neuron-2.2.0 ticket 09's own rc2
+  cut](../neuron-2.2.0/issues/09-cut-rc2.md): audit `git log
+  v2.3.0-rc1..HEAD` directly for what actually ships, not the nominal band
+  structure, since there's no per-band branch. Scopes in the Cursor adapter
+  (`02`, best-effort, not yet real-install-verified), the storage
+  vocabulary change (`05`/`06`), the architecture-card work through `27`
+  (explicitly flagging `27`'s own mid-band rejection and supersession by
+  `28`-`30`), `13`, and `31` — explicitly excludes any claim from `14`/`19`,
+  neither of which has a live run yet. Charting this ticket surfaced a real,
+  live doc-drift instance: README.md still reads "Cursor support is on the
+  roadmap" despite `02` shipping two commits after `rc1` — folded into this
+  ticket's scope rather than opened separately, alongside an audit of
+  `docs/COMMANDS.md`, `CONTEXT.md`, and the packaged `neuron-memory` skill
+  against the same trunk diff. Not wired as a blocker of `04` — an interim
+  snapshot, not a release dependency. Frontier is now `20`, `21`, `22`,
+  `28`, `32`, `34`.
 
 ## Decisions so far
 

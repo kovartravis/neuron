@@ -1134,3 +1134,15 @@ tags:
 taskId: null
 ---
 Ticket 19's synthetic counterfactual-A/B harness sources its two tasks from real SWE-bench Lite instances (astropy__astropy-12907, django__django-11133) pinned at their pre-fix base commit, rather than a hand-authored fake repo or the real SWE-bench execution harness. Pinning to base_commit gives 'answer structurally absent from the repo' for free since the fix was merged later, and borrowing only the repo/issue/gold-patch (not Docker or hidden-test execution) keeps grading a deterministic /ANSWER.md keyword check with no LLM judge, consistent with ticket 10's own no-judge rule. Task prompts are stripped to symptom-level text rather than the raw GitHub issue, because several candidate instances' real issue text already named the fix location or content -- reproducing ticket 10's own documented-answer confound was the exact failure this ticket exists to avoid, so prompt-leak became a selection/stripping criterion, not an afterthought. This is a supplement to the real-repo run (tickets 10/18), not a replacement -- the real-repo arm still measures behavior on an actual messy project that no synthetic fixture can stand in for.
+
+---
+id: 64c20754-c774-4dca-95d6-44aec980b0ae
+createdAt: 2026-08-09T13:52:59.896Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Chartered ticket 34 (Cut and Publish 2.3.0-rc2) on the neuron-2.3.0 wayfinder map, 2026-08-09, at the maintainer's request to snapshot everything on trunk since v2.3.0-rc1 into a real interim release candidate with docs audited against actual behavior. Modeled directly on neuron-2.2.0 ticket 09's own rc2 cut: because there's no per-band branch in this workflow, whatever is on trunk when an rc tag is cut is what ships, so the CHANGELOG must be written from git log v2.3.0-rc1..HEAD directly rather than assumed from the map's nominal band structure. Scoped in: the Cursor adapter (ticket 02, explicitly caveated as not yet real-install-verified), the storage vocabulary change (tickets 05/06), architecture-card work through ticket 27 (with ticket 27's own mid-band rejection by the maintainer and supersession by tickets 28-30 stated plainly, not glossed over), neuron status --check/--repair (ticket 13), and the memory list/query default fix (ticket 31). Explicitly scoped out: no benchmark findings from tickets 14/19, since neither has a live run yet. This is an interim rc, not the final 2.3.0 cut (ticket 04), so it is not wired as a blocker of 04. Found while charting: README.md's recall-fidelity section still says Cursor support is on the roadmap even though ticket 02 shipped a working CursorAdapter two commits after rc1 - a live instance of the exact claims-must-match-behavior gap this whole map exists to close - folded into ticket 34's scope alongside an audit of docs/COMMANDS.md, CONTEXT.md, and the packaged neuron-memory skill against the same trunk diff.
