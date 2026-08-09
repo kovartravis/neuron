@@ -282,7 +282,7 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   graduated [24 — Architecture Card A/B: With vs
   Without](issues/24-architecture-card-ab.md) for it rather than folding
   proof-of-value into this build ticket, the same split `18` used for `17`.
-  Frontier is now `05`, `13`, `14`, `19`, `20`, `21`, `22`, `24`.
+  Frontier is now `05`, `13`, `14`, `19`, `20`, `21`, `22`.
 - **[25 — Architecture Card: Fetch by Stable Id, Truncate Instead of Drop
   When Oversized](issues/25-architecture-card-stable-id-and-truncation.md)
   surfaced and resolved 2026-08-08**, mid-session while scoping `24` against
@@ -308,6 +308,17 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   `neuron exec`'s `autoRescanIfDriftDetected` refreshed it live, mid-session,
   as this ticket's own source changes landed. 2 new tests, full suite
   559/559.
+- **[24 — Architecture Card A/B](issues/24-architecture-card-ab.md) claimed
+  and built, not resolved, 2026-08-08.** Harness complete and dry-run
+  validated (`benchmarks/architecture-card-ab/`, reusing `token-ab/
+  session.mjs`), using the real post-`25` captured card content and two
+  tasks graded against it. The live 8-session pilot failed on a credentials
+  gap — see the *Not yet specified* entry on the A/B harness's execution
+  mechanism and funding, now concretely blocking rather than open. `24`
+  stays claimed and open (not resolved, not out of scope) — it isn't in the
+  frontier list below since a claimed ticket never is, but it's the first
+  thing to pick back up once an execution path is chosen. Frontier is now
+  `05`, `13`, `14`, `19`, `20`, `21`, `22`.
 
 ## Decisions so far
 
@@ -646,8 +657,19 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   git-log index cannot cover, so "replace" and "supplement" are materially
   different products, not just an implementation detail. Cannot be ticketed
   until `14` answers whether the premise holds at all.
-- **The A/B harness's execution mechanism and funding.** Neither `10` nor
-  `14` specifies whether the "N tasks × 2 arms × k repeats" sessions run as
+- **The A/B harness's execution mechanism and funding — now concretely
+  blocking, not just open.** [24](issues/24-architecture-card-ab.md) built
+  and dry-run-validated a real harness 2026-08-08, then hit this exact
+  question live: this session's sandbox has no `ANTHROPIC_API_KEY`, and
+  `@anthropic-ai/sdk`'s fallback OAuth credential discovery can't reach its
+  token endpoint from here, so the scripted 8-session pilot failed 2
+  sessions in. Maintainer chose to stop rather than pick a path this
+  session; `24` is left open, harness ready, for whichever path (supplied
+  API key, or driving the sessions as live Claude Code subagents instead of
+  a scripted harness) gets chosen next.
+
+  The underlying question predates `24`: neither `10` nor `14` specifies
+  whether the "N tasks × 2 arms × k repeats" sessions run as
   real Claude Code sessions (covered by whatever Claude Code subscription
   the maintainer already pays for, not separately metered) or as a scripted
   Claude API harness (billed per-token against a separate Anthropic Console
@@ -664,6 +686,22 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   could fund a small `N`×`k`, but this needs pricing against the tasks `10`
   actually picks, not a guess). Whichever ticket claims `10` should settle
   this before spending anything, per `10`'s own Scope item 6.
+
+- **`findById` doesn't fully reconcile a cold store.** Found 2026-08-08 while
+  building [24](issues/24-architecture-card-ab.md)'s A/B fixtures: `findById`
+  calls `this.router.query({ limit: 0 })` to force a reconcile before its raw
+  SQLite read, but on a genuinely cold store (fresh worktree, brand-new
+  project, first invocation ever) that `limit: 0` call doesn't actually
+  populate the mirror — confirmed live, a fresh git worktree's very first
+  `neuron hook claude-code session-start` missed the architecture card
+  entirely (`findById` returned not-found for a row a normal `query()`
+  immediately afterward found under the exact same id), while every call
+  after that first one succeeded, since the mirror was warmed by then. Self-
+  healing after one miss, so low severity, but affects `findById` broadly —
+  including the `--supersedes` flow (`17`) — not just `25`'s new call site.
+  Whether the fix is making `router.query({limit:0})` actually force a real
+  reconcile, or `findById` falling back to a `limit:1` query on a miss, is
+  unformed.
 
 ## Out of scope
 

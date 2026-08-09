@@ -1,0 +1,74 @@
+- [decisions] # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
+
+## 🚀 System Purpose & Tech Stack
+@kovartravis/neuron is a nodejs, typescript software system structured into 14 primary architectural modules.
+
+## 🔬 Parser Fidelity
+Default: `ast/2`
+
+## 🧾 Dependency Contract
+- `@anthropic-ai/sdk`
+- `@huggingface/transformers`
+- `@types/better-sqlite3`
+- `@types/node`
+- `env-paths`
+- `onnxruntime-web`
+- `tsx`
+- `typescript`
+- `vitest`
+- `web-tree-sitter`
+- `yaml`
+- `zod`
+
+## 🔗 Subsystem Dependency Map
+```text
+@kovartravis/neuron
+├── benchmarks (benchmarks)
+├── longmemeval (benchmarks/longmemeval)
+├── src (src)
+├── commands (src/commands)
+├── components (src/components)
+├── config (src/config)
+├── e2e (src/e2e)
+├── harnesses (src/harnesses)
+├── models (src/models)
+├── scanner (src/scanner)
+├── shared (src/shared)
+├── storage (src/storage)
+├── ui (src/ui)
+└── e2e (test/e2e)
+```
+
+## 📦 Primary Subsystems & Module Boundaries
+
+### 🧩 benchmarks (`benchmarks`)
+Primary benchmarks module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/e2e-runner.js`**: Driver for the deep E2E benchmark & correctness suite. Pillar results come from vitest's JSON reporter and the metrics file the suite itself writes — never from scraping stdout. The previous revision inferred status with `!output.includes(name) || overallPassed`, which marked a pillar PASSED precisely when it had NOT run, so a suite that died early scored better than one that ran and failed.
+- **`benchmarks/generate-dashboard.js`** (Exports: `generateDashboard`): Renders the benchmark dashboard from the artifacts the suites write. Self-contained output: inline CSS/SVG, no network fetches, no chart library. Charts use a single series hue because every plot here shows one measure across categories (magnitude), not competing identities — categorical colors would imply a distinction that does not exist. Pass/fail uses the reserved status palette and always pairs color with an icon and a text label, so state is never carried by hue alone.
+- **`benchmarks/open-report.js`**: Regenerates the dashboard from whatever artifacts are on disk and opens it. Kept separate from the runner so the report can be viewed without re-running a benchmark that takes minutes.
+
+### 🧩 longmemeval (`benchmarks/longmemeval`)
+Primary longmemeval module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/longmemeval/neuron.py`** (Exports: `NeuronMemoryProvider`): This code file defines a memory provider class for(neuron) that uses SQLitewal mode, FTS5 full-text indexing, local BGE vector embeddings, and Reciprocal Rank Fusion (RRF). The constructor initializes a memory provider instance and ensures that it can obtain a proc using the Popen
+- **`benchmarks/longmemeval/relevance_gate_eval.py`** (Exports: `eval_floor, eval_full_gate, reject, pctl`): Source file relevance_gate_eval.py (Methods: leg(), prose(), fix(), result()) exports primary project types and helper functions.
+- **`benchmarks/longmemeval/retrieval_eval.py`**: Memory benchmarking of a single-neuron LeMMA model. The model needs to put any gold evidence before the reader. Only a zero-level call costs no API quota (for local CPU). N is set to the number of queries loaded by the dataset "longmemeval". After loading the
+
+### 🧩 src (`src`)
+Primary src module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`src/cli.test.ts`**: Source file cli.test.ts (Methods: describe(), join(), beforeAll(), mkdirSync()) exports primary project types and helper functions.
+- **`src/cli.ts`**: Source file cli.ts (Methods: main(), slice(), log(), exit()) exports primary project types and helper functions.
+- **`src/db.test.ts`**: Source file db.test.ts (Methods: describe(), it(), openDatabase(), expect()) exports primary project types and helper functions.
+- **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase`): The `createNodeSqliteWrapper` function is used to establish a connection with a SQLite database using Node.js, without loading it as a module. It initializes a DatabaseSync instance, creates a new transaction on the database (if provided), executes SQL queries within the transaction and returns a single row value
+- **`src/enrichment.test.ts`**: Write-side enrichment, asserted at the transaction entry point — what ends up in the store. That was once two seams; the query seam carried the enrichment backlog's drain guarantee, and ticket 26 removed the only deferred job, so a read has no enrichment behaviour left to assert. Nothing here asserts how a tag was chosen. The category strategy in particular was A/B'd precisely because its winner was unknown, so tests that pinned the mechanism would have been rewritten by the experiment they existed to support.
+- **`src/fieldSchema.test.ts`**: Declarable per-category frontmatter fields (ticket 43 / ADR 0013), asserted at the `transact()` choke point — required-but-missing, defaults, enum membership, and the reject-undeclared-field guard — plus the markdown round-trip that makes a written field value durable. Storage: SQLite column support for `vector`-storage categories shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column migration and round-trip coverage. These tests use `storage.mode: md` where the markdown round-trip is meaningful.
+- **`src/index.supersession.test.ts`**: Source file index.supersession.test.ts (Methods: primitives(), vecAt(), Float32Array(), describe()) exports primary project types and helper functions.
+- **`src/index.test.ts`**: Source file index.test.ts (Methods: describe(), it(), NeuronMemory(), getDb()) exports primary project types and helper functions.
+- **`src/index.ts`** (Exports: `NeuronMemory`): Resolve a `category` from a mutation/query, supporting the deprecated `kind` field. Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
+- **`sr
+...[truncated]
