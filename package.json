@@ -21,6 +21,9 @@
     "local-vector-search"
   ],
   "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "main": "./dist/index.js",
   "bin": {
     "neuron": "dist/cli.js"
