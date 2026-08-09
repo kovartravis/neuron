@@ -23,7 +23,9 @@ import {
   MutationResult,
   MaintenancePolicy,
   MaintenanceReport,
-  NeuronMemoryOptions
+  NeuronMemoryOptions,
+  FieldComplianceViolation,
+  FieldRepairOutcome
 } from './models/index.js';
 
 export { openDatabase };
@@ -889,6 +891,136 @@ export class NeuronMemory {
     }
 
     return { ...m, fields: Object.keys(resolved).length > 0 ? resolved : undefined };
+  }
+
+  // --- Field-schema validation & repair (ticket 13 / ADR 0013) --------------
+
+  /**
+   * Every live entry across every category missing a value for a field that
+   * is *currently* declared required — including entries written before the
+   * field existed, or before `required: true` was set on it. Reads never
+   * hard-error on this (ADR 0013 "Pre-existing entries"); `neuron status
+   * --check` is the only surface that reports it.
+   */
+  public async checkFieldCompliance(): Promise<FieldComplianceViolation[]> {
+    if (!this.db) return [];
+    // Force a reconcile first — the same `router.query({ limit: 0 })` pattern
+    // `findById`/`findSupersessionCandidate` use — so md-mode entries are
+    // visible in the SQLite mirror this check reads from directly.
+    await this.router.query({ limit: 0 });
+
+    const violations: FieldComplianceViolation[] = [];
+
+    for (const [category, catConfig] of Object.entries(this.config.categories)) {
+      const requiredKeys = Object.entries(catConfig.fields ?? {})
+        .filter(([, def]) => def.required)
+        .map(([key]) => key);
+      if (requiredKeys.length === 0) continue;
+
+      const rows = this.db.prepare(`
+        SELECT id${this.fieldSelectSql()}
+        FROM memories
+        WHERE project_id = ? AND category = ? AND superseded_by IS NULL
+      `).all(this.projectId, category) as any[];
+
+      for (const row of rows) {
+        const missingRequiredFields = requiredKeys.filter((key) => {
+          const value = row[this.fieldColumnName(key)];
+          return value === null || value === undefined;
+        });
+        if (missingRequiredFields.length > 0) {
+          violations.push({ id: row.id, category, missingRequiredFields });
+        }
+      }
+    }
+
+    return violations;
+  }
+
+  /**
+   * Fixes what `checkFieldCompliance` finds and is safely fixable: a
+   * configured `default:`, or centroid-based inference for enum-typed fields
+   * only — the same content-to-label mechanism write-side tag/category
+   * enrichment already uses (ADR 0010's measured 9/9 vs. the model's 1/9).
+   * Never fabricates a value for a free-text identity field (`reviewedBy`,
+   * `ticket`, …) — there is no content signal that could produce a person's
+   * name or a ticket number. Those, and any enum field with no other entry
+   * to build a confident centroid from yet, come back in `unresolved`
+   * untouched, for a human or an agent told to go find the real answer.
+   */
+  public async repairFieldCompliance(): Promise<FieldRepairOutcome[]> {
+    const violations = await this.checkFieldCompliance();
+    if (violations.length === 0) return [];
+
+    // One centroid set per (category, field) pair, built lazily from every
+    // other live entry in that category already carrying a value for that
+    // field — a category with no enum violations never pays for a build.
+    const centroidCache = new Map<string, Centroid[]>();
+    const centroidsFor = (category: string, key: string, values: string[]): Centroid[] => {
+      const cacheKey = `${category}::${key}`;
+      const cached = centroidCache.get(cacheKey);
+      if (cached) return cached;
+      const column = this.fieldColumnName(key);
+      const rows = this.db.prepare(`
+        SELECT embedding, ${column} as value FROM memories
+        WHERE project_id = ? AND category = ? AND superseded_by IS NULL AND ${column} IS NOT NULL
+      `).all(this.projectId, category) as any[];
+      const centroids = buildCategoryCentroids(
+        rows.map((r) => ({ category: r.value as string, embedding: toFloat32(r.embedding) })),
+        values
+      );
+      centroidCache.set(cacheKey, centroids);
+      return centroids;
+    };
+
+    const outcomes: FieldRepairOutcome[] = [];
+
+    for (const violation of violations) {
+      const fieldDefs = this.config.categories[violation.category]?.fields ?? {};
+      const applied: Record<string, string> = {};
+      const unresolved: string[] = [];
+      let rowEmbedding: Float32Array | null = null;
+
+      for (const key of violation.missingRequiredFields) {
+        const def = fieldDefs[key];
+        if (!def) continue; // no longer declared — nothing left to repair against
+
+        if (def.default !== undefined) {
+          applied[key] = def.default;
+          continue;
+        }
+
+        if (def.type !== 'enum') {
+          unresolved.push(key);
+          continue;
+        }
+
+        if (rowEmbedding === null) {
+          const embRow = this.db.prepare(
+            `SELECT embedding FROM memories WHERE id = ? AND project_id = ?`
+          ).get(violation.id, this.projectId) as { embedding: Buffer } | undefined;
+          rowEmbedding = embRow ? toFloat32(embRow.embedding) : new Float32Array(0);
+        }
+
+        const centroids = centroidsFor(violation.category, key, def.values);
+        const inferred = rowEmbedding.length > 0 ? selectCategory(rowEmbedding, centroids) : undefined;
+        if (inferred) {
+          applied[key] = inferred;
+        } else {
+          unresolved.push(key);
+        }
+      }
+
+      if (Object.keys(applied).length > 0) {
+        await this.transact([
+          { op: 'update', category: violation.category, id: violation.id, fields: applied },
+        ]);
+      }
+
+      outcomes.push({ id: violation.id, category: violation.category, applied, unresolved });
+    }
+
+    return outcomes;
   }
 
   // --- Write-side enrichment ------------------------------------------------

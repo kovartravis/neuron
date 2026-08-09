@@ -400,6 +400,62 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   silently) carry forward into `30`, applied to the new artifact — not
   wasted, just no longer the whole answer. Frontier is now `13`, `14`,
   `19`, `20`, `21`, `22`, `28`.
+- **[13 — `neuron status --check`/`--repair`](issues/13-status-check-repair.md)
+  resolved 2026-08-09.** No open design questions — carried `36`/ADR 0013's
+  design forward unchanged, so this was a straight implementation session.
+  `NeuronMemory.checkFieldCompliance()`/`repairFieldCompliance()`
+  (`src/index.ts`) report and fix live entries missing a *currently*-required
+  field; repair applies a configured `default:` first, then centroid-based
+  inference for enum-typed fields only (reusing write-side category
+  enrichment's own `buildCategoryCentroids`/`selectCategory` directly rather
+  than duplicating the math), and leaves free-text identity fields and
+  low-evidence enum fields `unresolved` rather than fabricating anything.
+  Wired into `neuron status --check`/`--repair`, mutually exclusive, both
+  exit `1` on remaining non-compliance — the same CI-gate posture `scan
+  --check` set. **Found and fixed a real pre-existing bug while wiring
+  this in**: `src/cli.ts`'s `status` branch returned
+  `handleStatusCommand(memory)` without `await` inside a
+  `try { ... } finally { memory.close(); }`, so `memory.close()` could run
+  before a pending continuation inside the handler resumed — silently
+  absorbed until now by the old scan-drift path's blanket `catch`, surfaced
+  immediately as a hard `TypeError` once `--check`/`--repair` added a real
+  await with no such catch. Fixed to match every other subcommand branch,
+  which already awaited. 10 new tests (8 unit, 2 CLI-level); `npm test`
+  578/578 (up from 568); `tsc --noEmit` clean; `npm run test:e2e` skipped,
+  no coupling found (same reasoning `05`/`06`/`23` used). Dogfooded clean
+  against this repo's own store. Docs swept (`docs/COMMANDS.md`,
+  `MASTER_HELP`). Frontier is now `14`, `19`, `20`, `21`, `22`, `28`.
+- **Grilled a new idea 2026-08-09, immediately after `13`'s resolution**:
+  the maintainer wants future sessions' work reliably discoverable for
+  downstream synthesis tasks (the README was the concrete trigger) — right
+  now an agent asked to write it only sees whatever fit through the hook's
+  per-epoch injection budget. Modeled explicitly on tickets 28-30's
+  index+detail-card restructuring of the architecture card, but a different
+  mechanism: instead of making detail reachable via ordinary relevance
+  recall (28-30's approach — no hint needed), the hook actively teaches the
+  agent the query surface exists, via a conditional, per-turn, *literal*
+  ready-to-run command (`neuron memory query "<prompt text>" --limit
+  <real-count>`), fired only when a cheap FTS `COUNT` shows the existing
+  recall left a real, counted gap — never a static repeated note (which
+  would hit the same redundancy ticket 08 already measured against
+  `history`). No session-start equivalent — ruled out as resident-but-
+  unearned content, the same class ticket 09 already trimmed. Store-wide
+  scope, matching the existing pre-prompt query's own scope. Three tickets
+  graduated: [31 — Fix `neuron memory` Query/List Default Ordering and
+  Limits](issues/31-fix-query-list-defaults.md) (unblocked; two independent
+  pre-existing bugs found while grounding this — list mode orders
+  oldest-first, and shares text-query mode's `limit ?? 5` default despite
+  answering a different question), [32 — Per-Prompt Discovery-Command
+  Hint](issues/32-per-prompt-discovery-command-hint.md) (blocked by `31` —
+  no point pointing at a command with broken defaults), and [33 — Measure
+  Whether the Discovery-Command Hint Gets Used](issues/33-measure-discovery-
+  hint-usage.md) (blocked by `32`, the same split-proof-of-value-from-build
+  move `11`→`24` and `17`→`18` used, motivated directly by `10`'s finding
+  that the memory arm sometimes performed *worse*). Landed on this map
+  rather than a new one — small enough in shape, and touches the same
+  `hook.ts` pre-prompt path `08`/`09`/`11` already own (all three already
+  resolved, so no live blocking from them). Frontier is now `14`, `19`,
+  `20`, `21`, `22`, `28`, `31`.
 
 ## Decisions so far
 

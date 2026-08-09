@@ -236,6 +236,17 @@ already reconcile markdown into the index automatically.
 Prints database, Markdown storage, embedding model and architectural drift status
 as JSON.
 
+`--check`/`--repair` fold in the validation surface ADR 0013 describes: entries
+whose category's *currently*-declared `fields` schema (see Configuration below)
+they violate — most commonly a field declared `required` after the entry was
+written. Reads never hard-error on this; these flags are the only surface that
+reports it.
+
+| Flag | Description |
+|---|---|
+| `--check` | List entries missing a currently-required field; exits `1` if any |
+| `--repair` | Apply a configured `default:`, or centroid-based inference for enum-typed fields only. Never fabricates a value for a free-text field (e.g. `reviewedBy`, `ticket`) — those come back unresolved, and `--repair` exits `1` if anything is left unresolved |
+
 ---
 
 ## `neuron ui`

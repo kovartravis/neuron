@@ -3140,3 +3140,27 @@ tags:
 taskId: null
 ---
 Resolved wayfinder ticket 23 (neuron-2.3.0): fixed init.test.ts's missing package.json isolation guard, first in the named harness-idempotent-test case, then found 4 more identical gaps in the file's first four tests via a full per-test audit of every execSync/spawnSync CLI test file. All five fixed; npm test run twice consecutively (552/552 both times) confirmed .neuron/ stays byte-identical. Ticket resolved, map updated, frontier now 11/13/14/19/20/21/22.
+
+---
+id: 358959e8-6335-40be-b308-6791007d4225
+createdAt: 2026-08-09T11:57:16.489Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "13"
+---
+Wayfinder pickup on the neuron-2.3.0 map: claimed the frontier's first ticket, 13 (neuron status --check/--repair), an implementation task carrying forward ADR 0013's design with no open design questions. Built NeuronMemory.checkFieldCompliance()/repairFieldCompliance() in src/index.ts, reusing write-side category enrichment's buildCategoryCentroids/selectCategory directly (not duplicated) for enum-field inference, applying configured defaults first, and never fabricating free-text identity fields. Wired into 'neuron status --check'/'--repair' (mutually exclusive, both exit 1 on remaining non-compliance, matching scan --check's CI-gate posture). Found and fixed a real pre-existing bug mid-session: cli.ts's status branch returned handleStatusCommand(memory) without awaiting it inside a try/finally that closes the db, a race silently absorbed until now by the old scan-drift path's blanket catch. 10 new tests (8 unit in src/statusCheckRepair.test.ts, 2 CLI-level in status.test.ts); npm test 578/578; tsc clean; docs swept (COMMANDS.md, MASTER_HELP). Resolved ticket 13 on the map, refreshed the architecture blueprint (two new exported types), and left the frontier at 14, 19, 20, 21, 22, 28.
+
+---
+id: e781939b-f850-4765-8d20-c400809b547e
+createdAt: 2026-08-09T12:20:49.073Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Wayfinder session continued after resolving ticket 13: ran a full /grilling session with the maintainer (10 sequential decisions) sparked by a postscript question about making future session work discoverable for downstream synthesis (README-writing was the trigger example). Landed on a per-prompt, count-gated, literal ready-to-run neuron memory query command injected into the pre-prompt hook payload -- not a static hint, not a session-start addition, and not the same redundancy shape ticket 08 already ruled out. Graduated tickets 31 (query/list default bugs -- oldest-first ordering, shared limit default), 32 (the hint itself, blocked by 31), and 33 (measure real usage/benefit, blocked by 32, matching this map's 11-to-24 and 17-to-18 proof-of-value-split precedent) onto the neuron-2.3.0 map rather than spinning up a new map. Appended a Notes entry to map.md documenting the reasoning. No code written this half of the session -- planning only, per wayfinder's plan-don't-do default. Frontier is now 14, 19, 20, 21, 22, 28, 31.

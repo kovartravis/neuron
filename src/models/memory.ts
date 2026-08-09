@@ -72,3 +72,30 @@ export interface MutationResult {
   status: string; // 'created' | 'updated' | 'deleted' | 'not_found'
   project: string;
 }
+
+/**
+ * One live entry violating its category's *currently*-declared field schema
+ * (ticket 13 / ADR 0013's "Pre-existing entries: read and report, never
+ * refuse to read" — a required field declared after the entry was written
+ * is reported here, never a read-time error).
+ */
+export interface FieldComplianceViolation {
+  id: string;
+  category: string;
+  /** Config keys (not flag names) of every required field with no stored value. */
+  missingRequiredFields: string[];
+}
+
+/**
+ * `neuron status --repair`'s outcome for one violating entry (ticket 13 /
+ * ADR 0013). `applied` is what was safely written back — a configured
+ * `default:`, or centroid-based inference for an enum-typed field. `unresolved`
+ * is left exactly as reported: either a free-text identity field (never
+ * fabricated) or an enum field with no confident centroid match yet.
+ */
+export interface FieldRepairOutcome {
+  id: string;
+  category: string;
+  applied: Record<string, string>;
+  unresolved: string[];
+}

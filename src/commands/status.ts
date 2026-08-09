@@ -2,8 +2,42 @@ import { NeuronMemory } from '../index.js';
 import { loadNeuronConfig } from '../config/neuronYaml.js';
 import { getArchitecturalDrift } from '../scanner/diff.js';
 import { summarizeRecallCost } from '../harnesses/index.js';
+import { parseFlags, STATUS_HELP } from './utils.js';
 
-export async function handleStatusCommand(memory: NeuronMemory): Promise<void> {
+/**
+ * Ticket 13 / ADR 0013: the validation surface `neuron doctor` was ruled out
+ * twice for, reopened folded into `status` instead of a new top-level
+ * command. `--check` and `--repair` are mutually exclusive report modes —
+ * neither touches the default `status` JSON payload below them.
+ */
+export async function handleStatusCommand(memory: NeuronMemory, args: string[] = []): Promise<void> {
+  const { options } = parseFlags(args.slice(1));
+
+  if (options.help) {
+    console.log(STATUS_HELP);
+    return;
+  }
+
+  if (options.check && options.repair) {
+    console.error('Error: --check and --repair are mutually exclusive');
+    process.exitCode = 1;
+    return;
+  }
+
+  if (options.repair) {
+    const repaired = await memory.repairFieldCompliance();
+    console.log(JSON.stringify({ repaired }));
+    if (repaired.some((o) => o.unresolved.length > 0)) process.exitCode = 1;
+    return;
+  }
+
+  if (options.check) {
+    const violations = await memory.checkFieldCompliance();
+    console.log(JSON.stringify({ compliant: violations.length === 0, violations }));
+    if (violations.length > 0) process.exitCode = 1;
+    return;
+  }
+
   const status = memory.getStatus();
   const config = loadNeuronConfig(process.cwd());
 

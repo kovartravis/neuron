@@ -106,6 +106,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     noProgress?: boolean;
     diff?: boolean;
     check?: boolean;
+    repair?: boolean;
     yes?: boolean;
     noHooks?: boolean;
     overwriteHooks?: boolean;
@@ -143,6 +144,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let noProgress: boolean | undefined;
   let diff: boolean | undefined;
   let check: boolean | undefined;
+  let repair: boolean | undefined;
   let yes: boolean | undefined;
   let noHooks: boolean | undefined;
   let overwriteHooks: boolean | undefined;
@@ -186,6 +188,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       diff = true;
     } else if (arg === '--check') {
       check = true;
+    } else if (arg === '--repair') {
+      repair = true;
     } else if (arg === '--tags') {
 
       const val = args[++i];
@@ -323,6 +327,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       noProgress,
       diff,
       check,
+      repair,
       yes,
       noHooks,
       overwriteHooks,
@@ -384,6 +389,7 @@ Commands:
   init                 Bootstrap the project for agentic memory store (pre-downloads ONNX models with progress bar)
   exec -- <command>    Run a command with pre-command memory lookup
   status               Display status details for active database, project, embedding cache, and architectural drift
+                        (--check/--repair reports and fixes entries violating a category's declared field schema)
   memory <subcommand>  Manage memories across any category (use --category <name>)
   scan                 Scan project topology and manifests, ingest an architectural blueprint, and detect drift
   sync                 Sync memories between .neuron/*.md files and the vector database
@@ -396,6 +402,38 @@ Options:
   -h, --help           Show this help information
 
 Run 'neuron memory --help' or 'neuron scan --help' for details.`;
+
+export const STATUS_HELP = `Usage: neuron status [flags]
+
+With no flags, prints database/model/storage/enrichment/drift status as JSON.
+
+With --check or --repair, reports on entries whose category's *currently*
+declared field schema (neuron.yaml categories.<name>.fields) they violate —
+most commonly a field that was declared required after the entry was
+written. Reads never hard-error on this; these flags are the only surface
+that reports it (ADR 0013).
+
+Options:
+  --check                        List entries missing a currently-required field
+  --repair                       Fix what's safely fixable and report the result
+
+--repair applies a configured "default:" where one exists, and otherwise
+offers centroid-based inference for enum-typed fields only (the same
+content-to-label mechanism write-side tag/category inference uses). It never
+fabricates a value for a free-text identity field (e.g. "reviewedBy",
+"ticket") — there is no content signal that could produce a person's name or
+a ticket number. Those, and any enum field with no other entry to build a
+confident centroid from yet, come back unresolved for a human or an agent
+told to go find the real answer.
+
+Exit codes (--check / --repair):
+  0                              Compliant, or every violation repaired
+  1                              Violations found (--check), or some left unresolved (--repair)
+
+Examples:
+  neuron status                  Full status JSON
+  neuron status --check          List non-compliant entries, exit 1 if any
+  neuron status --repair         Fix what's fixable, exit 1 if anything is left unresolved`;
 
 export const SCAN_HELP = `Usage: neuron scan [flags]
 

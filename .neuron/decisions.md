@@ -522,6 +522,7 @@ Primary src module containing core application capabilities.
 - **`src/index.test.ts`**: Methods: describe(), it(), NeuronMemory(), getDb().
 - **`src/index.ts`** (Exports: `NeuronMemory`): Resolve a `category` from a mutation/query, supporting the deprecated `kind` field. Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
 - **`src/sqliteFieldSchema.test.ts`**: SQLite additive auto-migration for declared category fields (ticket 44 / ADR 0013) — the `vector`-storage counterpart to `fieldSchema.test.ts`'s markdown round-trip. Covers the migration mechanics (additive, idempotent, never `DROP COLUMN`) and the write-then-query round trip through real SQLite columns rather than frontmatter.
+- **`src/statusCheckRepair.test.ts`**: `neuron status --check`/`--repair` (ticket 13 / ADR 0013): reporting and fixing live entries that violate a category's currently-declared field schema. The interesting case is always the same shape — a field became required (or was newly declared with a default, or newly declared enum) after some entries were already written — simulated below by writing against one `neuron.yaml`, then reopening a fresh `NeuronMemory` against the same store with an evolved config, exactly as a real upgrade would.
 
 ### 🧩 commands (`src/commands`)
 Primary commands module containing core application capabilities.
@@ -548,7 +549,7 @@ Primary commands module containing core application capabilities.
 - **`src/commands/scan.test.ts`**: Methods: describe(), join(), it(), execSync().
 - **`src/commands/scan.ts`** (Exports: `handleScanCommand`): Function handleScanCommand (Methods: handleScanCommand(), log(), parseFlags(), cwd()).
 - **`src/commands/status.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
-- **`src/commands/status.ts`** (Exports: `handleStatusCommand`): Function handleStatusCommand (Methods: handleStatusCommand(), getStatus(), loadNeuronConfig(), 07()).
+- **`src/commands/status.ts`** (Exports: `handleStatusCommand`): Ticket 13 / ADR 0013: the validation surface `neuron doctor` was ruled out twice for, reopened folded into `status` instead of a new top-level command. `--check` and `--repair` are mutually exclusive report modes — neither touches the default `status` JSON payload below them.
 - **`src/commands/sync.test.ts`**: A genuine content conflict (both sides present, different content) used to be silently resolved by comparing createdAt, which ties in the common case and defaulted to markdown winning — including when markdown was the stale side. Without --force, `sync` must now report the conflict, leave both stores untouched, and exit non-zero so a script or CI run notices rather than silently accepting a guessed resolution.
 - **`src/commands/sync.ts`** (Exports: `handleSyncCommand, scaffoldNeuronDirectory`): Function handleSyncCommand (Methods: handleSyncCommand(), some(), includes(), error()).
 - **`src/commands/ui.test.ts`**: Methods: describe(), afterEach(), close(), it().
@@ -619,7 +620,7 @@ Primary models module containing core application capabilities.
 **Key Components & Export Contracts:**
 - **`src/models/index.ts`**: No exported symbols detected.
 - **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): No exported symbols detected.
-- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult`): @deprecated Use plain `string` for category names instead.
+- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome`): @deprecated Use plain `string` for category names instead.
 - **`src/models/options.ts`** (Exports: `NeuronMemoryOptions`): Injected write-side enricher. Tests supply a stub so the transaction seam can be exercised without loading a 500M-parameter model; production leaves it unset and gets `LocalEnrichmentModel`.
 
 ### 🧩 scanner (`src/scanner`)
@@ -628,7 +629,8 @@ Primary scanner module containing core application capabilities.
 **Key Components & Export Contracts:**
 - **`src/scanner/analyzer.test.ts`**: Class ServerApp (Methods: describe(), join(), beforeAll(), mkdirSync()).
 - **`src/scanner/analyzer.ts`** (Exports: `isIgnoredEntryName, ModuleSummary, ScanResult, scanProjectTopology`): Traversal rules shared by the topology scan and the drift fingerprint guard. Both must agree on exactly which files feed a scan: if the guard watches a narrower set than the scanner reads, edits to the difference are invisible and drift is never re-checked. Derived from the parser's own language list so the filter can never be narrower than what TreeSitterScanner can actually parse — a mismatch here silently hides whole languages (previously .tsx/.jsx/.cpp) from every scan.
-- **`src/scanner/compressCard.ts`** (Exports: `compressArchitectureCard`): Compresses a full architecture blueprint card down to a target character budget for injection, without touching the stored card `neuron scan --diff` reads (ticket 27, following 25/26). `parseBaselineBlueprint` (`diff.ts`) — the only consumer that needs the card to be complete — parses exactly two things off each component line: the file path and its `Exports:` list. The purpose/prose text after the colon is never read by drift detection at all, so it's the first and only thing this function drops; nothing here can desync `scan --diff`. Degrades in a fixed order, structurally rather than by truncating raw text at an arbitrary byte offset (25's problem: whichever module happened to be first in the document was the only one that ever survived): 1. Header (purpose, dependency contract, subsystem map) — always kept whole; it's small and it's the highest-value, most-stable part. 2. Per module, in order: heading + every file line with purpose text stripped (file + exports only). 3. If a module's full file list still doesn't fit, as many file lines as fit, then a "+N more files" note for that module. 4. If a module's heading alone doesn't fit, the whole module is skipped and counted in a trailing omission note — so every module gets a chance to appear before any single one exhausts the budget.
+- **`src/scanner/compressCard.test.ts`**: Methods: fakeCard(), from(), join(), describe().
+- **`src/scanner/compressCard.ts`** (Exports: `compressArchitectureCard`): Compresses a full architecture blueprint card down to a target character budget for injection, without touching the stored card `neuron scan --diff` reads (ticket 27, following 25/26). `parseBaselineBlueprint` (`diff.ts`) — the only consumer that needs the card to be complete — parses exactly two things off each component line: the file path and its `Exports:` list. The purpose/prose text after the colon is never read by drift detection at all, so it's the first and only thing this function drops; nothing here can desync `scan --diff`. Degrades in a fixed order, structurally rather than by truncating raw text at an arbitrary byte offset (25's problem: whichever module happened to be first in the document was the only one that ever survived): 1. Header (purpose, dependency contract, subsystem map) — always kept whole; it's small and it's the highest-value, most-stable part. 2. Per module, in order: heading + every file line with purpose text stripped (file + exports only). 3. If a module's full file list still doesn't fit, as many file lines as fit for that module, then every module after it is omitted. A fixed budget is reserved for the omission note up front, before laying out any module — never computed after the fact — so a cut is never silent: either everything fits and no note is needed, or something was cut and the note announcing that is guaranteed room to appear.
 - **`src/scanner/degradation-warning.test.ts`**: Scope item 2: a language that should have parsed from an AST but could not must say so loudly, not degrade in silence. The distinction that matters: Ruby and PHP have no grammar in 2.2.0 at all, so their regex fidelity is expected and unremarkable. TypeScript falling back means something went wrong with the install, and the resulting card is worse than the user has any reason to expect.
 - **`src/scanner/diff.test.ts`**: The same card, declaring the fidelity the current scan is produced at. Drift tests must use this: against the legacy fixture the engine correctly refuses to compare at all, which would make them vacuous.
 - **`src/scanner/diff.ts`** (Exports: `ModuleDiff, ExportDiff, DependencyDiff, ArchitecturalDiff, parseBaselineBlueprint, calculateArchitecturalDiff, formatArchitecturalDiffMarkdown, getArchitecturalDrift, autoRescanIfDriftDetected`): The baseline and the scan were produced by different parsers, so their difference is not drift. Mutually exclusive with `hasDrift`.
@@ -1096,3 +1098,27 @@ tags:
 taskId: null
 ---
 ADR 0016: Per-Category Storage Vocabulary (path and mode). Both storage.path and storage.mode are now overridable per category with matching precedence chains (categories.<name>.X > storage.X > default), converging the previously-separate split-mode gating into one always-live per-category resolver. split is deleted as a top-level mode and aliases to md (not vector) to reproduce its own pre-existing per-category default byte-for-byte; vector-only is renamed vector to converge with the per-category vocabulary. Rationale for warn-not-refuse on the md-to-vector upgrade path: ADR 0011 section 7's precedent (a config that errors on upgrade turns a rename into an outage) was set for a rename where behaviour was unchanged, but this is a real behaviour change, so the precedent was re-argued rather than cited -- the ruling stayed the same (warn on stderr, never touch the user's files or config automatically) once the real data-loss risk was closed by a separate reseed-on-first-sighting fix in DualStorageRouter. Full rationale in docs/adr/0016-per-category-storage-vocabulary.md.
+
+---
+id: 5ff64e25-f38e-44b2-ba9c-e95052ad9727
+createdAt: 2026-08-09T11:57:24.809Z
+importance: 4
+tags:
+  - enrichment
+  - llm
+  - adr
+taskId: null
+---
+Ticket 13 (neuron-2.3.0): neuron status --check/--repair reuses write-side category enrichment's centroid machinery (buildCategoryCentroids/selectCategory from src/components/enricher.ts) for repairing missing enum-typed declared fields, rather than writing a parallel inference path — the function signature was already generic enough (a 'category' label is just a string key), so no duplication was needed. Repair strictly separates three outcomes per missing field: a configured default: (always wins, no inference), centroid inference for enum fields only (never for free-text), and unresolved (free-text with no default, or an enum field with no other labeled entry yet to build a centroid from) — the last two are never fabricated, only ever reported, per ADR 0013's 'never fabricate a free-text identity field' ruling. --check and --repair both exit 1 on remaining non-compliance, matching neuron scan --check's existing CI-gate exit-code convention rather than inventing a new one.
+
+---
+id: 54211825-8c70-49d1-8c2e-af3a886fe952
+createdAt: 2026-08-09T12:20:37.058Z
+importance: 4
+tags:
+  - rc2
+  - benchmark
+  - wayfinder
+taskId: null
+---
+Grilled a new idea for neuron-2.3.0 (2026-08-09): future session work should be reliably discoverable for downstream synthesis tasks like writing the README, since today an agent only sees whatever fits the hook's per-epoch injection budget. Modeled on tickets 28-30's architecture-card index+detail-card split, but a different mechanism: instead of making detail reachable via ordinary relevance recall, the hook actively teaches the agent the neuron memory query surface exists via a conditional, per-turn, literal ready-to-run command (e.g. neuron memory query "<prompt text>" --limit 12), fired only when a cheap FTS COUNT shows the existing pre-prompt recall left a real counted gap versus what got injected -- never a static repeated note, which would hit the same redundancy ticket 08 measured against history. No session-start equivalent (ruled out as resident-but-unearned content). Store-wide scope, matching the existing pre-prompt query. Graduated three tickets: 31 (fix two independent pre-existing bugs in neuron memory list/query defaults -- oldest-first ordering, and a limit default shared between list mode and text-query mode despite answering different questions), 32 (the hint itself, blocked by 31), and 33 (measure whether the hint actually gets used and helps, blocked by 32, motivated by ticket 10's finding that the memory arm sometimes performed worse than no memory at all).

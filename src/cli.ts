@@ -63,7 +63,7 @@ async function main() {
 
   try {
     if (mainCommand === 'status') {
-      return handleStatusCommand(memory);
+      return await handleStatusCommand(memory, args);
     }
 
     if (mainCommand === 'memory') {
