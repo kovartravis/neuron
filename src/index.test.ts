@@ -764,6 +764,63 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     expect(kinds).toContain('history');
   });
 
+  it('should order list mode (no text query) newest-first, not oldest-first (ticket 31)', async () => {
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector',
+      projectName: 'test-project'
+    });
+
+    await memory.addHistory('first entry recorded', { importance: 3 });
+    await memory.addHistory('second entry recorded', { importance: 3 });
+    await memory.addHistory('third entry recorded', { importance: 3 });
+
+    const results = await memory.query({ categories: ['history'] });
+
+    expect(results.map(r => r.content)).toEqual([
+      'third entry recorded',
+      'second entry recorded',
+      'first entry recorded'
+    ]);
+  });
+
+  it('should default list mode to a larger limit than text-query mode (ticket 31)', async () => {
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      // Fabricated root: no directory to write .neuron/ into, so the mode is
+      // pinned rather than inherited from the schema default (`md`, ticket 31).
+      storageMode: 'vector',
+      projectName: 'test-project'
+    });
+
+    for (let i = 0; i < 8; i++) {
+      await memory.addHistory(`entry number ${i}`, { importance: 3 });
+    }
+
+    // List mode: no --limit, an inventory of 5 is close to useless.
+    const listed = await memory.query({ categories: ['history'] });
+    expect(listed).toHaveLength(8);
+
+    // Text-query mode keeps its own, smaller top-K default.
+    const mockEmbedder = { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) };
+    const rankedMemory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector',
+      projectName: 'test-project',
+      embedder: mockEmbedder
+    });
+    for (let i = 0; i < 8; i++) {
+      await rankedMemory.addHistory(`entry number ${i}`, { importance: 3 });
+    }
+    const ranked = await rankedMemory.query({ text: 'entry', categories: ['history'] });
+    expect(ranked).toHaveLength(5);
+  });
+
 describe('NeuronMemory BGE query instruction prefix', () => {
   it('should call embedQuery (not embed) when computing the search vector so the BGE instruction prefix is applied', async () => {
     // vecA: aligns with "alpha" passage. embed('alpha...') = vecA.

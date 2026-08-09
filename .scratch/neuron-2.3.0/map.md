@@ -739,6 +739,27 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   two. Graduated [24](issues/24-architecture-card-ab.md), a repeatable A/B
   proving the card's value, at the maintainer's direct request. Frontier is
   now `05`, `13`, `14`, `19`, `20`, `21`, `22`, `24`.
+- **[31 — Fix `neuron memory` Query/List Default Ordering and
+  Limits](issues/31-fix-query-list-defaults.md) resolved 2026-08-09.** No
+  open design questions — carried forward exactly as scoped. List mode
+  (`NeuronMemory.queryVector`, `src/index.ts`) now orders `ORDER BY rowid
+  DESC` (recency) instead of `ASC` (oldest-first), matching the deprecated
+  `listHistory` wrapper it had regressed behind; its default limit split
+  from text-query mode's unchanged `?? 5` to its own `?? 20`, matching
+  `listHistory`'s own existing default. `hook.ts`'s
+  `fetchArchitectureCardPayload` category-fill fallback passes an explicit
+  limit (unaffected by the default change) but inherits the ordering fix,
+  now filling from the most recent same-category entries rather than the
+  oldest — no regression against ticket `25`'s own stable-id test, which
+  asserts no ordering. **Found while verifying:**
+  `src/commands/ui.test.ts`'s `/api/learnings` test asserted the old
+  oldest-first order — a real instance of the same bug surfaced through the
+  HTTP API instead of the CLI; corrected to expect the fixed order rather
+  than loosened. Two new tests added to `src/index.test.ts` (list-mode
+  ordering, list-vs-text default-limit divergence), since neither was
+  covered before. `npm test` 580/580, `tsc --noEmit` clean; `test:e2e`
+  skipped — grepped, every e2e call site already passes explicit `text` and
+  `limit`. Unblocks `32`. Frontier is now `20`, `21`, `22`, `28`, `32`.
 
 ## Not yet specified
 

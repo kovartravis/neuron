@@ -2217,3 +2217,15 @@ tags:
 taskId: null
 ---
 Fix for a TypeError: The database connection is not open, thrown intermittently from any status subcommand that does real async work: src/cli.ts's status branch did 'return handleStatusCommand(memory, args)' (no await) inside a try { ... } finally { memory.close(); }. Root cause: calling an async function runs it synchronously up to its first real suspension point, and a bare 'return <promise>' hands control straight to finally without waiting for that promise to settle, so memory.close() ran before a pending continuation inside the handler resumed. This was latent and invisible for the original status command because it stayed fully synchronous unless scan.enabled was true, and even then its only await (getArchitecturalDrift) was already wrapped in a try/catch that silently downgrades any error, including a closed-db TypeError, to hasDrift: false — masking the exact same race. It surfaced as a hard crash once neuron status --check/--repair (ticket 13) added a real await with no such catch. Fix: 'return await handleStatusCommand(memory, args)', matching every other subcommand branch in cli.ts, which already awaited before returning. General rule: in a try/finally that releases a resource, every branch that returns an async call's result must await it explicitly — a bare return of a promise is not enough, and the bug can hide indefinitely behind an unrelated catch block downstream.
+
+---
+id: cf96addc-8995-4bba-9418-61c7ee2b5077
+createdAt: 2026-08-09T13:19:25.996Z
+importance: 4
+tags:
+  - adr
+  - rc2
+  - failure-fix
+taskId: null
+---
+Fix for ui.test.ts's /api/learnings order assertion breaking after changing NeuronMemory.queryVector's list-mode SQL from ORDER BY rowid ASC to DESC (ticket 31, neuron-2.3.0): the test asserted the old oldest-first order on a two-entry list-mode fetch through the UI server's /api/learnings endpoint, which passes an explicit limit but no ordering override, so it inherited the fix and started failing. Root cause: the endpoint's default ordering was never independently tested for direction, so the ordering bug had a second, un-flagged blast-radius surface beyond the CLI paths the ticket scoped. Resolution: updated the assertion to expect the corrected newest-first order (src/commands/ui.test.ts) rather than loosening it or reverting the fix. Edge case: any test elsewhere that asserts on list-mode (no-text query) ordering with more than one seeded entry needs the same check — grep for multi-entry list-mode fetches before trusting a green suite after an ordering change.

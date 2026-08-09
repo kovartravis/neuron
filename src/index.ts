@@ -622,7 +622,6 @@ export class NeuronMemory {
   }
 
   public async queryVector(q: MemoryQuery): Promise<Memory[]> {
-    const limit = q.limit ?? 5;
     const results: Memory[] = [];
 
     // Resolve categories to query
@@ -648,6 +647,9 @@ export class NeuronMemory {
     const supersededClause = q.includeSuperseded ? '' : 'AND superseded_by IS NULL';
 
     if (q.text) {
+      // Ranked semantic search — top-K most relevant. Diverged from list
+      // mode's default (ticket 31) since the two answer different questions.
+      const limit = q.limit ?? 5;
       const queryVec = await this.embedder.embedQuery(q.text);
 
       const RRF_K = 60;
@@ -725,12 +727,16 @@ export class NeuronMemory {
       results.sort((a, b) => (b.score!) - (a.score!));
       return results.slice(0, limit);
     } else {
-      // No text query — list mode
+      // No text query — list mode. An inventory question with no relevance
+      // ranking, so it orders by recency (ticket 31; matches the deprecated
+      // `listHistory`'s own `ORDER BY rowid DESC`) and gets its own, larger
+      // default — an inventory capped at 5 is close to useless.
+      const limit = q.limit ?? 20;
       const stmt = this.db.prepare(`
         SELECT id, category, content, tags, importance, task_id, created_at, superseded_by, superseded_at${this.fieldSelectSql()}
         FROM memories
         WHERE project_id = ? ${categoryClause} ${supersededClause}
-        ORDER BY rowid ASC
+        ORDER BY rowid DESC
       `);
       const rows = stmt.all(this.projectId, ...categoryParams) as any[];
       for (const row of rows) {

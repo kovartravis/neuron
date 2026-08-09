@@ -57,8 +57,9 @@ describe('neuron ui: HTTP server', () => {
     const body = await res.json() as any;
     expect(Array.isArray(body.results)).toBe(true);
     expect(body.results).toHaveLength(2);
-    expect(body.results[0].content).toBe('Always use WAL mode for SQLite');
-    expect(body.results[0].tags).toEqual(['db', 'sqlite']);
+    // List mode orders newest-first (ticket 31), so the second-added learning leads.
+    expect(body.results[0].content).toBe('Use dotProduct for BGE similarity');
+    expect(body.results[0].tags).toEqual(['embeddings']);
   });
 
   // --- S2c: GET /api/history ---
