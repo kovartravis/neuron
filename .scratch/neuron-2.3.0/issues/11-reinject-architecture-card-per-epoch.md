@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: context cost
 
@@ -66,7 +66,44 @@ silently invalidate `07`'s published number.
 
 ## Deliverables
 
-- [ ] Architecture card re-injected on the first `pre-prompt` of each epoch, via `pre-prompt` stdout only
-- [ ] Card spend charged against the same epoch budget `07` built
-- [ ] Cold-epoch / no-card case degrades to current behaviour exactly
-- [ ] Telemetry from `07` reflects the combined spend
+- [x] Architecture card re-injected on the first `pre-prompt` of each epoch, via `pre-prompt` stdout only
+- [x] Card spend charged against the same epoch budget `07` built
+- [x] Cold-epoch / no-card case degrades to current behaviour exactly
+- [x] Telemetry from `07` reflects the combined spend
+
+## Answer
+
+Built in `src/commands/hook.ts`'s `pre-prompt` branch, no design questions
+left open — the Scope was already fully specified.
+
+- **Trigger**: `loadEpochState(projectDir, sessionId).turns === 0` — the same
+  `turns` counter `recordPrePromptTurn` increments, so "first `pre-prompt` of
+  the epoch" is read from the same ledger `07` built, not a new counter.
+  Fires only from `pre-prompt`; `context-reset` stays execution-only exactly
+  as Scope item 2 requires.
+- **One `emit()` call, not two** (Scope item 3): the research doc has no
+  evidence any harness accepts or parses a second `hookSpecificOutput`/stdout
+  write per invocation, so the card and the turn's normal payload are built
+  separately with `buildPayload` (no `header` param, to sidestep its
+  documented header-only-on-empty-body behavior — see `payload.test.ts`'s
+  "accounts for the header against the same budget" case) and concatenated
+  by hand into one `## Architecture` / `## Relevant` two-section string, only
+  when both sides are non-empty.
+- **Budget accounting** (Scope items 1 and 4): the turn's normal allotment is
+  reserved first — `reserveForTurn = min(PRE_PROMPT_CHAR_BUDGET, remaining)`
+  — and the card gets `min(SESSION_START_CHAR_BUDGET, remaining -
+  reserveForTurn)`, so the card can only spend what the turn wouldn't have
+  used anyway; the turn then gets whatever the card *actually* spent back
+  (`remaining - cardBody.length`, never less than its reserved floor). Both
+  sections' combined `.length` goes through the existing
+  `recordPrePromptTurn` call — one write, one turn increment, no second
+  budget pool, so `summarizeRecallCost` (`07`'s telemetry) sees the true
+  combined per-epoch spend automatically.
+- **Cold epoch** (Scope item 5): identical code path as before when the
+  category query returns zero results — `cardBody` stays `''`, and the
+  turn-cap formula collapses to exactly `07`'s original `min(PRE_PROMPT_
+  CHAR_BUDGET, remaining)`, verified by a dedicated regression test.
+- 5 new tests in `hook.test.ts` (first-turn injection with no separate
+  `session-start` call, no repeat on turn 2, re-injection after
+  `context-reset` rolls the epoch, cold-epoch parity, and combined-spend
+  telemetry); full suite 557/557, `tsc --noEmit` clean.

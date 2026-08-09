@@ -1,9 +1,12 @@
 import { NeuronMemory } from '../index.js';
 import { loadConfig } from '../config/neuronYaml.js';
 import { withTimeout } from '../components/timeout.js';
+import { blueprintCardId } from '../scanner/ingest.js';
 import {
   buildPayload,
+  formatMemoryEntry,
   filterUnseen,
+  loadEpochState,
   remainingEpochBudget,
   recordSessionStartInjection,
   recordPrePromptTurn,
@@ -13,6 +16,61 @@ import {
   PRE_PROMPT_CHAR_BUDGET,
   LifecyclePoint,
 } from '../harnesses/index.js';
+
+const TRUNCATION_MARKER = '\n...[truncated]';
+
+interface CardPayload {
+  text: string;
+  includedIds: string[];
+}
+
+/**
+ * The architecture card, fetched two ways and combined (ticket 25): first by
+ * its stable scan id (`blueprintCardId`), so it survives category crowding —
+ * a generic ranked query can rank it out of a `limit`-sized window once
+ * enough other entries share the category, exactly `ingest.ts`'s own comment
+ * warns about, and exactly what this repo's own `scan.category: decisions`
+ * config reproduces. Truncated (not dropped) if it alone exceeds `cap` — a
+ * single large document loses `buildPayload`'s whole-entry-drop semantics,
+ * which exist for ranked lists of many small entries, not one document.
+ * Whatever budget is left after the card goes to the existing top-N-in-
+ * category query, excluding the card's own id so it never appears twice —
+ * additive, since a category shared with general decision-log content (this
+ * repo's own setup) is a deliberate config choice, not a bug to route around.
+ */
+async function fetchArchitectureCardPayload(memory: NeuronMemory, category: string, cap: number): Promise<CardPayload> {
+  if (cap <= 0) return { text: '', includedIds: [] };
+
+  const parts: string[] = [];
+  const includedIds: string[] = [];
+  let remaining = cap;
+
+  const blueprint = await memory.findById(blueprintCardId(category));
+  if (blueprint) {
+    const formatted = formatMemoryEntry(blueprint);
+    const chunk =
+      formatted.length <= remaining
+        ? formatted
+        : formatted.slice(0, Math.max(0, remaining - TRUNCATION_MARKER.length)) + TRUNCATION_MARKER;
+    if (chunk.length > 0) {
+      parts.push(chunk);
+      includedIds.push(blueprint.id);
+      remaining = Math.max(0, remaining - chunk.length - 1);
+    }
+  }
+
+  if (remaining > 0) {
+    const results = await memory.query({ categories: [category], limit: 4 });
+    const filtered = results.filter(r => r.id !== blueprint?.id);
+    const built = buildPayload(filtered, remaining);
+    if (built.includedIds.length > 0) {
+      parts.push(built.text);
+      includedIds.push(...built.includedIds);
+    }
+  }
+
+  return { text: parts.join('\n'), includedIds };
+}
 
 /**
  * Bounds how long a hung query can hold up the user's turn. Well under the
@@ -121,15 +179,13 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
   try {
     if (point === 'session-start') {
       const category = config.scan?.category || 'architecture';
-      const results = await memory.query({ categories: [category], limit: 3 });
-      if (results.length === 0) return;
 
       // No session id means no epoch to budget against — degrade toward the
       // fixed per-injection cap alone, same as before ticket 07 (neuron-2.3.0).
       const cap = sessionId
         ? Math.min(SESSION_START_CHAR_BUDGET, remainingEpochBudget(projectDir, sessionId, epochCharBudget))
         : SESSION_START_CHAR_BUDGET;
-      const { text, includedIds } = buildPayload(results, cap);
+      const { text, includedIds } = await fetchArchitectureCardPayload(memory, category, cap);
       if (includedIds.length === 0) return;
       if (sessionId) recordSessionStartInjection(projectDir, sessionId, includedIds, text.length);
       emit(harness, 'SessionStart', text);
@@ -159,9 +215,38 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
       return;
     }
 
+    // Ticket 11: the architecture card is injected only at `session-start`,
+    // which never fires again after a compaction — so re-inject it here, on
+    // the first `pre-prompt` of each epoch (never from `context-reset`,
+    // whose stdout isn't load-bearing on every harness). Reserving the
+    // turn's normal allotment first means the card can only spend what the
+    // turn wouldn't have used anyway.
+    let cardBody = '';
+    let cardIds: string[] = [];
+    if (loadEpochState(projectDir, sessionId).turns === 0) {
+      const category = config.scan?.category || 'architecture';
+      const reserveForTurn = Math.min(PRE_PROMPT_CHAR_BUDGET, remaining);
+      const cardCap = Math.min(SESSION_START_CHAR_BUDGET, remaining - reserveForTurn);
+      if (cardCap > 0) {
+        const built = await fetchArchitectureCardPayload(memory, category, cardCap);
+        if (built.includedIds.length > 0) {
+          cardBody = built.text;
+          cardIds = built.includedIds;
+        }
+      }
+    }
+
+    const turnCap = Math.min(PRE_PROMPT_CHAR_BUDGET, remaining - cardBody.length);
     const results = await memory.query({ text: prompt, limit: 10 });
     const unseen = filterUnseen(projectDir, sessionId, results);
-    const { text, includedIds } = buildPayload(unseen, Math.min(PRE_PROMPT_CHAR_BUDGET, remaining));
+    const { text: turnBody, includedIds: turnIds } = buildPayload(unseen, turnCap);
+
+    const sections: string[] = [];
+    if (cardBody) sections.push(`## Architecture\n${cardBody}`);
+    if (turnBody) sections.push(cardBody ? `## Relevant\n${turnBody}` : turnBody);
+    const text = sections.join('\n\n');
+    const includedIds = [...cardIds, ...turnIds];
+
     recordPrePromptTurn(projectDir, sessionId, includedIds, text.length);
     if (includedIds.length === 0) return;
     emit(harness, 'UserPromptSubmit', text);

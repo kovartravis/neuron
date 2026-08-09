@@ -133,6 +133,83 @@ describe('CLI Command: hook', () => {
     expect(JSON.parse(turn3.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('exponential backoff');
   });
 
+  // --- Ticket 11: re-inject the architecture card on the first pre-prompt of each epoch ---
+
+  it('injects the architecture card alongside the first pre-prompt turn of a session, with no session-start call', () => {
+    execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    const result = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'card-session', prompt: 'how should I access the database here' })
+    );
+    expect(result.status).toBe(0);
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).toContain('Repository Architectural Blueprint');
+    expect(context).toContain('Repository Pattern');
+  });
+
+  it('does not re-inject the architecture card on a second pre-prompt turn within the same epoch', () => {
+    execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    execAdd('Use exponential backoff for retrying flaky network calls', 'learning');
+    const sessionId = 'card-no-repeat-session';
+
+    const turn1 = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: sessionId, prompt: 'how should I access the database here' })
+    );
+    expect(JSON.parse(turn1.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('Repository Architectural Blueprint');
+
+    const turn2 = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: sessionId, prompt: 'exponential backoff retry' })
+    );
+    const turn2Context = JSON.parse(turn2.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(turn2Context).toContain('exponential backoff');
+    expect(turn2Context).not.toContain('Repository Architectural Blueprint');
+  });
+
+  it('re-injects the architecture card on the first pre-prompt after a context-reset rolls the epoch', () => {
+    execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+    const sessionId = 'card-reset-session';
+    const stdin = JSON.stringify({ session_id: sessionId, prompt: 'database access pattern' });
+
+    const turn1 = run(['hook', 'claude-code', 'pre-prompt'], stdin);
+    expect(JSON.parse(turn1.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('Repository Architectural Blueprint');
+
+    run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: sessionId }));
+
+    const turn2 = run(['hook', 'claude-code', 'pre-prompt'], stdin);
+    expect(JSON.parse(turn2.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('Repository Architectural Blueprint');
+  });
+
+  it('degrades to ordinary pre-prompt behaviour with no architecture card in the store', () => {
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    const result = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'no-card-session', prompt: 'how should I access the database here' })
+    );
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).toBe('- [learning] Use the Repository Pattern for database access in this codebase');
+  });
+
+  it('charges the architecture card against the same epoch budget as ordinary turns', () => {
+    execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    const sessionId = 'card-telemetry-session';
+
+    run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: sessionId, prompt: 'how should I access the database here' })
+    );
+    run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: sessionId }));
+
+    const statusResult = spawnSync('node', [cliPath, 'status'], { cwd: projectDir, env: env() });
+    const status = JSON.parse(statusResult.stdout.toString());
+    // Combined card + turn spend, not just the turn's own PRE_PROMPT_CHAR_BUDGET-sized portion.
+    expect(status.recallCost.maxCharsPerEpoch).toBeGreaterThan(100);
+  });
+
   it('neuron status reports recall cost telemetry recorded from real hook invocations', () => {
     execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
     const sessionId = 'status-telemetry-session';
@@ -337,4 +414,62 @@ describe('CLI Command: hook', () => {
       { cwd: projectDir, env: env() }
     );
   }
+
+  // Ticket 25: plants a card at the architecture blueprint's stable id
+  // directly (bypassing `memory add`, which always generates a random id),
+  // to reproduce the crowding/oversize scenarios the CLI alone can't set up.
+  function writeCardAtStableId(category: string, content: string) {
+    const scriptPath = path.join(projectDir, `_write-card-${Date.now()}.mjs`);
+    const indexPath = path.join(process.cwd(), 'dist/index.js').replace(/\\/g, '/');
+    const ingestPath = path.join(process.cwd(), 'dist/scanner/ingest.js').replace(/\\/g, '/');
+    fs.writeFileSync(
+      scriptPath,
+      `
+      import { NeuronMemory } from '${indexPath}';
+      import { blueprintCardId } from '${ingestPath}';
+      const memory = NeuronMemory.open(process.cwd());
+      await memory.transact([{
+        op: 'upsert',
+        id: blueprintCardId(${JSON.stringify(category)}),
+        category: ${JSON.stringify(category)},
+        content: ${JSON.stringify(content)},
+        tags: ['architecture', 'topology', 'scan', 'deep'],
+        importance: 5,
+      }]);
+      await memory.close();
+      `,
+      'utf8'
+    );
+    const result = spawnSync('node', [scriptPath], { cwd: projectDir, env: env() });
+    fs.rmSync(scriptPath, { force: true });
+    if (result.status !== 0) {
+      throw new Error(`writeCardAtStableId failed: ${result.stderr?.toString()}`);
+    }
+  }
+
+  // --- Ticket 25: fetch the architecture card by its stable scan id, truncate rather than drop when oversized ---
+
+  it('fetches the architecture card by its stable id even when other entries in the same category outrank it', () => {
+    writeCardAtStableId('architecture', 'Repository Architectural Blueprint: the real one, found by stable id.');
+    // Planted after the card, so a recency-ordered generic query pushes the
+    // card out of a small `limit` window — exactly ticket 37's own warning.
+    for (let i = 0; i < 5; i++) {
+      execAdd(`Unrelated architecture note ${i}`, 'architecture');
+    }
+    const result = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 's1' }));
+    expect(result.status).toBe(0);
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).toContain('Repository Architectural Blueprint: the real one, found by stable id.');
+  });
+
+  it('truncates an oversized architecture card instead of dropping it entirely', () => {
+    const hugeContent = 'X'.repeat(20000);
+    writeCardAtStableId('architecture', hugeContent);
+    const result = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 's1' }));
+    expect(result.status).toBe(0);
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context.length).toBeGreaterThan(0);
+    expect(context.length).toBeLessThan(hugeContent.length);
+    expect(context).toContain('...[truncated]');
+  });
 });

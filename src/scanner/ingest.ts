@@ -10,7 +10,7 @@ import { scanProjectTopology, ScanResult } from './analyzer.js';
  * window once enough other entries share the category (ticket 37), so
  * there is deliberately no query here at all: same category in, same id out.
  */
-function blueprintCardId(category: string): string {
+export function blueprintCardId(category: string): string {
   const hash = createHash('sha256').update(`neuron:architecture-blueprint:${category}`).digest('hex');
   return [
     hash.slice(0, 8),

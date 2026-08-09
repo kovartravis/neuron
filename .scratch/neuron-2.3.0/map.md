@@ -267,6 +267,47 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   split-verification-from-build move `20` used for `01`. `02`'s `Blocked by`
   now includes `22`, so `02` drops out of the frontier until `22` resolves.
   Frontier is now `05`, `11`, `13`, `14`, `19`, `20`, `21`, `22`.
+- **[11 — Re-Inject the Architecture Card on the First `pre-prompt` of Each
+  Epoch](issues/11-reinject-architecture-card-per-epoch.md) resolved
+  2026-08-08.** No open design questions — Scope was fully specified.
+  `hook.ts`'s `pre-prompt` branch now re-fetches and injects the card on the
+  first turn of each epoch (`loadEpochState(...).turns === 0`), reserving the
+  turn's own `PRE_PROMPT_CHAR_BUDGET` first so the card can only spend what
+  the turn wouldn't have used, and charging both through the single existing
+  `recordPrePromptTurn` call so `07`'s telemetry sees the true combined
+  spend with no second budget pool. One `emit()` call (concatenated
+  two-section payload), not two — no evidence any harness parses a second
+  stdout write. 5 new tests, full suite 557/557. Immediately followed by a
+  maintainer request for a repeatable A/B proving the card's real value;
+  graduated [24 — Architecture Card A/B: With vs
+  Without](issues/24-architecture-card-ab.md) for it rather than folding
+  proof-of-value into this build ticket, the same split `18` used for `17`.
+  Frontier is now `05`, `13`, `14`, `19`, `20`, `21`, `22`, `24`.
+- **[25 — Architecture Card: Fetch by Stable Id, Truncate Instead of Drop
+  When Oversized](issues/25-architecture-card-stable-id-and-truncation.md)
+  surfaced and resolved 2026-08-08**, mid-session while scoping `24` against
+  this repo's own real store. Two compounding gaps, both predating `11`
+  (affecting the original `session-start` injection too, not just `11`'s new
+  path): the generic `memory.query({categories, limit})` fetch can rank the
+  scan-produced blueprint out of its result window once enough other entries
+  share the category — exactly what `ingest.ts`'s own `blueprintCardId`
+  comment already warned a semantic/ranked query would do, reproduced live by
+  this repo's own `scan.category: decisions` config; and even when fetched,
+  `buildPayload`'s whole-entry-drop semantics silently discard this repo's
+  real ~53,000-character blueprint against the 6,000-character
+  `SESSION_START_CHAR_BUDGET` (Claude Code's own hard cap is 10,000, so no
+  amount of *more* budget fixes this — the card has to reach the model
+  *within* a realistic cap). Fixed by fetching the blueprint via its stable
+  id first (truncated with a marker if it alone exceeds the cap), additively
+  layered under the existing top-N-in-category query so this repo's
+  deliberate shared-category setup keeps working. Maintainer's proposal to
+  exempt the card from the shared epoch budget entirely was considered and
+  rejected — it wouldn't survive the harness's own hard cap regardless, so
+  budget-model changes weren't the actual fix. Also corrected this session's
+  own earlier mischaracterization: the blueprint card itself is not stale —
+  `neuron exec`'s `autoRescanIfDriftDetected` refreshed it live, mid-session,
+  as this ticket's own source changes landed. 2 new tests, full suite
+  559/559.
 
 ## Decisions so far
 
@@ -489,6 +530,15 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   respectively — verified against source, not assumed). `npm test` run
   twice consecutively, 552/552 both times, `.neuron/` byte-identical.
   Frontier is now `11`, `13`, `14`, `19`, `20`, `21`, `22`.
+- **[11 — Re-Inject the Architecture Card on the First `pre-prompt` of Each
+  Epoch](issues/11-reinject-architecture-card-per-epoch.md)** — re-fetches
+  and injects the architecture card on the first `pre-prompt` of each epoch
+  (never from `context-reset`), reserving the turn's own budget first and
+  charging both through one `recordPrePromptTurn` call so `07`'s telemetry
+  reflects the true combined spend. One concatenated `emit()` payload, not
+  two. Graduated [24](issues/24-architecture-card-ab.md), a repeatable A/B
+  proving the card's value, at the maintainer's direct request. Frontier is
+  now `05`, `13`, `14`, `19`, `20`, `21`, `22`, `24`.
 
 ## Not yet specified
 
