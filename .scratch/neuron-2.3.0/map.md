@@ -763,6 +763,7 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   own correctness is verified by the test suite (584/584) against clean
   synthetic fixtures, unaffected by this unrelated bug. Not wired as a
   blocker of anything; unclaimed, unblocked, sized for its own session.
+  **Resolved in a later session — see the `38` entry below.**
 
 ## Decisions so far
 
@@ -1055,6 +1056,17 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   card back into the legacy monolithic shape, so `parseBaselineBlueprint`/
   `calculateArchitecturalDiff` need zero changes. Resolved together with
   `28` in the same session — see that entry above for why.
+- **[38 — Md Parser Loses Entries on Stray
+  Dashes](issues/38-md-parser-loses-entries-on-stray-dashes.md)** —
+  root-caused to a one-off duplicated-content write (bisected to commit
+  `08fbdda`), not a systemic formatter bug; hardened
+  `parseMarkdownDetailed`'s block matching to two-pointer pairing so a
+  rejected candidate can't consume the next real delimiter and cascade into
+  losing unrelated later entries. `reconcileCategory` now warns loudly on an
+  unusually large single-pass deletion but still deletes — ADR 0011
+  Consequence 2's "no tripwire, no `--force`" stands unchanged. This repo's
+  own corrupted `decisions` entry repaired (75/75 now parse). 599/600 tests
+  (Pillar 8 the same known pre-existing flake ticket 34 already noted).
 
 ## Not yet specified
 

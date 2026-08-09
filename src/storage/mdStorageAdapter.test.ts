@@ -315,6 +315,63 @@ And multiline quotes:
     expect(readBack[0].content).toContain('Auto scaffolded deep entry');
   });
 
+  // --- neuron-2.3.0 Ticket 38: stray `---` in body content must not cascade ---
+
+  it('38-01: a bare `---` line inside one entry\'s body does not cause later entries to be dropped', () => {
+    const adapter = new MdStorageAdapter({ storagePath: testDir });
+
+    const content = `# Category: decisions
+
+---
+id: entry-a
+createdAt: 2026-08-01T00:00:00.000Z
+importance: 3
+tags: []
+---
+Body paragraph one.
+
+---
+
+Body paragraph one, duplicated by a write bug, with a stray horizontal rule
+sitting between the two copies.
+
+---
+id: entry-b
+createdAt: 2026-08-02T00:00:00.000Z
+importance: 3
+tags: []
+---
+Entry b's body, must not be silently dropped just because entry a's body
+happened to contain a bare "---" line.
+
+---
+id: entry-c
+createdAt: 2026-08-03T00:00:00.000Z
+importance: 3
+tags: []
+---
+Entry c's body.
+`;
+
+    const memories = adapter.parseMarkdown(content, 'decisions');
+
+    expect(memories).toHaveLength(3);
+    expect(memories.map(m => m.id)).toEqual(['entry-a', 'entry-b', 'entry-c']);
+
+    const entryB = memories.find(m => m.id === 'entry-b');
+    expect(entryB?.content).toContain("Entry b's body");
+
+    const entryC = memories.find(m => m.id === 'entry-c');
+    expect(entryC?.content).toContain("Entry c's body");
+
+    // The stray `---` stays literal body content on the entry that actually
+    // contains it — the parser doesn't try to "clean" it, only avoid letting
+    // it swallow neighboring entries.
+    const entryA = memories.find(m => m.id === 'entry-a');
+    expect(entryA?.content).toContain('---');
+    expect(entryA?.content).toContain('duplicated by a write bug');
+  });
+
   // --- Ticket 35: Frontmatter Round-Trip Integrity ---
 
   describe('Frontmatter Round-Trip Integrity (ticket 35)', () => {

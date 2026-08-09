@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: none (data-integrity finding, discovered while verifying 28/29)
 
@@ -83,3 +83,72 @@ stay a private finding.
   the fix reports the true `decisions` count (109, or whatever it is after
   Scope item 4's repair), not a silently truncated one.
 - `npm test` green.
+
+## Answer
+
+**1. Root cause.** Bisected via `git show <rev>:.neuron/decisions.md` across
+the commits that touched the file. Entry `c4ab3275` was written cleanly (a
+single copy of its body paragraph) in `377b8a2` (ticket 05). By the very next
+commit that touched the file, `08fbdda` (ticket 06, same session), `git diff
+377b8a2 08fbdda -- .neuron/decisions.md` shows the corruption landing
+directly: the pre-existing single paragraph is followed by an **added**
+`---` and a second copy of the identical paragraph, immediately before the
+session's legitimate new entry (`617331af`, ADR 0016) — which itself landed
+with a clean, single frontmatter block. That rules out a systemic
+`formatMarkdown`/`parseMarkdown` round-trip bug (it would have corrupted the
+new entry too, and R1-T1-02's roundtrip test already covers format→parse and
+passes); this was a one-off write whose `content` argument was constructed
+with the paragraph duplicated and a literal `---` divider between the
+copies — most likely a hand-built `--content` value during that session that
+pasted the same text twice. **The read side is what turned a one-off content
+mistake into cascading data loss**, which is the actual defect this ticket
+closes.
+
+**2. Parser hardened** (`src/storage/mdStorageAdapter.ts`,
+`parseMarkdownDetailed`). Replaced the single-pass global regex (which
+advanced its match cursor past a *rejected* candidate block, silently
+consuming the next real delimiter along with it) with a two-pointer scan
+over every raw `---`-only line: each candidate `(open, close)` pair is
+tested for a key:value frontmatter shape; on failure the pointer advances by
+one delimiter (not two), so the very next delimiter gets a fresh chance to
+pair correctly instead of being swallowed by the failed match. A stray
+`---` inside a body is now retained as ordinary body content on the entry
+that actually contains it, and never affects any other entry. Added
+`38-01` in `mdStorageAdapter.test.ts` (fixture with a duplicated
+paragraph + stray `---`, asserting entries before/after both parse intact).
+
+**3. `reconcileCategory` guardrail — decided: warn loudly, don't block.**
+ADR 0011 Consequence 2 already settled "no tripwire, no `--force`" for
+`reconcileCategory`'s delete-mirror step, on the reasoning that markdown is
+authoritative and `.neuron/` is git-recoverable — re-litigating that would
+need new evidence, and this ticket's root cause (a one-off content mistake,
+caught and fixed at the read side) doesn't supply it. What it does supply is
+the concrete case for *visibility*: added a threshold in
+`dualStorageRouter.ts` (`MASS_DELETE_WARN_FRACTION = 0.2`,
+`MASS_DELETE_MIN_ROWS = 5`) that logs a loud stderr warning when a single
+reconcile pass is about to delete an unusually large fraction of a
+category's vector rows, without blocking the deletion. This is the
+"degrades loudly instead of silently" ask, kept orthogonal to the settled
+"no tripwire" ruling. Covered by two new tests in
+`dualStorageRouter.test.ts` (warns on a large deletion, stays silent on a
+small one).
+
+**4. This repo's own file repaired.** Removed the duplicated paragraph and
+the stray `---` from entry `c4ab3275` in `.neuron/decisions.md` by hand.
+Audited the rest of the file for the same shape: counted every line that is
+exactly `---` (151 before the fix, 150 after — exactly one extra, matching
+the one known corrupt entry) against `75 * 2` expected for 75 clean
+entries — confirms this was the only instance. Verified: `parseMarkdown`
+against the repaired file now returns exactly 75 memories, matching
+`grep -c '^id: ' .neuron/decisions.md`. Ran a full `npm run build` +
+`neuron exec -- neuron status` afterward to confirm the reconcile path
+runs clean against the repaired file (no mass-delete warning fired, since
+the fixed file already matches truth).
+
+**5. Regression coverage.** `38-01` (`mdStorageAdapter.test.ts`) plus the
+two new `dualStorageRouter.test.ts` cases above. Full suite: 599/600
+passing — the one failure (`test/e2e/concurrency-stress.test.ts` Pillar 8)
+is pre-existing flakiness in an unrelated multi-process SQLite-schema race
+(the exact error message changes between runs — `no such table: learnings`
+on one run, `duplicate column name: scope` on a rerun — neither related to
+markdown parsing or this change).

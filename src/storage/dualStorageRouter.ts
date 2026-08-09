@@ -9,6 +9,18 @@ import { computeMemoryHash } from './mdVectorSync.js';
 const MD_SEEDED_AT_KEY = 'md_seeded_at';
 const RECONCILE_QUERY_LIMIT = 1_000_000;
 const categoryRootMetaKey = (category: string) => `md_root:${category}`;
+// Below this many existing rows, a large deleted fraction is unremarkable
+// (deleting 2 of 3 rows is a normal small edit, not a signal of anything).
+const MASS_DELETE_MIN_ROWS = 5;
+// Ticket 38: a stray `---` in one entry's body once made the markdown parser
+// undercount a category by ~38% and silently mass-deleted the vector mirror
+// to match. The parser bug is fixed at its root, but ADR 0011 Consequence 2
+// deliberately keeps this deletion tripwire-free and `--force`-free — `.neuron/`
+// is git-recoverable, so a real bulk deletion (the user meant it) must not be
+// blocked. This threshold only makes an unusually large deletion loud, the
+// same "degrade loudly instead of silently" ask neuron-2.3.0 ticket 38 raised, without
+// reopening the settled "no tripwire" ruling.
+const MASS_DELETE_WARN_FRACTION = 0.2;
 
 export class DualStorageRouter {
   private vectorDb: NeuronMemory;
@@ -279,7 +291,9 @@ export class DualStorageRouter {
    * by construction. An entry present in the vector index but absent from
    * markdown is deleted — no tripwire, no `--force` (ADR 0011 Consequence 2);
    * `.neuron/` is a tracked, git-recoverable directory, so this mirrors how
-   * source files already work.
+   * source files already work. An unusually large single-pass deletion still
+   * logs a loud warning (neuron-2.3.0 ticket 38) — visibility, not a block, so a future
+   * parser bug that undercounts markdown degrades loudly instead of silently.
    */
   private async reconcile(categories: string[]): Promise<void> {
     if (categories.length === 0) return;
@@ -443,8 +457,20 @@ export class DualStorageRouter {
       }
     }
 
-    for (const id of vecMap.keys()) {
-      if (mdMap.has(id)) continue;
+    const idsToDelete = [...vecMap.keys()].filter(id => !mdMap.has(id));
+    if (
+      vecMap.size >= MASS_DELETE_MIN_ROWS
+      && idsToDelete.length / vecMap.size >= MASS_DELETE_WARN_FRACTION
+    ) {
+      process.stderr.write(
+        `[neuron warning] reconcile is about to delete ${idsToDelete.length} of ${vecMap.size} vector rows ` +
+          `in category "${category}" — markdown only has ${mdMap.size}. Deletion still proceeds (markdown is ` +
+          `authoritative and ".neuron/" is git-recoverable), but a drop this large is unusual: confirm this ` +
+          `reflects an intentional bulk edit to the markdown file, not a parse failure undercounting it.\n`
+      );
+    }
+
+    for (const id of idsToDelete) {
       try {
         await this.vectorDb.transact([{ op: 'delete', category, id }]);
       } catch (err) {

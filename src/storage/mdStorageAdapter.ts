@@ -339,27 +339,47 @@ export class MdStorageAdapter implements MdStorage {
     const memories: Memory[] = [];
     const repairs: string[] = [];
 
-    // Find all valid frontmatter blocks delimited by `---` on dedicated lines
-    const frontmatterRegex = /(?:^|\n)---\r?\n([\s\S]*?)\r?\n---\r?\n/g;
-
     interface BlockMatch {
       matchStart: number;
       bodyStart: number;
       yamlStr: string;
     }
 
-    const matches: BlockMatch[] = [];
-    let match: RegExpExecArray | null;
+    // Collect every delimiter LINE (a line that is exactly `---`) rather than
+    // matching open/close pairs in one global pass. A pass-based regex
+    // advances its `lastIndex` past whatever it last tried, including a
+    // rejected candidate — so a bare `---` inside one entry's body (a
+    // markdown horizontal rule, or duplicated content) consumes the next
+    // real delimiter as part of the failed match and cascades into losing
+    // every entry after it (neuron-2.3.0 ticket 38). Two-pointer pairing over the raw
+    // delimiter positions lets a rejected pairing retry from the very next
+    // delimiter instead of skipping past it.
+    const delimiterRegex = /^---\r?\n/gm;
+    const delimiters: { lineStart: number; lineEnd: number }[] = [];
+    let delimMatch: RegExpExecArray | null;
+    while ((delimMatch = delimiterRegex.exec(content)) !== null) {
+      delimiters.push({ lineStart: delimMatch.index, lineEnd: delimMatch.index + delimMatch[0].length });
+    }
 
-    while ((match = frontmatterRegex.exec(content)) !== null) {
-      const yamlStr = match[1];
+    const matches: BlockMatch[] = [];
+    let p = 0;
+    while (p + 1 < delimiters.length) {
+      const open = delimiters[p];
+      const close = delimiters[p + 1];
+      const yamlStr = content.slice(open.lineEnd, close.lineStart).replace(/\r?\n$/, '');
       // Verify candidate block contains key-value pairs to distinguish frontmatter from body horizontal rules `---`
       if (/^\s*[a-zA-Z0-9_-]+\s*:/m.test(yamlStr)) {
         matches.push({
-          matchStart: match.index,
-          bodyStart: match.index + match[0].length,
+          matchStart: open.lineStart,
+          bodyStart: close.lineEnd,
           yamlStr,
         });
+        p += 2;
+      } else {
+        // Not a valid frontmatter block — `open` was body content (e.g. a
+        // stray `---`), not a real delimiter. Retry with `close` as the next
+        // candidate open rather than skipping past it.
+        p += 1;
       }
     }
 

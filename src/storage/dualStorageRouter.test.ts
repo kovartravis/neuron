@@ -361,6 +361,50 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     });
   });
 
+  describe('neuron-2.3.0 Ticket 38: mass-deletion during reconcile logs a loud warning, but still proceeds', () => {
+    it('warns on stderr when a reconcile pass would delete an unusually large fraction of a category\'s vector rows, but does not block the deletion', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+
+      const ids = Array.from({ length: 6 }, (_, i) => `mass-${i}`);
+      await router.transact(ids.map(id => ({ op: 'upsert' as const, category: 'learning', id, content: `body ${id}` })));
+
+      // Simulate the class of bug ticket 38 fixed at its root (a parser
+      // undercounting markdown): drop most entries from markdown directly,
+      // bypassing the router, without touching the vector index.
+      for (const id of ids.slice(0, 5)) {
+        await mdAdapter.deleteEntry('learning', id);
+      }
+
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      await router.query({ category: 'learning' });
+
+      const warned = warnSpy.mock.calls.some(call => String(call[0]).includes('about to delete'));
+      expect(warned).toBe(true);
+      warnSpy.mockRestore();
+
+      // Deletion still proceeds — ADR 0011 Consequence 2's "no tripwire, no
+      // --force" ruling is unchanged, only made loud.
+      const remaining = await memoryDb.query({ category: 'learning' });
+      expect(remaining.map(m => m.id).sort()).toEqual(['mass-5']);
+    });
+
+    it('does not warn when the deleted fraction is small, or the category is too small to be meaningful', async () => {
+      const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
+
+      const ids = Array.from({ length: 6 }, (_, i) => `small-${i}`);
+      await router.transact(ids.map(id => ({ op: 'upsert' as const, category: 'learning', id, content: `body ${id}` })));
+
+      await mdAdapter.deleteEntry('learning', 'small-0');
+
+      const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      await router.query({ category: 'learning' });
+
+      const warned = warnSpy.mock.calls.some(call => String(call[0]).includes('about to delete'));
+      expect(warned).toBe(false);
+      warnSpy.mockRestore();
+    });
+  });
+
   describe('Ticket 29: hand-edit round trip and re-embed churn (content hashing, not per-category mtimeMs)', () => {
     it('a hand-edit to the .md file is reflected on the next command, no sync step required', async () => {
       const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
