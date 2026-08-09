@@ -2277,3 +2277,15 @@ tags:
 taskId: null
 ---
 Fix for GitHub Actions publish.yml build-and-test failure 'Error: No such built-in module: node:sqlite': the workflow (ticket 21, neuron-2.3.0) pinned node-version '20' in both jobs, but src/db.ts's createNodeSqliteWrapper uses node:sqlite's DatabaseSync, which requires Node >=22.5.0 and wasn't usable without the --experimental-sqlite flag until 22.13.0/23.4.0 -- invisible locally because dev machines run Node 24. Root cause only surfaced on the first real CI run (ticket 36), since ticket 21's own YAML syntax check and manual dist-tag review never executed the test suite under the pinned runtime. Fix: bump node-version to '22' in both the build-and-test and publish jobs of .github/workflows/publish.yml, and add "engines": {"node": ">=22.13.0"} to package.json to document the real minimum so this doesn't regress silently. Edge case: actions/checkout@v4 and actions/setup-node@v4 themselves log an unrelated 'Node 20 is being deprecated' warning about the action runtime, not the node-version input -- that warning is noise, not something to chase.
+
+---
+id: deeacd84-b8a4-4079-813a-1ab2180e62c2
+createdAt: 2026-08-09T18:19:12.747Z
+importance: 4
+tags:
+  - npm
+  - release
+  - failure-fix
+taskId: null
+---
+npm's publish auth model changed under us mid-ticket (2026-07-31): npm disabled Classic token creation entirely (no more 'Automation' token type in the npmjs.com UI -- confirmed live, only 'Granular Access Token' remains), and per npm's own changelog, Granular tokens' 2FA-bypass publish capability is being removed entirely in January 2027, with npm's current guidance recommending Trusted Publishing (OIDC) or staged publishing instead. Symptom that surfaced this: a manual 'npm publish' hit 'npm error code EOTP' even with an NPM_TOKEN environment secret already provisioned, because that token was a standard Granular token still subject to interactive 2FA, which can never work unattended from CI (no human to supply a live code). Resolution: switched .github/workflows/publish.yml's publish job to GitHub OIDC trusted publishing instead of any token -- added permissions: id-token: write at job level (job-level permissions blocks replace rather than merge the workflow-level block, so contents: write had to be repeated there too), bumped node-version to '24' and added an explicit 'npm install -g npm@latest' step since trusted publishing requires npm CLI >=11.5.1, and removed the NODE_AUTH_TOKEN env var from the publish step entirely (docs.npmjs.com explicitly warns setting it makes npm fall back to the legacy token path instead of OIDC). Remaining HITL step: the package owner must configure Trusted Publisher -> GitHub Actions on npmjs.com package settings (org, repo, workflow filename, optionally environment name) before this will actually authenticate -- the OIDC identity means nothing to npm's registry until that trust relationship is registered on their end.

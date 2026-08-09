@@ -128,7 +128,48 @@ real run could have surfaced — confirming the value of splitting
 verification from build the way ticket `21` did. `build-and-test` is now
 proven correct end-to-end. `publish` is proven to reach `npm publish` with
 the right command and dist-tag, and to fail safely with no side effects
-when credentials are missing. Full closure of Scope items 1-5 remains
-blocked on the maintainer provisioning `NPM_TOKEN` and (optionally) the
-`npm-publish` environment's required reviewers — left claimed, not
-resolved, pending that HITL step.
+when credentials are missing.
+
+**Addendum, 2026-08-09 — auth model changed mid-verification, from token
+to OIDC.** The maintainer provisioned `NPM_TOKEN` as an `npm-publish`
+environment secret and created the environment with themselves as
+required reviewer (real progress — the environment-approval gate is
+confirmed live: [run 31328311920](https://github.com/kovartravis/neuron/actions/runs/31328311920)'s
+`publish` job sat in `waiting` status, never executing, until approved —
+first real evidence for the approval-gate half of Scope item 5). But a
+manual `npm publish` attempt hit `EOTP`, and investigating why surfaced
+that **npm no longer offers Automation tokens at all** (Classic token
+creation is disabled registry-wide; confirmed live against the
+maintainer's own npmjs.com account, which shows only "Granular Access
+Token"), and that Granular tokens' 2FA-bypass publish capability is
+**being removed entirely in January 2027** per npm's own 2026-07-31
+changelog — npm's own current guidance is to move to **Trusted Publishing
+(OIDC)** instead of any bypass token. The maintainer chose to switch
+now rather than wire up a token already on a deprecation path. Rewrote
+`publish.yml`'s `publish` job: `permissions: id-token: write` added,
+`node-version` bumped to `'24'`, an explicit `npm install -g npm@latest`
+step added (trusted publishing needs npm CLI ≥11.5.1, and Node 24 was the
+version the sources checked while researching this recommended for full
+support), and `NODE_AUTH_TOKEN`/`secrets.NPM_TOKEN` removed from the
+`Publish to npm` step entirely — no token, no secret, at all.
+
+**One remaining HITL step supersedes Scope item 1's original "provision
+`NPM_TOKEN`" wording**: on npmjs.com, `@kovartravis/neuron` package
+Settings → **Trusted Publisher** → **GitHub Actions**, with:
+- Organization or user: `kovartravis`
+- Repository: `neuron`
+- Workflow filename: `publish.yml`
+- Environment name: `npm-publish` (optional field; using it ties the OIDC
+  trust to runs that passed the existing reviewer gate too, not just to
+  the repo/workflow identity)
+- Allowed actions: `npm publish`
+
+Once that's set, the next push (or a re-run of a pending `waiting` job)
+should reach `npm publish` with no `EOTP`/`ENEEDAUTH` failure and no
+manual OTP entry. The previously-created `NPM_TOKEN` environment secret is
+now dead weight, safe to delete at the maintainer's convenience but not
+required to.
+
+**Scope items 1-5 all remain open** pending that npmjs.com step — this is
+now the single blocking action for full closure, replacing the original
+"provision `NPM_TOKEN`" framing. `36` stays claimed, not resolved.

@@ -689,6 +689,19 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   3 (real stable push), 4 (unbumped-push skip), and 5 (branch-protection
   rejection) remain unexercised, all downstream of the same HITL
   provisioning step. Frontier is now `20`, `22`, `28`, `32`.
+- **`21`/`36`'s publish auth model changed from token to OIDC,
+  2026-08-09**, mid-verification: the maintainer provisioned `NPM_TOKEN`
+  as planned (confirming the environment-approval gate really does pause
+  a run — real evidence for `36`'s Scope item 5), but a manual publish
+  attempt's `EOTP` error led to discovering npm no longer offers
+  Automation tokens at all, and is removing Granular tokens' 2FA-bypass
+  publish capability entirely in January 2027 per npm's own guidance to
+  move to **Trusted Publishing (OIDC)** instead. `publish.yml`'s `publish`
+  job now authenticates via GitHub OIDC identity with no `NPM_TOKEN`
+  secret at all. One remaining HITL step (configuring `@kovartravis/neuron`'s
+  Trusted Publisher on npmjs.com) supersedes the original "provision
+  `NPM_TOKEN`" framing in both tickets' own Scope. Full detail in each
+  ticket's own addendum.
 
 ## Decisions so far
 

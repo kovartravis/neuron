@@ -75,6 +75,9 @@ jobs:
     if: needs.build-and-test.outputs.already_published == 'false'
     runs-on: ubuntu-latest
     environment: npm-publish
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,19 +87,20 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Ensure npm CLI supports trusted publishing
+        run: npm install -g npm@latest
 
       - name: Build
         run: npm run build
 
       - name: Publish to npm
         run: npm publish --tag ${{ needs.build-and-test.outputs.dist_tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Tag release commit
         run: |

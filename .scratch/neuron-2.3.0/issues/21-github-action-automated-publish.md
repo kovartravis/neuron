@@ -169,3 +169,26 @@ this ticket doesn't stay open-ended on an action only the maintainer can
 take. YAML syntax checked with `pyyaml`; the four-case dist-tag regex
 checked by hand in `bash` (see above) — neither exercises the real
 `npm view`/`npm publish`/tag-push behavior, which only a live run can.
+
+**Addendum, 2026-08-09 (from ticket `36`'s real-run work): the Auth
+section above (item 6) is superseded.** npm no longer offers Automation
+tokens at all — Classic token creation was disabled npm-registry-wide, and
+the maintainer's own npmjs.com account confirmed this live (no
+"Automation" option present, only "Granular Access Token"). Worse, npm's
+own 2026-07-31 changelog restricts what a Granular token's "Bypass 2FA"
+setting can do going forward and states direct-publish capability for
+such tokens is being **removed entirely in January 2027**, with npm's own
+guidance recommending **Trusted Publishing (OIDC)** or staged publishing
+instead. Rather than wire up a token that's already on a deprecation path,
+the maintainer chose Trusted Publishing: `publish.yml`'s `publish` job now
+authenticates via GitHub's OIDC identity (`permissions: id-token: write`,
+Node bumped to `'24'`, an explicit `npm install -g npm@latest` step since
+trusted publishing needs npm CLI ≥11.5.1) with **no `NPM_TOKEN` secret at
+all** — `NODE_AUTH_TOKEN` was removed from the `Publish to npm` step
+entirely. This needs one remaining HITL step on npmjs.com (package
+Settings → Trusted Publisher → GitHub Actions), detailed in
+[36](36-verify-publish-workflow-real-run.md)'s own addendum. The
+previously-created `npm-publish` environment secret `NPM_TOKEN` is now
+unused (harmless, left for the maintainer to delete at their discretion)
+— the `environment: npm-publish` gate itself is unchanged and still
+required-reviewer-protected.
