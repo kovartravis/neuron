@@ -3296,3 +3296,15 @@ tags:
 taskId: "30"
 ---
 Wayfinder pickup on the neuron-2.3.0 map: claimed and resolved ticket 30 (Injection Fetches Only the Index). Verified fetchArchitectureCardPayload was already index-only by construction (ticket 28's change), so the real work was deciding compressArchitectureCard's fate and verifying Scope item 3. Measured this repo's real post-28/29 index honestly (1,591 of 6,000 chars, 26.5%) before deciding, per the map's own standing rule; rewrote compressArchitectureCard (src/scanner/compressCard.ts) from scratch for the index's line-per-module shape rather than retiring it, keeping the never-cut-silently discipline tickets 25/27 established but with far less code since there's no per-file detail left to strip. Dogfooding a plain 'neuron hook claude-code session-start' call against this repo's own store surfaced a real, previously undetected bug: the pre-existing additive top-N-in-category query in hook.ts (predating ticket 28) matched real module detail cards since they now share the index's category and tags, injecting a full module card (ui) on every session-start regardless of relevance -- reproduced live and confirmed against this very session's own injected context. Fixed by excluding every module id belonging to the fetched index from that query. Demonstrated the reused-recall design works with no new code: a prompt naming src/harnesses surfaces that module's real card as the top hit via ordinary memory.query. Refreshed ticket 24's captured-card.txt to a real post-fix capture (2,994 bytes, down from ~6,084 stale pre-28 bytes); its tasks needed no changes since both only depend on the dependency list and per-module path list, still present verbatim in the index. compressCard.test.ts fully rewritten (8 tests) for the new shape; one new regression test added to hook.test.ts for the module-card-exclusion fix. npm test 599/600 (one pre-existing, unrelated concurrency-stress.test.ts flake). tsc --noEmit clean. Updated map.md's Notes and Decisions-so-far; frontier is now 20, 22, 32.
+
+---
+id: c6c8abb4-947b-40eb-954f-b6a0cfe915c6
+createdAt: 2026-08-10T01:53:14.802Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "15"
+---
+Wayfinder pickup on neuron-2.3.0 map: committed leftover uncommitted work from the prior session (ticket 30's card-compression rewrite + module-card injection fix, ticket 14's git-log A/B result, graduating tickets 39-42), then claimed and resolved ticket 15 (Publish the Benchmark Suite). Built benchmarks/token-economics.mjs, a new dashboard section aggregating tickets 07/08/18/14/19's token-economics findings, wired into e2e-runner.js's existing orchestration rather than a bespoke generator, plus README/benchmarks-README pointers and reproduction docs. Mid-ticket, found that ticket 19's real favorable SWE-bench A/B (57.7% pooled token reduction) had already shipped to README.md in an earlier commit but was never reflected in its own ticket file or map.md -- corrected the token-economics report to label it established, left 19's own bookkeeping for a future session. Frontier is now 20, 22, 28, 32, 39.
