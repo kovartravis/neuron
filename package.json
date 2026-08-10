@@ -62,7 +62,8 @@
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
     "postinstall": "node -e \"if (process.platform === 'android') { try { require('child_process').execSync('termux-fix-shebang dist/cli.js 2>/dev/null || true'); } catch(e){} }\"",
     "start": "node ./dist/cli.js",
-    "bench:swebench-ab:discovery": "node benchmarks/token-ab/run-swebench-ab.mjs --arms=memory,control"
+    "bench:swebench-ab:discovery": "node benchmarks/token-ab/run-swebench-ab.mjs --arms=memory,control",
+    "bench:hint-follow": "node benchmarks/hint-follow/analyze.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",

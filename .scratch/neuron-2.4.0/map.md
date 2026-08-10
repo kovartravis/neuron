@@ -147,6 +147,25 @@ thin.
   frontier. True frontier as of this session: `07`, `08`, `12`, `14`, `15`,
   `17` (all unclaimed and unblocked); `02`, `04`, `05` claimed and in
   progress; `03`, `09`, `10`, `11`, `13`, `16` blocked.
+- **Ticket 07 resolved, 2026-08-10.** Before building anything, checked
+  with the maintainer whether to spend real money on
+  `benchmarks/token-ab/` for this ticket's outcome-quality question, given
+  the map's own fog already flags that exact funding/execution decision as
+  unresolved and blocking `05` — same precedent, same question, asked
+  again rather than assumed. Maintainer chose free dogfooding
+  instrumentation over a paid run. Built a passive, zero-cost, ongoing
+  measurement instead: `src/harnesses/hintFollowLog.ts` plus a
+  `post-tool-use` hook point (deliberately *not* a `LifecyclePoint` —
+  Claude-Code-only, hand-wired into this repo's own
+  `.claude/settings.json`, never installed by `neuron init`) records every
+  hint firing and every matching `neuron memory query` Bash call;
+  `benchmarks/hint-follow/analyze.mjs` (`npm run bench:hint-follow`) joins
+  them into a follow rate. See its own Answer for the two false-positive
+  bugs found and fixed during live smoke testing. The outcome-quality
+  question is *not* answered by this ticket — moved to Not yet specified
+  below, alongside `05`'s. True frontier as of this session: `08`, `12`,
+  `14`, `15`, `17` (all unclaimed and unblocked); `02`, `04`, `05` claimed
+  and in progress; `03`, `09`, `10`, `11`, `13`, `16` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -163,6 +182,7 @@ thin.
 
 - [01 — Implement Category Declaration Authority](issues/01-implement-category-declaration-authority.md) — built ADR 0017 end to end: `neuron.yaml` I/O moved to the `yaml` package's `Document` API, an auto-declare hook in `NeuronMemory.transact()` appends a minimal `categories.<name>: {}` block on first write to an undeclared category (comments/formatting preserved), `neuron status --check`/`--repair` gained a distinct `undeclaredCategories` finding kind for pre-existing backfill, and this repo's own `scan: category: decisions` alias was reverted and re-verified live (`categories.architecture: {}` auto-declared for real). Found and fixed a real bug along the way: auto-vivifying a `categories` key on a file that had none at all would have silently dropped the schema's implicit default category set.
 - [06 — Per-Prompt Discovery-Command Hint](issues/06-per-prompt-discovery-command-hint.md) — built: `NeuronMemory.countFtsMatches()` (raw, unranked, store-wide `COUNT(*)` against the same FTS index/cleaned query as the keyword leg) feeds `buildDiscoveryHint()`, which appends a real `neuron memory query "<prompt>" --limit <total>` line, dropped whole rather than truncated, when a real gap exists. Had to resolve one design question the ticket left open by omission: the gap must be measured against this turn's gated `limit: 10` recall count (`results.length`), not the post-ledger-dedup injected count — comparing against the latter re-fires the hint every turn on an already-seen entry and broke four pre-existing ledger-dedup tests.
+- [07 — Measure Whether the Discovery-Command Hint Gets Used](issues/07-measure-discovery-hint-usage.md) — maintainer chose free dogfooding instrumentation over a paid `benchmarks/token-ab/` run (same funding question already open on `05`). Built a passive, zero-cost, always-on measurement: `hintFollowLog.ts` + a Claude-Code-only `post-tool-use` hook (hand-wired into this repo's own `.claude/settings.json`, not a `LifecyclePoint`, not installed by `neuron init`) log every hint firing and every matching `neuron memory query` Bash call; `npm run bench:hint-follow` joins them into a follow rate. Found and fixed two real false positives live, both stemming from this repo's self-referential nature (its own memory entries and commits routinely talk about its own commands): a bare substring match flagged commands that only *mentioned* the phrase in quoted text, and — after anchoring to shell-separator position — a `neuron memory add` entry whose quoted content described a chained invocation as prose still matched until a quote-parity check excluded matches inside string literals. The outcome-quality half of the question is unanswered — moved to fog, next to `05`'s.
 
 ## Not yet specified
 
@@ -197,6 +217,20 @@ thin.
   low-single-digit dollars per run at Sonnet-tier pricing for a
   medium-length agentic session). Whichever session claims `05` should
   settle this before spending anything.
+- **Does the discovery-command hint (ticket 06) actually improve task
+  outcomes, not just get followed?** Raised 2026-08-10 while resolving `07`:
+  the maintainer chose free dogfooding instrumentation for the
+  hint-*followed* question (built, see `07`'s Decisions-so-far entry and
+  its own Answer — `npm run bench:hint-follow`), explicitly leaving this
+  half open rather than spending on it that session. Answering it needs a
+  task that genuinely depends on discovering more than the initial recall
+  surfaces (a README/summary task spanning many entries), run through
+  `benchmarks/token-ab/` with and without the hint — the same paid-harness
+  funding/execution question already blocking `05`, immediately above.
+  Worth revisiting once `05` settles that question, or once
+  `bench:hint-follow`'s real follow-rate signal (still empty as of `07`'s
+  close — the instrument only starts collecting from the next real session
+  onward) is strong enough to justify the spend.
 - **`findById` doesn't fully reconcile a cold store.** Moved from
   neuron-2.3.0 2026-08-10. Found 2026-08-08 while building `05`'s A/B
   fixtures: `findById` calls `this.router.query({ limit: 0 })` to force a

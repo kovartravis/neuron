@@ -2349,3 +2349,27 @@ tags:
 taskId: null
 ---
 Ticket 06 (neuron-2.4.0)'s per-prompt discovery hint initially compared the store-wide FTS COUNT(*) against turnIds.length (the final, post-ledger-dedup, post-budget injected count) to decide whether to append a 'more results available' hint. This broke four pre-existing hook.test.ts tests asserting that a repeat pre-prompt turn over an already-shown entry stays silent (src/harnesses/ledger.ts's dedup guarantee) -- because the ledger correctly drops an already-seen entry from turnIds every turn, the FTS count always exceeded it, so the hint re-fired every turn pointing at the same one entry the agent had already seen. Fixed by comparing against results.length instead: this turn's gated, RRF-ranked recall capped at the query's own limit:10, taken BEFORE filterUnseen's ledger dedup and BEFORE buildPayload's char-budget packing (src/commands/hook.ts). This isolates the actual gap the ticket cares about -- the fixed limit:10 hiding the tail of a large match set -- without coupling the hint to session-scoped dedup or per-turn budget truncation, both already owned by ticket 07/the ledger elsewhere.
+
+---
+id: aada84c5-74c2-4ae6-a1a0-1819106675b6
+createdAt: 2026-08-10T20:04:22.498Z
+importance: 4
+tags:
+  - exec
+  - adr
+  - failure-fix
+taskId: null
+---
+Fix for a false-positive Bash-command match in the ticket-07 hint-follow instrument: recordToolUse's QUERY_COMMAND_PATTERN was a bare substring test (/neuron\s+memory\s+query/), so any Bash command that merely quoted or echoed that phrase (found live: this ticket's own smoke test, 'echo <json containing the phrase> | neuron hook claude-code post-tool-use') got logged as a real query invocation. Root cause: substring matching can't distinguish 'runs the command' from 'contains the text of the command'. Fixed by anchoring the pattern to require an actual invocation position — start of command or immediately after a shell separator (;, &, |, a subshell's ( or backtick, or a newline): /(^|[;&|\n(`]\s*)neuron\s+memory\s+query(\s|$)/ in src/harnesses/hintFollowLog.ts. Edge case covered by a regression test: a chained real invocation like 'cd /repo && neuron memory query ...' still matches correctly.
+
+---
+id: 5b7aec68-0263-4f56-b0a2-711ba1d42988
+createdAt: 2026-08-10T20:06:34.249Z
+importance: 4
+tags:
+  - adr
+  - exec
+  - enrichment
+taskId: null
+---
+Second fix for the same false-positive class in the ticket-07 hint-follow instrument (src/harnesses/hintFollowLog.ts): after anchoring QUERY_COMMAND_PATTERN to require an invocation position (start of command or after a shell separator), a real neuron memory add call whose quoted --category learning content itself mentioned the phrase 'cd /repo && neuron memory query ...' as prose still matched, because the separator anchor landed inside a string literal, not at the shell's top level. Root cause: text-only pattern matching without any awareness of shell quoting can't tell 'a separator character appears before this position' from 'a separator character appears before this position AND we are not inside a quoted string'. Fixed by adding isInsideQuotes(), a lightweight quote-parity scan (not a real shell tokenizer) that walks the command up to the match index tracking single/double-quote depth, and only accepts a match when it falls outside both. Iterates every regex match via the g flag rather than stopping at the first, since an earlier match could be the false positive while a later one is real. Regression test covers this exact case: a neuron memory add command whose quoted content describes a chained invocation as an example.

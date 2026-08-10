@@ -1304,3 +1304,15 @@ tags:
 taskId: null
 ---
 Implementation rulings made while building ADR 0017 (ticket 01, neuron-2.4.0) that the ADR itself didn't spell out: (1) autoDeclareCategory is scoped to op 'upsert'/'update' only, never 'delete' -- matches enforceFieldSchema's existing op guard immediately adjacent to it in transact(), and a delete never 'introduces' a category so declaring one on the way out would be surprising. (2) declareCategoryInNeuronYaml must special-case a neuron.yaml with no top-level 'categories' key at all: NeuronConfigSchema's zod .default(...) for the categories block only fires when the key is fully absent, so auto-vivifying a 'categories' key containing only the new entry would silently discard every implicit default category and break pullRules.default's own category reference. Fixed by seeding DEFAULT_CONFIG.categories explicitly first when doc.get('categories') is undefined, before appending the new entry -- making the implicit set explicit rather than replacing it. (3) The auto-declare write mutates this.config.categories[category] = {} IN PLACE rather than reassigning this.config, deliberately, because DualStorageRouter and MultiRootMdStorage are constructed holding the exact same config object reference as NeuronMemory -- an in-place mutation is what makes 'the rest of the same process sees it as declared immediately' (ADR 0017 item 2) true for those consumers without any extra wiring.
+
+---
+id: eb29b99c-2503-4733-9588-69a7f51d8107
+createdAt: 2026-08-10T20:04:33.221Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Ticket 07 (neuron-2.4.0, measure whether the discovery-command hint gets used): chose free passive dogfooding instrumentation over a paid benchmarks/token-ab/ A/B run, per direct maintainer choice when asked (the map's own fog already flagged that exact funding/execution-path question as unresolved and blocking ticket 05, so the same question was asked again rather than assumed). Built src/harnesses/hintFollowLog.ts plus a new 'post-tool-use' hook point that is deliberately NOT a LifecyclePoint — no HarnessAdapter capability contract, no install()/uninstall()/verify() support across the four harnesses, hand-wired only into this repo's own .claude/settings.json (Claude Code only) rather than researched and shipped cross-harness via neuron init, since only this repo dogfoods itself and the alternative would have meant committing to PostToolUse's documented shape for Codex/Copilot/Cursor for a measurement instrument that doesn't need it. The outcome-quality half of the original question (does the hint change task success, not just get followed) stays unanswered, moved to the map's fog next to ticket 05's funding question.
