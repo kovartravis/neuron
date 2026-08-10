@@ -113,12 +113,42 @@ Two real defects this suite surfaced, both currently unfixed:
 No silent data loss was observed, and SIGKILL mid-write recovery passes: the
 store stays readable and writable, and committed data survives.
 
+## Token economics
+
+Answers a different question than the pillars above: not "does it find the
+right thing" but "what does installing it cost, and is that cost worth it."
+A dashboard section (`token-economics.mjs`), not a vitest pillar — it
+aggregates each ticket's own committed result artifacts rather than
+re-measuring anything on every run:
+
+- **Session budget** (ticket 07) — the per-epoch char/token cap, plus this
+  repo's own live `neuron status` numbers (median/p95 chars actually spent).
+- **Injection redundancy** (ticket 08) — how much of what gets injected the
+  agent already had resident (`CLAUDE.md` + `git log`), by category.
+- **Counterfactual A/Bs** (tickets 10/18, 14, 19) — real Claude Sonnet 5
+  sessions, memory hook on vs. off, graded by a deterministic script, not a
+  vibe. Ticket 18 is ticket 10's regression re-run after the fix that closed
+  it; ticket 19's SWE-bench-Lite run is the cleanest instrument of the three
+  (the answer is structurally absent from the control fixture, not just
+  unlikely to be found).
+- **Not run** — what hasn't been measured yet (currently: ticket 24, the
+  architecture-card A/B), so a gap reads as "not run," never as "no effect."
+
+Every finding is labeled `established` or `not run` — nothing here rounds an
+underpowered or not-yet-run comparison into a claim. Regenerating this
+section (`npm run bench:report`) costs nothing; it only reads committed
+`results.json`/`findings.md` files plus one local `neuron status` call. To
+re-earn a number yourself, see each A/B's own `npm run bench:*-ab` command in
+[`benchmarks/token-ab/README.md`](token-ab/README.md) — that's the only part
+of this section that spends anything.
+
 ## Artifacts
 
 Written to `benchmarks/reports/`:
 
 - `index.html` — the dashboard (`npm run bench:view`)
 - `e2e-benchmark-scorecard.json` — per-pillar status + metrics
+- `token-economics.json` — the token-economics section's own data, see above
 - `history.json` — one compact row per run, for movement over time
 - `*-metrics.json` — raw per-suite measurements
 

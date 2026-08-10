@@ -424,6 +424,27 @@ Every session's full answer text, token breakdown, and per-gate grade is
 written to `results.json`, so you can re-grade our verdicts offline without
 spending anything — and disagree with them.
 
+### The full benchmark report
+
+This section cherry-picks the highlights. Every token-economics finding —
+`07`'s session budget, `08`'s injection-redundancy audit, both counterfactual
+A/Bs above, and what hasn't been run yet — lives alongside the retrieval
+pillars in one generated report, each number labeled **established** or
+**not run**, never rounded toward a claim:
+
+```bash
+npm run bench:report   # free, ~10s — re-renders from the result files already in this repo
+npm run bench:view     # same, then opens benchmarks/reports/index.html
+```
+
+That regenerates the report from evidence already committed to this repo —
+nothing to spend. To re-earn any one number yourself, the A/B's own command
+is next to its number above (or in
+[`benchmarks/token-ab/README.md`](benchmarks/token-ab/README.md)); the
+retrieval pillars behind it re-run via `npm run test:e2e` (sanity tier,
+minutes) or `npm run bench` (full tier, longer, real ONNX embedding +
+summarization).
+
 ## 🖥️ Local dashboard
 
 ```bash

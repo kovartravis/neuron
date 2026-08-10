@@ -186,6 +186,17 @@ if (!reportOnly) {
   fs.writeFileSync(historyPath, JSON.stringify(history.slice(-200), null, 2), 'utf8');
 }
 
+// Ticket 15 (neuron-2.3.0): the token-economics artifact is cheap to
+// regenerate (reads committed result JSON + one `neuron status` call, no
+// LLM spend) so it's rebuilt on every run/report-only pass, same as the
+// scorecard above — no separate opt-in step for a skeptic to forget.
+const { computeTokenEconomics } = await import('./token-economics.mjs');
+fs.writeFileSync(
+  path.join(reportDir, 'token-economics.json'),
+  JSON.stringify(computeTokenEconomics(rootDir), null, 2),
+  'utf8'
+);
+
 const { generateDashboard } = await import('./generate-dashboard.js');
 const dashboardPath = generateDashboard(reportDir);
 

@@ -1,0 +1,217 @@
+{
+  "generatedAt": "2026-08-10T01:50:33.338Z",
+  "budget": {
+    "honestyBand": "established",
+    "ticket": 7,
+    "sessionStartCharBudget": 6000,
+    "prePromptCharBudget": 1500,
+    "epochCharBudget": 18000,
+    "charsPerTokenRatio": 3,
+    "epochTokenBudgetApprox": 6000,
+    "live": {
+      "epochCharBudget": 18000,
+      "charsPerTokenRatio": 3,
+      "epochTokenBudgetApprox": 6000,
+      "sessionsObserved": 55,
+      "epochsObserved": 54,
+      "medianCharsPerEpoch": 5887,
+      "p95CharsPerEpoch": 17631,
+      "maxCharsPerEpoch": 17970,
+      "meanCharsPerTurn": 3764
+    },
+    "narrative": "Per-epoch (not per-session) char budget, hard stop on exhaustion, published at a conservative 3 chars/token (~3% of a 200K window). \"live\" is this repo's own recorded cost from `neuron status`, not a projection."
+  },
+  "redundancy": {
+    "honestyBand": "established",
+    "ticket": 8,
+    "bar": 0.7,
+    "byCategory": [
+      {
+        "category": "decisions",
+        "uniqueEntries": 6,
+        "occurrences": 18,
+        "meanSim": 0.776,
+        "redundantEntriesAtBar": 5,
+        "redundantOccurrencesAtBar": 13,
+        "redundantEntryFraction": 0.833,
+        "redundantOccurrenceFraction": 0.722
+      },
+      {
+        "category": "history",
+        "uniqueEntries": 18,
+        "occurrences": 29,
+        "meanSim": 0.798,
+        "redundantEntriesAtBar": 18,
+        "redundantOccurrencesAtBar": 29,
+        "redundantEntryFraction": 1,
+        "redundantOccurrenceFraction": 1
+      },
+      {
+        "category": "learning",
+        "uniqueEntries": 1,
+        "occurrences": 1,
+        "meanSim": 0.92,
+        "redundantEntriesAtBar": 1,
+        "redundantOccurrencesAtBar": 1,
+        "redundantEntryFraction": 1,
+        "redundantOccurrenceFraction": 1
+      }
+    ],
+    "narrative": "Max cosine similarity of each injected entry against the resident corpus (CLAUDE.md + full git log), the overstating-cost measure the band standardized on. `history` is saturated redundant against `git log`; `decisions` is substantially redundant once a single vacuous entry is excluded; `learning` is a one-data-point limitation."
+  },
+  "counterfactualAb": {
+    "honestyBand": "established",
+    "generatedAt": "2026-08-08T11:52:38.984Z",
+    "model": "claude-sonnet-5",
+    "taskCount": 2,
+    "repeats": 3,
+    "sessionCount": 12,
+    "totalCostUsd": 1.1103,
+    "summary": {
+      "armStats": {
+        "memory": {
+          "sessions": 6,
+          "passed": 6,
+          "failed": 0,
+          "failureRate": 0,
+          "tokens": {
+            "mean": 52130,
+            "median": 43627,
+            "p95": 54641,
+            "min": 37547,
+            "max": 87337
+          },
+          "costUsd": 0.705
+        },
+        "control": {
+          "sessions": 6,
+          "passed": 4,
+          "failed": 2,
+          "failureRate": 0.3333333333333333,
+          "tokens": {
+            "mean": 27474,
+            "median": 26151,
+            "p95": 33549,
+            "min": 17460,
+            "max": 35145
+          },
+          "costUsd": 0.4053
+        }
+      },
+      "riskCases": [],
+      "tokenDiff": -24656,
+      "spread": 49790,
+      "noMeasuredDifference": true
+    },
+    "ticket": 18,
+    "supersedesTicket": 10,
+    "treatmentArm": "memory",
+    "controlArm": "control",
+    "narrative": "Ticket 10's original 4-task run found the memory arm failed MORE often than no-memory control (33% vs 17%) — both misses traced to a superseded decisions.md entry outranking its own correction. Ticket 17 fixed that (supersession), and this re-run of the 2 regressed tasks confirms the fix: memory-arm failure dropped to 0%, beating control (unchanged at 33%). No measured token difference either run — memory sessions read more context, not fewer."
+  },
+  "gitlogAb": {
+    "honestyBand": "established",
+    "generatedAt": "2026-08-09T20:34:28.353Z",
+    "model": "claude-sonnet-5",
+    "taskCount": 3,
+    "repeats": 3,
+    "sessionCount": 18,
+    "totalCostUsd": 1.4514,
+    "summary": {
+      "armStats": {
+        "gitlog": {
+          "sessions": 9,
+          "passed": 9,
+          "failed": 0,
+          "failureRate": 0,
+          "tokens": {
+            "mean": 17427,
+            "median": 16177,
+            "p95": 25327,
+            "min": 7490,
+            "max": 34493
+          },
+          "costUsd": 0.4109
+        },
+        "agent": {
+          "sessions": 9,
+          "passed": 8,
+          "failed": 1,
+          "failureRate": 0.1111111111111111,
+          "tokens": {
+            "mean": 49598,
+            "median": 43024,
+            "p95": 68784,
+            "min": 30536,
+            "max": 88259
+          },
+          "costUsd": 1.0404
+        }
+      },
+      "riskCases": [],
+      "tokenDiff": 32171,
+      "spread": 57723,
+      "noMeasuredDifference": true
+    },
+    "ticket": 14,
+    "treatmentArm": "gitlog",
+    "controlArm": "agent",
+    "narrative": "Hook-injected git-log search beat the agent running `git log` itself on every raw number (0% vs 11% failure, ~17.4k vs ~49.6k mean tokens) but the token gap does not clear this suite's own no-measured-difference guard (diff smaller than the observed spread, driven by agent-arm variance on one task). Maintainer ruled to build it anyway, on the raw numbers."
+  },
+  "swebenchAb": {
+    "honestyBand": "established",
+    "generatedAt": "2026-08-09T15:29:12.494Z",
+    "model": "claude-sonnet-5",
+    "taskCount": 2,
+    "repeats": 4,
+    "sessionCount": 16,
+    "totalCostUsd": 0.6854,
+    "summary": {
+      "armStats": {
+        "injection": {
+          "sessions": 8,
+          "passed": 8,
+          "failed": 0,
+          "failureRate": 0,
+          "tokens": {
+            "mean": 8144,
+            "median": 7006,
+            "p95": 7472,
+            "min": 6636,
+            "max": 15651
+          },
+          "costUsd": 0.2232
+        },
+        "control": {
+          "sessions": 8,
+          "passed": 8,
+          "failed": 0,
+          "failureRate": 0,
+          "tokens": {
+            "mean": 19267,
+            "median": 13612,
+            "p95": 24446,
+            "min": 10353,
+            "max": 32574
+          },
+          "costUsd": 0.4623
+        }
+      },
+      "riskCases": [],
+      "tokenDiff": 11123,
+      "spread": 22221,
+      "noMeasuredDifference": true
+    },
+    "ticket": 19,
+    "treatmentArm": "injection",
+    "controlArm": "control",
+    "narrative": "Real SWE-bench Lite checkouts pinned before their real fix landed, so the answer is structurally absent without recall — a cleaner instrument than 10/18, which dogfooded this repo, where control could stumble onto an answer in ordinary docs. Pooled 19,267 -> 8,144 tokens (57.7%), 16/16 correct in both arms. One task (`matplotlib-24265`) separates completely (Mann-Whitney U=0, p=0.029); the other (`django-11019`, 24.9%) doesn't reach significance alone. This suite's own pooled no-measured-difference guard (same statistic ticket 10 used) prints true here — a known reporting gap: it washes out a real per-task effect against another task's unrelated variance, so the per-task numbers above are the correct read, not the pooled verdict field."
+  },
+  "notEstablished": [
+    {
+      "ticket": 24,
+      "title": "Architecture Card A/B: With vs Without",
+      "reason": "Harness built and dry-run-validated; the live pilot has not run — blocked on choosing a funded execution path (API key vs. driven Claude Code sessions)."
+    }
+  ]
+}

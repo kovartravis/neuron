@@ -1155,6 +1155,29 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   [41](issues/41-update-init-skill-readme-for-git-log-index.md)/[42](issues/42-dogfood-git-log-index.md)
   for design, build, docs sweep (init/skill/README), and dogfooding, in
   that dependency order. Unblocks `15`.
+- **[15 — Publish the Benchmark Suite](issues/15-benchmark-suite-publication.md)
+  resolved 2026-08-09.** A new "Token economics" dashboard section
+  (`benchmarks/token-economics.mjs`), wired into `e2e-runner.js`'s existing
+  build/purge/manifest pipeline rather than a bespoke report generator, so
+  `npm run bench:report`/`bench:view` regenerate it for free from each
+  ticket's already-committed `results.json`/`findings.md`. Aggregates `07`
+  (session budget, plus this repo's own live `neuron status` numbers), `08`
+  (injection redundancy, recomputed live from its `results.json`), `18`
+  (supersedes `10`; reported as "found a regression, fixed it, verified the
+  fix"), and `14` — each labeled `established`; `24` labeled `not run`
+  (blocked on a funded execution path). README gained a "The full benchmark
+  report" pointer under `03`'s disclosure section;
+  [benchmarks/README.md](../../benchmarks/README.md) documents the section.
+  **Found mid-ticket:** `19`'s real, favorable, adequately-powered SWE-bench
+  synthetic-fixture run (16 sessions, 57.7% pooled token reduction, already
+  shipped to `README.md` in commit `0bea898`) was mislabeled `not run` in
+  this ticket's first draft — its own tracker bookkeeping (`Status: claimed`,
+  no `## Answer`, no map entry) never caught up to the real work. Corrected
+  to `established` here, sourced directly from `19`'s own `results.json` —
+  but `19`'s own Status/Answer/map entry are **not fixed**, left for
+  whichever session picks it back up next. `npm test` 587/587 (no `src/`
+  changes); `tsc --noEmit` clean. Frontier is now `20`, `22`, `28`, `32`,
+  `39`.
 
 ## Not yet specified
 

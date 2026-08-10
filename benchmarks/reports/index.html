@@ -318,6 +318,163 @@
     </table></div>
   </div>
   
+  <h2>Token economics — does neuron cost more than it returns?</h2>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+      <div class="name">Session budget (ticket 7)</div>
+      <span class="status pass">✔ established</span>
+    </div>
+    <div class="tiles" style="margin-top:.75rem">
+      <div class="tile"><div class="label">epoch budget</div><div class="value">18,000 chars</div><div class="note">~6,000 tok @ 3:1</div></div>
+      <div class="tile"><div class="label">median/epoch</div><div class="value">5,887</div><div class="note">this repo, live</div></div>
+      <div class="tile"><div class="label">p95/epoch</div><div class="value">17,631</div><div class="note">of 54 epochs</div></div>
+      <div class="tile"><div class="label">sessions observed</div><div class="value">55</div><div class="note">this repo, live</div></div>
+    </div>
+    <div class="metrics" style="margin-top:.75rem">Per-epoch (not per-session) char budget, hard stop on exhaustion, published at a conservative 3 chars/token (~3% of a 200K window). &quot;live&quot; is this repo&#39;s own recorded cost from `neuron status`, not a projection.</div>
+  </div>
+
+  <div class="card" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+      <div class="name">Injection redundancy against resident context (ticket 8)</div>
+      <span class="status pass">✔ established</span>
+    </div>
+    <div class="scroll" style="margin-top:.75rem">
+      <table>
+        <thead><tr><th>Category</th><th class="num">Unique entries</th><th class="num">Mean sim</th><th class="num">Entries ≥0.7</th><th class="num">Occurrences ≥0.7</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>decisions</td>
+      <td class="num">6</td>
+      <td class="num">0.776</td>
+      <td class="num">5/6 (83.3%)</td>
+      <td class="num">13/18 (72.2%)</td>
+    </tr>
+    <tr>
+      <td>history</td>
+      <td class="num">18</td>
+      <td class="num">0.798</td>
+      <td class="num">18/18 (100.0%)</td>
+      <td class="num">29/29 (100.0%)</td>
+    </tr>
+    <tr>
+      <td>learning</td>
+      <td class="num">1</td>
+      <td class="num">0.92</td>
+      <td class="num">1/1 (100.0%)</td>
+      <td class="num">1/1 (100.0%)</td>
+    </tr></tbody>
+      </table>
+    </div>
+    <div class="metrics" style="margin-top:.75rem">Max cosine similarity of each injected entry against the resident corpus (CLAUDE.md + full git log), the overstating-cost measure the band standardized on. `history` is saturated redundant against `git log`; `decisions` is substantially redundant once a single vacuous entry is excluded; `learning` is a one-data-point limitation.</div>
+  </div>
+
+  <div style="margin-top:1rem;font-size:.8125rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Counterfactual A/Bs — memory arm vs no-memory control</div>
+  
+  <div class="card" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap">
+      <div class="name">Ticket 18 (supersedes 10) — 12 sessions, $1.1103 spent</div>
+      <span class="status pass">✔ established</span>
+    </div>
+    <div class="scroll" style="margin-top:.75rem">
+      <table>
+        <thead><tr><th>Arm</th><th class="num">Sessions</th><th class="num">Failure rate</th><th class="num">Mean tokens</th><th class="num">Cost</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>memory</td>
+      <td class="num">6</td>
+      <td class="num">0.0%</td>
+      <td class="num">52,130</td>
+      <td class="num">$0.705</td>
+    </tr>
+    <tr>
+      <td>control</td>
+      <td class="num">6</td>
+      <td class="num">33.3%</td>
+      <td class="num">27,474</td>
+      <td class="num">$0.405</td>
+    </tr></tbody>
+      </table>
+    </div>
+    <div class="metrics" style="margin-top:.75rem">
+      token diff -24,656 vs spread 49,790 —
+      <strong>no measured difference</strong>
+    </div>
+    <div class="metrics" style="margin-top:.5rem">Ticket 10&#39;s original 4-task run found the memory arm failed MORE often than no-memory control (33% vs 17%) — both misses traced to a superseded decisions.md entry outranking its own correction. Ticket 17 fixed that (supersession), and this re-run of the 2 regressed tasks confirms the fix: memory-arm failure dropped to 0%, beating control (unchanged at 33%). No measured token difference either run — memory sessions read more context, not fewer.</div>
+  </div>
+  
+  <div class="card" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap">
+      <div class="name">Ticket 14 — 18 sessions, $1.4514 spent</div>
+      <span class="status pass">✔ established</span>
+    </div>
+    <div class="scroll" style="margin-top:.75rem">
+      <table>
+        <thead><tr><th>Arm</th><th class="num">Sessions</th><th class="num">Failure rate</th><th class="num">Mean tokens</th><th class="num">Cost</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>gitlog</td>
+      <td class="num">9</td>
+      <td class="num">0.0%</td>
+      <td class="num">17,427</td>
+      <td class="num">$0.411</td>
+    </tr>
+    <tr>
+      <td>agent</td>
+      <td class="num">9</td>
+      <td class="num">11.1%</td>
+      <td class="num">49,598</td>
+      <td class="num">$1.040</td>
+    </tr></tbody>
+      </table>
+    </div>
+    <div class="metrics" style="margin-top:.75rem">
+      token diff 32,171 vs spread 57,723 —
+      <strong>no measured difference</strong>
+    </div>
+    <div class="metrics" style="margin-top:.5rem">Hook-injected git-log search beat the agent running `git log` itself on every raw number (0% vs 11% failure, ~17.4k vs ~49.6k mean tokens) but the token gap does not clear this suite&#39;s own no-measured-difference guard (diff smaller than the observed spread, driven by agent-arm variance on one task). Maintainer ruled to build it anyway, on the raw numbers.</div>
+  </div>
+  
+  <div class="card" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap">
+      <div class="name">Ticket 19 — 16 sessions, $0.6854 spent</div>
+      <span class="status pass">✔ established</span>
+    </div>
+    <div class="scroll" style="margin-top:.75rem">
+      <table>
+        <thead><tr><th>Arm</th><th class="num">Sessions</th><th class="num">Failure rate</th><th class="num">Mean tokens</th><th class="num">Cost</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>injection</td>
+      <td class="num">8</td>
+      <td class="num">0.0%</td>
+      <td class="num">8,144</td>
+      <td class="num">$0.223</td>
+    </tr>
+    <tr>
+      <td>control</td>
+      <td class="num">8</td>
+      <td class="num">0.0%</td>
+      <td class="num">19,267</td>
+      <td class="num">$0.462</td>
+    </tr></tbody>
+      </table>
+    </div>
+    <div class="metrics" style="margin-top:.75rem">
+      token diff 11,123 vs spread 22,221 —
+      <strong>no measured difference</strong>
+    </div>
+    <div class="metrics" style="margin-top:.5rem">Real SWE-bench Lite checkouts pinned before their real fix landed, so the answer is structurally absent without recall — a cleaner instrument than 10/18, which dogfooded this repo, where control could stumble onto an answer in ordinary docs. Pooled 19,267 -&gt; 8,144 tokens (57.7%), 16/16 correct in both arms. One task (`matplotlib-24265`) separates completely (Mann-Whitney U=0, p=0.029); the other (`django-11019`, 24.9%) doesn&#39;t reach significance alone. This suite&#39;s own pooled no-measured-difference guard (same statistic ticket 10 used) prints true here — a known reporting gap: it washes out a real per-task effect against another task&#39;s unrelated variance, so the per-task numbers above are the correct read, not the pooled verdict field.</div>
+  </div>
+  
+    <div class="card" style="margin-top:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+        <div class="name">Ticket 24 — Architecture Card A/B: With vs Without</div>
+        <span class="status warn">! not run</span>
+      </div>
+      <div class="metrics" style="margin-top:.4rem">Harness built and dry-run-validated; the live pilot has not run — blocked on choosing a funded execution path (API key vs. driven Claude Code sessions).</div>
+    </div>
+  
   <h2>Run history</h2>
   <div class="card scroll">
     <table>
@@ -412,7 +569,8 @@
 
   <footer>
     Generated from <code>e2e-benchmark-scorecard.json</code>, <code>adversarial-metrics.json</code>,
-    and <code>contention-metrics.json</code>. Regenerate with <code>npm run bench:report</code>.
+    <code>contention-metrics.json</code>, and <code>token-economics.json</code>.
+    Regenerate with <code>npm run bench:report</code>.
   </footer>
 </div>
 </body>

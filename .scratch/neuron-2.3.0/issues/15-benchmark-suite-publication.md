@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 10, 14
 Band: context cost
 
@@ -59,12 +59,78 @@ number.
 
 ## Deliverables
 
-- [ ] Token-economics pillar added to the benchmark suite alongside the
+- [x] Token-economics pillar added to the benchmark suite alongside the
       existing retrieval pillars
-- [ ] Every finding labeled with its honesty band (established /
+- [x] Every finding labeled with its honesty band (established /
       underpowered / not run)
-- [ ] README summary + link to the full report
-- [ ] Documented reproduction steps with expected cost/runtime
+- [x] README summary + link to the full report
+- [x] Documented reproduction steps with expected cost/runtime
+
+## Answer
+
+**A dashboard section, not a vitest pillar** (Scope item 1's "or" branch) —
+`benchmarks/token-economics.mjs` aggregates each ticket's already-committed
+result artifacts (`results.json`/`findings.md`) rather than re-measuring
+anything, and is wired into the *existing* orchestration exactly as scoped:
+`e2e-runner.js` (the shared engine behind `test:e2e`/`bench`/`bench:report`)
+writes `benchmarks/reports/token-economics.json` on every run or
+report-only pass — same build/purge/manifest pipeline the scorecard already
+uses, no bespoke report generator — and `generate-dashboard.js` renders it
+as a new "Token economics" section in `benchmarks/reports/index.html`,
+alongside the retrieval pillars. Regenerating it costs nothing (reads local
+files + one `neuron status` call); it never runs an A/B itself.
+
+**Honesty bands** (Scope item 2): every entry carries `established` or
+`not run` (this repo never hit the "underpowered" case — each A/B that ran
+was adequately powered on at least one task). Established: the session
+budget (`07`, with this repo's own live `neuron status` numbers alongside
+the published constants), injection redundancy (`08`, computed live from
+its committed `results.json` — the ≥0.70 table matches its `findings.md`
+exactly), the counterfactual A/B (`18`, which supersedes `10` — reported as
+"found a regression, fixed it, verified the fix," per this ticket's own
+Comments), the git-log A/B (`14`), and the SWE-bench synthetic-fixture A/B
+(`19` — see the correction below). Not run: the architecture-card A/B
+(`24`, blocked on a funded execution path).
+
+**Found mid-ticket, corrected before publishing:** ticket `19` already has a
+real, favorable, adequately-powered result — a live 16-session
+`injection`-vs-`control` run (pooled 19,267→8,144 tokens, 57.7% reduction,
+16/16 correct both arms, one task significant at p=0.029) — shipped to
+`README.md` and `benchmarks/token-ab/README.md` in commit `0bea898`, well
+before this session. But `19`'s own ticket file is still `Status: claimed`
+with no `## Answer`, and `map.md`'s Decisions-so-far has no entry for it —
+only the earlier difficulty-calibration pilot narrative that preceded the
+real run. This ticket's first draft mislabeled `19` as "not run" by trusting
+that bookkeeping instead of checking the actual repo state (README.md +
+`benchmarks/token-ab/results/19-.../full-injection-low/results.json`).
+Corrected: `19`'s result is reported here as `established`, sourced directly
+from its own committed `results.json`. **Not fixed here, left for whoever
+picks `19` back up**: flipping its `Status:` to `resolved` and giving it a
+real `## Answer`/map entry — out of this ticket's own scope, and `19`'s own
+file may still have a reason it was left open (the medium-effort prompt-gap
+finding) that a fresh session should read before closing it.
+
+**README** (Scope item 3): a new "The full benchmark report" subsection
+under the existing "📊 Measured, not just claimed" section points at
+`npm run bench:report`/`bench:view` and the generated dashboard, framed the
+same way as `03`'s compatibility disclosure — what's actually been measured,
+not just claimed. `benchmarks/README.md` got a matching "Token economics"
+section documenting what the dashboard section aggregates and why it's a
+section rather than a pillar.
+
+**Reproducibility** (Scope item 4): `npm run bench:report` (~10s, $0)
+reproduces every number in the token-economics section from files already
+in this repo — no re-run needed to *see* the numbers. Re-earning any one
+finding costs what its own `npm run bench:*-ab` command costs (documented
+next to each number and in `benchmarks/token-ab/README.md`); the retrieval
+pillars behind the same dashboard re-run via `npm run test:e2e` (sanity,
+minutes) or `npm run bench` (full, longer, real ONNX embedding).
+
+`npm test` 587/587 (this ticket touched no `src/` files); `tsc --noEmit`
+clean. Manually verified `benchmarks/reports/index.html` renders the new
+section with balanced markup and no numeric drift in the unrelated
+retrieval-pillar scorecard (confirmed by diffing against the committed
+baseline before and after).
 
 ## Comments
 

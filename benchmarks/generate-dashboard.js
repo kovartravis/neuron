@@ -30,6 +30,7 @@ export function generateDashboard(reportDir) {
   const adversarial = readJson(path.join(reportDir, 'adversarial-metrics.json'));
   const contention = readJson(path.join(reportDir, 'contention-metrics.json'));
   const history = readJson(path.join(reportDir, 'history.json')) ?? [];
+  const tokenEconomics = readJson(path.join(reportDir, 'token-economics.json'));
 
   const advPillar = adversarial?.pillars?.find(p => p.pillar.includes('Adversarial'));
   const scalePillar = adversarial?.pillars?.find(p => p.pillar.includes('Scale Curve'));
@@ -126,11 +127,13 @@ ${cssVars(DARK)}
   ${renderAdversarial(advPillar)}
   ${renderScaleCurve(scalePillar)}
   ${renderContention(contPillar)}
+  ${renderTokenEconomics(tokenEconomics)}
   ${renderHistory(history)}
 
   <footer>
     Generated from <code>e2e-benchmark-scorecard.json</code>, <code>adversarial-metrics.json</code>,
-    and <code>contention-metrics.json</code>. Regenerate with <code>npm run bench:report</code>.
+    <code>contention-metrics.json</code>, and <code>token-economics.json</code>.
+    Regenerate with <code>npm run bench:report</code>.
   </footer>
 </div>
 </body>
@@ -259,6 +262,112 @@ function renderContention(p) {
       <tbody>${crash.map(c => `<tr><td>${c.round}</td><td class="num">${c.seeded}</td><td class="num">${c.survivorsAfterCrash}</td><td>${statusLabel(c.readableAndWritableAfterCrash ? 'PASSED' : 'FAILED')}</td></tr>`).join('')}</tbody>
     </table></div>` : ''}
   </div>`;
+}
+
+function honestyBadge(band) {
+  const cls = band === 'established' ? 'pass' : 'warn';
+  const icon = band === 'established' ? '✔' : '!';
+  return `<span class="status ${cls}">${icon} ${escapeHtml(band)}</span>`;
+}
+
+function renderAbSummary(ab) {
+  if (!ab) return '';
+  if (ab.honestyBand !== 'established') {
+    return `<div class="card" style="margin-top:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+        <div class="name">${escapeHtml(ab.title ?? `Ticket ${ab.ticket}`)}</div>
+        ${honestyBadge(ab.honestyBand)}
+      </div>
+      <div class="metrics" style="margin-top:.4rem">${escapeHtml(ab.reason ?? '')}</div>
+    </div>`;
+  }
+  const s = ab.summary;
+  const arms = Object.entries(s.armStats);
+  const rows = arms.map(([arm, st]) => `
+    <tr>
+      <td>${escapeHtml(arm)}</td>
+      <td class="num">${st.sessions}</td>
+      <td class="num">${pct(st.failureRate)}</td>
+      <td class="num">${st.tokens.mean?.toLocaleString() ?? '—'}</td>
+      <td class="num">$${st.costUsd.toFixed(3)}</td>
+    </tr>`).join('');
+  return `
+  <div class="card" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap">
+      <div class="name">Ticket ${ab.ticket}${ab.supersedesTicket ? ` (supersedes ${ab.supersedesTicket})` : ''} — ${ab.sessionCount} sessions, $${ab.totalCostUsd} spent</div>
+      ${honestyBadge(ab.honestyBand)}
+    </div>
+    <div class="scroll" style="margin-top:.75rem">
+      <table>
+        <thead><tr><th>Arm</th><th class="num">Sessions</th><th class="num">Failure rate</th><th class="num">Mean tokens</th><th class="num">Cost</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="metrics" style="margin-top:.75rem">
+      token diff ${s.tokenDiff?.toLocaleString()} vs spread ${s.spread?.toLocaleString()} —
+      <strong>${s.noMeasuredDifference ? 'no measured difference' : 'measured difference'}</strong>
+    </div>
+    ${ab.narrative ? `<div class="metrics" style="margin-top:.5rem">${escapeHtml(ab.narrative)}</div>` : ''}
+  </div>`;
+}
+
+function renderTokenEconomics(te) {
+  if (!te) return '';
+  const b = te.budget;
+  const redRows = (te.redundancy?.byCategory ?? []).map(r => `
+    <tr>
+      <td>${escapeHtml(r.category)}</td>
+      <td class="num">${r.uniqueEntries}</td>
+      <td class="num">${r.meanSim}</td>
+      <td class="num">${r.redundantEntriesAtBar}/${r.uniqueEntries} (${pct(r.redundantEntryFraction)})</td>
+      <td class="num">${r.redundantOccurrencesAtBar}/${r.occurrences} (${pct(r.redundantOccurrenceFraction)})</td>
+    </tr>`).join('');
+
+  const notEstablished = (te.notEstablished ?? []).map(n => `
+    <div class="card" style="margin-top:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+        <div class="name">Ticket ${n.ticket} — ${escapeHtml(n.title)}</div>
+        ${honestyBadge('not run')}
+      </div>
+      <div class="metrics" style="margin-top:.4rem">${escapeHtml(n.reason)}</div>
+    </div>`).join('');
+
+  return `
+  <h2>Token economics — does neuron cost more than it returns?</h2>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+      <div class="name">Session budget (ticket 7)</div>
+      ${honestyBadge(b?.honestyBand ?? 'not run')}
+    </div>
+    <div class="tiles" style="margin-top:.75rem">
+      ${tile('epoch budget', `${b?.epochCharBudget?.toLocaleString() ?? '—'} chars`, `~${b?.epochTokenBudgetApprox?.toLocaleString() ?? '—'} tok @ ${b?.charsPerTokenRatio ?? '—'}:1`)}
+      ${tile('median/epoch', b?.live?.medianCharsPerEpoch?.toLocaleString() ?? '—', 'this repo, live')}
+      ${tile('p95/epoch', b?.live?.p95CharsPerEpoch?.toLocaleString() ?? '—', `of ${b?.live?.epochsObserved ?? '—'} epochs`)}
+      ${tile('sessions observed', b?.live?.sessionsObserved ?? '—', 'this repo, live')}
+    </div>
+    ${b?.narrative ? `<div class="metrics" style="margin-top:.75rem">${escapeHtml(b.narrative)}</div>` : ''}
+  </div>
+
+  <div class="card" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+      <div class="name">Injection redundancy against resident context (ticket 8)</div>
+      ${honestyBadge(te.redundancy?.honestyBand ?? 'not run')}
+    </div>
+    <div class="scroll" style="margin-top:.75rem">
+      <table>
+        <thead><tr><th>Category</th><th class="num">Unique entries</th><th class="num">Mean sim</th><th class="num">Entries ≥${te.redundancy?.bar ?? 0.7}</th><th class="num">Occurrences ≥${te.redundancy?.bar ?? 0.7}</th></tr></thead>
+        <tbody>${redRows}</tbody>
+      </table>
+    </div>
+    ${te.redundancy?.narrative ? `<div class="metrics" style="margin-top:.75rem">${escapeHtml(te.redundancy.narrative)}</div>` : ''}
+  </div>
+
+  <div style="margin-top:1rem;font-size:.8125rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Counterfactual A/Bs — memory arm vs no-memory control</div>
+  ${renderAbSummary(te.counterfactualAb)}
+  ${renderAbSummary(te.gitlogAb)}
+  ${renderAbSummary(te.swebenchAb)}
+  ${notEstablished}`;
 }
 
 function renderHistory(history) {
