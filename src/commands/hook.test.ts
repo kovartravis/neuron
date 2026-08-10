@@ -522,6 +522,36 @@ describe('CLI Command: hook', () => {
     expect(context).not.toContain('Module detail that must never appear unprompted');
   });
 
+  // --- Ticket 06 (neuron-2.4.0): discovery-command hint ---
+
+  it('appends a ready-to-run discovery command when store-wide FTS matches exceed what this turn injected', () => {
+    // `limit: 10` on the recall query plus a small PRE_PROMPT_CHAR_BUDGET
+    // means only a few of these can actually be injected, while the FTS
+    // count (no LIMIT) sees all of them — a real, counted gap.
+    for (let i = 0; i < 15; i++) {
+      execAdd(`Repository Pattern note ${i}: use it for database access here`, 'learning');
+    }
+    const result = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'hint-session', prompt: 'Repository Pattern database access' })
+    );
+    expect(result.status).toBe(0);
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).toContain('neuron memory query');
+    expect(context).toContain('--limit');
+  });
+
+  it('fires no hint when this turn already surfaced every store-wide match', () => {
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    const result = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'no-hint-session', prompt: 'how should I access the database here' })
+    );
+    expect(result.status).toBe(0);
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).not.toContain('neuron memory query');
+  });
+
   it('truncates an oversized architecture card instead of dropping it entirely', () => {
     const hugeContent = 'X'.repeat(20000);
     writeCardAtStableId('architecture', hugeContent);

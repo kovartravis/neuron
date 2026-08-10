@@ -1,5 +1,6 @@
 export * from './types.js';
 export * from './payload.js';
+export * from './discoveryHint.js';
 export * from './cacheDir.js';
 export * from './ledger.js';
 export * from './hookState.js';

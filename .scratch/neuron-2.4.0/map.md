@@ -126,6 +126,27 @@ thin.
   True frontier as of this session: `01`, `06`, `08`, `12`, `14`, `15` (all
   unclaimed and unblocked); `02`, `04`, `05` claimed and in progress; `03`,
   `07`, `09`, `10`, `11`, `13`, `16` blocked.
+- **Ticket 17 added, 2026-08-10**, direct maintainer request: [17 —
+  Antagonistic Recall: Does Neuron Abstain When Nothing Is
+  Relevant?](issues/17-antagonistic-recall-abstention-benchmark.md). Every
+  existing recall benchmark (Pillar 7's adversarial corpus, LongMemEval's
+  `retrieval_eval.py`) measures ranking when a relevant memory exists; none
+  measure the mirror case ADR 0012 opened with — a query with nothing
+  relevant in the store at all, and whether the shipped lexical-only gate
+  (ticket `41`) actually abstains rather than passing through an incidental
+  keyword match. `relevance_gate_eval.py`'s Run 3 negative control already
+  builds the right fixture (a cross-partition query guaranteed to share no
+  gold evidence) but only recorded its cosine, never its actual gate
+  decision — this ticket finishes that measurement and adds the resident
+  E2E equivalent. Unclaimed, unblocked. True frontier updated to include
+  `17`.
+- **Ticket 06 resolved, 2026-08-10.** Built the discovery-command hint;
+  see its own Answer and the Decisions-so-far entry above. Resolving it
+  unblocks [07 — Measure Whether the Discovery-Command Hint Gets
+  Used](issues/07-measure-discovery-hint-usage.md), which now joins the
+  frontier. True frontier as of this session: `07`, `08`, `12`, `14`, `15`,
+  `17` (all unclaimed and unblocked); `02`, `04`, `05` claimed and in
+  progress; `03`, `09`, `10`, `11`, `13`, `16` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -141,6 +162,7 @@ thin.
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
 
 - [01 — Implement Category Declaration Authority](issues/01-implement-category-declaration-authority.md) — built ADR 0017 end to end: `neuron.yaml` I/O moved to the `yaml` package's `Document` API, an auto-declare hook in `NeuronMemory.transact()` appends a minimal `categories.<name>: {}` block on first write to an undeclared category (comments/formatting preserved), `neuron status --check`/`--repair` gained a distinct `undeclaredCategories` finding kind for pre-existing backfill, and this repo's own `scan: category: decisions` alias was reverted and re-verified live (`categories.architecture: {}` auto-declared for real). Found and fixed a real bug along the way: auto-vivifying a `categories` key on a file that had none at all would have silently dropped the schema's implicit default category set.
+- [06 — Per-Prompt Discovery-Command Hint](issues/06-per-prompt-discovery-command-hint.md) — built: `NeuronMemory.countFtsMatches()` (raw, unranked, store-wide `COUNT(*)` against the same FTS index/cleaned query as the keyword leg) feeds `buildDiscoveryHint()`, which appends a real `neuron memory query "<prompt>" --limit <total>` line, dropped whole rather than truncated, when a real gap exists. Had to resolve one design question the ticket left open by omission: the gap must be measured against this turn's gated `limit: 10` recall count (`results.length`), not the post-ledger-dedup injected count — comparing against the latter re-fires the hint every turn on an already-seen entry and broke four pre-existing ledger-dedup tests.
 
 ## Not yet specified
 
@@ -233,7 +255,11 @@ thin.
   from retrieval signals, or does catching it require adjudicating semantic
   opposites — the weakest capability of both the embedder and the 0.5B
   model? If undetectable, the honest response may be a disclosure rather
-  than a fix.
+  than a fix. **[17](issues/17-antagonistic-recall-abstention-benchmark.md)
+  is this fog item's cheaper, sharper-edged sibling** — no answer present at
+  all, rather than a wrong one present — and needs no adjudication of
+  "wrong," only "present vs. absent." Should settle first; its result may
+  inform how tractable this one is.
 - **Threat model for grammar delivery.** Moved from neuron-2.3.0 2026-08-10.
   Tree-Sitter `.wasm` grammars fetch from the npm registry over TLS with
   pinned versions, but do not verify the registry's `dist.integrity`

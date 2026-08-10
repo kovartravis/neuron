@@ -5,6 +5,7 @@ import { blueprintCardId, moduleCardId, parseModuleListFromIndex } from '../scan
 import { compressArchitectureCard } from '../scanner/compressCard.js';
 import {
   buildPayload,
+  buildDiscoveryHint,
   filterUnseen,
   loadEpochState,
   remainingEpochBudget,
@@ -210,8 +211,16 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
       // No session id means no ledger to dedupe or budget against — degrade
       // toward repetition (show everything every turn), never toward silence.
       const results = await memory.query({ text: prompt, limit: 10 });
-      const { text, includedIds } = buildPayload(results, PRE_PROMPT_CHAR_BUDGET);
-      if (includedIds.length === 0) return;
+      const { text: body } = buildPayload(results, PRE_PROMPT_CHAR_BUDGET);
+      // Ticket 06: gap is measured against `results.length` — this turn's
+      // gated, ranked recall before budget-packing — not the final injected
+      // count, so a tight char budget doesn't get double-flagged (ticket 07
+      // already surfaces that constraint on its own terms).
+      const totalMatches = memory.countFtsMatches(prompt);
+      const hintBudget = PRE_PROMPT_CHAR_BUDGET - (body ? body.length + 1 : 0);
+      const hint = buildDiscoveryHint(prompt, totalMatches, results.length, hintBudget);
+      const text = hint ? (body ? `${body}\n${hint}` : hint) : body;
+      if (!text) return;
       emit(harness, 'UserPromptSubmit', text);
       return;
     }
@@ -251,14 +260,32 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
     const unseen = filterUnseen(projectDir, sessionId, results);
     const { text: turnBody, includedIds: turnIds } = buildPayload(unseen, turnCap);
 
+    // Ticket 06: same query text, but an unranked store-wide count with no
+    // `LIMIT` — compared against `results.length` (this turn's gated, ranked
+    // recall, capped at `limit: 10`, before ledger dedup and budget-packing),
+    // not the final injected count. Comparing against the post-dedup count
+    // instead would re-fire the hint every subsequent turn on an entry the
+    // ledger already silenced as seen — directly at odds with the dedup
+    // guarantee other tickets rely on (a repeat turn over the same prompt
+    // must stay silent). Comparing against the post-budget count would
+    // couple the hint to ticket 07's own char-budget truncation, which
+    // already surfaces itself on its own terms. `results.length` isolates
+    // exactly the gap this ticket is about: the query's own `limit: 10`
+    // ceiling versus what's really in the store — the architecture card is a
+    // different query and irrelevant to it either way.
+    const totalMatches = memory.countFtsMatches(prompt);
+    const hintBudget = turnCap - (turnBody ? turnBody.length + 1 : 0);
+    const hint = buildDiscoveryHint(prompt, totalMatches, results.length, hintBudget);
+    const turnBodyWithHint = hint ? (turnBody ? `${turnBody}\n${hint}` : hint) : turnBody;
+
     const sections: string[] = [];
     if (cardBody) sections.push(`## Architecture\n${cardBody}`);
-    if (turnBody) sections.push(cardBody ? `## Relevant\n${turnBody}` : turnBody);
+    if (turnBodyWithHint) sections.push(cardBody ? `## Relevant\n${turnBodyWithHint}` : turnBodyWithHint);
     const text = sections.join('\n\n');
     const includedIds = [...cardIds, ...turnIds];
 
     recordPrePromptTurn(projectDir, sessionId, includedIds, text.length);
-    if (includedIds.length === 0) return;
+    if (!text) return;
     emit(harness, 'UserPromptSubmit', text);
   } finally {
     memory.close();
