@@ -166,6 +166,59 @@ thin.
   below, alongside `05`'s. True frontier as of this session: `08`, `12`,
   `14`, `15`, `17` (all unclaimed and unblocked); `02`, `04`, `05` claimed
   and in progress; `03`, `09`, `10`, `11`, `13`, `16` blocked.
+- **Four tickets and two fog items added, 2026-08-10, from a real dogfooding
+  feedback batch** (maintainer-photographed terminal output from a session
+  using a published neuron install in another repo, `travisos`). Triaged
+  against current `src/`, not transcribed blindly — two of the seven
+  recommendations in the original feedback turned out to already be shipped
+  behavior once checked against the code rather than assumed broken:
+  - [18 — Fix Concurrent-Write Data Loss in Markdown
+    Storage](issues/18-fix-concurrent-write-data-loss.md) — the critical
+    item: two racing `neuron memory add` calls each report `created` but
+    only one persists. Confirmed as a real, still-open bug —
+    `mdStorageAdapter.ts`'s `writeEntry`/`updateEntry`/`deleteEntry` are
+    unlocked read-modify-write cycles. Folds in the batch's own item 2
+    ("make `--supersedes` fail loudly on a missing target") as the *same*
+    race rather than a separate gap, since flag-target validation
+    (`memory.ts:88-93`) already fails loud today.
+  - [19 — Non-Interactive Write Mode for Scheduled/Cron
+    Writers](issues/19-non-interactive-write-mode-for-cron.md) — cron jobs
+    can't answer the supersession gate's interactive prompt-and-retry loop.
+  - [20 — Ship `neuron doctor`](issues/20-ship-neuron-doctor.md) — one
+    command for duplicate groups, importance histogram, superseded count,
+    `sessionsObserved`; open question whether it's new or folds into
+    `neuron status`.
+  - [21 — Warn When Recall Is Never Invoked
+    (`sessionsObserved: 0`)](issues/21-warn-on-zero-sessions-observed.md) —
+    smallest item in the batch, good next pickup.
+
+  Unclaimed and unblocked: `18`, `19`, `20`, `21`.
+
+  Two more items moved to fog (Not yet specified, below) rather than
+  ticketed, because checking them against current code raised a real open
+  question instead of a sized task:
+  - The batch's item 3 claimed the supersession similarity gate "never
+    fired" (0 superseded across 670 entries) — but
+    `findSupersessionCandidate`/`SUPERSESSION_SIMILARITY_THRESHOLD`
+    (`src/index.ts:839,1644`) already exist, are already wired into
+    `memory add`, and have their own test coverage. Whether 0/670 means the
+    gate is broken, the 0.97 threshold is too strict for realistic
+    near-duplicate content, or the store genuinely never had a near-dup, is
+    unknown without a live repro — not a reimplementation task.
+  - The batch's item 7 (decay importance by recency/access-frequency
+    instead of trusting self-reported importance at write time) has no
+    chosen formula or mechanism yet.
+
+  **One item from the same feedback explicitly did not graduate to this
+  map at all**: an open question about wiring up real session-start recall
+  via `.github/hooks/neuron.json` in `travisos` itself — that file doesn't
+  exist in this repo (confirmed), so it's a `travisos`-side dogfooding
+  decision, not `neuron`-the-tool work. Answered back to the maintainer
+  directly rather than ticketed here.
+
+  True frontier as of this session: `08`, `12`, `14`, `15`, `17`, `18`,
+  `19`, `20`, `21` (all unclaimed and unblocked); `02`, `04`, `05` claimed
+  and in progress; `03`, `09`, `10`, `11`, `13`, `16` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -188,6 +241,32 @@ thin.
 
 <!-- in-scope fog: real, but not yet sharp enough to ticket -->
 
+- **Supersession similarity gate reported never firing in real dogfood
+  use.** Added 2026-08-10 from the same feedback batch as tickets
+  `18`-`21`: a `travisos` session saw 0 superseded entries across 670,
+  despite writing what the maintainer judged to be near-duplicates over
+  time. The gate exists and is tested (`findSupersessionCandidate` /
+  `SUPERSESSION_SIMILARITY_THRESHOLD = 0.97`, `src/index.ts:839,1644`,
+  wired into `memory add` at `src/commands/memory.ts:94-105`), so this
+  isn't "build the feature" — it's "find out why it didn't fire here."
+  Candidate explanations, unranked: the 0.97 cosine threshold is too
+  strict for what a human would call a near-duplicate; every actual
+  near-dup in that store went through `--supersedes`/`--not-a-reversal`
+  explicitly and correctly bypassed detection; or the store genuinely
+  never contained a near-duplicate pair and 0/670 is simply correct.
+  Needs a live repro (a deliberately near-duplicate write against a real
+  or fixture store) before it's sharp enough to ticket either a threshold
+  change or a "confirmed working as designed" close.
+- **Importance decay.** Added 2026-08-10 from the same feedback batch:
+  self-reported importance (passed once at write time via `--importance`)
+  predictably inflates, and doesn't move afterward regardless of whether
+  an entry is ever recalled again. The field feedback's suggestion is
+  ranking by recency/access-frequency instead of trusting the write-time
+  value verbatim. Unformed: whether this changes the stored `importance`
+  field itself (mutating history) or only affects query-time ranking,
+  what the decay function is, and whether access-frequency requires new
+  tracking (query hits aren't currently recorded per-entry, only
+  aggregated via `sessionsObserved`).
 - **Everything else `2.4.0` admits.** This map is a catch-all seeded from a
   single redirected ticket, not yet breadth-first grilled. What else lands
   here (new bands, fresh maintainer asks) is unknown until a session runs
