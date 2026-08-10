@@ -2,6 +2,87 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.3.0] - 2026-08-10
+
+**Four harnesses now supported, and `neuron init` tells you truthfully what
+you're getting on each.** GitHub Copilot CLI and Cursor join Claude Code and
+OpenAI Codex CLI with real recall adapters — both new ones are `best-effort`
+(session-start injection only; neither harness has a per-turn hook point) —
+and `neuron init`'s own output now reports, per detected harness, whether a
+hook is actually registered (`verify()`-driven, not inferred from a config
+file existing) and what fidelity that delivers, with a concrete remediation
+line whenever it's short of deterministic. The README's compatibility
+section got the same honesty pass: a plain-language glossary of what
+deterministic/best-effort/instruction-only mean, a real `Harness | Mechanism
+| Fidelity` table naming actual hook event names, and a dated verified-as-of
+line. **Copilot CLI's adapter was confirmed against a real installation**
+(install, session-start injection, and clean uninstall all matched
+documented behavior); **Cursor's was not** — no maintainer access to Cursor
+for this cycle — and ships on fixture/documentation evidence alone, by
+explicit maintainer decision to rely on user reports rather than delay the
+release. Both the code (`cursor.ts`'s own `capability()` caveat) and the
+docs say this plainly.
+
+Alongside the harness work, the storage config vocabulary is simpler:
+`storage.path`/`storage.mode` are now settable at the top level and
+overridable per category, and `split` is deleted as a distinct mode (see
+Upgrading, below). The architecture card moved from one monolithic blueprint
+to a small always-injected index plus per-module detail cards fetched via
+ordinary relevance recall — the monolithic-card compression approach tried
+mid-cycle didn't scale to a large repo and was replaced, not patched.
+`neuron status --check`/`--repair` shipped for validating and backfilling
+required fields on existing entries. A published, re-runnable benchmark
+suite (`npm run bench:report`) now backs the token-economics and
+recall-quality claims this project makes about itself — see [Measured, not
+just claimed](README.md#-measured-not-just-claimed) for the headline
+numbers and their caveats.
+
+This section supersedes and consolidates `2.3.0-rc1` and `2.3.0-rc2`; there
+is no separate `rc3` tag.
+
+### Upgrading from 2.2.0 — two things to check, nothing to migrate
+
+1. **If your `neuron.yaml` uses `storage.mode: split`, `vector-only`,
+   `md-only`, or `dual`, or a category's `storage:` field set to `dual`** —
+   all four still parse and behave exactly as before, with a one-time
+   stderr warning naming the canonical spelling to switch to
+   (`split`/`dual` → `md`, `vector-only` → `vector`). Nothing is
+   auto-migrated or refused; a config carrying these values today keeps
+   working unchanged. Verified this cycle with a live upgrade test: a
+   `split` + `categories.*.storage: dual` project, seeded with real
+   entries, upgraded cleanly under the `2.3.0` binary — warnings fired,
+   `neuron.yaml` was left byte-identical, and every entry remained
+   queryable. See [ADR 0016](docs/adr/0016-per-category-storage-vocabulary.md).
+2. **`neuron init`'s output has a new `harnessFidelity` field** and prints a
+   new "Recall fidelity by harness" block to stderr. Nothing about hook
+   installation or protocol-block generation changed; this is additive
+   reporting only, driven by the same `verify()` calls `neuron status`
+   already used.
+
+### Harnesses verified this cycle
+
+Claude Code and Codex CLI's `deterministic` adapters have shipped since
+`2.2.0` and are exercised continuously by dogfooding this project's own
+development in both — no pinned external version, since neither harness's
+hook contract has changed since `2.2.0`'s research. Copilot CLI's adapter
+was confirmed 2026-08-10 against a real Copilot CLI installation (exact
+version not captured). Cursor's adapter has **not** been run against a real
+Cursor installation at all — capability is sourced entirely from a direct
+fetch of `cursor.com/docs/hooks` plus 14 fixture tests; treat it as the one
+harness in this matrix without independent confirmation.
+
+**Known pre-existing failure, unrelated to any band in this release:**
+`test/e2e/concurrency-stress.test.ts`'s Pillar 8 (multi-process contention)
+fails intermittently under concurrent `NeuronMemory` initialization —
+reproduced three times while cutting this release with three *different*
+symptoms (a dropped write, `no column named scope`, `duplicate column name:
+superseded_by`), confirming it's a genuine SQLite schema-migration race
+between concurrent processes rather than one specific bug with one fixed
+signature. Disclosed in `2.2.0`'s CHANGELOG as a write-drop rate under a 5%
+bar; now understood to be the same underlying race surfacing as transient
+migration errors too. Not touched by anything in this release; not wired as
+a blocker of any ticket.
+
 ## [2.3.0-rc2] - 2026-08-09
 
 Interim release candidate — most of the [neuron-2.3.0

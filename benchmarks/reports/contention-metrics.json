@@ -1,43 +1,43 @@
 {
-  "timestamp": "2026-08-09T17:51:46.756Z",
+  "timestamp": "2026-08-10T13:08:18.245Z",
   "tier": "sanity",
-  "suiteDurationMs": 12107,
+  "suiteDurationMs": 1064,
   "pillars": [
     {
       "pillar": "Pillar 8: Multi-Process Contention & Crash Recovery",
       "samples": 1,
-      "p50Ms": 1158.31,
-      "p95Ms": 1158.31,
-      "p99Ms": 1158.31,
-      "minMs": 1158.31,
-      "maxMs": 1158.31,
-      "meanMs": 1158.31,
-      "totalMs": 1158.31,
-      "throughputPerSec": 0.86,
+      "p50Ms": 387.21,
+      "p95Ms": 387.21,
+      "p99Ms": 387.21,
+      "minMs": 387.21,
+      "maxMs": 387.21,
+      "meanMs": 387.21,
+      "totalMs": 387.21,
+      "throughputPerSec": 2.58,
       "extra": {
         "processes": 3,
         "writesPerWorker": 25,
-        "attempted": 50,
-        "committed": 50,
+        "attempted": 25,
+        "committed": 25,
         "droppedWrites": 0,
         "droppedWriteRatio": 0,
-        "readableAfterwards": 48,
-        "lostWrites": 2,
+        "readableAfterwards": 25,
+        "lostWrites": 0,
         "lockErrors": 0,
         "initErrors": 1,
         "initErrorSample": [
-          "no such table: learnings"
+          "duplicate column name: superseded_by"
         ],
         "nonZeroExits": 1,
         "otherErrors": [],
-        "wallMs": 1158,
-        "writesPerSec": 43,
+        "wallMs": 387,
+        "writesPerSec": 65,
         "crashRecovery": [
           {
             "round": 0,
             "seeded": 20,
             "victimSignal": "SIGKILL",
-            "survivorsAfterCrash": 20,
+            "survivorsAfterCrash": 33,
             "readableAndWritableAfterCrash": true,
             "recoveryError": null
           }

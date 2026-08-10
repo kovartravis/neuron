@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-08-09T17:51:58.332Z",
+  "timestamp": "2026-08-10T13:07:35.410Z",
   "tier": "sanity",
-  "suiteDurationMs": 23678,
+  "suiteDurationMs": 15972,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 29.11,
-      "p95Ms": 66.94,
-      "p99Ms": 75.11,
-      "minMs": 20.41,
-      "maxMs": 77.15,
-      "meanMs": 35.64,
-      "totalMs": 285.14,
-      "throughputPerSec": 28.06,
+      "p50Ms": 27.92,
+      "p95Ms": 95.74,
+      "p99Ms": 116.5,
+      "minMs": 20.21,
+      "maxMs": 121.69,
+      "meanMs": 41.77,
+      "totalMs": 334.15,
+      "throughputPerSec": 23.94,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
@@ -97,20 +97,20 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 32.05,
-      "p95Ms": 32.05,
-      "p99Ms": 32.05,
-      "minMs": 32.05,
-      "maxMs": 32.05,
-      "meanMs": 32.05,
-      "totalMs": 32.05,
-      "throughputPerSec": 31.2,
+      "p50Ms": 49.54,
+      "p95Ms": 49.54,
+      "p99Ms": 49.54,
+      "minMs": 49.54,
+      "maxMs": 49.54,
+      "meanMs": 49.54,
+      "totalMs": 49.54,
+      "throughputPerSec": 20.18,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 32.051,
-            "p95Ms": 65.118,
+            "p50Ms": 49.543,
+            "p95Ms": 60.5,
             "recallAt1": 0.125
           }
         ]
