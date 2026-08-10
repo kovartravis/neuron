@@ -3308,3 +3308,15 @@ tags:
 taskId: "15"
 ---
 Wayfinder pickup on neuron-2.3.0 map: committed leftover uncommitted work from the prior session (ticket 30's card-compression rewrite + module-card injection fix, ticket 14's git-log A/B result, graduating tickets 39-42), then claimed and resolved ticket 15 (Publish the Benchmark Suite). Built benchmarks/token-economics.mjs, a new dashboard section aggregating tickets 07/08/18/14/19's token-economics findings, wired into e2e-runner.js's existing orchestration rather than a bespoke generator, plus README/benchmarks-README pointers and reproduction docs. Mid-ticket, found that ticket 19's real favorable SWE-bench A/B (57.7% pooled token reduction) had already shipped to README.md in an earlier commit but was never reflected in its own ticket file or map.md -- corrected the token-economics report to label it established, left 19's own bookkeeping for a future session. Frontier is now 20, 22, 28, 32, 39.
+
+---
+id: 5c694f90-79ce-426e-81bc-9c6c18a3a400
+createdAt: 2026-08-10T02:36:33.171Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "39"
+---
+Continued the neuron-2.3.0 wayfinder session past ticket 15 to pick up ticket 39 (git-log index design), a grilling ticket. Grilled all five original scope items with the maintainer via AskUserQuestion. Mid-session, built and ran a small offline zero-spend comparison (benchmarks/token-ab/results/39-git-log-term-extraction-ab/compare.mjs) against ticket 14's own three real tasks, which found that no purely extractive term-generation method (tried Intl.Segmenter and the compromise npm package, both ranked by embedding similarity) can reproduce ticket 14's hand-verified gitLogQuery terms -- those are internal code-symbol names (DualStorageRouter, rollEpoch) that never appear in the prompt's own words, so ticket 14's favorable A/B result was measured against an oracle, not a shippable mechanism. This overturned the ticket's original grep-based framing; ruled semantic embedding match instead (new git_log_index SQLite table, same linear dot-product scan memories already uses, no markdown mirror since git is already the source of truth, no new dependency after reverting the compromise install). Also ruled: check-HEAD-on-read incremental refresh with a one-time backfill, pre-prompt-only injection gated by the existing relevance machinery, history write step stays supplement-only, and ticket-number collision across concurrent maps is a disclosed limitation. At the maintainer's request, graduated ticket 43 (blocked by ticket 40) to re-run the A/B against the real semantic mechanism once built, since ticket 14's numbers can't be assumed to carry over from oracle-term search. Frontier is now 20, 22, 28, 32, 40.
