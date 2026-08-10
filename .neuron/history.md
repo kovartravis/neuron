@@ -3428,3 +3428,15 @@ tags:
 taskId: "07"
 ---
 Wayfinder pickup session on the neuron-2.4.0 map: claimed and resolved ticket 07 (Measure Whether the Discovery-Command Hint Gets Used), the first unblocked frontier ticket after ticket 06's resolution. Asked the maintainer via AskUserQuestion whether to spend real money on a benchmarks/token-ab/ A/B run or build free dogfooding instrumentation instead, given the map's own fog already flagged the identical funding question as unresolved and blocking ticket 05 (same precedent, asked again rather than assumed); maintainer chose free instrumentation. Built src/harnesses/hintFollowLog.ts (append-only fired/query-run event log), wired a Claude-Code-only 'post-tool-use' hook point into hook.ts (deliberately outside the LifecyclePoint/HarnessAdapter contract), hand-registered the PostToolUse entry in this repo's own .claude/settings.json, and wrote benchmarks/hint-follow/analyze.mjs (npm run bench:hint-follow) to join and report a follow rate. Found and fixed a real false-positive bug during a live smoke test against this repo's real store (a bare substring match flagged the smoke test's own echoed JSON as a genuine query run); regression-tested. 623 tests pass, tsc clean, end-to-end wiring verified live then the manufactured smoke-test rows were deleted so they don't contaminate real data. Resolved ticket 07's file with a full Answer, appended a Decisions-so-far entry to map.md, and added the still-open outcome-quality question to the map's fog next to ticket 05's. True frontier going into the next session: 08, 12, 14, 15, 17 (unclaimed and unblocked); 02, 04, 05 claimed and in progress; 03, 09, 10, 11, 13, 16 blocked.
+
+---
+id: 80365f0b-4c78-4f7e-84ff-5fb99d4cfbba
+createdAt: 2026-08-10T21:33:10.882Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: neuron-2.4.0
+---
+Triaged a maintainer-reported dogfooding feedback batch (photographed travisos terminal output) into neuron-2.4.0's map: tickets 18-21 (concurrent-write data-loss race in mdStorageAdapter.ts, non-interactive cron write mode, neuron doctor, sessionsObserved:0 startup warning), plus two fog items (supersession-gate-never-fired needs live repro, importance decay unformed). Checked each of the batch's 7 recommendations against current src/ before ticketing rather than transcribing blindly — found 2 of 7 (supersedes-fail-loudly, auto-supersede-on-similarity) already shipped in current code, folded the real symptom into ticket 18 as the same race rather than duplicating already-working validation. One item (wiring travisos's own .github/hooks/neuron.json) confirmed out of scope for this repo and left for the maintainer.
