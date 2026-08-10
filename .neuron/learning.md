@@ -2337,3 +2337,15 @@ tags:
 taskId: null
 ---
 Fix for declareCategoryInNeuronYaml (ADR 0017) silently dropping a config's implicit default categories: a neuron.yaml with no top-level 'categories' key relies on NeuronConfigSchema's zod .default(...) for the whole block, which only applies when the key is fully ABSENT from the parsed object. The initial implementation used the yaml package's Document.setIn(['categories', name], emptyMap) to auto-declare a category, which auto-vivifies a 'categories' key containing ONLY the new entry -- making the key present, so zod's default no longer fires, silently discarding every implicit default category (learning/history/decisions/architecture) and breaking pullRules.default's own category reference. Caught by a targeted unit test (auto-vivifies a missing top-level categories key) that round-tripped the write through loadNeuronYaml and asserted on the full config, not just the new key. Fix: before setIn-ing the new category, check doc.get('categories') === undefined; if so, seed the same DEFAULT_CONFIG.categories entries explicitly first via doc.setIn(['categories', name], cfg) for each, making the implicit set explicit, then append the new category on top.
+
+---
+id: 215990ae-7f47-4637-a7c2-3f5a614e96de
+createdAt: 2026-08-10T19:44:25.386Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: null
+---
+Ticket 06 (neuron-2.4.0)'s per-prompt discovery hint initially compared the store-wide FTS COUNT(*) against turnIds.length (the final, post-ledger-dedup, post-budget injected count) to decide whether to append a 'more results available' hint. This broke four pre-existing hook.test.ts tests asserting that a repeat pre-prompt turn over an already-shown entry stays silent (src/harnesses/ledger.ts's dedup guarantee) -- because the ledger correctly drops an already-seen entry from turnIds every turn, the FTS count always exceeded it, so the hint re-fired every turn pointing at the same one entry the agent had already seen. Fixed by comparing against results.length instead: this turn's gated, RRF-ranked recall capped at the query's own limit:10, taken BEFORE filterUnseen's ledger dedup and BEFORE buildPayload's char-budget packing (src/commands/hook.ts). This isolates the actual gap the ticket cares about -- the fixed limit:10 hiding the tail of a large match set -- without coupling the hint to session-scoped dedup or per-turn budget truncation, both already owned by ticket 07/the ledger elsewhere.

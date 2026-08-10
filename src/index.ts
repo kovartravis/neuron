@@ -632,6 +632,32 @@ export class NeuronMemory {
     return { results, rejected };
   }
 
+  /**
+   * Ticket 06 (neuron-2.4.0): an unranked, store-wide `COUNT(*)` against the
+   * same FTS index and cleaned query text `queryVector`'s keyword leg uses,
+   * but with no `LIMIT` and no category filter — `hook.ts`'s discovery-hint
+   * nudge compares this against how many results a turn actually injected to
+   * decide whether more exists than the agent saw. Callers that already ran
+   * `memory.query()` this turn get a reconciled mirror for free (`md` mode's
+   * reconcile happens inside `router.query`); this does not reconcile on its
+   * own.
+   */
+  public countFtsMatches(text: string): number {
+    const ftsQuery = cleanFtsQuery(text);
+    if (!ftsQuery) return 0;
+    try {
+      const row = this.db.prepare(`
+        SELECT COUNT(*) as count FROM memories_fts f
+        JOIN memories m ON m.rowid = f.rowid
+        WHERE f.memories_fts MATCH ? AND m.project_id = ? AND m.superseded_by IS NULL
+      `).get(ftsQuery, this.projectId) as { count: number };
+      return row.count;
+    } catch {
+      // Malformed FTS query — degrade to "nothing more to point at."
+      return 0;
+    }
+  }
+
   public async queryVector(q: MemoryQuery): Promise<Memory[]> {
     const results: Memory[] = [];
 

@@ -60,7 +60,7 @@ Default: `ast/2`
 - **components** — `src/components` (10 files)
 - **config** — `src/config` (10 files)
 - **e2e** — `src/e2e` (1 file)
-- **harnesses** — `src/harnesses` (16 files)
+- **harnesses** — `src/harnesses` (18 files)
 - **models** — `src/models` (4 files)
 - **scanner** — `src/scanner` (18 files)
 - **shared** — `src/shared` (1 file)
@@ -270,6 +270,8 @@ Primary harnesses module containing core application capabilities.
 - **`src/harnesses/copilot.ts`** (Exports: `CopilotAdapter`): Neuron's own lifecycle vocabulary, translated to Copilot CLI's event names — camelCase, unlike Claude Code/Codex's PascalCase (confirmed via direct fetch of `docs.github.com/en/copilot/reference/hooks-reference` during this ticket). Only `session-start` has an entry: `pre-prompt` and `context-reset` are deliberately never wired (see `capability()` below), so the map only needs to cover the one point neuron can actually use.
 - **`src/harnesses/cursor.test.ts`**: Methods: describe(), join(), CursorAdapter(), beforeEach().
 - **`src/harnesses/cursor.ts`** (Exports: `CursorAdapter`): Neuron's own lifecycle vocabulary, translated to Cursor's event names (camelCase, confirmed via direct fetch of `cursor.com/docs/hooks` during this ticket — the same naming-convention family as Claude Code/Codex). `pre-prompt` has no entry: `beforeSubmitPrompt` fires every turn but its documented output is `{continue, user_message}` — permission allow/deny only, no context-carrying field — so neuron never wires a hook there at all, same design call ticket 01 made for Copilot CLI's `userPromptSubmitted`. Unlike Copilot, `context-reset` does get a real event (`preCompact`) — see `capability()` below for why wiring it still doesn't make the epoch reliably roll.
+- **`src/harnesses/discoveryHint.test.ts`**: Methods: describe(), it(), expect(), toBeNull().
+- **`src/harnesses/discoveryHint.ts`** (Exports: `buildDiscoveryHint`): Ticket 06 (neuron-2.4.0): a per-turn hint that teaches the agent the broader `neuron memory query` surface exists, fired only when this turn's relevance-gated recall actually left something on the table — never a generic "you can search" note, always the real command with the real count. Counts against the same per-turn char budget as everything else `hook.ts` injects (no reserved allotment), so a tight budget just drops it.
 - **`src/harnesses/hookState.ts`** (Exports: `recordFired, readFiringState`): Firing evidence, not inference from file contents. Ticket 10 found no harness researched documents an external way to confirm a registered hook actually fired — so neuron manufactures its own evidence: the hook command records a timestamp the moment it runs, before doing any of the work that could fail. `verify()` reads this file to answer "is this hook firing" as a fact, not a guess from `settings.json` being present.
 - **`src/harnesses/index.ts`**: No exported symbols detected.
 - **`src/harnesses/ledger.test.ts`**: Methods: entry(), describe(), join(), beforeEach().

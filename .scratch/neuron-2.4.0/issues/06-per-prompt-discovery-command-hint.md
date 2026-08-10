@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none (31 resolved on neuron-2.3.0 before this ticket moved)
 Band: context cost
 
@@ -68,3 +68,65 @@ categories or leave it store-wide matching the query it's extending).
   scoped to neuron's own `memories` table.
 - Graduates [33](07-measure-discovery-hint-usage.md) as its own
   proof-of-value ticket rather than asserting the hint gets used.
+
+## Answer
+
+Built on `hook.ts`'s existing pre-prompt path. A new `NeuronMemory.countFtsMatches(text)`
+(`src/index.ts`) runs `cleanFtsQuery`'s cleaned text against `memories_fts`
+directly — same store-wide scope and superseded-exclusion as `queryVector`'s
+keyword leg, but a raw `COUNT(*)` with no `LIMIT` and no ranking. A new
+`buildDiscoveryHint()` (`src/harnesses/discoveryHint.ts`) turns a real gap
+into a single bullet-formatted line matching `formatMemoryEntry`'s own
+`- [...]` convention (`- [more available] N more match(es) not shown — run:
+neuron memory query "<prompt>" --limit <total>`), dropped whole (never
+truncated) if it doesn't fit whatever budget remains — no reserved
+allotment, per the ticket's own instruction.
+
+**The one real design call the build session had to make wasn't in the
+ticket's "open to the build session" list:** what "how many results
+actually got injected this turn" means once the session ledger enters the
+picture. Comparing the FTS total against the *final* injected count
+(`turnIds.length`, after ledger dedup and char-budget packing) is the most
+literal reading of the ticket text, but it breaks a guarantee several
+existing tests already encode — a repeat turn over an already-shown entry
+must stay silent (the ledger's whole reason to exist). Under that literal
+reading, a single-entry store makes the hint re-fire every subsequent turn
+pointing at the same one entry the agent already saw, because the ledger
+(correctly) drops it from `turnIds` every time. Reproduced live: four of
+the pre-existing dedup/ledger tests in `hook.test.ts` turned red the moment
+the comparison used the post-dedup count.
+
+Resolved by comparing against `results.length` instead — this turn's
+gated, RRF-ranked recall capped at the query's own `limit: 10`, *before*
+ledger dedup and *before* `buildPayload`'s budget-packing. That isolates
+exactly the gap this ticket is actually about (the fixed `limit: 10` on
+`memory.query({ text, limit: 10 })` hiding the tail of a large match set —
+the ticket's own motivating case, "write the README from everything neuron
+has learned"), without coupling the hint to session-scoped dedup (already
+ticket 07/the ledger's job) or to this turn's own char-budget truncation
+(also already ticket 07's job, self-reporting via `recallCost` telemetry).
+Both the no-`sessionId` and `sessionId` pre-prompt branches use the same
+`results.length` comparison for consistency, even though the no-`sessionId`
+branch has no ledger to conflict with.
+
+Prompt text for display: collapsed whitespace, truncated to 80 chars with
+`...`, backslash/double-quote escaped so it reads as a valid quoted shell
+argument (`src/harnesses/discoveryHint.ts`'s `sanitizeForHint`) — it is
+never actually executed by neuron, only shown.
+
+Also changed both pre-prompt branches' final emit-or-not check from
+`includedIds.length === 0` to `!text`, since the hint can now make `text`
+non-empty even when zero memory entries were injected (an all-dedup'd turn
+with a real FTS gap still deserves the hint, per the ticket).
+
+New coverage: `src/harnesses/discoveryHint.test.ts` (5 unit tests on
+`buildDiscoveryHint` — gap detection, whole-line-drop on budget miss,
+truncation/escaping) plus two `hook.test.ts` integration cases (hint fires
+across a real `limit: 10` gap; stays silent when a turn's recall already
+covered every store-wide match). Full existing suite (124 tests across
+`hook.test.ts` + `harnesses/`) green, plus `tsc --noEmit` and `npm run
+build` clean. The one pre-existing failure in the wider suite
+(`concurrency-stress.test.ts`'s Pillar 8) is unrelated and pre-existing —
+reproduced identically on a clean stash of this ticket's changes, itself a
+`duplicate column name: scope` schema-migration race unconnected to this
+ticket's files.
