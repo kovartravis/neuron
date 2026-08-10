@@ -1297,6 +1297,27 @@ wired to.
   blocker is its own unworked cut checklist** (version bump, CHANGELOG,
   claim-vs-behavior audit, config-safety matrix, upgrade test, full test
   run, tag, publish). Frontier is now `04`.
+- **[04 — Cut and Publish](issues/04-cut-and-publish.md) resolved 2026-08-10
+  — destination reached.** Ran the full cut checklist against the real
+  built binary: a four-harness claim-vs-behaviour audit (`harnessFidelity`
+  matched every adapter's own `capability()` verdict exactly), the
+  config-safety matrix across all four adapters simultaneously (idempotent,
+  clean uninstall, no double-injection), and a live pre-`2.3.0` upgrade test
+  (`storage.mode: split` + a category's `storage: dual`) confirming zero
+  data loss. Version bumped to `2.3.0`; CHANGELOG's `[2.3.0]` entry written,
+  superseding `rc1`/`rc2` (no separate `rc3` tag — ticket `37` had already
+  closed superseded). **Published for real**: `feat/2.3.0-rc3` fast-forwarded
+  onto `main` and pushed, `v2.3.0` tagged and pushed, the OIDC publish
+  workflow went green
+  ([run 31392550964](https://github.com/kovartravis/neuron/actions/runs/31392550964)),
+  independently confirmed against the live registry
+  (`npm view @kovartravis/neuron dist-tags` → `latest: '2.3.0'`). One
+  pre-existing, disclosed limitation carried into the release rather than
+  fixed: `concurrency-stress.test.ts`'s Pillar 8 reproduced three times
+  during the cut with three different error signatures, confirming a
+  genuine concurrent-migration race rather than one bug — same posture
+  `2.2.0`'s own CHANGELOG already took on this pillar. **This map's
+  destination is reached; no further session is needed on `neuron-2.3.0`.**
 
 ## Not yet specified
 

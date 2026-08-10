@@ -1,5 +1,5 @@
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: none
 
 # 04 — Cut and Publish 2.3.0
@@ -58,7 +58,7 @@ writing the CHANGELOG rather than assuming these six tickets are all of it.
 
 ## Deliverables
 
-- [ ] `2.3.0` published — **pending maintainer confirmation to tag/push, see Answer**
+- [x] `2.3.0` published
 - [x] CHANGELOG covering both new adapters, the disclosure upgrade, and the config vocabulary change with its upgrade note
 - [x] Claim-versus-behaviour audit passing for all four harnesses
 - [x] Config-safety matrix verified across all four
@@ -110,12 +110,17 @@ genuine concurrent-migration race rather than a specific regression;
 disclosed in the CHANGELOG, not touched by this release, not a blocker —
 same posture `2.2.0`'s own CHANGELOG already took on this exact pillar.
 
-**Publish itself intentionally not yet run.** Tagging `v2.3.0` and pushing
-to `main` triggers a real `npm publish` via the OIDC workflow (ticket `21`)
-with no further confirmation step in between — hard to reverse once live on
-the registry. Left for explicit maintainer go-ahead in this session rather
-than done unilaterally, even though the maintainer's standing instruction
-this session was "push it."
+**Published for real, 2026-08-10.** Maintainer confirmed via `AskUserQuestion`
+after reviewing the checklist above. `feat/2.3.0-rc3` fast-forwarded onto
+`main` and pushed (branch protection's ruleset bypassed for the
+maintainer's own push, same as ticket `34`'s merge); `v2.3.0` tagged and
+pushed. The `publish.yml` OIDC workflow ([run
+31392550964](https://github.com/kovartravis/neuron/actions/runs/31392550964))
+went green end to end in 3m. Independently verified against the live
+registry, not just the checkmark: `npm view @kovartravis/neuron dist-tags`
+shows `latest: '2.3.0'`, and `git ls-remote --tags origin` confirms
+`v2.3.0` is on `origin`. This is the map's actual destination — see map.md
+for the closing note.
 
 ## Comments
 
