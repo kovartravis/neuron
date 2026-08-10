@@ -1,15 +1,15 @@
 Type: task
 Status: unclaimed
-Blocked by: 40
+Blocked by: 08
 Band: context cost
 
-# 43 — Re-run the Git-Log A/B Against the Real (Semantic) Mechanism
+# 11 — Re-run the Git-Log A/B Against the Real (Semantic) Mechanism
 
 ## Question
 
-Now that [40](40-implement-git-log-index.md) builds the real, shippable
-git-log index (semantic embedding match, per [39](39-git-log-index-design.md)'s
-rulings), does it actually reproduce or beat [14](14-git-log-hook-vs-agent-log-ab.md)'s
+Now that [40](08-implement-git-log-index.md) builds the real, shippable
+git-log index (semantic embedding match, per [39](../../neuron-2.3.0/issues/39-git-log-index-design.md)'s
+rulings), does it actually reproduce or beat [14](../../neuron-2.3.0/issues/14-git-log-hook-vs-agent-log-ab.md)'s
 original favorable result — or does the real mechanism land somewhere
 between "no search" (the agent arm) and "oracle search" (`14`'s hand-picked,
 hand-verified `gitLogQuery` terms)?

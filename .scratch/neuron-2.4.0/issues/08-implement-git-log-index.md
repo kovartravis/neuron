@@ -1,14 +1,14 @@
 Type: task
 Status: unclaimed
-Blocked by: 39
+Blocked by: none (39 resolved on neuron-2.3.0 before this ticket moved)
 Band: context cost
 
-# 40 — Implement the Git-Log Index
+# 08 — Implement the Git-Log Index
 
 ## Question
 
 Build the git-log-as-searchable-resident-source feature per
-[39](39-git-log-index-design.md)'s rulings: the index itself, its refresh
+[39](../../neuron-2.3.0/issues/39-git-log-index-design.md)'s rulings: the index itself, its refresh
 mechanism, and its wiring into `src/commands/hook.ts`'s
 session-start/pre-prompt injection path.
 
@@ -68,5 +68,5 @@ from raw ticket numbers, or disambiguate by map/directory.
 - [ ] Git-log index + refresh mechanism implemented per `39`'s rulings
 - [ ] Wired into `hook.ts`'s injection path with budget accounting
 - [ ] Tests, `npm test`/`tsc` clean
-- [ ] Unblocks [41](41-update-init-skill-readme-for-git-log-index.md) and
-      [42](42-dogfood-git-log-index.md)
+- [ ] Unblocks [41](09-update-init-skill-readme-for-git-log-index.md) and
+      [42](10-dogfood-git-log-index.md)

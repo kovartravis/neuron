@@ -1,9 +1,9 @@
 Type: task
 Status: claimed
-Blocked by: 28, 29, 30
+Blocked by: none (28, 29, 30 resolved on neuron-2.3.0 before this ticket moved)
 Band: context cost
 
-# 24 — Architecture Card A/B: With vs Without
+# 05 — Architecture Card A/B: With vs Without
 
 ## Question
 
@@ -17,7 +17,7 @@ Surfaced 2026-08-08 directly from `11`'s resolution, at the maintainer's
 direct request for a repeatable proof of the card's value — the same split
 `18` used for `17`: the build ticket (`11`) shouldn't grade its own outcome.
 
-Reuses [10](10-counterfactual-token-ab.md)'s harness and methodology (same
+Reuses [10](../../neuron-2.3.0/issues/10-counterfactual-token-ab.md)'s harness and methodology (same
 tiered plumbing, same fixed-task-set-with-objective-completion-criteria
 design, no LLM judge) rather than building new orchestration — the same
 reuse discipline `14`'s own Scope states. Narrower than `10`: `10`/`18` test
@@ -26,8 +26,8 @@ reuse discipline `14`'s own Scope states. Narrower than `10`: `10`/`18` test
 of the broader memory-recall question `10`/`18` already answered.
 
 **Two real, unplanned findings surfaced while scoping this ticket, both
-resolved before it ran** (see [11](11-reinject-architecture-card-per-epoch.md)
-and [25](25-architecture-card-stable-id-and-truncation.md)'s own Answers):
+resolved before it ran** (see [11](../../neuron-2.3.0/issues/11-reinject-architecture-card-per-epoch.md)
+and [25](../../neuron-2.3.0/issues/25-architecture-card-stable-id-and-truncation.md)'s own Answers):
 the card wasn't reliably fetched (crowded out of a generic category query on
 this repo's own `scan.category: decisions` config) and, even when fetched,
 was silently dropped for exceeding the injection budget (~53,000 chars
@@ -130,7 +130,7 @@ tasks as live Claude Code subagent sessions instead of a scripted harness,
 or stop here); maintainer chose to stop for this session. Left unresolved,
 not closed — the harness is ready to run as soon as either path is chosen.
 
-**`captured-card.txt` refreshed post-[26](26-shrink-architecture-card-drop-llm.md)**,
+**`captured-card.txt` refreshed post-[26](../../neuron-2.3.0/issues/26-shrink-architecture-card-drop-llm.md)**,
 2026-08-08: re-captured via a real `neuron hook claude-code session-start`
 invocation after `26` shrank and de-LLM'd the card (54,924 → 49,243 bytes;
 still truncated at the 6,000-char injection cap, but reaching further into
@@ -140,7 +140,7 @@ card's header/dependency-contract/subsystem-map section, which sits before
 any per-file detail and is unaffected by `26`'s changes — no task-file
 changes needed, just the refreshed fixture content.
 
-**`captured-card.txt` refreshed again post-[27](27-structural-card-compression.md)**,
+**`captured-card.txt` refreshed again post-[27](../../neuron-2.3.0/issues/27-structural-card-compression.md)**,
 2026-08-08: `27` replaced raw truncation with real structural compression —
 the injected card now fits whole (5,970 of 6,000 chars) with 7 of this
 repo's 14 subsystems in complete file+export detail plus an honest omission
@@ -148,9 +148,9 @@ note, rather than an arbitrary partial-subsystem cutoff. Dry-run re-verified
 after the refresh; both tasks' grading targets still sit in the always-
 included header section, unaffected.
 
-**Re-blocked on [28](28-architecture-index-and-module-cards.md),
-[29](29-diff-baseline-reassembly.md) and
-[30](30-injection-fetches-index-only.md)**, 2026-08-08: the maintainer
+**Re-blocked on [28](../../neuron-2.3.0/issues/28-architecture-index-and-module-cards.md),
+[29](../../neuron-2.3.0/issues/29-diff-baseline-reassembly.md) and
+[30](../../neuron-2.3.0/issues/30-injection-fetches-index-only.md)**, 2026-08-08: the maintainer
 rejected `27`'s compression as not actually solving the scaling problem —
 a fixed-size card still can't hold unbounded content as the repo grows, it
 just delays the cutoff. `28`/`29`/`30` replace the monolithic card with an

@@ -3,12 +3,12 @@ Status: claimed
 Blocked by: none
 Band: catch-all
 
-# 36 — Verify the Publish Workflow Against a Real Push
+# 02 — Verify the Publish Workflow Against a Real Push
 
 ## Question
 
 Does [`.github/workflows/publish.yml`](../../../.github/workflows/publish.yml)
-(built in [21](21-github-action-automated-publish.md)) actually publish to
+(built in [21](03-github-action-automated-publish.md)) actually publish to
 npm, tag the release, and skip safely on an unbumped push — exercised for
 real, not just read?
 

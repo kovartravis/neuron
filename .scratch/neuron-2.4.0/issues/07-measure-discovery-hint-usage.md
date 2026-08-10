@@ -1,9 +1,9 @@
 Type: task
 Status: unclaimed
-Blocked by: 32
+Blocked by: 06
 Band: context cost
 
-# 33 — Measure Whether the Discovery-Command Hint Gets Used
+# 07 — Measure Whether the Discovery-Command Hint Gets Used
 
 ## Question
 

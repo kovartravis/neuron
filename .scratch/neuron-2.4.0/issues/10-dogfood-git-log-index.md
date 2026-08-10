@@ -1,14 +1,14 @@
 Type: task
 Status: unclaimed
-Blocked by: 40, 41
+Blocked by: 08, 09
 Band: context cost
 
-# 42 — Dogfood the Git-Log Index in This Repo
+# 10 — Dogfood the Git-Log Index in This Repo
 
 ## Question
 
-Once [40](40-implement-git-log-index.md) and
-[41](41-update-init-skill-readme-for-git-log-index.md) ship, does running
+Once [40](08-implement-git-log-index.md) and
+[41](09-update-init-skill-readme-for-git-log-index.md) ship, does running
 the shipped feature for real against this repo's own git history and its
 own `neuron.yaml`/`CLAUDE.md`/skill install actually work end to end — the
 same live-demonstration bar `28`/`30` held themselves to, not just green

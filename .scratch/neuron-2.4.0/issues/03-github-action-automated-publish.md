@@ -1,9 +1,9 @@
 Type: task
 Status: claimed
-Blocked by: 36
+Blocked by: 02
 Band: catch-all
 
-# 21 — GitHub Action: Automated npm Publish on Push to Main
+# 03 — GitHub Action: Automated npm Publish on Push to Main
 
 ## Question
 
@@ -163,7 +163,7 @@ is HITL and unstarted), and the Verification section requires a real push
 to `main` actually landing on npm, so nothing here can be exercised
 end-to-end without both. Split real-install verification into
 [36 — Verify the Publish Workflow Against a Real
-Push](36-verify-publish-workflow-real-run.md), the same
+Push](02-verify-publish-workflow-real-run.md), the same
 split-verification-from-build precedent `01`→`20` and `02`→`22` used, so
 this ticket doesn't stay open-ended on an action only the maintainer can
 take. YAML syntax checked with `pyyaml`; the four-case dist-tag regex
@@ -187,7 +187,7 @@ trusted publishing needs npm CLI ≥11.5.1) with **no `NPM_TOKEN` secret at
 all** — `NODE_AUTH_TOKEN` was removed from the `Publish to npm` step
 entirely. This needs one remaining HITL step on npmjs.com (package
 Settings → Trusted Publisher → GitHub Actions), detailed in
-[36](36-verify-publish-workflow-real-run.md)'s own addendum. The
+[36](02-verify-publish-workflow-real-run.md)'s own addendum. The
 previously-created `npm-publish` environment secret `NPM_TOKEN` is now
 unused (harmless, left for the maintainer to delete at their discretion)
 — the `environment: npm-publish` gate itself is unchanged and still

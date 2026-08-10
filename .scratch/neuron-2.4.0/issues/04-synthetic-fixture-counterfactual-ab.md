@@ -2,7 +2,7 @@ Type: task
 Status: claimed
 Band: context cost
 
-# 19 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets
+# 04 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets
 
 ## Question
 

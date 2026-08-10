@@ -1,13 +1,13 @@
 Type: task
 Status: unclaimed
-Blocked by: 40
+Blocked by: 08
 Band: context cost
 
-# 41 — Update Generated Protocol Block, Packaged Skill & README for the Git-Log Index
+# 09 — Update Generated Protocol Block, Packaged Skill & README for the Git-Log Index
 
 ## Question
 
-Once [40](40-implement-git-log-index.md) ships the git-log index, what
+Once [40](08-implement-git-log-index.md) ships the git-log index, what
 does `neuron init` generate differently, what does the packaged
 `neuron-memory` skill tell agents to do differently, and what does the
 README claim — so that all three actually match what the shipped feature
@@ -79,4 +79,4 @@ this session (not assumed):
 - [ ] Packaged skill updated
 - [ ] README updated
 - [ ] `docs/COMMANDS.md`/`CONTEXT.md` swept if applicable
-- [ ] Unblocks [42](42-dogfood-git-log-index.md)
+- [ ] Unblocks [42](10-dogfood-git-log-index.md)

@@ -1,9 +1,9 @@
 Type: task
 Status: unclaimed
-Blocked by: 31
+Blocked by: none (31 resolved on neuron-2.3.0 before this ticket moved)
 Band: context cost
 
-# 32 — Per-Prompt Discovery-Command Hint
+# 06 — Per-Prompt Discovery-Command Hint
 
 ## Question
 
@@ -66,5 +66,5 @@ categories or leave it store-wide matching the query it's extending).
   source feature itself") — that is a different data source (git history,
   not neuron's own memory store) explored by a separate ticket; this one is
   scoped to neuron's own `memories` table.
-- Graduates [33](33-measure-discovery-hint-usage.md) as its own
+- Graduates [33](07-measure-discovery-hint-usage.md) as its own
   proof-of-value ticket rather than asserting the hint gets used.

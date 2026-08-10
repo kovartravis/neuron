@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 29, 30, 32
 Band: 2.3.0-rc3
 
@@ -70,3 +70,22 @@ this cuts, say so).
 - [ ] Doc sweep against the same diff, updated where stale
 - [ ] Unit + E2E suites green
 - [ ] `npm publish --tag rc` left explicitly to the maintainer
+
+## Answer
+
+**Superseded, not cut — 2026-08-10.** Scoping this map's remaining tickets
+against the maintainer's remaining weekly usage budget, `32` (the ticket
+this rc was also gated on) moved to [neuron-2.4.0](../../neuron-2.4.0/map.md)
+along with the rest of the work `04` never actually depended on. That
+leaves this ticket gated only on `28`/`29`/`30`, both already resolved — but
+cutting a third interim rc (its own version bump, CHANGELOG audit, doc
+sweep, tag, and push) spends a session `04`'s own direct blockers
+(`01`/`02`/`03`, all waiting on `20`/`22`'s real-install verification) don't
+need. Ruled to skip straight to the full `04` cut once `01`/`02`/`03` clear,
+rather than insert an rc3 the destination doesn't require. `28`-`30`'s
+architecture-index restructure still ships — it lands in `04`'s own
+CHANGELOG audit of the full `v2.3.0-rc2..HEAD` diff instead of a dedicated
+interim snapshot. Not reopened as a `neuron-2.4.0` ticket: there is no
+`2.4.0-rc3` to cut, since rc numbering belongs to this release. Closed as
+resolved (an actual decision was made — don't cut it), not out of scope
+(the destination never excluded it, its prerequisite just got deferred).

@@ -23,11 +23,16 @@ ticket `04`. Two bands are chartered today:
    second, more specific A/B on `08`'s own finding (`14`) and published as a
    repeatable benchmark suite rather than left as tracker findings (`15`).
 
-Reaching the end means every ticket here is resolved, what neuron *claims*
-matches what it *does* for each shipped harness, each config shape and each
-token claim, `2.3.0` ships with a published, re-runnable benchmark suite
-showing neuron's measured effect (favorable or not) versus raw harness, and
-`2.3.0` is cut and published.
+Reaching the end means what neuron *claims* matches what it *does* for each
+shipped harness, each config shape and each token claim, `2.3.0` ships with
+a published, re-runnable benchmark suite showing neuron's measured effect
+(favorable or not) versus raw harness, and `2.3.0` is cut and published —
+concretely, [04 — Cut and Publish](issues/04-cut-and-publish.md) resolves.
+**Narrowed 2026-08-10** (see Notes) from "every ticket on this map" to `04`'s
+own actual blockers: this is still a catch-all map, so work not owed
+elsewhere keeps landing here, but reaching *this* destination no longer
+requires every such ticket to close before the cut — only what `04` is
+wired to.
 
 ## Notes
 
@@ -1207,150 +1212,44 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   Mechanism](issues/43-rerun-gitlog-ab-semantic-mechanism.md), blocked by
   `40`, at the maintainer's direct request — `14`'s numbers cannot be
   assumed to carry over to the real mechanism and need their own
-  measurement. Frontier is now `20`, `22`, `28`, `32`, `40`.
+  measurement. Frontier is now `20`, `22`, `32`, `40` (this line's own prior
+  "`28`" was stale — `28` resolved earlier the same session, see its own
+  entry above).
+
+- **Scoped down to `04`'s actual blockers and moved everything else to
+  [neuron-2.4.0](../neuron-2.4.0/map.md), 2026-08-10**, at the maintainer's
+  direct request against ~50% of their weekly usage limit remaining and a
+  wish to actually finish `2.3.0` inside it. Audited what `04`
+  ([Cut and Publish 2.3.0](issues/04-cut-and-publish.md)) is really wired to
+  block on: `01`/`02`/`03` (waiting on `20`/`22`'s real-harness-install
+  verification) are the only ones still open — `05`, `06`, `07`, `08`, `09`,
+  `10`, `11`, `13`, `15`, `18` were already resolved. Everything else open on
+  this map was already, by this map's own repeated "not wired as a blocker
+  of `04`" notes above, never load-bearing for the cut: **moved to
+  neuron-2.4.0** as its tickets `02`–`11` — `19`→`04`, `21`→`03`, `24`→`05`,
+  `32`→`06`, `33`→`07`, `36`→`02`, `40`→`08`, `41`→`09`, `42`→`10`, `43`→`11`
+  (renumbered; cross-links back to tickets staying here, e.g.
+  `10`/`11`/`14`/`25`-`30`/`39`, now point at this map's `issues/` by
+  relative path). Each moved ticket kept its own claimed/unclaimed status and
+  in-progress work (harnesses `19`/`24` already built, `21`/`36` already
+  exercised against a real push) — this was a scope move, not a reset.
+  [37 — Cut and Publish 2.3.0-rc3](issues/37-cut-rc3.md) closed as
+  superseded rather than moved — see its own Answer — since an interim rc
+  gated on now-deferred work isn't worth its own session when `04`'s real
+  blockers are two HITL install checks away. The **"Not yet specified" fog
+  below moved to neuron-2.4.0's own fog wholesale**, for the same reason:
+  none of it gates `04`. **True remaining frontier on this map is now just
+  `20`, `22`** — both HITL (a real Copilot CLI install and a real Cursor
+  install), both of which unblock `01`/`02`, which unblock `03`, which with
+  `04`'s already-resolved blockers unblocks `04` itself. No further AFK
+  ticket work is available on this map until one of those two verifications
+  happens.
 
 ## Not yet specified
 
-<!-- in-scope fog: real, but not yet sharp enough to ticket -->
-
-- **Plan-vs-architecture-diff (`diffAgainstArchitecture`).** Requested in the
-  2026-08-02 repositioning handoff as a generic per-category flag in
-  `neuron.yaml`, letting a category's entries (e.g. `plans`) be compared
-  against the architecture diff by a two-stage pipeline — embedding
-  similarity for matching, the 0.5B model only for phrasing already-confirmed
-  matches, never for the match decision itself. **Cannot be ticketed: the
-  handoff cites a full spec at `neuron-plan-vs-drift-handoff.md` that does
-  not exist in this repo or anywhere reachable.** The handoff is explicit
-  that the feature must be scoped *exactly* as that spec has it — no new
-  package, no PM-software creep, no hardcoded category-name logic — so
-  writing a replacement spec from the one-paragraph summary would be
-  inventing the thing it says not to invent. Graduates the moment the spec
-  is supplied. Note the two-stage shape is consistent with everything
-  `neuron-2.2.0` measured: embedder decides, model only phrases.
-- **A write-time content-integrity floor.** On `neuron-2.2.0`'s own store,
-  roughly a quarter of entries held a single token (`Fix`, `Updated`,
-  `When`) because unquoted shell arguments word-split and `neuron memory
-  add` kept only the first positional. Otherwise well-formed rows, so
-  nothing flags them and they still occupy an embedding slot. Whether the
-  fix is a length floor, a whitespace check, a confirmation prompt, or an
-  argument-count guard is unformed.
-- **Bootstrapping category centroids on a cold store.** `init` produces a
-  working project, so the very first `neuron memory add` a user runs is
-  against an empty store — and without `--category` it hard-errors
-  ("category inference found no category close enough"). The recommended
-  posture passes `--category` explicitly, so this may be acceptable; not a
-  storage-mode problem (a fresh `md` project has exactly the cliff a fresh
-  `vector` project has). Whether the cliff is worth removing, and how,
-  given the rejection of embedding short label strings, is unformed.
-- **Tag vocabulary is a full-table read per process.** Write-side
-  enrichment reads every tagged row's embedding to build centroids on the
-  first inferring write. Fine at a few hundred entries; wants a cached
-  centroid table or an index long before it's a real problem. Not ticketed
-  because the trigger — what store size actually hurts — has not been
-  measured.
-- **Should `neuron exec`'s pre-command lookup also become a hook?** Step 1
-  of the deterministic protocol block (Command Execution) still asks the
-  agent to wrap commands. `10` confirmed every harness exposes *some*
-  `PreToolUse`-equivalent, so the prerequisite fact is known — but whether
-  to build on it is an adapter-architecture design call, not a separable
-  decision, and touching it now would mean reopening ADR 0014 rather than
-  extending it. Revisited (not resolved) by `09` on 2026-08-07 as its
-  "option 2" — confirmed ADR 0014 doesn't mention `neuron exec` at all, so
-  this would be a real scope expansion of that ADR, not an extension. `09`
-  ruled to leave it here rather than open a `/grilling` session under its
-  own ticket; best scoped as its own ticket once `01`/`02` make the
-  question concrete, if ever.
-- **Confidently-wrong retrieval is unowned.** A `neuron-2.2.0` measurement
-  found raw cosine *inverted* on wrong answers — top-1 cosine on queries
-  retrieval got wrong (mean 0.7779) is *higher* than on queries it got
-  right (mean 0.7518) — and no relevance gate addresses it: a gate rejects
-  the *irrelevant*, not the *wrong*, and both its legs measure forms of
-  confidence. Unformed because the prior question is unanswered: is a
-  confidently-wrong top hit detectable at all from retrieval signals, or
-  does catching it require adjudicating semantic opposites — the weakest
-  capability of both the embedder and the 0.5B model? If undetectable, the
-  honest response may be a disclosure rather than a fix.
-- **Threat model for grammar delivery.** Tree-Sitter `.wasm` grammars fetch
-  from the npm registry over TLS with pinned versions, but do not verify
-  the registry's `dist.integrity` checksum. A compromised mirror could
-  serve a bad grammar. Not ticketed because the prior question is unformed:
-  what threat model does a local-only dev tool owe its users?
-- **Cross-harness testing strategy.** This map's two adapters (plus the two
-  already shipped) need verification against real harness installations.
-  Whether that is CI-automatable or stays manual is unknown.
-- **What the cost band does if the answer is bad.** `07`–`10` are charted as
-  if the finding will be favourable enough to disclose. If it isn't — if the
-  hook costs materially more than it returns — the response is a product
-  decision this map has not made: narrow what the hook injects, make the hook
-  opt-in per category, or ship the honest number and let users choose.
-  Unformed because the options only become comparable once `08` reports, and
-  pre-committing to one now would bias what gets measured.
-- **What `2.3.0` else admits.** This map is a catch-all, so its own scope is
-  fog by construction: work not owed by an earlier map lands here, and what
-  lands is not yet known. The cut (`04`) is the only fixed point.
-- **The git-log-as-searchable-resident-source feature itself.** `14` only
-  tests the premise (does hook-injected git-log search beat the agent
-  running `git log` itself); it deliberately does not commit to *how* a
-  favourable answer gets built — whether it replaces the `history`-logging
-  write step in `CLAUDE.md`'s protocol block entirely, only supplements it,
-  and whether the index refreshes via a git hook or a check-HEAD-on-read
-  comparison at session-start/pre-prompt (the latter needs no separate
-  install step and can't be silently bypassed the way a git hook can, which
-  is the working lean, but it's not decided). Also unformed: `history`
-  entries that never correspond to any commit (this very ticket's own
-  resolution, at the time it was written, had none) are exactly what a
-  git-log index cannot cover, so "replace" and "supplement" are materially
-  different products, not just an implementation detail. Cannot be ticketed
-  until `14` answers whether the premise holds at all. **Graduated
-  2026-08-09** — `14` resolved (favorable on every raw number, "no
-  measured difference" by spread, maintainer ruled to build anyway) into
-  [39](issues/39-git-log-index-design.md), which carries these exact two
-  open questions forward verbatim; see the Decisions-so-far `14` entry.
-- **The A/B harness's execution mechanism and funding — now concretely
-  blocking, not just open.** [24](issues/24-architecture-card-ab.md) built
-  and dry-run-validated a real harness 2026-08-08, then hit this exact
-  question live: this session's sandbox has no `ANTHROPIC_API_KEY`, and
-  `@anthropic-ai/sdk`'s fallback OAuth credential discovery can't reach its
-  token endpoint from here, so the scripted 8-session pilot failed 2
-  sessions in. Maintainer chose to stop rather than pick a path this
-  session; `24` is left open, harness ready, for whichever path (supplied
-  API key, or driving the sessions as live Claude Code subagents instead of
-  a scripted harness) gets chosen next.
-
-  The underlying question predates `24`: neither `10` nor `14` specifies
-  whether the "N tasks × 2 arms × k repeats" sessions run as
-  real Claude Code sessions (covered by whatever Claude Code subscription
-  the maintainer already pays for, not separately metered) or as a scripted
-  Claude API harness (billed per-token against a separate Anthropic Console
-  balance). Surfaced 2026-08-07 when the maintainer asked whether a monthly
-  Claude API credit allotment could fund the API-harness path — unconfirmed
-  from this session, since a coding session has no visibility into the
-  maintainer's actual Console billing/plan; check console.anthropic.com
-  directly. The two paths have very different cost profiles (subscription
-  sessions are effectively free at the margin but must be driven live and
-  are not scriptable for repeatable `k` repeats; an API harness is
-  scriptable and repeatable but bills per token at standard rates — roughly
-  low-single-digit dollars per run at Sonnet-tier pricing for a
-  medium-length agentic session, cheap enough that a modest monthly budget
-  could fund a small `N`×`k`, but this needs pricing against the tasks `10`
-  actually picks, not a guess). Whichever ticket claims `10` should settle
-  this before spending anything, per `10`'s own Scope item 6.
-
-- **`findById` doesn't fully reconcile a cold store.** Found 2026-08-08 while
-  building [24](issues/24-architecture-card-ab.md)'s A/B fixtures: `findById`
-  calls `this.router.query({ limit: 0 })` to force a reconcile before its raw
-  SQLite read, but on a genuinely cold store (fresh worktree, brand-new
-  project, first invocation ever) that `limit: 0` call doesn't actually
-  populate the mirror — confirmed live, a fresh git worktree's very first
-  `neuron hook claude-code session-start` missed the architecture card
-  entirely (`findById` returned not-found for a row a normal `query()`
-  immediately afterward found under the exact same id), while every call
-  after that first one succeeded, since the mirror was warmed by then. Self-
-  healing after one miss, so low severity, but affects `findById` broadly —
-  including the `--supersedes` flow (`17`) — not just `25`'s new call site.
-  Whether the fix is making `router.query({limit:0})` actually force a real
-  reconcile, or `findById` falling back to a `limit:1` query on a miss, is
-  unformed.
+<!-- fog moved wholesale to neuron-2.4.0 on 2026-08-10 (see Notes above) —
+     none of it gates `04`, this map's narrowed destination. See
+     neuron-2.4.0's own "Not yet specified" section. -->
 
 ## Out of scope
 
