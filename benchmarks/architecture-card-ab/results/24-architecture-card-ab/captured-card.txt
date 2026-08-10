@@ -39,101 +39,19 @@ Default: `ast/2`
 └── e2e (test/e2e)
 ```
 
-## 📦 Primary Subsystems & Module Boundaries
-
-### 🧩 benchmarks (`benchmarks`)
-
-**Key Components & Export Contracts:**
-- **`benchmarks/e2e-runner.js`**
-- **`benchmarks/generate-dashboard.js`** (Exports: `generateDashboard`)
-- **`benchmarks/open-report.js`**
-
-### 🧩 longmemeval (`benchmarks/longmemeval`)
-
-**Key Components & Export Contracts:**
-- **`benchmarks/longmemeval/neuron.py`** (Exports: `NeuronMemoryProvider`)
-- **`benchmarks/longmemeval/relevance_gate_eval.py`** (Exports: `eval_floor, eval_full_gate, reject, pctl`)
-- **`benchmarks/longmemeval/retrieval_eval.py`**
-
-### 🧩 src (`src`)
-
-**Key Components & Export Contracts:**
-- **`src/cli.test.ts`**
-- **`src/cli.ts`**
-- **`src/db.test.ts`**
-- **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase`)
-- **`src/enrichment.test.ts`**
-- **`src/fieldSchema.test.ts`**
-- **`src/index.supersession.test.ts`**
-- **`src/index.test.ts`**
-- **`src/index.ts`** (Exports: `NeuronMemory`)
-- **`src/sqliteFieldSchema.test.ts`**
-
-### 🧩 commands (`src/commands`)
-
-**Key Components & Export Contracts:**
-- **`src/commands/exec.test.ts`**
-- **`src/commands/exec.ts`** (Exports: `handleExecCommand`)
-- **`src/commands/feedback.test.ts`**
-- **`src/commands/feedback.ts`** (Exports: `buildGitHubIssueUrl, handleFeedbackCommand`)
-- **`src/commands/history.test.ts`**
-- **`src/commands/history.ts`** (Exports: `handleHistoryCommand`)
-- **`src/commands/hook.test.ts`**
-- **`src/commands/hook.ts`** (Exports: `handleHookCommand`)
-- **`src/commands/index.ts`**
-- **`src/commands/init.test.ts`**
-- **`src/commands/init.ts`** (Exports: `ProtocolWriteReport, handleInitCommand`)
-- **`src/commands/learn.test.ts`**
-- **`src/commands/learn.ts`** (Exports: `handleLearnCommand`)
-- **`src/commands/memory.supersession.test.ts`**
-- **`src/commands/memory.test.ts`**
-- **`src/commands/memory.ts`** (Exports: `handleMemoryCommand`)
-- **`src/commands/scan.determinism.test.ts`**
-- **`src/commands/scan.fidelity.test.ts`**
-- **`src/commands/scan.test.ts`**
-- **`src/commands/scan.ts`** (Exports: `handleScanCommand`)
-- **`src/commands/status.test.ts`**
-- **`src/commands/status.ts`** (Exports: `handleStatusCommand`)
-- **`src/commands/sync.test.ts`**
-- **`src/commands/sync.ts`** (Exports: `handleSyncCommand, scaffoldNeuronDirectory`)
-- **`src/commands/ui.test.ts`**
-- **`src/commands/ui.ts`** (Exports: `UiCommandOptions, handleUiCommand`)
-- **`src/commands/utils.test.ts`**
-- **`src/commands/utils.ts`** (Exports: `findProjectRoot, drawBox, parseFlags, updateMarkdownFile, getMemoryHelp`)
-
-### 🧩 components (`src/components`)
-
-**Key Components & Export Contracts:**
-- **`src/components/embedder.test.ts`**
-- **`src/components/embedder.ts`** (Exports: `Embedder, TransformersEmbedder`)
-- **`src/components/enricher.ts`** (Exports: `Centroid, VocabularyEntry, buildTagVocabulary, buildCategoryCentroids, TagSelectionOptions, selectTags, selectCategory, CategoryOption, CategoryInferenceInput, CategoryInferenceResult, EnrichmentModel, LocalEnrichmentModelOptions, LocalEnrichmentModel, buildCategoryPrompt`)
-- **`src/components/fts-query.test.ts`**
-- **`src/components/fts-query.ts`** (Exports: `isStopword, cleanFtsQuery`)
-- **`src/components/generator.ts`** (Exports: `GeneratorProgress, getTextGenerator, isTextGeneratorLoaded, resetTextGenerator`)
-- **`src/components/index.ts`**
-- **`src/components/summarizer.test.ts`**
-- **`src/components/summarizer.ts`** (Exports: `SmolLM2Summarizer`)
-- **`src/components/timeout.ts`** (Exports: `TimeoutError, withTimeout`)
-
-### 🧩 config (`src/config`)
-
-**Key Components & Export Contracts:**
-- **`src/config/categoryPath.test.ts`**
-- **`src/config/categoryPath.ts`** (Exports: `resolveCategoryPath, rawCategoryPath, resolveAllCategoryRoots`)
-- **`src/config/harness.ts`** (Exports: `AgentHarness, detectHarnesses, copySkill`)
-- **`src/config/index.ts`**
-- **`src/config/neuronYaml.test.ts`**
-- **`src/config/neuronYaml.ts`** (Exports: `StorageMode, StorageConfig, CategoryField, CategoryConfig, fieldKeyToFlagName, fieldKeyToColumnName, isValidColumnIdentifier, DeclaredFieldFlag, collectDeclaredFieldFlags, PullRuleDefault, PullRuleOnExec, PullRulesConfig, ScanConfig, LlmEnrichmentConfig, LlmConfig, RelevanceGateConfig, RelevanceConfig, RecallConfig, NeuronConfig, findNeuronYaml, findConfigFile, validateNeuronYaml, parseNeuronYaml, loadNeuronYaml, loadConfig, resolveExecCategories`)
-- **`src/config/protocolBlock.test.ts`**
-- **`src/config/protocolBlock.ts`** (Exports: `ProtocolFidelity, ProtocolBlockOptions, generateProtocolBlock, ProtocolWriteAction, UpsertProtocolBlockResult, upsertProtocolBlock`)
-- **`src/config/scaffold.test.ts`**
-- **`src/config/scaffold.ts`** (Exports: `ScaffoldResult, scaffoldNeuronYaml`)
-
-### 🧩 e2e (`src/e2e`)
-
-**Key Components & Export Contracts:**
-- **`src/e2e/mdFileManagement.e2e.test.ts`**
-
-_(Omitted to fit the injection budget: 7 more subsystem(s) entirely — see the full card in `.neuron/` for the complete blueprint.)_
-- [decisions] Integrated (tags: adr, benchmark, provider)
-- [decisions] Architectural (tags: adr, md-sync, architecture)
+## 📦 Primary Subsystems
+- **benchmarks** — `benchmarks` (3 files)
+- **longmemeval** — `benchmarks/longmemeval` (3 files)
+- **src** — `src` (11 files)
+- **commands** — `src/commands` (28 files)
+- **components** — `src/components` (10 files)
+- **config** — `src/config` (10 files)
+- **e2e** — `src/e2e` (1 file)
+- **harnesses** — `src/harnesses` (16 files)
+- **models** — `src/models` (4 files)
+- **scanner** — `src/scanner` (18 files)
+- **shared** — `src/shared` (1 file)
+- **storage** — `src/storage` (13 files)
+- **ui** — `src/ui` (4 files)
+- **e2e** — `test/e2e` (9 files)
+- [decisions] Ticket 38 (neuron-2.3.0, md parser stray-dash cascading data loss) design rationale: reconcileCategory's delete-mirror step in dualStorageRouter.ts gets a non-blocking warning, not a hard tripwire, when a single reconcile pass is about to delete an unusually large fraction (>=20% of a category's rows, with a 5-row floor to avoid noise on tiny categories) of a category's vector rows. ADR 0011 Consequence 2 already settled 'no tripwire, no --force' for this delete step deliberately, reasoning that markdown is authoritative by construction and '.neuron/' is git-recoverable; ticket 38's own root cause (a one-off duplicated-content write, not a systemic formatter bug, closed at the read side by hardening the frontmatter block matcher) supplied evidence for making the class of failure LOUD, not evidence for reopening the settled 'no tripwire' ruling itself, so the two were kept orthogonal. This is deliberately a different posture than ticket 24's (neuron-2.2.0) LLM-judged-deletion false-delete disqualification, which killed model-judged content deletion outright because there was no independent trustworthy source to check against -- here the mechanism is mechanical sync against markdown, which IS the trustworthy source by ADR 0011's own design, so the fix is visibility (MASS_DELETE_WARN_FRACTION stderr warning) rather than a block. (tags: adr, md-storage, rc2)

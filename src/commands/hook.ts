@@ -1,7 +1,7 @@
 import { NeuronMemory } from '../index.js';
 import { loadConfig } from '../config/neuronYaml.js';
 import { withTimeout } from '../components/timeout.js';
-import { blueprintCardId } from '../scanner/ingest.js';
+import { blueprintCardId, moduleCardId, parseModuleListFromIndex } from '../scanner/ingest.js';
 import { compressArchitectureCard } from '../scanner/compressCard.js';
 import {
   buildPayload,
@@ -29,13 +29,22 @@ interface CardPayload {
  * enough other entries share the category, exactly `ingest.ts`'s own comment
  * warns about, and exactly what this repo's own `scan.category: decisions`
  * config reproduces. Structurally compressed to `cap` if it exceeds it
- * (ticket 27, `compressArchitectureCard`) — every module gets a chance to
- * appear, in decreasing detail, rather than truncating raw text at whatever
+ * (ticket 27/30, `compressArchitectureCard`) — every module-list line gets
+ * a chance to appear, in order, rather than truncating raw text at whatever
  * byte offset the budget happens to land on. Whatever budget is left after
- * the card goes to the existing top-N-in-category query, excluding the
- * card's own id so it never appears twice — additive, since a category
- * shared with general decision-log content (this repo's own setup) is a
- * deliberate config choice, not a bug to route around.
+ * the card goes to the existing top-N-in-category query, additive, since a
+ * category shared with general decision-log content (this repo's own
+ * setup) is a deliberate config choice, not a bug to route around — but
+ * (ticket 30) that query also matches real per-module detail cards, which
+ * share the same category and tags as the index post-28. Left unfiltered, a
+ * module card rides along on every `session-start` injection regardless of
+ * relevance, reproduced live against this repo's own store (the `ui`
+ * module's full card riding along on a plain `session-start` call with no
+ * prompt in play at all) — exactly the unconditional per-module detail this
+ * ticket's index/module split exists to avoid. So the additive query
+ * excludes every module card belonging to this index, not just the index's
+ * own id: module detail surfaces only through the *pre-prompt* relevance
+ * query (the reused-recall design), never through this always-on one.
  */
 async function fetchArchitectureCardPayload(memory: NeuronMemory, category: string, cap: number): Promise<CardPayload> {
   if (cap <= 0) return { text: '', includedIds: [] };
@@ -45,6 +54,9 @@ async function fetchArchitectureCardPayload(memory: NeuronMemory, category: stri
   let remaining = cap;
 
   const blueprint = await memory.findById(blueprintCardId(category));
+  const moduleIds = blueprint
+    ? new Set(parseModuleListFromIndex(blueprint.content).map(m => moduleCardId(category, m.path)))
+    : new Set<string>();
   if (blueprint) {
     const prefix = `- [${blueprint.category}] `;
     const budget = Math.max(0, remaining - prefix.length);
@@ -59,7 +71,7 @@ async function fetchArchitectureCardPayload(memory: NeuronMemory, category: stri
 
   if (remaining > 0) {
     const results = await memory.query({ categories: [category], limit: 4 });
-    const filtered = results.filter(r => r.id !== blueprint?.id);
+    const filtered = results.filter(r => r.id !== blueprint?.id && !moduleIds.has(r.id));
     const built = buildPayload(filtered, remaining);
     if (built.includedIds.length > 0) {
       parts.push(built.text);

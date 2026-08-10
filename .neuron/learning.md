@@ -2301,3 +2301,15 @@ tags:
 taskId: null
 ---
 Fix for MdStorageAdapter's parseMarkdownDetailed silently dropping entries after a stray '---' in an entry's body (neuron-2.3.0 ticket 38): the single-pass global regex /(?:^|\n)---\n([\s\S]*?)\n---\n/g advanced its own lastIndex past a REJECTED candidate block (one that failed the key:value frontmatter test), consuming the next real delimiter along with it -- measured on this repo's own decisions.md, one duplicated paragraph with a stray horizontal rule dropped 41 of 109 real entries (68 parsed), and reconcileCategory then silently mass-deleted the 'missing' rows from the SQLite mirror on every reconcile. Root cause of the corruption itself was NOT a parser/formatter bug (format/parse roundtrip tests already passed) but a one-off write whose content argument had the same paragraph pasted twice with a literal '---' divider -- the real defect was that the READER let one bad entry cascade into losing unrelated ones. Fix: replaced the single regex pass with a two-pointer scan over every raw '---'-only line; a rejected (open,close) pair now retries from the very next delimiter instead of skipping past it, so body content is preserved literally on the entry that has it and never swallows a neighbor. Edge case: this only protects the READ side -- reconcileCategory's delete-mirror step still has no hard tripwire against a large single-pass deletion (ADR 0011 Consequence 2 rules that out deliberately), only a new non-blocking stderr warning at >=20% of a category's vector rows in one pass (MASS_DELETE_WARN_FRACTION in dualStorageRouter.ts).
+
+---
+id: fc3baad1-78c5-47f6-b191-2d9fcd4ba326
+createdAt: 2026-08-09T19:34:40.337Z
+importance: 4
+tags:
+  - failure-fix
+  - adr
+  - architecture
+taskId: null
+---
+Fix for module detail cards leaking into unconditional session-start injection: after ticket 28 split the architecture blueprint into a small index plus per-module detail cards sharing the index's category and tags, fetchArchitectureCardPayload's pre-existing additive top-N-in-category query (src/commands/hook.ts, predating 28) started matching real module cards and injecting full per-module detail on every session-start call regardless of relevance, defeating the whole point of the index/module split. Root cause: the additive query only excluded the index's own id, never the module ids that now share its category/tags. Fixed by computing the set of moduleCardId(category, path) for every module in the fetched index (via parseModuleListFromIndex, already exported from ingest.ts) and excluding those ids too: const moduleIds = new Set(parseModuleListFromIndex(blueprint.content).map(m => moduleCardId(category, m.path))); filtered = results.filter(r => r.id !== blueprint?.id && !moduleIds.has(r.id)). Reproduced live via a plain 'neuron hook claude-code session-start' call against this repo's own store before the fix (a real 'ui' module card appeared with no prompt in play), confirmed absent after.

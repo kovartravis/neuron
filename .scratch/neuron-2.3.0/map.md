@@ -764,6 +764,74 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   synthetic fixtures, unaffected by this unrelated bug. Not wired as a
   blocker of anything; unclaimed, unblocked, sized for its own session.
   **Resolved in a later session — see the `38` entry below.**
+- **[30 — Injection Fetches Only the Index](issues/30-injection-fetches-index-only.md)
+  resolved 2026-08-09.** `fetchArchitectureCardPayload` (`hook.ts`) was
+  already index-only by construction (`28`'s stable-id change) — the real
+  work was deciding `compressArchitectureCard`'s fate and a Scope item 3
+  verification that turned into a real bug find. Measured the real index
+  honestly first (1,591 of the 6,000-char budget, 26.5%): compression is
+  rarely exercised on repos this size, but not retired — rewrote it from
+  scratch for the new shape (line-atomic truncation of the module list,
+  much less code than the per-file version it replaces) rather than drop
+  the "truncate instead of drop when oversized" discipline `25` established.
+  **Dogfooding a plain `session-start` call against this repo's own store
+  surfaced a real, previously undetected bug**: the existing additive
+  top-N-in-category query (predating `28`) now matches real per-module
+  detail cards, since they share the index's category and tags — a module
+  card (`ui`) rode along in a session-start injection with no prompt in
+  play at all, reproduced live and confirmed against this very session's
+  own injected context. Fixed by excluding every module id belonging to
+  the fetched index from that query, so module detail now surfaces only
+  through the pre-prompt relevance path, matching `28`'s actual design.
+  Demonstrated live (no new code): a prompt naming `src/harnesses`
+  surfaces that module's real card as the top hit via ordinary
+  `memory.query`. `24`'s `captured-card.txt` refreshed to a real post-fix
+  capture (2,994 bytes, down from ~6,084 stale pre-`28` bytes). `npm test`
+  599/600 (the one failure the same pre-existing, unrelated
+  `concurrency-stress.test.ts` flake). Frontier is now `20`, `22`, `32`.
+- **[14 — Git-Log Recall: Hook-Injected Search vs Agent-Invoked `git
+  log`](issues/14-git-log-hook-vs-agent-log-ab.md) resolved 2026-08-09**,
+  picked back up once the maintainer confirmed working `ant` credentials
+  this session (the operational blocker its first pickup hit). Ran the
+  `--k=1` cheap pilot first per its own Comments' precedent ($0.46), then
+  the full `--k=3` budget ($1.45) — $1.91 total, within the stated
+  low-single-digit-dollar estimate. **Result: `gitlog` beat `agent` on
+  every raw number** (0% vs 11% failure, ~17.4k vs ~49.6k mean tokens,
+  $0.41 vs $1.04 cost, empty risk arm) **but is technically
+  "no measured difference"** by the same spread-vs-diff discipline `10`
+  established (diff 32,171 tokens, spread 57,723 — driven by `agent`-arm
+  variance on one task, not `gitlog`-arm instability). At the maintainer's
+  direct instruction ("Let's implement it") after reviewing these numbers,
+  ruled to graduate into implementation rather than fold into `09` or rule
+  out of scope — recorded as the maintainer's own call on an otherwise
+  inconclusive-by-the-book result, not an agent override of the harness's
+  reporting discipline. Unblocks [15](issues/15-benchmark-suite-publication.md)
+  (both its blockers, `10` and `14`, are now resolved).
+- **Graduated four tickets for the git-log index build, 2026-08-09, at the
+  maintainer's direct instruction to ticket the work rather than build it
+  this session.** The design questions this map's fog explicitly deferred
+  until `14` answered whether the premise held (replace-vs-supplement the
+  `history` write step, refresh mechanism, the no-corresponding-commit
+  gap — see the "Not yet specified" entry below, now graduated rather than
+  restated here) go to
+  [39 — Git-Log Index: Replace-vs-Supplement and Refresh
+  Mechanism](issues/39-git-log-index-design.md) (grilling, unblocked).
+  `39` blocks [40 — Implement the Git-Log
+  Index](issues/40-implement-git-log-index.md), which blocks both
+  [41 — Update Generated Protocol Block, Packaged Skill & README for the
+  Git-Log Index](issues/41-update-init-skill-readme-for-git-log-index.md)
+  (confirmed by direct investigation this session:
+  `src/config/protocolBlock.ts`'s `headerSection()`/`recallStep()` write a
+  per-project block into `AGENTS.md`/`CLAUDE.md` dynamically interpolated
+  from that project's own `neuron.yaml` `categories` — this repo's own
+  root `CLAUDE.md` is confirmed neuron-generated output, not hand-written
+  — while `.claude/skills/neuron-memory/SKILL.md` is copied
+  byte-identical with no templating at all, and `README.md` currently
+  documents neither mechanism) and
+  [42 — Dogfood the Git-Log Index in This Repo](issues/42-dogfood-git-log-index.md)
+  (blocked by both `40` and `41`, since dogfooding needs the real `init`
+  output `41` produces). None of `39`–`42` claimed or worked this session.
+  Frontier is now `15`, `20`, `22`, `32`, `39`.
 
 ## Decisions so far
 
@@ -1067,6 +1135,26 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   Consequence 2's "no tripwire, no `--force`" stands unchanged. This repo's
   own corrupted `decisions` entry repaired (75/75 now parse). 599/600 tests
   (Pillar 8 the same known pre-existing flake ticket 34 already noted).
+- **[30 — Injection Fetches Only the Index](issues/30-injection-fetches-index-only.md)**
+  — `fetchArchitectureCardPayload` was already index-only by construction;
+  `compressArchitectureCard` rewritten (not retired) for the index's
+  line-per-module shape, measured real usage 26.5% of budget on this repo.
+  Found and fixed a real bug while verifying: the pre-existing additive
+  top-N-in-category query pulled real module cards into every
+  `session-start` injection (they share the index's category/tags
+  post-`28`) — now excluded, so module detail surfaces only via ordinary
+  pre-prompt relevance recall, as `28` actually designed. `24`'s
+  `captured-card.txt` refreshed to a real post-fix capture. 599/600 tests.
+- **[14 — Git-Log Recall: Hook-Injected Search vs Agent-Invoked `git
+  log`](issues/14-git-log-hook-vs-agent-log-ab.md)** — live `k=3` A/B run
+  ($1.91 total): `gitlog` beat `agent` on every raw number (0% vs 11% fail,
+  ~17.4k vs ~49.6k mean tokens, empty risk arm) but is "no measured
+  difference" by spread (diff 32,171 < spread 57,723). Maintainer ruled to
+  implement anyway. Graduated
+  [39](issues/39-git-log-index-design.md)→[40](issues/40-implement-git-log-index.md)→
+  [41](issues/41-update-init-skill-readme-for-git-log-index.md)/[42](issues/42-dogfood-git-log-index.md)
+  for design, build, docs sweep (init/skill/README), and dogfooding, in
+  that dependency order. Unblocks `15`.
 
 ## Not yet specified
 
@@ -1160,7 +1248,11 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   resolution, at the time it was written, had none) are exactly what a
   git-log index cannot cover, so "replace" and "supplement" are materially
   different products, not just an implementation detail. Cannot be ticketed
-  until `14` answers whether the premise holds at all.
+  until `14` answers whether the premise holds at all. **Graduated
+  2026-08-09** — `14` resolved (favorable on every raw number, "no
+  measured difference" by spread, maintainer ruled to build anyway) into
+  [39](issues/39-git-log-index-design.md), which carries these exact two
+  open questions forward verbatim; see the Decisions-so-far `14` entry.
 - **The A/B harness's execution mechanism and funding — now concretely
   blocking, not just open.** [24](issues/24-architecture-card-ab.md) built
   and dry-run-validated a real harness 2026-08-08, then hit this exact

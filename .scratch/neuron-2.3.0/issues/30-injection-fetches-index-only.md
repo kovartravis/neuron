@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 28
 Band: context cost
 
@@ -74,9 +74,99 @@ the new, smaller artifact instead of retiring them wholesale.
 
 ## Deliverables
 
-- [ ] `fetchArchitectureCardPayload` fetches the index only
-- [ ] `compressArchitectureCard` adapted or retired, decided from a real
+- [x] `fetchArchitectureCardPayload` fetches the index only
+- [x] `compressArchitectureCard` adapted or retired, decided from a real
       measurement, not an assumption
-- [ ] Demonstrated: a module-relevant prompt recalls that module's card via
+- [x] Demonstrated: a module-relevant prompt recalls that module's card via
       existing pre-prompt recall, unmodified
-- [ ] `24`'s captured card content refreshed to match
+- [x] `24`'s captured card content refreshed to match
+
+## Answer
+
+**Item 1 (index-only fetch) was already true by construction** — `28` moved
+`blueprintCardId(category)` to identify the index specifically, so
+`fetchArchitectureCardPayload`'s existing stable-id fetch was already
+pulling only the index. Verified, not changed.
+
+**Item 2 — adapted, not retired.** Measured this repo's real post-`28`/`29`
+index honestly first, per this map's own standing rule (`26` got burned once
+assuming instead of measuring): 1,591 chars against the 6,000-char
+`SESSION_START_CHAR_BUDGET` — 26.5%, comfortably under. Per-module-list-line
+cost is small (~41 bytes/line here), so this repo would need on the order of
+100+ modules before module-list growth alone approached the cap — but the
+header also grows with the dependency contract independent of module count,
+so an unbounded-growth path still exists. Retiring compression outright
+would mean a future large-monorepo index silently blows the budget with no
+graceful path — `25`'s own title ("truncate instead of drop when oversized")
+is a standing discipline this ticket owes forward, not something to drop
+just because the artifact got smaller. Rewrote `compressArchitectureCard`
+(`src/scanner/compressCard.ts`) from scratch for the new shape: the old
+per-file/per-module structural parser (`### 🧩` headings, purpose-stripping)
+is gone entirely — there's no per-file detail left in the index to strip.
+The new version keeps the header (purpose/fidelity/dependencies/subsystem
+map) whole, then includes as many complete `## 📦 Primary Subsystems`
+module-list lines as fit — never cutting a line in half — with the same
+"reserve the omission-note budget before laying out anything" discipline
+25/27 established, now sized for the much shorter note this shape needs
+(160 chars vs. the old 220). Falls back to a marked hard truncation
+(`...[truncated]`) for content with no recognizable module-list heading at
+all (the same degrade path `hook.test.ts`'s pre-existing oversized-card test
+already exercises, unmodified). Much less code than the version it replaces
+— confirms the "far less machinery needed" prediction in this ticket's own
+Scope.
+
+**Item 3 (no new fetch for module cards) surfaced a real bug, not just a
+confirmation.** Dogfooding a live `session-start` call against this repo's
+own store (no prompt in play at all) showed a full per-module detail card
+(`ui`) riding along in the injected payload — reproduced this session's own
+system-reminder context, which had literally been fed the `ui` module's full
+card at the start of this conversation. Root cause: `fetchArchitectureCardPayload`'s
+*existing* additive top-N-in-category query (`memory.query({categories:
+[category], limit: 4})`, pre-dating `28`) was built when only the monolithic
+card and unrelated decisions shared the category — post-`28`, every module
+card shares the same category and tags as the index, so that query now
+matches real module details unconditionally, exactly the un-budgeted
+per-module content this ticket's whole index/module split exists to avoid.
+Fixed in `src/commands/hook.ts`: the additive query now excludes every
+module id belonging to the fetched index (`parseModuleListFromIndex` +
+`moduleCardId`, both reused from `ingest.ts` unchanged), not just the
+index's own id. Module detail now surfaces *only* through the pre-prompt
+relevance query, matching the design `28` actually specified. New regression
+test in `hook.test.ts` plants an index + a real module card sharing category
+and tags, confirms the module card never appears in a `session-start`
+injection. This is the one genuinely new piece of code this ticket
+required beyond compression's adaptation — everything else in Scope items 1
+and 3 was verification of prior work, not new implementation.
+
+**Item 3's positive case (module-relevant recall) demonstrated live**, no
+new code: `neuron memory query "what does src/harnesses do and what does
+hook.ts import from it"` against this repo's real store returns the
+`harnesses` module's detail card as the top hit (score 1, cosine similarity
+0.79, FTS-matched) — the existing `memory.query({text, ...})` pre-prompt
+path surfaces module detail on relevance alone, exactly as `28`'s design
+called for, no explicit "fetch this module" mechanism added anywhere.
+
+**Item 4** confirmed unchanged: both `session-start` and the first
+`pre-prompt` of an epoch already route through the same
+`fetchArchitectureCardPayload`, so the fix above applies to both call sites
+identically. `hook.test.ts`'s existing epoch-reinjection coverage
+(re-inject on first pre-prompt, skip on the second, re-inject after
+`context-reset`) passes unmodified against the new index shape.
+
+**`24`'s `captured-card.txt` refreshed** with a real live capture
+(`neuron hook claude-code session-start`'s actual emitted
+`additionalContext`) post-fix: 2,994 bytes (down from the stale ~6,084-byte
+pre-`28` monolithic capture), zero `### 🧩` module headings. `24`'s own
+tasks (`dependency-contract`, `subsystem-inventory`) only need the
+dependency list and the per-module path list, both still present verbatim
+in the index — no change needed to `tasks.mjs`/`fixtures.mjs`.
+
+`compressCard.test.ts` fully rewritten for the new shape (8 tests: unchanged
+passthrough, line-atomic truncation, omission-note presence, the two hard-
+truncation fallbacks, zero/negative cap, determinism, never-exceeds-cap
+across a cap sweep) — the old per-file-stripping tests no longer apply,
+since there's no per-file content left in this artifact. One new test added
+to `hook.test.ts` for the module-card-exclusion fix. `npm test`: 599/600 (up
+from 598/599), the one failure the same pre-existing, unrelated
+`concurrency-stress.test.ts` SQLite-migration-race flake prior sessions
+already tracked independent of this ticket. `tsc --noEmit` clean.

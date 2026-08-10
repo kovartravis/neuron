@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { compressArchitectureCard } from './compressCard.js';
 
-function fakeCard(moduleCount: number, filesPerModule: number): string {
+function fakeIndex(moduleCount: number): string {
   const header = `# 🏛️ Repository Architectural Blueprint: fake-project
 
 ## 🚀 System Purpose & Tech Stack
@@ -16,84 +16,73 @@ fake-project
 ${Array.from({ length: moduleCount }, (_, i) => `├── mod${i} (src/mod${i})`).join('\n')}
 \`\`\`
 
-## 📦 Primary Subsystems & Module Boundaries
+## 📦 Primary Subsystems
 `;
-  const modules = Array.from({ length: moduleCount }, (_, i) => {
-    const files = Array.from(
-      { length: filesPerModule },
-      (_, j) =>
-        `- **\`src/mod${i}/file${j}.ts\`** (Exports: \`Thing${j}\`): A long-winded prose description that exists only to pad this fixture file out to a realistic size, repeated for every file in every module so the whole card comfortably exceeds any small test budget.`
-    ).join('\n');
-    return `\n### 🧩 mod${i} (\`src/mod${i}\`)\nPrimary mod${i} module.\n\n**Key Components & Export Contracts:**\n${files}\n`;
-  }).join('');
+  const moduleLines = Array.from(
+    { length: moduleCount },
+    (_, i) => `- **mod${i}** — \`src/mod${i}\` (3 files)`
+  ).join('\n');
 
-  return header + modules;
+  return header + moduleLines + '\n';
 }
 
 describe('compressArchitectureCard', () => {
   it('returns the input unchanged when it already fits the cap', () => {
-    const card = fakeCard(1, 1);
+    const card = fakeIndex(3);
     expect(compressArchitectureCard(card, card.length + 100)).toBe(card);
   });
 
-  it('strips purpose text but keeps every module and file when that alone fits', () => {
-    const card = fakeCard(2, 2);
-    // Purpose-stripped rendering is much shorter than the original but the
-    // original doesn't fit — pick a cap between the two.
-    const compressed = compressArchitectureCard(card, 1200);
-    expect(compressed.length).toBeLessThanOrEqual(1200);
-    expect(compressed).toContain('mod0');
-    expect(compressed).toContain('mod1');
-    expect(compressed).toContain('file0.ts');
-    expect(compressed).toContain('file1.ts');
-    expect(compressed).not.toContain('long-winded prose');
-    expect(compressed).not.toContain('Omitted');
+  it('never cuts a module line in half: each surviving line is a complete line, and some are omitted', () => {
+    const card = fakeIndex(15); // header 620 chars, total 1141
+    const compressed = compressArchitectureCard(card, 900);
+    let matched = 0;
+    for (const line of compressed.split('\n')) {
+      if (line.startsWith('- **mod')) {
+        expect(line).toMatch(/^- \*\*mod\d+\*\* — `src\/mod\d+` \(3 files\)$/);
+        matched += 1;
+      }
+    }
+    expect(matched).toBeGreaterThan(0);
+    expect(matched).toBeLessThan(15);
+    expect(compressed).toMatch(/\d+ more subsystem\(s\)/);
   });
 
-  it('keeps file + Exports for every file that survives, dropping only the prose', () => {
-    const card = fakeCard(1, 3);
-    const compressed = compressArchitectureCard(card, 1000);
-    expect(compressed).toContain('- **`src/mod0/file0.ts`** (Exports: `Thing0`)');
-    expect(compressed).not.toContain('long-winded prose');
+  it('never silently drops content: a cut always carries a visible note naming how many were omitted', () => {
+    const card = fakeIndex(30); // header 950 chars, total 2011
+    const compressed = compressArchitectureCard(card, 1400);
+    expect(compressed.length).toBeLessThanOrEqual(1400);
+    expect(compressed).toMatch(/\d+ more subsystem\(s\)/);
   });
 
-  it('never silently drops content: a cut always carries a visible note', () => {
-    const card = fakeCard(10, 20);
-    const compressed = compressArchitectureCard(card, 2000);
-    expect(compressed.length).toBeLessThanOrEqual(2000);
-    expect(compressed).toContain('Omitted to fit the injection budget');
-    // At least the earliest modules should have made it in whole.
-    expect(compressed).toContain('mod0');
-  });
-
-  it('omits later whole modules before truncating an earlier one, and says how many', () => {
-    const card = fakeCard(5, 15);
-    const compressed = compressArchitectureCard(card, 2500);
-    expect(compressed).toMatch(/\d+ more subsystem\(s\) entirely/);
-  });
-
-  it('degrades to a marked hard truncation when there are no recognizable module headings at all', () => {
+  it('degrades to a marked hard truncation when there is no recognizable module list heading at all', () => {
     const unstructured = 'X'.repeat(20000);
     const compressed = compressArchitectureCard(unstructured, 500);
     expect(compressed.length).toBeLessThanOrEqual(500);
     expect(compressed).toContain('...[truncated]');
   });
 
+  it('degrades to a marked hard truncation when even the header alone exceeds the cap', () => {
+    const card = fakeIndex(500); // huge dependency-map/module-count header
+    const compressed = compressArchitectureCard(card, 50);
+    expect(compressed.length).toBeLessThanOrEqual(50);
+    expect(compressed).toContain('...[truncated]');
+  });
+
   it('respects a zero or negative cap by returning empty', () => {
-    expect(compressArchitectureCard(fakeCard(1, 1), 0)).toBe('');
-    expect(compressArchitectureCard(fakeCard(1, 1), -5)).toBe('');
+    expect(compressArchitectureCard(fakeIndex(3), 0)).toBe('');
+    expect(compressArchitectureCard(fakeIndex(3), -5)).toBe('');
   });
 
   it('is deterministic: same input and cap produce byte-identical output', () => {
-    const card = fakeCard(6, 10);
-    const a = compressArchitectureCard(card, 3000);
-    const b = compressArchitectureCard(card, 3000);
+    const card = fakeIndex(30);
+    const a = compressArchitectureCard(card, 900);
+    const b = compressArchitectureCard(card, 900);
     expect(a).toBe(b);
   });
 
   it('never exceeds the cap even including the omission note', () => {
-    const card = fakeCard(8, 25);
-    for (const cap of [300, 800, 1500, 3000, 5000]) {
+    const card = fakeIndex(100);
+    for (const cap of [100, 300, 800, 1500, 3000]) {
       const compressed = compressArchitectureCard(card, cap);
       expect(compressed.length).toBeLessThanOrEqual(cap);
     }

@@ -462,6 +462,66 @@ describe('CLI Command: hook', () => {
     expect(context).toContain('Repository Architectural Blueprint: the real one, found by stable id.');
   });
 
+  // --- Ticket 30: session-start injects the index only; a module card must
+  // never ride along via the additive top-N-in-category query just because
+  // it shares the index's category and tags. Reproduced live against this
+  // repo's own store before the fix (a real module card appeared in a plain
+  // `session-start` call with no prompt in play at all).
+  function writeIndexAndModuleCard(category: string, modulePath: string, moduleContent: string) {
+    const scriptPath = path.join(projectDir, `_write-index-module-${Date.now()}.mjs`);
+    const indexPath = path.join(process.cwd(), 'dist/index.js').replace(/\\/g, '/');
+    const ingestPath = path.join(process.cwd(), 'dist/scanner/ingest.js').replace(/\\/g, '/');
+    fs.writeFileSync(
+      scriptPath,
+      `
+      import { NeuronMemory } from '${indexPath}';
+      import { blueprintCardId, moduleCardId } from '${ingestPath}';
+      const memory = NeuronMemory.open(process.cwd());
+      const indexContent = [
+        '# Repository Architectural Blueprint: fixture',
+        '## Primary Subsystems',
+        '- **mod** — \`${modulePath}\` (1 file)',
+        '',
+      ].join('\\n');
+      await memory.transact([
+        {
+          op: 'upsert',
+          id: blueprintCardId(${JSON.stringify(category)}),
+          category: ${JSON.stringify(category)},
+          content: indexContent,
+          tags: ['architecture', 'topology', 'scan', 'deep'],
+          importance: 5,
+        },
+        {
+          op: 'upsert',
+          id: moduleCardId(${JSON.stringify(category)}, ${JSON.stringify(modulePath)}),
+          category: ${JSON.stringify(category)},
+          content: ${JSON.stringify(moduleContent)},
+          tags: ['architecture', 'topology', 'scan', 'deep'],
+          importance: 5,
+        },
+      ]);
+      await memory.close();
+      `,
+      'utf8'
+    );
+    const result = spawnSync('node', [scriptPath], { cwd: projectDir, env: env() });
+    fs.rmSync(scriptPath, { force: true });
+    if (result.status !== 0) {
+      throw new Error(`writeIndexAndModuleCard failed: ${result.stderr?.toString()}`);
+    }
+  }
+
+  it('never includes a module detail card in the session-start injection, even though it shares the index category and tags', () => {
+    writeIndexAndModuleCard('architecture', 'src/widgets', '### 🧩 widgets (`src/widgets`)\nModule detail that must never appear unprompted.');
+    const result = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 's1' }));
+    expect(result.status).toBe(0);
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).toContain('Repository Architectural Blueprint');
+    expect(context).not.toContain('### 🧩');
+    expect(context).not.toContain('Module detail that must never appear unprompted');
+  });
+
   it('truncates an oversized architecture card instead of dropping it entirely', () => {
     const hugeContent = 'X'.repeat(20000);
     writeCardAtStableId('architecture', hugeContent);

@@ -1,5 +1,5 @@
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: 10
 Band: context cost
 
@@ -159,3 +159,53 @@ distinction ticket 10's own first-pickup comment drew. Whoever picks this
 back up: `node benchmarks/token-ab/run-gitlog-ab.mjs --k=1` as a cheap
 pilot first, per ticket 10's own precedent, before spending the full
 budget.
+
+## Answer
+
+**Resolved 2026-08-09 — ran the live A/B for real**, `ant` credentials
+available this session. `--k=1` pilot first (6 sessions, $0.4568), then the
+full `--k=3` budget (18 sessions, $1.4514) — **$1.9082 total**, within the
+"low-single-digit dollars" this ticket's own Comments estimated.
+
+**Results (full `k=3` run, `benchmarks/token-ab/results/14-git-log-hook-vs-agent-log-ab/results.json`):**
+
+| Arm | Sessions | Failed | Tokens mean / median / p95 | Cost |
+|---|---|---|---|---|
+| `gitlog` | 9 | 0 (0%) | 17,427 / 16,177 / 25,327 | $0.41 |
+| `agent` | 9 | 1 (11%) | 49,598 / 43,024 / 68,784 | $1.04 |
+
+Token diff (agent − gitlog): 32,171. Spread across repeats: 57,723 — larger
+than the diff, so by the same discipline ticket 10 established (Scope item
+4: any per-arm advantage smaller than run-to-run spread is reported as "no
+measured difference"), this is technically a **no-measured-difference**
+result, not a clean statistical win. That said: `gitlog` beat `agent` on
+every raw number (fewer failures, fewer tokens, lower cost), and the risk
+arm is empty — `gitlog` never lost a repeat that `agent` won. The spread is
+driven entirely by `agent`-arm variance on `reconcile-data-loss-fix`
+(34,493 / 68,784 / 39,333 tokens across its three repeats, one of which
+failed), not by any instability on the `gitlog` side.
+
+**Ruling (Deliverable 4), per direct maintainer instruction after
+reviewing these results ("Let's implement it"):** graduates from fog into
+implementation, not folded into `09`'s framing and not ruled out of scope.
+Recorded here as the maintainer's own call on a result that the harness's
+own strict spread-based reporting would otherwise leave inconclusive — not
+an agent-side override of that reporting discipline, which stays accurate
+in the table above.
+
+This ticket does **not** settle how the feature is built — the design
+questions this map's own fog explicitly deferred until the premise was
+tested (replace vs. supplement the `history` write step; refresh via git
+hook vs. check-HEAD-on-read; the no-corresponding-commit gap) are graduated
+to [39 — Git-Log Index: Replace-vs-Supplement and Refresh
+Mechanism](39-git-log-index-design.md) (grilling), which blocks
+[40 — Implement the Git-Log Index](40-implement-git-log-index.md), which
+blocks [41 — Update Generated Protocol Block, Packaged Skill & README for
+the Git-Log Index](41-update-init-skill-readme-for-git-log-index.md) and
+[42 — Dogfood the Git-Log Index in This Repo](42-dogfood-git-log-index.md).
+None of 39–42 are worked this session, per direct maintainer instruction
+("build out tickets to accomplish all of this, don't do it in this
+session").
+
+Also unblocks [15 — Publish the Benchmark Suite](15-benchmark-suite-publication.md)
+now that both `10` and `14` are resolved — not picked up this session.

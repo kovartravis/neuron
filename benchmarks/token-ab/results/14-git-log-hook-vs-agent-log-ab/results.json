@@ -1,0 +1,407 @@
+{
+  "generatedAt": "2026-08-09T20:34:28.353Z",
+  "model": "claude-sonnet-5",
+  "dryRun": false,
+  "taskCount": 3,
+  "repeats": 3,
+  "sessionCount": 18,
+  "totalCostUsd": 1.4514,
+  "summary": {
+    "armStats": {
+      "gitlog": {
+        "sessions": 9,
+        "passed": 9,
+        "failed": 0,
+        "failureRate": 0,
+        "tokens": {
+          "mean": 17427,
+          "median": 16177,
+          "p95": 25327,
+          "min": 7490,
+          "max": 34493
+        },
+        "costUsd": 0.4109
+      },
+      "agent": {
+        "sessions": 9,
+        "passed": 8,
+        "failed": 1,
+        "failureRate": 0.1111111111111111,
+        "tokens": {
+          "mean": 49598,
+          "median": 43024,
+          "p95": 68784,
+          "min": 30536,
+          "max": 88259
+        },
+        "costUsd": 1.0404
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": 32171,
+    "spread": 57723,
+    "noMeasuredDifference": true
+  },
+  "results": [
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "gitlog",
+      "sessionLabel": "isolation-gap-fixed-twice-gitlog-r0",
+      "turns": 4,
+      "wallMs": 27234,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Yes — fixed twice: ticket 42 isolated most CLI test files from the real .neuron store but missed 5 cases in init.test.ts, which ticket 23 later fixed.",
+      "tokens": {
+        "input": 14418,
+        "output": 1759,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16177,
+      "answerText": "# Has the CLI-test-leaks-into-real-.neuron bug been fixed more than once?\n\nYes. This bug class was fixed at least twice, under two different tickets:\n\n## Ticket 42 (commit `290ad3b0`, 2.2.0-rc5)\n\"test(2.2.0-rc5): isolate CLI tests from the real .neuron store\"\n\n- Root cause: several execSync-based CLI test files isolated `NEURON_DB_PATH`\n  but never the markdown storage path. Since storage.mode: md became the\n  default (ticket 31), every `npm test` run wrote real entries into this\n  repo's own `.neuron/*.md`.\n- Fix: planted a `package.json` in a per-test tmp project dir (to stop the\n  `findProjectRoot`/`findNeuronYaml` upward directory walk) and passed `cwd`\n  to every `execSync`/`spawnSync` call, matching the pattern `init.test.ts`\n  already used.\n- Scope: covered `src/cli.test.ts`, `src/commands/exec.test.ts`,\n  `src/commands/history.test.ts`, `src/commands/learn.test.ts`, etc.\n- Explicitly split off ticket 47 for e2e/benchmark files with the same\n  root-cause bug outside npm test's scope, rather than folding them in.\n- **Missed**: the audit did not catch that five specific test cases within\n  `init.test.ts` itself — the file whose pattern ticket 42 used as the\n  model to copy — lacked the same package.json isolation guard.\n\n## Ticket 23 (commit `6254b802`, 2.3.0)\n\"fix(test): isolate remaining init.test.ts cases from real .neuron store\"\n\n- Root cause: five CLI tests in `init.test.ts` lacked the package.json\n  isolation guard that every sibling test case in that same file uses,\n  letting `findProjectRoot` walk past the temp dir to this repo's real\n  root and pollute `.neuron/decisions.md`.\n- Fix: added the missing isolation guard to those five test cases.\n- Explicitly described as closing \"a one-test-file gap in ticket 42's\n  original audit,\" found via a per-test grep across all 10\n  execSync/spawnSync CLI test files.\n- **What it covered that ticket 42 missed**: ticket 42's fix touched other\n  CLI test files but did not verify/complete coverage within\n  `init.test.ts` itself, leaving 5 of its test cases still unguarded and\n  still capable of leaking writes into the real `.neuron/decisions.md`.\n\n## Summary (chronological order)\n1. **Ticket 42** — first fix; isolated most execSync-based CLI test files\n   (cli, exec, history, learn, etc.) from the real `.neuron` store, but\n   left 5 cases in `init.test.ts` unfixed and spun off e2e/benchmark files\n   as ticket 47.\n2. **Ticket 23** — second fix; closed the specific gap ticket 42 missed by\n   adding the isolation guard to the remaining 5 `init.test.ts` cases.\n\n(Note: ticket 47, split off from ticket 42, appears to address the\nsame underlying bug class in e2e/benchmark files, but is a distinct,\nexplicitly-deferred piece of scope rather than a second \"fix of the same\nfix\" — the two directly linked repeat-fix tickets for the CLI test\nisolation gap are 42 and 23.)\n",
+      "passed": true,
+      "gradeDetail": "ticket42=true ticket23=true multiple=true denies=false"
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "gitlog",
+      "sessionLabel": "isolation-gap-fixed-twice-gitlog-r1",
+      "turns": 3,
+      "wallMs": 17980,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The CLI-test isolation leak into the real .neuron store was fixed twice: ticket 42 (commit 290ad3b0) added markdown-path isolation across most CLI test files, then ticket 23 (commit 6254b802) fixed five leftover cases in init.test.ts itself that never applied that same guard, closing a gap in ticket 42's original audit.",
+      "tokens": {
+        "input": 10181,
+        "output": 1294,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 11475,
+      "answerText": "# Has the CLI-test isolation leak been fixed more than once?\n\nYes — it was fixed twice, in **ticket 42** and then again in **ticket 23**.\n\n## Ticket 42 (commit 290ad3b0, \"test(2.2.0-rc5): isolate CLI tests from the real .neuron store\")\nSeveral execSync-based CLI test files (`cli.test.ts`, `commands/exec.test.ts`,\n`commands/history.test.ts`, `commands/learn.test.ts`, etc.) isolated `NEURON_DB_PATH`\nbut never the markdown storage path. Since storage.mode: md became the default\n(ticket 31), every `npm test` run wrote real entries into this repo's own\n`.neuron/*.md`. The fix planted a `package.json` in a per-test tmp project dir\n(to stop `findProjectRoot`/`findNeuronYaml` from walking up past the temp dir)\nand passed `cwd` to every execSync/spawnSync call — matching the pattern\n`init.test.ts` already used. (A related but separate case, e2e benchmarks, was\nsplit off into ticket 47 rather than fixed here.)\n\n## Ticket 23 (commit 6254b802, \"fix(test): isolate remaining init.test.ts cases from real .neuron store\")\nDespite ticket 42 treating `init.test.ts` as the reference pattern for the fix,\nfive test cases *within init.test.ts itself* had never actually applied that\npackage.json isolation guard that its sibling tests used. This let\n`findProjectRoot` walk past the temp dir to the real repo root and pollute\n`.neuron/decisions.md`. This was a gap left over from ticket 42's original\naudit — found later via a per-test grep across all 10 execSync/spawnSync CLI\ntest files — and ticket 23 closed that remaining one-test-file gap by adding\nthe missing guard to the five uncovered cases.\n\n## Summary\n- Order: **ticket 42 → ticket 23**\n- Ticket 42 fixed the missing markdown-path isolation across most CLI test\n  files, using init.test.ts's existing guard pattern as the model.\n- Ticket 23 fixed the fact that init.test.ts itself was incomplete — five of\n  its own test cases had never adopted that guard pattern, so the \"model\"\n  ticket 42 relied on wasn't fully applied even within its own source file.\n",
+      "passed": true,
+      "gradeDetail": "ticket42=true ticket23=true multiple=true denies=false"
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "gitlog",
+      "sessionLabel": "isolation-gap-fixed-twice-gitlog-r2",
+      "turns": 3,
+      "wallMs": 21572,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Yes, fixed twice: ticket 42 (2.2.0-rc5) did a file-level isolation audit of CLI tests, then ticket 23 (2.3.0) found five individual tests within init.test.ts (ticket 42's own reference file) still lacked the package.json isolation guard because ticket 42 audited at file granularity rather than per-test.",
+      "tokens": {
+        "input": 16999,
+        "output": 1595,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 18594,
+      "answerText": "# Has the \"CLI tests leak real writes into .neuron/decisions.md\" bug been fixed more than once?\n\nYes — it was fixed twice, under two different tickets:\n\n1. **Ticket 42** (commit `290ad3b0`, neuron 2.2.0-rc5): Audited every `execSync`-based CLI\n   test file run by `npm test` (cli.test.ts, exec.test.ts, history.test.ts, learn.test.ts,\n   memory.test.ts) and isolated them by planting a `package.json` in a per-test tmp project\n   dir (to stop `findProjectRoot`/`findNeuronYaml` from walking up past it) and passing `cwd`\n   to every `execSync`/`spawnSync` call — matching the pattern `init.test.ts` already used.\n   The audit was done at the *file* level (\"does this file look isolated?\"), and it explicitly\n   split off the still-unfixed `test/e2e/*` benchmark files as a separate ticket 47 rather than\n   fixing them here.\n\n2. **Ticket 23** (commit `6254b802`, neuron 2.3.0): Found that `init.test.ts` itself — the file\n   ticket 42 treated as the reference/already-correct example — actually had **five** tests\n   that lacked the `package.json` isolation guard used by its sibling tests. Ticket 42's\n   file-level audit missed this because it judged whole files as safe/unsafe rather than\n   checking every individual test case; `init.test.ts` has no shared `beforeEach` planting the\n   guard, so each test manages isolation on its own, and five of them simply never did. This\n   let `findProjectRoot` climb past the temp dir to this repo's real root and pollute\n   `.neuron/decisions.md` via `neuron init`'s real `ingestScanResults` write path. Ticket 23's\n   fix added the missing guard to all five gaps and then redid the audit per-test (not\n   per-file) across all ten `execSync`/`spawnSync` CLI test files, verifying two consecutive\n   `npm test` runs left `.neuron/*.md` byte-identical.\n\n## Summary\n- Order: **ticket 42 → ticket 23**.\n- What ticket 23 covered that ticket 42 missed: ticket 42 audited isolation at the file\n  granularity and assumed a file was safe if it appeared to follow the pattern; it did not\n  check each test case individually. This left five ungated tests inside `init.test.ts` (the\n  very file used as the \"already correct\" reference pattern) that still leaked writes into\n  the real `.neuron/decisions.md`. Ticket 23 closed that gap with a per-test audit.\n- (Aside: ticket 42 also spun off a related but distinct problem — the same root-cause bug\n  present in `test/e2e/adversarial-recall.test.ts` and `test/e2e/benchmark-suite.test.ts`,\n  which are outside `npm test`'s scope — as ticket 47, which is a separate, not-yet-covered\n  fix in this history.)\n",
+      "passed": true,
+      "gradeDetail": "ticket42=true ticket23=true multiple=true denies=false"
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "agent",
+      "sessionLabel": "isolation-gap-fixed-twice-agent-r0",
+      "turns": 6,
+      "wallMs": 42092,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Yes — fixed twice: ticket 42 (neuron-2.2.0) isolated most CLI tests' markdown writes but wrongly judged init.test.ts already safe at file-level; ticket 23 (neuron-2.3.0, docs f36c06c + fix 6254b80) found ticket 42's audit missed test-level granularity and fixed five still-leaking init.test.ts cases.",
+      "tokens": {
+        "input": 66338,
+        "output": 2297,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 68635,
+      "answerText": "# CLI test isolation leak into `.neuron/decisions.md` — fixed more than once\n\nYes. This bug class was fixed twice, in this order:\n\n## 1. Ticket 42 (neuron-2.2.0, commit `290ad3b`)\n\"Isolate CLI Tests From the Real .neuron Store.\" Audited every `execSync`-based\nCLI test file that `npm test` runs and found several\n(`cli.test.ts`, `exec.test.ts`, `history.test.ts`, `learn.test.ts`,\n`memory.test.ts`) isolated `NEURON_DB_PATH` (SQLite) but never the markdown\nstorage path, so under `storage.mode: md` every test run wrote real entries\ninto this repo's own `.neuron/*.md`. Fix: plant a bare `package.json` in a\nper-test tmp project dir (which stops `findProjectRoot`/`findNeuronYaml`'s\nupward directory walk) and pass `cwd` to every `execSync`/`spawnSync` call.\nThe ticket's own audit explicitly checked `src/commands/init.test.ts` and\nconcluded it was \"already safe... every test already plants its own\npackage.json+cwd\" — and left the e2e benchmark harnesses' copy of the same\nbug out of scope as a new ticket 47.\n\n## 2. Ticket 23 (neuron-2.3.0, commits `f36c06c` docs + `6254b80` fix)\n\"init.test.ts's harness-idempotent-test Case Still Pollutes the Real .neuron\nStore.\" Surfaced later, while committing an unrelated ticket (06), when a\n`git diff --stat -- .neuron/` showed the real `decisions.md` architecture\ncard overwritten with test fixture content. Root cause: ticket 42's\nfile-level \"this file already looks isolated\" judgment on `init.test.ts` was\nwrong — one test in that file (`'is idempotent — running twice overwrites\nskill without error'`) never planted the `package.json` guard its sibling\ntests used, so `findProjectRoot` walked past the temp dir up to this repo's\nreal root and `neuron init`'s markdown writes leaked into the real\n`.neuron/decisions.md`.\n\nWhat the later fix (ticket 23) covered that ticket 42 missed:\n- Ticket 42 audited at the **file** level (\"does this file already isolate\n  its CLI calls?\") and, for `init.test.ts`, concluded yes because most tests\n  in that file did plant the guard. It missed that isolation needs to be\n  verified **per individual test case**, not per file — one test in an\n  otherwise-safe file still lacked the `package.json` plant.\n- The ticket 23 fix (`6254b80`) went further than the single test flagged in\n  the docs commit: a full per-test re-audit (\"grep every execSync/spawnSync\n  invocation... for a temp dir lacking its own package.json before the first\n  CLI invocation\") turned up a total of five CLI test cases in\n  `init.test.ts` missing the guard, all five fixed in that commit — not just\n  the one case originally reported.\n\nSo: **ticket 42** established and applied the isolation mechanism at file\ngranularity; **ticket 23** found and fixed a granularity gap in that same\naudit (test-level, not file-level) that had let one file's exception slip\nthrough and continue polluting `.neuron/decisions.md`.\n\n(Ticket 47, split off from ticket 42, covers the same root-cause bug in the\n`test/e2e/*` benchmark harnesses — out of `npm test`'s scope — and is a\nseparate, not-yet-necessarily-resolved follow-up rather than a second fix of\nthe same CLI-test bug.)\n",
+      "passed": true,
+      "gradeDetail": "ticket42=true ticket23=true multiple=true denies=false"
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "agent",
+      "sessionLabel": "isolation-gap-fixed-twice-agent-r1",
+      "turns": 5,
+      "wallMs": 34756,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Yes — the isolation leak was fixed twice, by ticket 42 (broad CLI-test isolation fix) and ticket 23 (which closed one remaining init.test.ts case ticket 42's audit missed), with a third instance (ticket 47) split off but not yet fixed.",
+      "tokens": {
+        "input": 29991,
+        "output": 1792,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 31783,
+      "answerText": "# CLI-test → real `.neuron/decisions.md` isolation leak: fixed twice\n\n**Yes**, this bug class has been fixed more than once. Two tickets, in order:\n\n1. **Ticket 42** — *\"isolate CLI tests from the real .neuron store\"* (commit `290ad3b`, neuron-2.2.0-rc5).\n   Several `execSync`-based CLI test files (`cli.test.ts`, `exec.test.ts`, `history.test.ts`, `learn.test.ts`, etc.) isolated `NEURON_DB_PATH` but never the markdown storage path. Under `storage.mode: md` (the default since ticket 31), every `npm test` run wrote real entries into this repo's own `.neuron/*.md`. Fixed by planting a `package.json` in a per-test tmp project dir (to stop the `findProjectRoot`/`findNeuronYaml` upward directory walk) and passing `cwd` to every `execSync`/`spawnSync` call. The commit explicitly notes it audited all in-scope test files and split off two e2e/benchmark files with the same root cause into a separate ticket (47), which it did **not** fix.\n\n2. **Ticket 23** — *\"isolate remaining init.test.ts cases from real .neuron store\"* (commit `6254b80`, neuron-2.3.0). This found that **one test case in `init.test.ts`** still lacked the package.json isolation guard that its sibling tests (and ticket 42's fix) used, letting `findProjectRoot` walk past the temp dir up to this repo's real root and leak `neuron init`'s markdown writes into the real `.neuron/decisions.md`. The ticket's own filing (commit `f36c06c`) explicitly describes this as \"a one-test gap in neuron-2.2.0's ticket 42 audit, not a regression it introduced\" — i.e., ticket 42's per-file audit missed one test case within a file it otherwise covered.\n\n## What the later fix (23) covered that the earlier one (42) missed\n\nTicket 42 covered the systemic problem across *most* CLI test files by adding the isolation guard, but its audit missed a single test in `init.test.ts` that never got the guard applied (found via ticket 23's more exhaustive \"per-test grep across all 10 execSync/spawnSync CLI test files\"). Ticket 23 closed that single remaining gap.\n\nNote: ticket 42 also explicitly spun off a third, still-open ticket (**47**) for the same root-cause bug in two e2e/benchmark files outside `npm test`'s scope — those had not been fixed as of the commits inspected.\n",
+      "passed": true,
+      "gradeDetail": "ticket42=true ticket23=true multiple=true denies=false"
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "agent",
+      "sessionLabel": "isolation-gap-fixed-twice-agent-r2",
+      "turns": 7,
+      "wallMs": 52142,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Yes, fixed twice — ticket 42 isolated most execSync-based CLI test files from the real .neuron markdown store by planting package.json + passing cwd, but its file-level audit wrongly cleared init.test.ts as already safe; ticket 23 later found init.test.ts had no shared beforeEach and five of its individual tests still lacked the guard, fixing them via a proper per-test (not per-file) audit.",
+      "tokens": {
+        "input": 85521,
+        "output": 2738,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 88259,
+      "answerText": "# Has the CLI-test-pollutes-real-.neuron-store bug been fixed more than once?\n\n**Yes — it was fixed twice, in tickets 42 and then 23 (in that order).**\n\n## Ticket 42 — \"Isolate CLI Tests From the Real .neuron Store\" (commit 290ad3b, neuron-2.2.0-rc5)\n\nRoot cause: several `execSync`/`spawnSync`-based CLI test files isolated\n`NEURON_DB_PATH` (the SQLite side) but never isolated the markdown storage\npath. Once `storage.mode: md` became the default (ticket 31), every `npm test`\nrun wrote real entries into this repo's own `.neuron/learning.md` and\n`.neuron/history.md`, because `NeuronMemory.open(dir)` / `findProjectRoot` /\n`findNeuronYaml` walk *up* from an unmarked temp directory until they hit a\n`package.json` or `.git`, landing on this repo's real root.\n\nFix: plant a bare `package.json` in each test's per-test tmp project dir\n(stops the upward walk) and pass `cwd` to every `execSync`/`spawnSync` call —\nthe same pattern `init.test.ts` already used correctly. Applied to\n`cli.test.ts`, `exec.test.ts`, `history.test.ts`, `learn.test.ts`, and\n`memory.test.ts`.\n\nTicket 42's own audit explicitly judged `init.test.ts` as \"already safe, no\nchange needed\" (file-level skim: it uses the package.json pattern somewhere,\nso the whole file looked fine) and split off the unrelated e2e-benchmark\nversion of the same bug as ticket 47 (out of `npm test`'s scope entirely).\n\n## Ticket 23 — \"init.test.ts's isolation gap\" (commit 6254b80, neuron-2.3.0)\n\nTicket 42's \"already safe\" verdict on `init.test.ts` turned out to be wrong\nat the per-test level: `init.test.ts` has no shared `beforeEach` that plants\n`package.json` for every test — each test manages its own temp dir\nindividually. Ticket 42 checked the file, saw *some* tests already guarded,\nand didn't check every individual test within it. That left **five** of\n`init.test.ts`'s tests (`'should support the init command...'`, `'copies\nskill to existing .agents/...'`, `'copies skill to all detected harness\ndirs...'`, `'falls back to .agents/skills/...'`, and the originally-reported\n`'is idempotent — running twice...'`) still unguarded, so `neuron init`'s\nreal `ingestScanResults` write path kept polluting `.neuron/decisions.md`\nfor real.\n\nFix: added the same one-line `package.json` guard to all five gaps, and\nthis time ran a genuine per-test grep audit (not a file-level skim) across\nall 10 `execSync`/`spawnSync`-based CLI test files to confirm no other file\nhad the same file-vs-test granularity mistake.\n\n## What the later fix (23) covered that the earlier one (42) missed\n\nTicket 42 fixed every *file* that looked unisolated, but audited at\nfile-level granularity — if a file already contained the isolation pattern\nanywhere, it was marked safe. `init.test.ts` contained the pattern in some\ntests but not all of them (no shared `beforeEach`), so it passed 42's audit\nwhile still leaking real writes from its other four/five tests. Ticket 23\ncaught this by re-auditing per individual test rather than per file, finding\nand closing the remaining five-test gap in `init.test.ts` that 42's audit\nhad incorrectly cleared.\n\n(Ticket 47, split off from 42, covers the same underlying bug pattern but in\n`test/e2e/*` benchmark files, which are outside `npm test`'s scope — a\nseparate, still-open follow-up, not a second \"fix\" of the same bug within\nCLI tests.)\n",
+      "passed": true,
+      "gradeDetail": "ticket42=true ticket23=true multiple=true denies=false"
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "gitlog",
+      "sessionLabel": "reconcile-data-loss-fix-gitlog-r0",
+      "turns": 5,
+      "wallMs": 35170,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "DualStorageRouter.reconcileCategoryWithPathGuard's first-sighting branch used to just record the category's root and fall through to the destructive strict-mirror reconcile, which deleted real vector rows as \"missing from markdown\" when a category's md-file was empty; it now reseeds/re-exports that category's markdown from the vector store (like a root-change) and returns immediately, avoiding the fallthrough and the data loss.",
+      "tokens": {
+        "input": 32568,
+        "output": 1925,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 34493,
+      "answerText": "# Component\n\n`DualStorageRouter.reconcileCategoryWithPathGuard()` in `src/storage/dualStorageRouter.ts`\n(the per-category counterpart of the `md_root:<category>` path-guard used by `reconcile()`).\n\n# The bug (commit `08fbdda2`, ticket 06, neuron-2.3.0)\n\nOn a category's **first-ever sighting** (i.e. when `vectorDb.getMeta(metaKey)` returned\n`null` because there was no recorded `md_root:<category>` value yet — either a brand-new\ncategory, or, after this ticket's change, a category whose `categories.<name>.storage`\noverride newly started resolving to `md` for the first time), the old code only recorded\nthe current resolved root:\n\n```ts\nif (knownRoot === null) {\n  this.vectorDb.setMeta(metaKey, resolvedRoot);\n} else if (knownRoot !== resolvedRoot) {\n  await this.seedCategoryFromVector(category);\n  ...\n}\n```\n\nIt then **fell through to the normal, destructive strict-mirror `reconcileCategory` path**\ninstead of returning. That mirror trusts the on-disk `.md` file as authoritative and deletes\nany vector rows not found in it. Since the category had never been written to markdown\nbefore, its `.md` file was empty (or non-existent), so every existing vector row for that\ncategory was treated as \"absent from markdown\" and deleted — silent, real data loss.\n\nThis was previously masked because, before ticket 06 made `categories.<name>.storage`\n\"always live,\" a category could only enter the md-reconciled set in a stable way (its\nstorage mode didn't change shape between runs), so a first sighting always coincided with a\ngenuinely empty category. Making the per-category override always-live broke that\nassumption: an existing category with real vector rows (e.g. one previously pinned to\n`vector` storage, or under a `storage.mode: md` config where `categories.foo.storage: vector`\nused to be silently ignored) could suddenly resolve to `md` for the first time while already\nholding vector data — triggering the destructive fallthrough on real data.\n\n# The fix\n\nThe first-ever-sighting branch (`knownRoot === null`) is now treated exactly like a\n*changed*-root branch: instead of just recording the root and falling through to the\ndestructive mirror, it re-exports/reseeds that category's markdown from the vector index\n(the same authoritative source `bootstrapSeed` uses, via `seedCategoryFromVector`), records\nthe new root, and returns immediately — skipping the destructive mirror entirely for that\ncall:\n\n```ts\nif (knownRoot === null || knownRoot !== resolvedRoot) {\n  await this.seedCategoryFromVector(category);\n  this.vectorDb.setMeta(metaKey, resolvedRoot);\n  return;\n}\n```\n\nFor a genuinely brand-new category with no vector rows yet, this reseed is just a harmless\nzero-row export; for a category with existing vector data being reconciled for the first\ntime, it now safely reconstructs the markdown file from the vector store instead of wiping\nthe vector rows because the markdown file was empty.\n",
+      "passed": true,
+      "gradeDetail": "component=true bug=true fix=true"
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "gitlog",
+      "sessionLabel": "reconcile-data-loss-fix-gitlog-r1",
+      "turns": 5,
+      "wallMs": 25613,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "DualStorageRouter's reconcileCategoryWithPathGuard used to fall through to the destructive strict-mirror mode on a category's first-ever sighting (deleting vector rows not present in the never-before-written .md file); it now reseeds the category from the vector index the same way it already did for changed roots, avoiding data loss when the always-live per-category storage override newly surfaces existing categories.",
+      "tokens": {
+        "input": 22807,
+        "output": 1596,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 24403,
+      "answerText": "# Component and Bug\n\n**Component:** `DualStorageRouter.reconcileCategoryWithPathGuard` (in `src/storage/dualStorageRouter.ts`), specifically its handling of `md_root:<category>` metadata during `reconcile`.\n\n## Old (buggy) behavior\nOn a category's **first-ever sighting** (i.e. `knownRoot === null` — either an upgrade from a pre-ticket-05 store or a brand-new category with no recorded root), the code just recorded the current resolved root via `vectorDb.setMeta(metaKey, resolvedRoot)` and then **fell through** into the normal `reconcileCategory` path, which runs a destructive \"strict mirror\": it treats the (empty/never-before-written) `.md` file as authoritative and deletes any vector rows for that category not found in the markdown file.\n\nThis was safe under ticket 05's assumptions (every category reaching this code had already been reconciled once, so a first sighting only really happened for genuinely empty categories). Ticket 06 broke that assumption by making the per-category `categories.<name>.storage` override **always live** instead of only active in `split` mode — so a category could now newly enter `mdCategories()` for the first time even though it already had real rows in the vector store (e.g. flipping a category's override from `vector` to `md`, or removing a `categories.foo.storage: vector` override that used to be silently ignored). In that case, the strict-mirror fallthrough would read the never-written `.md` file as empty and delete every vector row for that category — silent, real data loss.\n\n## New (fixed) behavior\nBoth the first-ever-sighting case (`knownRoot === null`) and the changed-root case (`knownRoot !== resolvedRoot`) are now handled identically: instead of falling through to the destructive mirror, the router **reseeds** the category by re-exporting it from the vector index (the authoritative source, same one `bootstrapSeed` uses) into its resolved markdown location, records the new root, and returns — deferring the strict mirror to the *next* reconcile call. For a genuinely brand-new category with no data in either store, this reseed is just a harmless zero-row export, so the fix costs nothing in the case the old code was designed for while eliminating the new data-loss window opened by the always-live per-category override.\n",
+      "passed": true,
+      "gradeDetail": "component=true bug=true fix=true"
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "gitlog",
+      "sessionLabel": "reconcile-data-loss-fix-gitlog-r2",
+      "turns": 5,
+      "wallMs": 32414,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "DualStorageRouter.reconcileCategoryWithPathGuard's first-sighting branch used to fall through to the destructive strict-mirror reconcile (deleting vector rows it saw as \"absent\" from an empty/never-written .md file); it now reseeds the category from the vector index (same as a changed-root sighting) before returning, avoiding data loss.",
+      "tokens": {
+        "input": 23701,
+        "output": 1626,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 25327,
+      "answerText": "# Component\n\n`DualStorageRouter.reconcileCategoryWithPathGuard` in `src/storage/dualStorageRouter.ts`\n(the per-category path-guard branch of `reconcile()`, fixed in commit `08fbdda2`,\nticket 06 / neuron-2.3.0).\n\n# Old (buggy) behavior\n\n`reconcileCategoryWithPathGuard` tracks, per category, the last resolved md-root it\nreconciled against via a `md_root:<category>` metadata key. On a **first-ever sighting**\nof a category (i.e. `knownRoot === null` — an upgrade from a pre-ticket-05 store, or a\ncategory newly entering `mdCategories()`), the old code just recorded the current\nresolved root and then **fell through** into the normal `reconcileCategory` call, which\nruns the destructive \"strict mirror\" reconcile (delete-from-vector-if-absent-from-markdown).\nThis was safe under the old assumption that every category reaching this code had\nalready been reconciled before, so its `.md` file already reflected the vector content.\n\nTicket 06 broke that assumption by making `categories.<name>.storage` always live\n(no longer inert unless `storage.mode: split`). A category could now newly enter\n`mdCategories()` on a store that already had real vector rows for it but no\ncorresponding `.md` file content yet (e.g. a `categories.foo.storage: vector`\noverride being removed, or an override flipping from `vector` to `md`). In that\ncase the strict mirror read the category's never-before-written, empty `.md` file\nand treated every existing vector row as \"absent from markdown,\" **deleting all of\nthat category's vector data** — real, silent data loss.\n\n# New (fixed) behavior\n\nThe first-ever-sighting branch (`knownRoot === null`) is now handled identically to\na changed-root sighting (`knownRoot !== resolvedRoot`): both **reseed** the category\nby re-exporting it from the vector index (the authoritative source, same as\n`bootstrapSeed`) into its resolved markdown location, then record the new root and\nreturn — skipping the destructive strict mirror entirely for that call. The next\nreconcile call for that category proceeds normally (mirror-based). For a genuinely\nbrand-new category with no data in either store, this reseed is just a harmless\nzero-row export.\n",
+      "passed": true,
+      "gradeDetail": "component=true bug=true fix=true"
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "agent",
+      "sessionLabel": "reconcile-data-loss-fix-agent-r0",
+      "turns": 7,
+      "wallMs": 44721,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "DualStorageRouter.reconcileCategoryWithPathGuard's first-sighting branch used to record the root and fall through into the destructive strict-mirror reconcile (deleting vector rows absent from an as-yet-unwritten .md file); it now reseeds the category from the vector index on first sighting (same as a changed root) instead of running the destructive mirror, preventing silent data loss once per-category storage overrides became always-live.",
+      "tokens": {
+        "input": 66852,
+        "output": 1932,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 68784,
+      "answerText": "# Component with the bug\n\n`DualStorageRouter.reconcileCategoryWithPathGuard` (in `src/storage/dualStorageRouter.ts`), specifically its\n\"first-ever sighting\" branch — the case where the per-category `md_root:<category>` meta key has never been\nrecorded for that category (`knownRoot === null`).\n\n# Old (buggy) behavior\n\nOn a category's first sighting, the code only recorded the category's resolved storage root\n(`this.vectorDb.setMeta(metaKey, resolvedRoot)`) and then fell through into the normal reconcile path, which\nruns the destructive \"strict mirror\" (`reconcileCategory`): it treats the category's `.md` file as the record\nof truth and deletes any vector-index rows that aren't present in that file.\n\nThis was safe under the old ticket-05 world, where a category could only reach this method after already\nhaving been reconciled at least once before (its storage mode/category set never changed shape between runs).\nBut once ticket 06 made a category's `categories.<name>.storage` override *always live* (rather than inert\nunless `storage.mode: split`), a category could newly enter the markdown-reconciled set (`mdCategories()`) for\nthe first time even though it already had real rows in the SQLite vector index (e.g. an existing `md`-mode\nstore where a category's override flips from `vector` to `md`, or a brand-new override being added/removed).\nIn that case the strict mirror read the category's never-before-written (and therefore empty) `.md` file and\ndeleted every one of that category's existing vector rows as \"absent from markdown\" — real, silent data loss.\n\n# New (fixed) behavior\n\nThe first-ever-sighting branch is now handled the same way as a changed root: both `knownRoot === null` and\n`knownRoot !== resolvedRoot` reseed the category — re-exporting it from the vector index (the authoritative\nsource) into its resolved `.md` location via `seedCategoryFromVector`, then recording the root in\n`md_root:<category>` and returning, instead of falling through into the destructive strict mirror. For a\ngenuinely brand-new category (nothing in either store yet) this reseed is just a harmless zero-row export;\nfor a category with pre-existing vector rows it prevents them from being deleted.\n",
+      "passed": true,
+      "gradeDetail": "component=true bug=true fix=true"
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "agent",
+      "sessionLabel": "reconcile-data-loss-fix-agent-r1",
+      "turns": 7,
+      "wallMs": 33460,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Identified that DualStorageRouter's reconcileCategoryWithPathGuard first-sighting branch used to fall through to the destructive strict-mirror reconcile (deleting real vector rows for categories with no prior .md file), and ticket 06's always-live per-category storage override fixed it to reseed/re-export from the vector index on first sighting (same as a changed root) instead.",
+      "tokens": {
+        "input": 40967,
+        "output": 2057,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 43024,
+      "answerText": "# Component with the bug\n\n`DualStorageRouter.reconcileCategoryWithPathGuard` (in `src/storage/dualStorageRouter.ts`), specifically its per-category md-root path-guard logic used by the storage-reconcile path (`reconcile()` → `reconcileCategoryWithPathGuard()` → `reconcileCategory()`).\n\nThis surfaced while making ticket 06's config change: `categories.<name>.storage` was changed from being inert unless `storage.mode: split` was set, to being an \"always-live\" override that takes effect under every top-level storage mode (`resolveCategoryStorage()`: `categories.<name>.storage > storage.mode > 'md'`).\n\n# Old (buggy) behavior\n\nOn a category's *first-ever sighting* (i.e. `knownRoot === null`, meaning the router had never recorded a resolved md-root/metadata key for that category before), the code only recorded the current resolved root via `vectorDb.setMeta(metaKey, resolvedRoot)` and then **fell through** into the normal `reconcileCategory` destructive \"strict mirror\" reconcile — the logic that treats the on-disk `.md` file as authoritative and deletes any vector rows not found in it.\n\nThis was safe under the old (pre-ticket-06) rules because a category could only ever reach this code path after having already been reconciled at least once before — the set of categories being reconciled never changed shape between runs. But once the per-category `storage` override became always-live, a category with existing, real vector-only data could newly enter `mdCategories()` (the reconciled set) for the first time — e.g. a `storage.mode: md` config with `categories.foo.storage: vector` removed/changed to `md`. In that case the \"first sighting\" fallthrough would read the category's never-before-written (and thus empty) `.md` file as the source of truth and delete every one of that category's existing vector rows as \"absent from markdown\" — silent, real data loss.\n\n# New (fixed) behavior\n\nBoth a first-ever sighting (`knownRoot === null`) and a changed root (`knownRoot !== resolvedRoot`) now take the same branch: instead of falling through to the destructive strict mirror, the router **reseeds** — it re-exports that category's existing data from the vector index (treated as authoritative) into its resolved markdown location via `seedCategoryFromVector(category)`, then records the new root via `vectorDb.setMeta(metaKey, resolvedRoot)` and returns, deferring the normal mirror reconcile to the *next* call. For a genuinely brand-new category with nothing in either store, this reseed is just a harmless zero-row export.\n",
+      "passed": true,
+      "gradeDetail": "component=true bug=true fix=true"
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "agent",
+      "sessionLabel": "reconcile-data-loss-fix-agent-r2",
+      "turns": 8,
+      "wallMs": 45147,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The bug was in DualStorageRouter.reconcileCategoryWithPathGuard: on a category's first-ever sighting it used to fall through to the destructive markdown-mirror and delete all pre-existing vector rows (since the never-written .md file read as empty); now it seeds markdown from the vector store first (like a root change) before any mirror runs, preventing that data loss.",
+      "tokens": {
+        "input": 37196,
+        "output": 2137,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 39333,
+      "answerText": "# Component\n\n`DualStorageRouter.reconcileCategoryWithPathGuard` (and the first-ever-sighting\nbranch it guards) in `src/storage/dualStorageRouter.ts`, part of the\nmarkdown/vector storage-reconcile path.\n\n# Trigger\n\nTicket 06 (neuron-2.3.0) made the per-category `categories.<name>.storage`\nconfig override *always live* (previously it was only honored under the\nnow-deleted `split` top-level storage mode, and was otherwise ignored). This\nmeant a category could now enter `mdCategories()` for the very first time on\na store that already had real, populated vector rows for it — e.g. a config\nthat used to run `storage.mode: md` with `categories.foo.storage: vector`\n(silently ignored before) now actually resolving `foo` to vector, or a\ncategory whose override flips from `vector` to `md`.\n\n# Old (buggy) behavior\n\nOn a category's first-ever sighting in `reconcileCategoryWithPathGuard`, the\ncode just recorded the category's resolved root and fell straight through\ninto the normal destructive mirror (`reconcileCategory`). That mirror reads\nthe category's markdown file — which, for a category seeing this path for\nthe first time, had never been written — as empty, and then deletes every\nvector row for that category because none of them are \"present in markdown.\"\nThis logic was only safe under the old assumption (true in ticket 05's world)\nthat every category reaching this method had already been reconciled at\nleast once before, so \"no prior root on record\" only ever meant a changed\nroot, never a truly first sighting with pre-existing vector data. Ticket 06\nbroke that assumption, turning the fallthrough into real, silent data loss:\nan existing vector-backed category's data was wiped the moment its resolved\nstorage flipped to `md` for the first time.\n\n# New (fixed) behavior\n\n`reconcileCategoryWithPathGuard` now treats a first-ever sighting the same\nway it already treated a genuine root change: instead of falling through to\nthe destructive mirror, it calls `seedCategoryFromVector(category)` to\nre-export the category's existing vector rows into markdown at its resolved\nlocation, records the resolved root in `md_root:<category>` meta, and\nreturns — leaving the destructive mirror (`reconcileCategory`) to run only on\nthe *next* reconcile call, once markdown genuinely reflects the vector store.\nFor a brand-new category with nothing in either store, this seed is just a\nharmless zero-row export, so the fix costs nothing in the common case while\nclosing the data-loss window for categories with pre-existing vector data.\n",
+      "passed": false,
+      "gradeDetail": "component=true bug=true fix=false"
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "gitlog",
+      "sessionLabel": "session-budget-granularity-gitlog-r0",
+      "turns": 3,
+      "wallMs": 9232,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The budget is tracked per epoch (not per session): default 18,000 chars, published at 3 chars/token, with a hard stop on exhaustion.",
+      "tokens": {
+        "input": 7137,
+        "output": 741,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7878,
+      "answerText": "The recall hook's character budget is tracked **per epoch**, not per session (commit b556ede9 explicitly reworked it from a per-session model to \"per-epoch (not per-session)\" tracking, replacing the ledger's `clearLedger` with `rollEpoch` so dedupe state and spend share one file/reset point).\n\n- **Default budget:** 18,000 characters.\n- **Published unit:** at a conservative rate of 3 characters per token.\n- **On exhaustion:** a hard stop — once the epoch's budget is used up, the hook stops injecting further recall content for that epoch. Each finished epoch's `{chars, turns}` is archived into history, and `neuron status` reports real recorded cost (median/p95/max per epoch, mean chars/turn) via a new `recallCost` section.\n",
+      "passed": true,
+      "gradeDetail": "epoch=true value=true hardStop=true"
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "gitlog",
+      "sessionLabel": "session-budget-granularity-gitlog-r1",
+      "turns": 3,
+      "wallMs": 8875,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The recall hook's budget is tracked per epoch (not per session), defaults to 18,000 characters published at 3 chars/token, and triggers a hard stop once exhausted.",
+      "tokens": {
+        "input": 6807,
+        "output": 683,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7490,
+      "answerText": "# Recall Hook Token Budget\n\nThe recall hook's character budget is tracked **per epoch, not per session** (commit b556ede9, \"feat(2.3.0): session token budget and cost telemetry (ticket 07)\").\n\n- **Default budget:** 18,000 characters\n- **Published unit:** 3 chars/token (a conservative chars-per-token ratio)\n- **On exhaustion:** a hard stop — once the epoch's char budget is used up, the hook stops injecting further recall content for that epoch.\n\nAdditionally, this change replaced the ledger's `clearLedger` with `rollEpoch`: dedupe state and spend now share a single file/reset point, and each finished epoch's `{chars, turns}` are archived into history. `neuron status` now reports real recorded cost (median/p95/max per epoch, mean chars/turn) via a new `recallCost` section.\n",
+      "passed": true,
+      "gradeDetail": "epoch=true value=true hardStop=true"
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "gitlog",
+      "sessionLabel": "session-budget-granularity-gitlog-r2",
+      "turns": 4,
+      "wallMs": 12984,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The budget is per-epoch (not per-session): default 18,000 chars at 3 chars/token, with a hard stop once exhausted, tracked via rollEpoch (which replaced clearLedger).",
+      "tokens": {
+        "input": 10066,
+        "output": 939,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 11005,
+      "answerText": "# Recall hook character budget\n\nThe budget is tracked **per epoch, not per session** (an epoch is a broader/longer-lived unit than a single session; the dedupe ledger and the char-spend budget share one lifecycle, both reset together by `rollEpoch`, which replaced the old per-session `clearLedger`).\n\n- **Default budget:** 18,000 characters\n- **Published unit:** 3 chars/token (a conservative chars-per-token ratio)\n- **On exhaustion:** a hard stop — once the epoch's char budget is used up, the recall hook stops injecting further content for that epoch (remaining budget is floored at zero). The finished epoch's `{chars, turns}` are archived into history, and `neuron status` reports real recorded cost (median/p95/max per epoch, mean chars/turn) via a `recallCost` section.\n\nSource: commit b556ede9 \"feat(2.3.0): session token budget and cost telemetry (ticket 07)\" and `src/harnesses/ledger.ts`.\n",
+      "passed": true,
+      "gradeDetail": "epoch=true value=true hardStop=true"
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "agent",
+      "sessionLabel": "session-budget-granularity-agent-r0",
+      "turns": 7,
+      "wallMs": 35887,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The recall hook's char budget (default 18,000 chars, published as ~6,000 tokens at 3 chars/token) is tracked per epoch (session-start-to-context-reset span, resetting via rollEpoch), not per whole session, and once exhausted the hook hard-stops injection for the rest of that epoch while still recording silent turns.",
+      "tokens": {
+        "input": 30212,
+        "output": 1933,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 32145,
+      "answerText": "# Recall hook character budget\n\n**Granularity: per epoch, not per session.**\n\nThe budget (`recall.epochCharBudget` in `neuron.yaml`, implemented in\n`src/config/neuronYaml.ts` and consumed in `src/commands/hook.ts` /\n`src/harnesses/ledger.ts`) is tracked per **epoch**, where an epoch is the\nspan between session start (or the last compaction) and the next\n`context-reset` event — *not* the whole session. Because `context-reset`\nwipes everything neuron previously injected (ADR 0014 §5), re-injecting\nafter a reset is recovery rather than repetition, so the budget resets\nwith the ledger (`rollEpoch`) rather than accumulating across an entire\nsession. A single session can therefore span multiple epochs, each with\nits own fresh budget.\n\n## Default value\n\n- Default: **18,000 characters** (`epochCharBudget: 18000`).\n- Composition: 6,000 chars reserved for the session-start architecture\n  card (`SESSION_START_CHAR_BUDGET`) plus up to 8 worst-case full\n  `pre-prompt` turns at `PRE_PROMPT_CHAR_BUDGET` (1,500 chars each).\n\n## Published unit\n\nThe budget is published/described externally as **~6,000 tokens**, using\na conservative **3 characters per token** ratio (as already used in\n`src/harnesses/payload.ts`), rather than the more common 4:1 chars/token\nratio — chosen deliberately to overstate neuron's own cost rather than\nunderstate it.\n\n## Behavior once exhausted\n\nOnce the epoch's budget is exhausted (`remainingEpochBudget(...) <= 0`),\nthe hook performs a **hard stop** for the rest of that epoch:\n- On `pre-prompt`, it skips the query entirely (no injection) but still\n  records the turn (with zero content) so the per-turn cost-rate\n  denominator stays accurate.\n- It does **not** degrade to showing everything or repeating unseen\n  content — it goes silent for that epoch. The only way to get injections\n  again is a new epoch (triggered by `context-reset`, which rolls/resets\n  the ledger and budget), or by not having a session id at all, in which\n  case there's no epoch to track and the hook falls back to the simpler\n  fixed per-injection cap (`SESSION_START_CHAR_BUDGET` /\n  `PRE_PROMPT_CHAR_BUDGET`) without a running total.\n",
+      "passed": true,
+      "gradeDetail": "epoch=true value=true hardStop=true"
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "agent",
+      "sessionLabel": "session-budget-granularity-agent-r1",
+      "turns": 6,
+      "wallMs": 34883,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The recall hook's char budget (default 18,000 chars, ≈6,000 tokens at a 3-chars/token ratio) is tracked per-epoch (session-start to next context-reset/compaction), not per-session; once exhausted it hard-stops recall queries for the rest of that epoch, resuming only when a new epoch rolls.",
+      "tokens": {
+        "input": 28676,
+        "output": 1860,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 30536,
+      "answerText": "# Recall hook char budget\n\n**Tracked per-epoch, not per-session.** `epochCharBudget` (in `src/config/neuronYaml.ts`, `neuron.yaml`'s `recall` config, default below) is enforced by `remainingEpochBudget` in `src/harnesses/ledger.ts`, keyed by `sessionId` but scoped to the current **epoch** — the span from session start (or the last compaction) to the next `context-reset`. A single session can contain multiple epochs: `rollEpoch` resets both the dedupe ledger and the char-spend counter together whenever a compaction/`context-reset` happens, because compaction wipes out everything neuron previously injected, so re-injection after it is \"recovery, not repetition,\" not a continuation of the same budget window.\n\n- **Default numeric budget:** 18,000 characters (`epochCharBudget: z.number().int().positive().default(18000)` in `src/config/neuronYaml.ts`).\n- **Published unit / conversion:** the cost summary (`summarizeRecallCost` in `src/harnesses/ledger.ts`, surfaced via `neuron status`) also reports an approximate token figure using a fixed ratio of **3 characters per token** (`CHARS_PER_TOKEN_RATIO = 3`), i.e. `epochTokenBudgetApprox = ceil(epochCharBudget / 3)` — 18,000 chars ≈ 6,000 tokens by default.\n- **What happens once exhausted:** once `remainingEpochBudget(...) <= 0` for the current epoch, the `pre-prompt` hook hits a hard stop (ticket 07): it records the turn (with zero chars/ids, so the per-turn cost-rate denominator still counts silent turns) but skips querying memory entirely — no further recall content is injected for the rest of that epoch. Injection resumes only once a new epoch starts (i.e. after `rollEpoch` fires on `context-reset`/compaction), at which point the budget resets to `epochCharBudget` again. (If there's no `sessionId` at all, there's no ledger/budget to track against, so the hook deliberately degrades toward showing everything every turn rather than toward silence.)\n",
+      "passed": true,
+      "gradeDetail": "epoch=true value=true hardStop=true"
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "agent",
+      "sessionLabel": "session-budget-granularity-agent-r2",
+      "turns": 5,
+      "wallMs": 35680,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The recall hook's budget is tracked per epoch (session-start-to-context-reset span, not the whole session), defaults to 18,000 chars, is published as ~6,000 tokens using a fixed 3-chars-per-token ratio, and once exhausted the hook hard-stops injection for the rest of the epoch (still logging silent turns) until the next context-reset rolls the epoch over.",
+      "tokens": {
+        "input": 42179,
+        "output": 1708,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 43887,
+      "answerText": "# Recall hook character budget\n\n**Tracked per epoch, not per session.** An \"epoch\" is the span from session start (or\nthe last compaction) to the next `context-reset`, not the whole session — because\ncompaction wipes everything neuron previously injected, so re-injection after a\ncompaction is recovery, not repetition. `rollEpoch` resets both the dedupe ledger and\nthe char-spend counter together when a `context-reset` fires, so a single session can\ncontain multiple epochs, each getting its own fresh budget (`src/harnesses/ledger.ts`).\n\n- **Default numeric budget:** `epochCharBudget` defaults to **18,000 characters**\n  (`src/config/neuronYaml.ts`, `z.number().int().positive().default(18000)`).\n- **Published unit:** the budget is reported to users in *tokens*, not raw characters.\n  `summarizeRecallCost` converts it via a fixed ratio `CHARS_PER_TOKEN_RATIO = 3`\n  (i.e. 3 chars/token), publishing `epochTokenBudgetApprox = ceil(epochCharBudget / 3)`\n  — so the default 18,000-char budget is published as ~6,000 tokens\n  (`src/harnesses/ledger.ts`).\n- **What happens once exhausted:** the hook enforces a hard stop, not gradual\n  degradation. Once `remainingEpochBudget(...) <= 0` for the current epoch, the\n  `pre-prompt` hook records the turn (with zero chars/ids, so the per-turn cost rate\n  still has silent turns in its denominator) and skips the memory query entirely —\n  nothing further is injected until the epoch rolls over via the next `context-reset`\n  (`src/commands/hook.ts`). Within an epoch, the session-start architecture-card\n  injection and each pre-prompt turn's injection are additionally capped by their own\n  fixed per-injection limits (`SESSION_START_CHAR_BUDGET = 6000`,\n  `PRE_PROMPT_CHAR_BUDGET = 1500`, in `src/harnesses/payload.ts`), and whichever of the\n  epoch's remaining budget or these per-injection caps is smaller wins.\n",
+      "passed": true,
+      "gradeDetail": "epoch=true value=true hardStop=true"
+    }
+  ]
+}
