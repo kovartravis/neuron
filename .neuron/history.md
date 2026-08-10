@@ -3332,3 +3332,39 @@ tags:
 taskId: null
 ---
 Wayfinder session, 2026-08-10: at the maintainer's request, scoped neuron-2.3.0's remaining tickets against ~50% weekly usage remaining. Audited ticket 04 (Cut and Publish 2.3.0)'s real Blocked-by list and found only 01/02/03 (waiting on 20/22's real-harness-install verification) still open -- everything else on the map was already, by the map's own repeated notes, never wired as a blocker of the cut. Moved the ten non-blocking tickets (19, 21, 24, 32, 33, 36, 40, 41, 42, 43) to a new numbering (02-11) on the neuron-2.4.0 map, preserving claimed/unclaimed status and in-progress work, fixing all cross-links (same-map links renumbered, links to tickets staying on neuron-2.3.0 repointed by relative path). Closed ticket 37 (interim rc3 cut) as superseded rather than moved, since it was gated on now-deferred work and an interim rc isn't needed when the real cut is two HITL install checks away. Moved the map's entire 'Not yet specified' fog section to neuron-2.4.0 wholesale, since none of it gates the cut. Narrowed neuron-2.3.0's Destination language from 'every ticket here resolved' to ticket 04's actual blockers. True remaining frontier on neuron-2.3.0 is now just 20 and 22 (both HITL real-install verifications); no further AFK work is available on that map until one clears. No code changed, only .scratch/neuron-2.3.0 and .scratch/neuron-2.4.0 tracker files.
+
+---
+id: ab32592f-ca66-4704-b597-d00170aef3bc
+createdAt: 2026-08-10T12:05:39.764Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - failure-fix
+taskId: "20"
+---
+Ticket 20 (neuron-2.3.0, verify Copilot CLI adapter against real install): user began the real-install checklist and hit a real bug on the very first step -- running 'neuron init' for Copilot CLI still printed an interactive hook-target prompt naming .claude/settings.json paths, copy-pasted from the Claude Code adapter and never made harness-generic. Diagnosed and fixed in src/commands/init.ts (resolveHookTarget): the prompt now describes the three scopes generically (committed/gitignored/user-wide) instead of hardcoding one harness's file names, since it fires once per init run across whatever harnesses are being wired (ADR 0014 section 6). Confirmed CopilotAdapter itself was never wrong -- targetFilePath() always resolved the correct .github/hooks/neuron.json or ~/.copilot/hooks/neuron.json path, and the final JSON output already reported it truthfully -- so no change was needed in copilot.ts. Verified with tsc --noEmit (clean) and the full init.test.ts suite (24/24 passing); ticket 20's Answer section updated with the finding, but the ticket stays open since the remaining real-CLI checklist items (auth, live context injection, failure posture, payload cap) still need to be run by the user against an actual Copilot CLI install.
+
+---
+id: 7b93a01c-3de2-4941-b35b-dfe43cbe76ef
+createdAt: 2026-08-10T12:54:38.834Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "20"
+---
+Ticket 20 (neuron-2.3.0, Copilot CLI real-install verification) resolved 2026-08-10 -- maintainer ran the real checklist directly against a live Copilot CLI install: auth, the exact .github/hooks/neuron.json shape, real session-start injection, and clean --uninstall all confirmed matching copilot.ts. The one bug found (the init.ts hook-target prompt hardcoding .claude/ paths for every harness) was already diagnosed and fixed earlier this session -- see the separate learning entry. failurePosture and payloadCapChars checklist items were not specifically exercised (no deliberate hook failure or oversized payload), so capability()'s two 'unknown' fields were deliberately left as-is rather than guessed, per the maintainer's explicit choice when asked. This resolved and unblocked ticket 01 (Copilot adapter), which had been sitting claimed-not-resolved solely on ticket 20's outcome -- 01 closed with its own Answer section added. Separately, the maintainer reported they cannot run ticket 22 (Cursor real-install verification) because they don't have a Cursor login -- 22 stays unclaimed/unblocked exactly as before (this is a disclosure of why the map's frontier hasn't moved, not a status change), but the map's Notes now explicitly record it as a standing HITL blocker requiring either Cursor access or a different session, not just 'next up mechanically.' 02/03/04 (the final 2.3.0 cut) stay transitively blocked on 22 clearing. Both tickets' files and the neuron-2.3.0 map.md Notes/Decisions-so-far were updated to reflect this; true remaining frontier on the map is now just 22.
+
+---
+id: 46bfdab2-0c25-4908-9f27-c714ed9d7e7f
+createdAt: 2026-08-10T13:04:56.245Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "03"
+---
+Tickets 02, 03 (neuron-2.3.0) resolved 2026-08-10, continuing directly from 20's real-install-verification session. Maintainer decided (via AskUserQuestion, over dropping Cursor from 2.3.0 or waiting for someone with access) to ship CursorAdapter best-effort and UNVERIFIED against a real install, relying on user reports -- ticket 22 closed won't-do for the same reason, downgrading its real-install requirement to a disclosed limitation rather than meeting it. Added a matching caveat directly into cursor.ts's own capability() session-start record (not just a ticket note) so the unverified-install fact lives in the same truthful source neuron init's reporting reads. Then built ticket 03 (compatibility disclosure) for real: buildHarnessFidelityReport()/formatHarnessFidelityReport() in src/commands/init.ts report detected/wired/fidelity + actionable remediation per harness, driven by each adapter's real verify() rather than config-file inference, printed to stderr and returned as structured harnessFidelity in the JSON stdout payload; 5 new tests, init.test.ts 29/29. Rewrote README's compatibility section: plain-language fidelity glossary, a real Harness x Mechanism x Fidelity table naming actual hook event names per adapter, the AGENTS.md fallback as a real row instead of trailing prose, and a dated verified-as-of line. Corrected a mid-session mistake: initially told the maintainer README had zero disclosure, which was wrong -- a partial ticket-less table already existed from ticket 34's rc2 doc audit (case-sensitive grep miss on my first check); the real gap was narrower (missing mechanism column, fallback row, glossary, staleness line), still real feature work but not a from-scratch build. npm test 599/600 (the one failure the same pre-existing concurrency-stress.test.ts SQLite migration-race flake tickets 34/38 already documented), tsc --noEmit clean. All of 01/02/03/20/22 are now resolved; ticket 04's Blocked-by line (stale, still listing 13 tickets including many already-resolved ones from earlier sessions) was corrected to 'none' -- its only remaining work is its own unworked cut checklist: version bump, CHANGELOG, claim-vs-behavior audit, config-safety matrix, a real pre-2.3.0 config upgrade test, full test run, tag, and publish.
