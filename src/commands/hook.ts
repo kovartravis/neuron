@@ -13,10 +13,18 @@ import {
   recordPrePromptTurn,
   rollEpoch,
   recordFired,
+  recordHintFired,
+  recordToolUse,
   SESSION_START_CHAR_BUDGET,
   PRE_PROMPT_CHAR_BUDGET,
   LifecyclePoint,
 } from '../harnesses/index.js';
+
+/** Extracts the exact suggested command from a `buildDiscoveryHint` line — everything after `run: `. */
+function hintCommand(hint: string): string {
+  const idx = hint.indexOf('run: ');
+  return idx === -1 ? hint : hint.slice(idx + 'run: '.length);
+}
 
 interface CardPayload {
   text: string;
@@ -148,24 +156,69 @@ function emit(harness: string, hookEventName: string, additionalContext: string)
  * command exists to never cause. Nothing in this function is allowed to
  * reject or throw past its own boundary.
  */
+/** Ticket 07 (neuron-2.4.0)'s measurement instrument — deliberately not a `LifecyclePoint`; see `runPostToolUse`. */
+const MEASUREMENT_POINT = 'post-tool-use';
+const POST_TOOL_USE_TIMEOUT_MS = 3000;
+
 export async function handleHookCommand(args: string[]): Promise<void> {
   const harness = args[1];
-  const point = args[2] as LifecyclePoint;
+  const point = args[2];
   const projectDir = process.cwd();
 
-  if (!VALID_HARNESSES.includes(harness) || !VALID_POINTS.includes(point)) {
+  if (!VALID_HARNESSES.includes(harness)) return;
+
+  if (point === MEASUREMENT_POINT) {
+    try {
+      await withTimeout(runPostToolUse(projectDir), POST_TOOL_USE_TIMEOUT_MS, `neuron hook ${harness} ${point}`);
+    } catch {
+      // Silent degrade: a missed measurement is never worth failing the tool call.
+    }
     return;
   }
 
+  if (!VALID_POINTS.includes(point as LifecyclePoint)) {
+    return;
+  }
+  const lifecyclePoint = point as LifecyclePoint;
+
   // Recorded before any work that could fail, so verify()'s firing evidence
   // stays accurate even when the query below times out or throws.
-  recordFired(projectDir, harness, point);
+  recordFired(projectDir, harness, lifecyclePoint);
 
   try {
-    await withTimeout(runHook(projectDir, harness, point), HOOK_TIMEOUT_MS[point], `neuron hook ${harness} ${point}`);
+    await withTimeout(
+      runHook(projectDir, harness, lifecyclePoint),
+      HOOK_TIMEOUT_MS[lifecyclePoint],
+      `neuron hook ${harness} ${lifecyclePoint}`
+    );
   } catch {
     // Silent degrade: no stdout means no injection; exit code stays 0.
   }
+}
+
+/**
+ * Ticket 07 (neuron-2.4.0): records whether a `Bash` tool call matches a
+ * `neuron memory query` command, for `hintFollowLog.ts`'s analysis pass to
+ * join against `fired` events by session id. Measurement-only — no
+ * `LifecyclePoint` capability contract, no firing evidence, no
+ * install()/verify() support, and never wired by `neuron init`. This repo's
+ * own `.claude/settings.json` registers it by hand as a `PostToolUse` entry
+ * matching `Bash`.
+ */
+async function runPostToolUse(projectDir: string): Promise<void> {
+  const raw = await readStdin();
+  let input: Record<string, unknown> = {};
+  try {
+    input = raw ? JSON.parse(raw) : {};
+  } catch {
+    input = {};
+  }
+  const sessionId = typeof input.session_id === 'string' ? input.session_id : undefined;
+  const toolName = typeof input.tool_name === 'string' ? input.tool_name : undefined;
+  const toolInput = input.tool_input && typeof input.tool_input === 'object' ? (input.tool_input as Record<string, unknown>) : undefined;
+  const command = toolInput && typeof toolInput.command === 'string' ? toolInput.command : undefined;
+  if (!sessionId || toolName !== 'Bash' || !command) return;
+  recordToolUse(projectDir, sessionId, command);
 }
 
 async function runHook(projectDir: string, harness: string, point: LifecyclePoint): Promise<void> {
@@ -276,6 +329,10 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
     const totalMatches = memory.countFtsMatches(prompt);
     const hintBudget = turnCap - (turnBody ? turnBody.length + 1 : 0);
     const hint = buildDiscoveryHint(prompt, totalMatches, results.length, hintBudget);
+    // Ticket 07 (neuron-2.4.0): a fired hint is measurement-relevant only
+    // when there's a session to later join a `post-tool-use` event against —
+    // the sessionless branch above has no ledger either, for the same reason.
+    if (hint) recordHintFired(projectDir, sessionId, hintCommand(hint));
     const turnBodyWithHint = hint ? (turnBody ? `${turnBody}\n${hint}` : hint) : turnBody;
 
     const sections: string[] = [];

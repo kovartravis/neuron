@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import { readHintEvents } from '../harnesses/hintFollowLog.js';
 
 describe('CLI Command: hook', () => {
   const tempDbDir = path.join(process.cwd(), 'src/__tests__/temp-hook');
@@ -561,5 +562,65 @@ describe('CLI Command: hook', () => {
     expect(context.length).toBeGreaterThan(0);
     expect(context.length).toBeLessThan(hugeContent.length);
     expect(context).toContain('...[truncated]');
+  });
+
+  // --- Ticket 07 (neuron-2.4.0): hint-follow measurement ---
+
+  function withHookCacheDir<T>(fn: () => T): T {
+    const prior = process.env.NEURON_HOOK_CACHE_DIR;
+    process.env.NEURON_HOOK_CACHE_DIR = path.join(projectDir, '.hook-cache');
+    try {
+      return fn();
+    } finally {
+      if (prior === undefined) delete process.env.NEURON_HOOK_CACHE_DIR;
+      else process.env.NEURON_HOOK_CACHE_DIR = prior;
+    }
+  }
+
+  it('records a fired event when the hint injects, and a joinable query-run event when post-tool-use sees the same command', () => {
+    for (let i = 0; i < 15; i++) {
+      execAdd(`Repository Pattern note ${i}: use it for database access here`, 'learning');
+    }
+    const preResult = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'measure-session', prompt: 'Repository Pattern database access' })
+    );
+    expect(preResult.status).toBe(0);
+    const context = JSON.parse(preResult.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    const commandMatch = context.match(/run: (neuron memory query.+)$/m);
+    expect(commandMatch).not.toBeNull();
+    const command = commandMatch![1];
+
+    const afterFire = withHookCacheDir(() => readHintEvents(projectDir));
+    expect(afterFire).toHaveLength(1);
+    expect(afterFire[0]).toMatchObject({ type: 'fired', sessionId: 'measure-session', command });
+
+    const postResult = run(
+      ['hook', 'claude-code', 'post-tool-use'],
+      JSON.stringify({ session_id: 'measure-session', tool_name: 'Bash', tool_input: { command } })
+    );
+    expect(postResult.status).toBe(0);
+
+    const afterFollow = withHookCacheDir(() => readHintEvents(projectDir));
+    expect(afterFollow.map(e => e.type)).toEqual(['fired', 'query-run']);
+    expect(afterFollow[1]).toMatchObject({ type: 'query-run', sessionId: 'measure-session', command });
+  });
+
+  it('post-tool-use ignores a Bash command unrelated to neuron memory query', () => {
+    const result = run(
+      ['hook', 'claude-code', 'post-tool-use'],
+      JSON.stringify({ session_id: 'measure-session', tool_name: 'Bash', tool_input: { command: 'git status' } })
+    );
+    expect(result.status).toBe(0);
+    expect(withHookCacheDir(() => readHintEvents(projectDir))).toEqual([]);
+  });
+
+  it('post-tool-use ignores non-Bash tool calls', () => {
+    const result = run(
+      ['hook', 'claude-code', 'post-tool-use'],
+      JSON.stringify({ session_id: 'measure-session', tool_name: 'Read', tool_input: { file_path: '/x' } })
+    );
+    expect(result.status).toBe(0);
+    expect(withHookCacheDir(() => readHintEvents(projectDir))).toEqual([]);
   });
 });

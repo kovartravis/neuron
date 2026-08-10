@@ -50,6 +50,23 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "neuron",
+            "args": [
+              "hook",
+              "claude-code",
+              "post-tool-use"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
