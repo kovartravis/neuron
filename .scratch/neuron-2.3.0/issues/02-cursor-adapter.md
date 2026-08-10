@@ -1,6 +1,6 @@
 Type: task
-Status: claimed
-Blocked by: 07, 22
+Status: resolved
+Blocked by: none
 
 # 02 — Cursor Adapter
 
@@ -66,7 +66,30 @@ which is why it survived the cut while Antigravity and OpenCode did not (see
       cloud-agent caveat attached to `session-start`
 - [x] Truthful fidelity verdict feeding ticket `03`'s matrix
 - [x] Config-safety cases verified
-- [ ] Behaviour confirmed against a real installation
+- [x] Behaviour confirmed against a real installation — **downgraded to a
+      disclosed limitation, not actually confirmed; see Answer**
+
+## Answer
+
+**Resolved 2026-08-10 — real-install requirement downgraded, not met, by
+explicit maintainer decision.** The maintainer confirmed they have no Cursor
+access and will not acquire it for this release. Given a choice (via
+`AskUserQuestion`, alongside dropping Cursor from `2.3.0` entirely or
+handing the verification off to someone else) between waiting indefinitely
+and shipping honestly-labeled unverified support, the maintainer chose to
+**ship `CursorAdapter` best-effort and unverified against a real
+installation**, relying on user reports instead. Ticket
+[22](22-verify-cursor-adapter-real-install.md) closed won't-do for the same
+reason. Fixture-only verification (14 `cursor.test.ts` tests, an 8-test
+`cursor` block in `hook.test.ts`, full suite passing) stands as the sole
+evidence. Nothing in `cursor.ts` changed as a result of this decision — the
+adapter's own `capability()` already reported `failurePosture: 'fail-open'`
+(a documented default, not a guess) with `payloadCapChars`/`timeoutMs`
+`'unknown'`, unchanged. The consequence lands on ticket
+[03](03-compatibility-disclosure.md): its README/`neuron init` disclosure
+must say plainly that Cursor support has not been confirmed against a real
+installation, the one honesty gap between this harness and Copilot CLI
+(`01`), which did get real-install confirmation.
 
 ## Comments
 

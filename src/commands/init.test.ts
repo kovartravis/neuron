@@ -515,4 +515,114 @@ describe('CLI Command: init', () => {
       fs.rmSync(initTempDir, { recursive: true });
     });
   });
+
+  describe('harness fidelity reporting (ticket 03)', () => {
+    it('reports a wired deterministic harness with a nothing-to-do remediation', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'fidelity-claude-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.harnessFidelity).toContainEqual(
+        expect.objectContaining({
+          name: 'claude',
+          mdFile: 'CLAUDE.md',
+          hasAdapter: true,
+          wired: true,
+          fidelity: 'deterministic',
+          remediation: expect.stringContaining('Nothing to do'),
+        })
+      );
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('reports a wired best-effort harness with a caveat-derived remediation', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'fidelity-github-test');
+      fs.mkdirSync(path.join(initTempDir, '.github'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const githubReport = result.harnessFidelity.find((r: any) => r.name === 'github');
+      expect(githubReport).toMatchObject({
+        mdFile: 'AGENTS.md',
+        hasAdapter: true,
+        wired: true,
+        fidelity: 'best-effort',
+      });
+      expect(githubReport.remediation).toContain('Best-effort recall —');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('reports instruction-only with a hook-install remediation when a real adapter exists but --no-hooks left it unwired', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'fidelity-not-wired-test');
+      fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --no-hooks`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.harnessFidelity).toContainEqual(
+        expect.objectContaining({
+          name: 'cursor',
+          hasAdapter: true,
+          wired: false,
+          fidelity: 'instruction-only',
+          remediation: expect.stringContaining("neuron hook install --harness cursor"),
+        })
+      );
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('reports instruction-only with a no-adapter remediation for a harness with no real adapter', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'fidelity-no-adapter-test');
+      fs.mkdirSync(path.join(initTempDir, '.agents'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.harnessFidelity).toContainEqual(
+        expect.objectContaining({
+          name: 'agents',
+          mdFile: 'AGENTS.md',
+          hasAdapter: false,
+          wired: false,
+          fidelity: 'instruction-only',
+          remediation: expect.stringContaining('No recall hook adapter exists'),
+        })
+      );
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('reports nothing when no harness is detected', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'fidelity-no-harness-test');
+      fs.mkdirSync(initTempDir, { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.harnessFidelity).toEqual([]);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+  });
 });

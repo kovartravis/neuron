@@ -2313,3 +2313,15 @@ tags:
 taskId: null
 ---
 Fix for module detail cards leaking into unconditional session-start injection: after ticket 28 split the architecture blueprint into a small index plus per-module detail cards sharing the index's category and tags, fetchArchitectureCardPayload's pre-existing additive top-N-in-category query (src/commands/hook.ts, predating 28) started matching real module cards and injecting full per-module detail on every session-start call regardless of relevance, defeating the whole point of the index/module split. Root cause: the additive query only excluded the index's own id, never the module ids that now share its category/tags. Fixed by computing the set of moduleCardId(category, path) for every module in the fetched index (via parseModuleListFromIndex, already exported from ingest.ts) and excluding those ids too: const moduleIds = new Set(parseModuleListFromIndex(blueprint.content).map(m => moduleCardId(category, m.path))); filtered = results.filter(r => r.id !== blueprint?.id && !moduleIds.has(r.id)). Reproduced live via a plain 'neuron hook claude-code session-start' call against this repo's own store before the fix (a real 'ui' module card appeared with no prompt in play), confirmed absent after.
+
+---
+id: 65899d09-307b-40f7-9661-6d21ef4721a3
+createdAt: 2026-08-10T12:05:30.893Z
+importance: 4
+tags:
+  - failure-fix
+  - 2.2.0
+  - architecture
+taskId: null
+---
+Fix for misleading hook-target prompt during 'neuron init': running init for a non-Claude harness (e.g. Copilot CLI) still showed a prompt naming .claude/settings.json paths for all three project-committed/project-local/user-global choices, discovered while doing ticket 20's real-install verification of the Copilot adapter. Root cause: resolveHookTarget in src/commands/init.ts hardcoded Claude Code's file paths in its interactive prompt copy even though this prompt is asked once per init run and applies across every harness being wired (ADR 0014 section 6) -- the actual write was always correct (CopilotAdapter.install() resolves its own real path via targetFilePath(), and the final JSON output's 'installed' field reports it truthfully), only the prompt text was wrong. Fixed by rewriting the three prompt lines to describe the scopes generically (committed/gitignored/user-wide) instead of one harness's concrete file names, and pointing users to the post-install report for exact paths -- no change needed in copilot.ts or any other adapter, this was purely init.ts copy shared incorrectly across harnesses. Edge case: any future harness-specific interactive copy in init.ts (there is currently none) should stay generic or be built dynamically from the adapters actually selected for that run, rather than hardcoding one harness's paths.

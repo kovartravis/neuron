@@ -81,6 +81,7 @@ function capability(): CapabilityMap {
       caveats: [
         'Payload cap is not documented anywhere reached. The default hook timeout is documented only as "platform-specific," with no concrete number stated.',
         'sessionStart does not run in cloud/background agents (confirmed via direct fetch) — an execution mode Cursor itself offers. User-level hooks (~/.cursor/hooks.json) never run in cloud agents at all, regardless of lifecycle point, since there is no home directory there.',
+        'Not confirmed against a real Cursor installation (ticket 22, neuron-2.3.0, closed won\'t-do 2026-08-10 — no maintainer access to Cursor). Everything above is sourced from documentation only; shipped best-effort and unverified by explicit maintainer decision, relying on user reports instead.',
       ],
     },
     'pre-prompt': {

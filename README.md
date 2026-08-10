@@ -90,17 +90,33 @@ It runs the setup interview and configures the project for you.
 
 On a supported harness, `neuron init` wires a hook that queries memory and
 injects results before the model sees the prompt — no instruction for the
-agent to follow, no dependence on it choosing to look.
+agent to follow, no dependence on it choosing to look. `neuron init` itself
+reports this per project, per harness — a `detected / wired / fidelity` line
+plus what to do about it, read from each harness's real hook registration
+(`verify()`), not inferred from a config file existing.
 
-| Harness | Recall |
-|---|---|
-| Claude Code | Deterministic (hook-based, every turn) |
-| OpenAI Codex CLI | Deterministic (hook-based, every turn) |
-| GitHub Copilot CLI | Best-effort — guarantees the architecture card at session start; Copilot has no per-turn hook point, so query-time recall still falls back to instructions |
-| Cursor | Best-effort — session-start and context-reset hooks are wired, but Cursor has no per-turn hook point, so query-time recall still falls back to instructions; not yet verified against a real Cursor installation |
+**What the fidelity labels mean:**
+- **Deterministic** — every injecting hook point has a known payload cap,
+  failure posture and timeout; recall refreshes every turn, guaranteed.
+- **Best-effort** — real, harness-executed injection, but with at least one
+  undocumented edge (a payload cap, a failure mode, or a missing per-turn
+  hook point) that keeps it short of the deterministic guarantee.
+- **Instruction-only** — no hook point on this harness ever injects context
+  into the model; recall depends entirely on the model choosing to read
+  `CLAUDE.md`/`AGENTS.md` and run `neuron memory query` itself.
 
-Any other harness falls back to an instruction in `CLAUDE.md`/`AGENTS.md`
-asking the agent to query the store itself.
+| Harness | Mechanism | Fidelity |
+|---|---|---|
+| Claude Code | `SessionStart` / `UserPromptSubmit` / `PreCompact` hooks, every turn | Deterministic |
+| OpenAI Codex CLI | `SessionStart` / `UserPromptSubmit` / `PreCompact` hooks, every turn | Deterministic |
+| GitHub Copilot CLI | `sessionStart` hook only — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; verified against a real Copilot CLI installation |
+| Cursor | `sessionStart` / `preCompact` hooks — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; **not verified against a real Cursor installation** (no maintainer access — see [ticket 22](.scratch/neuron-2.3.0/issues/22-verify-cursor-adapter-real-install.md)), shipped on fixture/documentation evidence only |
+| Anything else (`AGENTS.md` fallback) | No hook adapter | Instruction-only — the model must choose to read `AGENTS.md` and run `neuron memory query` itself |
+
+*Verified against each harness's documented hook behavior as of 2026-08-10.
+This matrix is static and harnesses change their own hook contracts without
+notice — treat "verified" as "true when last checked," not "guaranteed
+going forward."*
 
 ## 📁 What it looks like in your repo
 

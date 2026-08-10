@@ -1,6 +1,6 @@
 Type: task
-Status: unclaimed
-Blocked by: 01, 02
+Status: resolved
+Blocked by: none
 
 # 03 — Compatibility Disclosure: `neuron init` Reporting & README Matrix
 
@@ -57,11 +57,67 @@ is where the truth surfaces.
 
 ## Deliverables
 
-- [ ] Per-harness detection/fidelity reporting in `neuron init`, driven by `verify()`, for all four adapters
-- [ ] Actionable remediation text for non-deterministic harnesses
-- [ ] README compatibility matrix with a fallback row, superseding the minimal two-row note
-- [ ] Plain-language explanation of the fidelity levels
-- [ ] Verified-as-of version and date recorded on the matrix
+- [x] Per-harness detection/fidelity reporting in `neuron init`, driven by `verify()`, for all four adapters
+- [x] Actionable remediation text for non-deterministic harnesses
+- [x] README compatibility matrix with a fallback row, superseding the minimal two-row note
+- [x] Plain-language explanation of the fidelity levels
+- [x] Verified-as-of version and date recorded on the matrix
+
+## Answer
+
+Resolved 2026-08-10, built in the same session that closed `01`/`02`/`20`/`22`.
+Two deliverables were partially pre-existing (a `Harness | Recall` table
+already covered all four adapters plus a fallback note, added ad hoc during
+`34`'s rc2 doc audit without its own ticket bookkeeping) — corrected an
+earlier mid-session claim to the user that the README had *no* disclosure at
+all; the gap was narrower than that, but still missing three of five Scope
+items.
+
+**`src/commands/init.ts`**: new `buildHarnessFidelityReport()` /
+`formatHarnessFidelityReport()`, called for every entry in
+`detectedHarnessNames`. Per Scope item 2, `wired` comes from `adapter.verify()`
+— every capability-injecting lifecycle point must show `registered: true` —
+never from whether this run's `installHooks` just ran or from config-file
+presence alone; a hook installed by an earlier session, or one this run
+declined to overwrite, still reports correctly. Four cases, each with
+distinct remediation text: wired + `deterministic` ("nothing to do"), wired +
+`best-effort` (surfaces the adapter's own first `capability()` caveat, so
+the remediation text is never out of sync with the truthful capability
+record), detected-but-not-wired regardless of underlying capability
+(`instruction-only`, remediation names the exact `neuron hook install
+--harness <id>` command), and no-adapter-at-all (`instruction-only`,
+remediation explains the model must self-invoke `neuron memory query`).
+Printed as a readable block to stderr (matching the existing grammar-warning/
+star-callout convention) and returned as structured `harnessFidelity` in the
+JSON stdout payload for programmatic use. 5 new tests in `init.test.ts`
+covering all four cases plus the no-harness-detected empty case; full suite
+29/29 in that file, 599/600 overall (the one failure is `concurrency-
+stress.test.ts`'s pre-existing, unrelated SQLite migration-race flake, noted
+by tickets `34`/`38`). `tsc --noEmit` clean.
+
+**`README.md`**: rewrote the "Recall is enforced, not requested" section —
+added a plain-language three-item glossary of what
+deterministic/best-effort/instruction-only actually mean before the table
+(Scope item 4), restructured the table to genuine `Harness | Mechanism |
+Fidelity` columns naming the real hook event names per adapter (`SessionStart`/
+`UserPromptSubmit`/`PreCompact` for Claude Code and Codex CLI; `sessionStart`
+only for Copilot CLI; `sessionStart`/`preCompact` for Cursor), added the
+`AGENTS.md` fallback as a real table row instead of trailing prose (Scope
+item 3), and added a verified-as-of line dated 2026-08-10 with an explicit
+staleness caveat (Scope item 5) — no fabricated per-harness version numbers,
+since neuron doesn't pin external harness versions; "verified against
+documented behavior as of date" is the honest claim available. Cursor's row
+states plainly it is **not** verified against a real installation, linking
+to ticket `22`'s own Answer — the one asymmetry with Copilot CLI (`01`),
+which was real-install-confirmed. Also added a matching caveat directly into
+`cursor.ts`'s own `capability()` record for `session-start` (not just the
+README), so the unverified-install fact lives in the truthful capability
+source `neuron init`'s own reporting reads, not only in prose a user might
+not open.
+
+Nothing in `claudeCode.ts`/`codex.ts`/`copilot.ts` changed — their `verify()`-
+driven reports were already accurate; this ticket was pure reporting/
+disclosure work, no adapter behavior changed.
 
 ## Comments
 

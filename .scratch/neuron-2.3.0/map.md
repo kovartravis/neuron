@@ -1244,6 +1244,59 @@ wired to.
   `04`'s already-resolved blockers unblocks `04` itself. No further AFK
   ticket work is available on this map until one of those two verifications
   happens.
+- **[20 — Verify Copilot CLI Adapter Against a Real
+  Installation](issues/20-verify-copilot-adapter-real-install.md) resolved
+  2026-08-10**, the maintainer running the real-install checklist directly
+  against a live GitHub Copilot CLI. Install/auth, the `.github/hooks/
+  neuron.json` shape, and real session-start injection all confirmed
+  matching `copilot.ts` exactly; `--uninstall` confirmed clean. **Found one
+  real bug along the way, in `init.ts` not `copilot.ts`**: the interactive
+  hook-target prompt (`resolveHookTarget`) hardcoded Claude Code's
+  `.claude/settings.json` paths regardless of which harness was actually
+  being installed, so running `neuron init` for Copilot still showed the
+  wrong file names even though the real write was always correct. Fixed by
+  making the prompt describe the three scopes generically instead of naming
+  one harness's files. The failure-posture and payload-cap checklist items
+  were not specifically exercised this pass (no deliberate hook failure, no
+  deliberately oversized payload) — `capability()`'s `failurePosture` and
+  `payloadCapChars` stay `'unknown'` rather than guessed, maintainer's own
+  call rather than left ambiguous. Unblocks
+  [01](issues/01-copilot-adapter.md), now also resolved. Frontier is now
+  `22` only.
+- **[22 — Verify Cursor Adapter Against a Real
+  Installation](issues/22-verify-cursor-adapter-real-install.md) resolved
+  won't-do, 2026-08-10, superseding the note directly above within the same
+  session.** The maintainer confirmed they have no Cursor access and,
+  presented a choice via `AskUserQuestion` (wait for someone with access /
+  drop Cursor from `2.3.0` / ship unverified), chose to **ship `CursorAdapter`
+  best-effort and unverified, relying on user reports** rather than block the
+  release indefinitely. Unblocks `02`, resolved the same session on fixture
+  evidence alone (14 `cursor.test.ts` tests + an 8-test `hook.test.ts` block)
+  — its own real-install requirement downgraded to a disclosed limitation,
+  not met. A matching caveat was added directly into `cursor.ts`'s
+  `capability()` record (not just a ticket note) so the unverified-install
+  fact lives in the same truthful source `neuron init`'s reporting reads.
+  Unblocks `03`.
+- **[03 — Compatibility Disclosure](issues/03-compatibility-disclosure.md)
+  resolved 2026-08-10, same session.** Built `neuron init`'s per-harness
+  `detected/wired/fidelity` + remediation reporting
+  (`buildHarnessFidelityReport`/`formatHarnessFidelityReport`,
+  `src/commands/init.ts`), driven by each adapter's real `verify()` rather
+  than config-file inference — 5 new tests, `init.test.ts` 29/29. Rewrote
+  README's compatibility section: added a plain-language fidelity glossary,
+  restructured the table to real `Harness | Mechanism | Fidelity` columns
+  naming actual hook event names, added the `AGENTS.md` fallback as a real
+  row, and a dated verified-as-of line — correcting a mid-session
+  overstatement to the maintainer that the README had *no* disclosure at
+  all (it had a partial, ticket-less table from `34`'s doc audit; this
+  ticket closed the remaining gap: mechanism column, fallback row,
+  plain-language glossary, staleness line). `npm test` 599/600 (the one
+  failure the same pre-existing `concurrency-stress.test.ts` flake `34`/`38`
+  already noted), `tsc --noEmit` clean. Unblocks `04`'s `03` dependency —
+  **`01`, `02`, `03` all resolved this session; `04`'s only remaining real
+  blocker is its own unworked cut checklist** (version bump, CHANGELOG,
+  claim-vs-behavior audit, config-safety matrix, upgrade test, full test
+  run, tag, publish). Frontier is now `04`.
 
 ## Not yet specified
 

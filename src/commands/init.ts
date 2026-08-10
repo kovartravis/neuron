@@ -27,6 +27,8 @@ import {
   InstallResult,
   UninstallResult,
   deriveFidelity,
+  FidelityLabel,
+  LIFECYCLE_POINTS,
 } from '../harnesses/index.js';
 import {
   generateProtocolBlock,
@@ -70,9 +72,10 @@ async function resolveHookTarget(options: { yes?: boolean; hookTarget?: string }
       const answer = (
         await rl.question(
           'Where should neuron install recall hooks?\n' +
-          '  [1] project-committed (.claude/settings.json, shared with the team) [default]\n' +
-          '  [2] project-local (.claude/settings.local.json, gitignored)\n' +
-          '  [3] user-global (~/.claude/settings.json, this machine only)\n' +
+          '  [1] project-committed (shared with the team, committed to the repo) [default]\n' +
+          '  [2] project-local (project-scoped, gitignored)\n' +
+          '  [3] user-global (this machine only, applies across projects)\n' +
+          '(Exact file paths depend on which harness(es) are detected — reported after install.)\n' +
           'Choice: '
         )
       ).trim();
@@ -186,6 +189,86 @@ function resolveHarnessFidelity(
     point => verification[point as keyof typeof verification]?.registered
   );
   return allRegistered ? 'deterministic' : 'fallback';
+}
+
+/**
+ * Ticket 03: what a user actually gets from one detected harness, reported
+ * truthfully rather than inferred from config-file presence. `wired` comes
+ * from `verify()` (real firing-capable registration), never from whether
+ * `installHooks` just ran — a hook installed by an earlier session, or one
+ * this run declined to overwrite, still counts.
+ */
+export interface HarnessFidelityReport {
+  name: string;
+  mdFile: string;
+  hasAdapter: boolean;
+  wired: boolean;
+  /** The fidelity actually delivered right now — `'instruction-only'` whenever `wired` is false, regardless of what the adapter could deliver if installed. */
+  fidelity: FidelityLabel;
+  remediation: string;
+}
+
+function buildHarnessFidelityReport(
+  harnessName: string,
+  adapters: HarnessAdapter[],
+  projectDir: string
+): HarnessFidelityReport {
+  const meta = HARNESSES.find(h => h.name === harnessName);
+  const mdFile = meta?.mdFile ?? 'AGENTS.md';
+  const adapterId = ADAPTER_ID_BY_HARNESS_NAME[harnessName];
+  const adapter = adapterId ? adapters.find(a => a.id === adapterId) : undefined;
+
+  if (!adapter) {
+    return {
+      name: harnessName,
+      mdFile,
+      hasAdapter: false,
+      wired: false,
+      fidelity: 'instruction-only',
+      remediation:
+        `No recall hook adapter exists for this harness yet. Recall depends entirely on the model reading ` +
+        `${mdFile} and choosing to run 'neuron memory query' itself.`,
+    };
+  }
+
+  const capability = adapter.capability();
+  const verdict = deriveFidelity(capability);
+  const verification = adapter.verify(projectDir);
+  const injectingPoints = LIFECYCLE_POINTS.filter(point => capability[point].injects === true);
+  const wired = injectingPoints.length > 0 && injectingPoints.every(point => verification[point].registered);
+  const fidelity: FidelityLabel = wired ? verdict : 'instruction-only';
+
+  let remediation: string;
+  if (!wired) {
+    remediation =
+      `Recall hooks are not currently registered for this harness in this project. Run 'neuron init' again ` +
+      `(without --no-hooks) or 'neuron hook install --harness ${adapter.id}' to enable ${verdict} recall.`;
+  } else if (verdict === 'deterministic') {
+    remediation = 'Nothing to do — full per-turn recall confirmed and registered.';
+  } else if (verdict === 'best-effort') {
+    const caveat = injectingPoints.flatMap(point => capability[point].caveats ?? [])[0];
+    remediation = caveat
+      ? `Best-effort recall — ${caveat}`
+      : 'Best-effort recall — see the README compatibility matrix for this harness\'s known limitations.';
+  } else {
+    remediation =
+      'No lifecycle point on this harness ever injects context into the model — recall is instruction-only ' +
+      `regardless of hooks; the model must choose to read ${mdFile} and run 'neuron memory query' itself.`;
+  }
+
+  return { name: harnessName, mdFile, hasAdapter: true, wired, fidelity, remediation };
+}
+
+function formatHarnessFidelityReport(reports: HarnessFidelityReport[]): string {
+  if (reports.length === 0) return '';
+  const lines = ['', 'Recall fidelity by harness:'];
+  for (const r of reports) {
+    const status = r.wired ? 'wired' : r.hasAdapter ? 'detected, not wired' : 'detected, no adapter';
+    lines.push(`  ${r.name} (${r.mdFile}) — ${status} — ${r.fidelity}`);
+    lines.push(`    ${r.remediation}`);
+  }
+  lines.push('See the README compatibility matrix for the full harness x mechanism x fidelity picture.');
+  return lines.join('\n');
 }
 
 async function onProtocolConflict(targetPath: string): Promise<boolean> {
@@ -385,6 +468,16 @@ export async function handleInitCommand(args: string[]): Promise<void> {
   // detected harness's instruction file (ticket 14).
   const protocolResults = await writeProtocolBlocks(projectDir, config, detectedHarnessNames, options);
 
+  // 3.5. Report per-harness recall fidelity truthfully (ticket 03) — driven
+  // by verify(), not inferred from what this run's install just did, so a
+  // hook from an earlier session (or one this run declined to overwrite)
+  // still reports correctly.
+  const allAdaptersForReport = getAdapters();
+  const harnessFidelityReports = detectedHarnessNames.map(name =>
+    buildHarnessFidelityReport(name, allAdaptersForReport, projectDir)
+  );
+  const fidelityReportText = formatHarnessFidelityReport(harnessFidelityReports);
+  if (fidelityReportText) console.error(fidelityReportText);
 
   // Report degraded parsing rather than letting it be discovered later as
   // unexplained blueprint noise. A language without a grammar still scans, at
@@ -424,6 +517,7 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     protocol: {
       written: protocolResults,
     },
+    harnessFidelity: harnessFidelityReports,
     githubUrl: GITHUB_STAR_URL,
     callout
   }));

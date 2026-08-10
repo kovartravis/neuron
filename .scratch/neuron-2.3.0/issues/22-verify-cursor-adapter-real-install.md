@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: harness expansion
 
@@ -81,4 +81,22 @@ Ticket 02 stays `claimed`, blocked by this ticket, until this resolves.
 
 ## Answer
 
-_Pending._
+**Resolved as won't-do, 2026-08-10, maintainer decision.** The maintainer
+confirmed they do not have and will not have Cursor access to run this
+checklist. Rather than leave `02`/`03`/`04` blocked indefinitely on a HITL
+step that may never clear, the maintainer chose (via `AskUserQuestion`, over
+"drop Cursor from this release" and "hand off to someone with Cursor
+access") to **ship `CursorAdapter` best-effort and unverified against a real
+install** — fixture-only verification (`02`'s 14 `cursor.test.ts` tests plus
+an 8-test `cursor` block in `hook.test.ts`) stands as the release evidence,
+and `02`'s own Verification section's "must confirm against a real
+installation" requirement is downgraded to a disclosed limitation rather
+than a hard gate. None of this checklist's items (stdout contract, the
+cloud/background-agent hole, the `preCompact`/`session_id` gap, failure
+posture, payload cap) were exercised — `capability()`'s existing `'unknown'`
+fields stay exactly as `cursor.ts` already documents them, and ticket `03`'s
+README/`neuron init` disclosure work must say plainly that Cursor has not
+been confirmed against a real installation, the same honesty standard `01`
+just met for Copilot but `02` cannot. Unblocks `02`. If Cursor access
+becomes available later (another machine, another contributor), this
+checklist is still the right one to run — reopen rather than rewrite.

@@ -1,6 +1,6 @@
 Type: task
-Status: claimed
-Blocked by: 07, 20
+Status: resolved
+Blocked by: none
 
 # 01 — GitHub Copilot CLI Adapter
 
@@ -62,7 +62,24 @@ them assume they have the same recall a Claude Code or Codex CLI user has.
 - [x] Injection wired at `session-start`; `pre-prompt` honestly reported as non-injecting
 - [x] Truthful fidelity verdict feeding ticket `03`'s matrix
 - [x] Config-safety cases verified
-- [ ] Behaviour confirmed against a real installation
+- [x] Behaviour confirmed against a real installation
+
+## Answer
+
+Resolved 2026-08-10. `CopilotAdapter` delivers `session-start`-only
+best-effort recall on GitHub Copilot CLI, honestly reporting `pre-prompt`
+as non-injecting (documented notification-only) and `context-reset` as
+having no compaction-equivalent event at all. The adapter interface held
+without bending — the only real accommodation was `hook.ts`'s `emit()`
+branching on harness id for Copilot's flat `additionalContext` stdout
+contract, not a change to the shared adapter interface itself. Real-install
+verification (ticket [20](20-verify-copilot-adapter-real-install.md))
+confirmed install/session-start injection/uninstall all match documented
+behavior with no discrepancies — the one bug that verification pass found
+was in `init.ts`'s shared prompt copy, not in `copilot.ts` itself.
+`failurePosture`/`payloadCapChars` remain `'unknown'` (not specifically
+exercised in `20`'s pass), keeping the fidelity verdict `best-effort` as
+already reported — unchanged from what this ticket shipped.
 
 ## Comments
 
