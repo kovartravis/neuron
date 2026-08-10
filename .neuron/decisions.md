@@ -439,74 +439,6 @@ taskId: null
 Data-loss bug found and fixed in neuron ticket 31 (2026-08-03), worth remembering as a SHAPE rather than a one-off: a partial one-time migration is worse than no migration, because it sets the marker that says migration already happened. DualStorageRouter.bootstrapSeed exported only the categories declared in neuron.yaml and then wrote meta.md_seeded_at. Nothing in neuron validates --category against the config, so a store routinely holds UNDECLARED categories — neuron scan writes into 'architecture', which scan.category defaults to but no config template is required to declare. Those entries never reached markdown, which looked harmless because the strict mirror never visits an undeclared category either, right up until someone declares it: the mirror then visits a category whose markdown was never written, finds index rows markdown does not have, and deletes them, exactly as designed, on the data the seed skipped. Measured on the CLI before the fix on the vector-only to md to declare-the-category sequence: 1 of 2 entries destroyed, silently. Ticket 31 owns this rather than ticket 29 because before md became the default nobody reached that mode without asking for it. Fix: the seed takes the UNION of requested and stored categories via a new public NeuronMemory.listStoredCategories(); steady-state reconcile still runs on the declared set only, since that is a per-command cost and an undeclared category is inert there. The residual asymmetry — a hand-edit to an undeclared category's .md file is still never mirrored — is recorded as fog on the 2.2.0 map, because the sharp question is one level up: should --category be validated against the config at all.
 
 ---
-id: dff93b46-cf14-993a-2067-2b9e994527b3
-createdAt: 2026-08-03T17:07:17.277Z
-importance: 5
-tags:
-  - architecture
-  - topology
-  - scan
-  - deep
-taskId: null
----
-# 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
-
-## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 14 primary architectural modules.
-
-## 🔬 Parser Fidelity
-Default: `ast/2`
-
-## 🧾 Dependency Contract
-- `@anthropic-ai/sdk`
-- `@huggingface/transformers`
-- `@types/better-sqlite3`
-- `@types/node`
-- `env-paths`
-- `onnxruntime-web`
-- `tsx`
-- `typescript`
-- `vitest`
-- `web-tree-sitter`
-- `yaml`
-- `zod`
-
-## 🔗 Subsystem Dependency Map
-```text
-@kovartravis/neuron
-├── benchmarks (benchmarks)
-├── longmemeval (benchmarks/longmemeval)
-├── src (src)
-├── commands (src/commands)
-├── components (src/components)
-├── config (src/config)
-├── e2e (src/e2e)
-├── harnesses (src/harnesses)
-├── models (src/models)
-├── scanner (src/scanner)
-├── shared (src/shared)
-├── storage (src/storage)
-├── ui (src/ui)
-└── e2e (test/e2e)
-```
-
-## 📦 Primary Subsystems
-- **benchmarks** — `benchmarks` (3 files)
-- **longmemeval** — `benchmarks/longmemeval` (3 files)
-- **src** — `src` (11 files)
-- **commands** — `src/commands` (28 files)
-- **components** — `src/components` (10 files)
-- **config** — `src/config` (10 files)
-- **e2e** — `src/e2e` (1 file)
-- **harnesses** — `src/harnesses` (16 files)
-- **models** — `src/models` (4 files)
-- **scanner** — `src/scanner` (18 files)
-- **shared** — `src/shared` (1 file)
-- **storage** — `src/storage` (13 files)
-- **ui** — `src/ui` (4 files)
-- **e2e** — `test/e2e` (9 files)
-
----
 id: fe17bb3e-e195-4489-9048-3e5bf5f978a5
 createdAt: 2026-08-03T17:13:33.623Z
 importance: 5
@@ -1348,3 +1280,27 @@ tags:
 taskId: null
 ---
 Ticket 38 (neuron-2.3.0, md parser stray-dash cascading data loss) design rationale: reconcileCategory's delete-mirror step in dualStorageRouter.ts gets a non-blocking warning, not a hard tripwire, when a single reconcile pass is about to delete an unusually large fraction (>=20% of a category's rows, with a 5-row floor to avoid noise on tiny categories) of a category's vector rows. ADR 0011 Consequence 2 already settled 'no tripwire, no --force' for this delete step deliberately, reasoning that markdown is authoritative by construction and '.neuron/' is git-recoverable; ticket 38's own root cause (a one-off duplicated-content write, not a systemic formatter bug, closed at the read side by hardening the frontmatter block matcher) supplied evidence for making the class of failure LOUD, not evidence for reopening the settled 'no tripwire' ruling itself, so the two were kept orthogonal. This is deliberately a different posture than ticket 24's (neuron-2.2.0) LLM-judged-deletion false-delete disqualification, which killed model-judged content deletion outright because there was no independent trustworthy source to check against -- here the mechanism is mechanical sync against markdown, which IS the trustworthy source by ADR 0011's own design, so the fix is visibility (MASS_DELETE_WARN_FRACTION stderr warning) rather than a block.
+
+---
+id: f3afac94-886a-47fd-8843-42906fb822d2
+createdAt: 2026-08-10T18:48:58.897Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Wayfinder chartering session on neuron-2.4.0, 2026-08-10: scoping choices made while adding tickets 12-16 to the map. Dogfooding was deliberately split into two independent tracks with different completion bars rather than one effort -- process-rigor (ticket 13, audit gaps like CI never invoking neuron exec despite neuron.yaml's own onExec rule) versus showcase (ticket 16, curate this repo's own .neuron/ store as the demo artifact rather than building a separate demo doc or UI screenshots) -- because manufactured showcase work risks the kind of overstatement the v2.3.0 marketing handoff was explicitly written to avoid; showcase should fall out of real usage, not be chartered as its own performance. Ticket 12 (should neuron exec's pre-command lookup become a harness hook, reopening ADR 0014) was made a hard blocker of ticket 13 rather than run in parallel, so the dogfooding audit doesn't spend effort enumerating gaps against a neuron-exec convention that may be replaced. Mid-session the maintainer reframed the repo-cleanup thread's .scratch/ question into a much larger idea -- ticket 14, whether neuron's own storage should replace .scratch/ as this repo's issue tracker entirely, including migrating 20+ existing efforts -- rather than treating .scratch/ as merely something to tidy in place.
+
+---
+id: e7e75021-035d-4035-aec1-0e53341867f8
+createdAt: 2026-08-10T19:14:31.556Z
+importance: 4
+tags:
+  - enrichment
+  - llm
+  - adr
+taskId: null
+---
+Implementation rulings made while building ADR 0017 (ticket 01, neuron-2.4.0) that the ADR itself didn't spell out: (1) autoDeclareCategory is scoped to op 'upsert'/'update' only, never 'delete' -- matches enforceFieldSchema's existing op guard immediately adjacent to it in transact(), and a delete never 'introduces' a category so declaring one on the way out would be surprising. (2) declareCategoryInNeuronYaml must special-case a neuron.yaml with no top-level 'categories' key at all: NeuronConfigSchema's zod .default(...) for the categories block only fires when the key is fully absent, so auto-vivifying a 'categories' key containing only the new entry would silently discard every implicit default category and break pullRules.default's own category reference. Fixed by seeding DEFAULT_CONFIG.categories explicitly first when doc.get('categories') is undefined, before appending the new entry -- making the implicit set explicit rather than replacing it. (3) The auto-declare write mutates this.config.categories[category] = {} IN PLACE rather than reassigning this.config, deliberately, because DualStorageRouter and MultiRootMdStorage are constructed holding the exact same config object reference as NeuronMemory -- an in-place mutation is what makes 'the rest of the same process sees it as declared immediately' (ADR 0017 item 2) true for those consumers without any extra wiring.

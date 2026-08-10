@@ -11,6 +11,7 @@ import {
   fieldKeyToColumnName,
   isValidColumnIdentifier,
   collectDeclaredFieldFlags,
+  declareCategoryInNeuronYaml,
 } from './neuronYaml.js';
 import { resolveCategoryPath } from './categoryPath.js';
 
@@ -643,6 +644,82 @@ pullRules:
     it('returns an empty array when no category declares fields', () => {
       const config = validateNeuronYaml({ categories: { learning: {} } });
       expect(collectDeclaredFieldFlags(config)).toEqual([]);
+    });
+  });
+
+  function writeYamlProject(yamlBody: string): string {
+    const dir = path.join(tempDir, `declare-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(dir, { recursive: true });
+    const configPath = path.join(dir, 'neuron.yaml');
+    fs.writeFileSync(configPath, yamlBody);
+    return configPath;
+  }
+
+  describe('declareCategoryInNeuronYaml (ADR 0017)', () => {
+    it('appends a minimal flow-style block for an undeclared category, preserving hand-added comments', () => {
+      const yamlBody = `version: "1.0"
+# a hand-written comment the user cares about
+storage:
+  mode: md
+
+categories:
+  learning:
+    description: Agent conventions
+`;
+      const configPath = writeYamlProject(yamlBody);
+      declareCategoryInNeuronYaml(configPath, 'newthing');
+
+      const written = fs.readFileSync(configPath, 'utf8');
+      expect(written).toContain('# a hand-written comment the user cares about');
+      expect(written).toContain('newthing: {}');
+
+      const config = loadNeuronYaml(path.dirname(configPath));
+      expect(config.categories.newthing).toEqual({});
+      expect(config.categories.learning.description).toBe('Agent conventions');
+    });
+
+    it('is a no-op when the category is already declared on disk', () => {
+      const yamlBody = `version: "1.0"
+categories:
+  learning:
+    description: Agent conventions
+`;
+      const configPath = writeYamlProject(yamlBody);
+      const before = fs.readFileSync(configPath, 'utf8');
+      declareCategoryInNeuronYaml(configPath, 'learning');
+      const after = fs.readFileSync(configPath, 'utf8');
+      expect(after).toBe(before);
+    });
+
+    it('auto-vivifies a missing top-level "categories" key', () => {
+      const yamlBody = `version: "1.0"\nstorage:\n  mode: md\n`;
+      const configPath = writeYamlProject(yamlBody);
+      declareCategoryInNeuronYaml(configPath, 'freshcat');
+      const config = loadNeuronYaml(path.dirname(configPath));
+      expect(config.categories.freshcat).toEqual({});
+    });
+  });
+
+  describe('parseNeuronYaml / loadNeuronYaml round-trip fidelity (ADR 0017 Document API)', () => {
+    it('round-trips a config with comments and blank lines with no meaningful loss', () => {
+      const yamlBody = `version: "1.0"
+# top comment
+storage:
+  mode: md # inline comment
+
+categories:
+  learning:
+    description: Agent conventions
+`;
+      const configPath = writeYamlProject(yamlBody);
+      // Reading through loadNeuronYaml must not itself mutate the file...
+      loadNeuronYaml(path.dirname(configPath));
+      expect(fs.readFileSync(configPath, 'utf8')).toBe(yamlBody);
+      // ...and declaring a *different* category preserves both comments.
+      declareCategoryInNeuronYaml(configPath, 'newthing');
+      const written = fs.readFileSync(configPath, 'utf8');
+      expect(written).toContain('# top comment');
+      expect(written).toContain('mode: md # inline comment');
     });
   });
 });

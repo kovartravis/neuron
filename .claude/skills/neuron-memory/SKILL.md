@@ -30,6 +30,18 @@ When asked to set up memory for a project or configure memory settings:
 > wholesale** — it may already carry the user's edits. Change the keys the user
 > asked about and leave the rest alone.
 
+> [!NOTE]
+> **`neuron.yaml` is a file the tool itself can write to, not just the agent
+> (ADR 0017).** Categories stay advisory, not validated: a write against a
+> category `neuron.yaml` doesn't yet declare is never rejected. Instead it
+> auto-appends a minimal `categories.<name>: {}` block to the file on disk
+> (comments and formatting preserved) the first time that category is
+> written. So a `categories` entry with no `description`/`tags` you didn't
+> add yourself is expected, not a sign something else edited the file — it's
+> this hook converging the declared set toward what the store actually
+> contains. `neuron status --repair` backfills any category that already had
+> rows before this hook existed.
+
 1. **Ask & Explain First (Interview Protocol)**:
    Before taking any action or writing configuration files, explain to the user what setup steps will be performed, and ask how they would like memory configured for their project:
    - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).

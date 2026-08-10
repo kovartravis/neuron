@@ -272,3 +272,94 @@ describe('repairFieldCompliance (ticket 13 / ADR 0013)', () => {
     expect(outcomes).toEqual([]);
   });
 });
+
+describe('Category declaration authority (ADR 0017)', () => {
+  beforeAll(() => fs.mkdirSync(tempRoot, { recursive: true }));
+  afterAll(() => fs.rmSync(tempRoot, { recursive: true, force: true }));
+
+  it('auto-declares an undeclared category on its first write, editing neuron.yaml on disk', async () => {
+    const { root, dbPath } = makeProject(YAML_NO_REQUIRED_FIELDS);
+    const memory = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+
+    expect(memory.getConfig().categories.snippets).toBeUndefined();
+    await memory.transact([{ op: 'upsert', category: 'snippets', content: 'a reusable snippet' }]);
+    memory.close();
+
+    expect(memory.getConfig().categories.snippets).toEqual({});
+    const onDisk = fs.readFileSync(path.join(root, 'neuron.yaml'), 'utf8');
+    expect(onDisk).toContain('snippets: {}');
+    // The rest of the file, including comment-free formatting, is untouched.
+    expect(onDisk).toContain('description: Agent conventions');
+  });
+
+  it('does not write to disk a second time for a category declared earlier in the same process', async () => {
+    const { root, dbPath } = makeProject(YAML_NO_REQUIRED_FIELDS);
+    const memory = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+
+    await memory.transact([{ op: 'upsert', category: 'snippets', content: 'first' }]);
+    const afterFirst = fs.readFileSync(path.join(root, 'neuron.yaml'), 'utf8');
+    await memory.transact([{ op: 'upsert', category: 'snippets', content: 'second' }]);
+    const afterSecond = fs.readFileSync(path.join(root, 'neuron.yaml'), 'utf8');
+    memory.close();
+
+    expect(afterSecond).toBe(afterFirst);
+  });
+
+  it('never auto-declares on delete', async () => {
+    const { root, dbPath } = makeProject(YAML_NO_REQUIRED_FIELDS);
+    const memory = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+    await memory.transact([{ op: 'delete', category: 'nevercreated', id: 'no-such-id' }]);
+    memory.close();
+
+    expect(memory.getConfig().categories.nevercreated).toBeUndefined();
+  });
+
+  it('leaves inferred-category behavior unchanged — inference is still hard-constrained to the declared set', async () => {
+    // Regression guard for ADR 0017 Decision 4: this ticket must not touch
+    // matchDeclaredCategory or the centroid path's `declared` set. Omitting
+    // --category on a store with a centroid vocabulary too weak to infer
+    // confidently must still hard-error, not silently land in an undeclared
+    // category.
+    const { root, dbPath } = makeProject(YAML_NO_REQUIRED_FIELDS);
+    const memory = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+    await expect(
+      memory.transact([{ op: 'upsert', content: 'no category given, cold store, no centroids yet' }])
+    ).rejects.toThrow(/--category is required/);
+    memory.close();
+  });
+
+  it('checkUndeclaredCategories finds a category with real rows but no neuron.yaml entry', async () => {
+    const { root, dbPath } = makeProject(YAML_NO_REQUIRED_FIELDS);
+    // Bypass transact() (and its auto-declare hook) to simulate a pre-upgrade
+    // store: rows already exist under a category the config never declared.
+    const memory1 = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+    await memory1.transactVector([{ op: 'upsert', category: 'legacy', content: 'a pre-upgrade row' }]);
+    memory1.close();
+
+    const memory2 = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+    const undeclared = await memory2.checkUndeclaredCategories();
+    memory2.close();
+
+    expect(undeclared).toEqual(['legacy']);
+  });
+
+  it('repairUndeclaredCategories declares every category checkUndeclaredCategories finds', async () => {
+    const { root, dbPath } = makeProject(YAML_NO_REQUIRED_FIELDS);
+    const memory1 = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+    await memory1.transactVector([{ op: 'upsert', category: 'legacy', content: 'a pre-upgrade row' }]);
+    memory1.close();
+
+    const memory2 = openAt(root, dbPath, YAML_NO_REQUIRED_FIELDS);
+    const declared = await memory2.repairUndeclaredCategories();
+    expect(declared).toEqual(['legacy']);
+    expect(memory2.getConfig().categories.legacy).toEqual({});
+    memory2.close();
+
+    const onDisk = fs.readFileSync(path.join(root, 'neuron.yaml'), 'utf8');
+    expect(onDisk).toContain('legacy: {}');
+
+    const memory3 = openAt(root, dbPath, fs.readFileSync(path.join(root, 'neuron.yaml'), 'utf8'));
+    expect(await memory3.checkUndeclaredCategories()).toEqual([]);
+    memory3.close();
+  });
+});

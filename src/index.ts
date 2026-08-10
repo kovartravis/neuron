@@ -37,6 +37,8 @@ import { DualStorageRouter } from './storage/dualStorageRouter.js';
 import { MultiRootMdStorage } from './storage/multiRootMdStorage.js';
 import {
   loadNeuronYaml,
+  findNeuronYaml,
+  declareCategoryInNeuronYaml,
   NeuronConfig,
   fieldKeyToFlagName,
   fieldKeyToColumnName,
@@ -109,6 +111,14 @@ export class NeuronMemory {
    * there is exactly one derivation of "key → column" per process.
    */
   private fieldColumns: Array<{ key: string; column: string }>;
+  /**
+   * Absolute path to this project's `neuron.yaml`, or `null` if none was
+   * found (a project running on `DEFAULT_CONFIG`). ADR 0017's auto-declare
+   * hook writes back through this path; `null` means there is no file on
+   * disk to append to, so the hook only updates the in-memory config for
+   * the rest of this process.
+   */
+  private configPath: string | null;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -118,9 +128,10 @@ export class NeuronMemory {
       .update(options.projectRoot)
       .digest('hex')
       .slice(0, 16);
-    
+
     this.embedder = options.embedder ?? new TransformersEmbedder();
 
+    this.configPath = findNeuronYaml(options.projectRoot);
     const discovered = loadNeuronYaml(options.projectRoot);
     const config: NeuronConfig = options.storageMode
       ? { ...discovered, storage: { ...discovered.storage, mode: options.storageMode } }
@@ -829,9 +840,65 @@ export class NeuronMemory {
     const enriched: MemoryMutation[] = [];
     for (const m of mutations) {
       const afterEnrichment = m.op === 'upsert' ? await this.enrichUpsert(m) : m;
+      this.autoDeclareCategory(afterEnrichment);
       enriched.push(this.enforceFieldSchema(afterEnrichment));
     }
     return this.router.transact(enriched);
+  }
+
+  // --- Category declaration authority (ADR 0017) -----------------------------
+
+  /**
+   * Converges `neuron.yaml`'s declared set toward the store's actual
+   * contents, in memory and (when a config file exists) on disk. A no-op if
+   * `category` is already declared, which also covers "already auto-declared
+   * earlier in this same process" — the in-memory update below makes the
+   * second call see it as declared before a second file write is ever
+   * attempted.
+   */
+  private declareCategory(category: string): void {
+    if (this.config.categories[category]) return;
+    this.config.categories[category] = {};
+    if (this.configPath) {
+      declareCategoryInNeuronYaml(this.configPath, category);
+    }
+  }
+
+  /**
+   * ADR 0017 Decision 1: the first write that introduces an undeclared
+   * category auto-declares it. Scoped to `upsert`/`update` — the two ops
+   * that carry a category a caller has deliberately chosen (explicitly, or
+   * via enrichment above), matching `enforceFieldSchema`'s own op guard
+   * immediately below. `delete` never introduces a category, so it is
+   * excluded rather than silently declaring one on the way out.
+   */
+  private autoDeclareCategory(m: MemoryMutation): void {
+    if (m.op !== 'upsert' && m.op !== 'update') return;
+    this.declareCategory(resolveCategory(m));
+  }
+
+  /**
+   * Every category holding live rows in the store but absent from
+   * `neuron.yaml` — ADR 0017 Decision 6's backfill target, for a category
+   * that predates the auto-declare-on-write hook (this repo's own
+   * pre-alias-revert `architecture` category was the motivating instance).
+   * Reported as its own finding kind, distinct from `checkFieldCompliance`'s
+   * per-entry violations, since it's a config-file drift, not an entry defect.
+   */
+  public async checkUndeclaredCategories(): Promise<string[]> {
+    if (!this.db) return [];
+    // Force a reconcile first, same pattern `checkFieldCompliance` uses, so
+    // md-mode categories are visible in the SQLite mirror `listStoredCategories`
+    // reads from directly.
+    await this.router.query({ limit: 0 });
+    return this.listStoredCategories().filter((category) => !this.config.categories[category]);
+  }
+
+  /** Declares every category `checkUndeclaredCategories` finds, and reports which ones. */
+  public async repairUndeclaredCategories(): Promise<string[]> {
+    const undeclared = await this.checkUndeclaredCategories();
+    for (const category of undeclared) this.declareCategory(category);
+    return undeclared;
   }
 
   // --- Declared field-schema enforcement (ticket 43 / ADR 0013) -------------

@@ -92,6 +92,40 @@ thin.
   install checks. True frontier here is now `01`, `06`, `08` (all unclaimed
   and unblocked); `02`, `04`, `05` are claimed and in progress; `03`, `07`,
   `09`, `10`, `11` are blocked.
+- **Breadth-first grilling session, 2026-08-10**, chartering two new
+  threads the maintainer brought directly rather than a full re-charter of
+  the whole map: "dogfood neuron everywhere possible" and "clean up the
+  repo so it reads well." Split into five tickets:
+  - [12 — Should `neuron exec`'s Pre-Command Lookup Become a Hook
+    Instead?](issues/12-precommand-hook-vs-exec.md) — graduated from this
+    map's own standing fog item once its prerequisite (Copilot/Cursor
+    adapters shipping on neuron-2.3.0) was confirmed resolved. Unblocked;
+    blocks `13`.
+  - [13 — Audit: Dogfooding Gaps in This
+    Repo](issues/13-audit-dogfooding-gaps.md) — process-rigor track of the
+    dogfooding thread. Blocked by `12` at the maintainer's request, so it
+    audits against whatever pre-command mechanism `12` lands on rather than
+    the convention it might replace.
+  - [14 — Design: Should Neuron Replace `.scratch/` as This Repo's Issue
+    Tracker?](issues/14-neuron-as-tracker-design.md) — raised by the
+    maintainer mid-session when asked whether `.scratch/` itself was in
+    scope for the cleanup thread; reframes both new threads at once
+    (dogfooding the tracker itself, and removing most of what makes
+    `.scratch/` look sprawling). Includes deciding how/whether to migrate
+    the 20+ existing `.scratch/` efforts. Unblocked.
+  - [15 — Audit: Repo Cleanup Punch List](issues/15-audit-repo-cleanup-punch-list.md)
+    — code readability + repo hygiene sweep (root-level stray docs, the
+    untracked `tmp/` dir, `src/` structure). Explicitly excludes `.scratch/`
+    itself, which `14` now governs. Unblocked.
+  - [16 — Curate This Repo's `.neuron/` Store as the
+    Showcase](issues/16-curate-neuron-store-showcase.md) — showcase track of
+    the dogfooding thread; the maintainer's chosen deliverable is the
+    repo's own store, not a separate demo doc. Blocked by `13` and `14`,
+    since both change what the store looks like by the time this runs.
+
+  True frontier as of this session: `01`, `06`, `08`, `12`, `14`, `15` (all
+  unclaimed and unblocked); `02`, `04`, `05` claimed and in progress; `03`,
+  `07`, `09`, `10`, `11`, `13`, `16` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -106,7 +140,7 @@ thin.
 
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
 
-(none yet — this map has not resolved any of its own tickets)
+- [01 — Implement Category Declaration Authority](issues/01-implement-category-declaration-authority.md) — built ADR 0017 end to end: `neuron.yaml` I/O moved to the `yaml` package's `Document` API, an auto-declare hook in `NeuronMemory.transact()` appends a minimal `categories.<name>: {}` block on first write to an undeclared category (comments/formatting preserved), `neuron status --check`/`--repair` gained a distinct `undeclaredCategories` finding kind for pre-existing backfill, and this repo's own `scan: category: decisions` alias was reverted and re-verified live (`categories.architecture: {}` auto-declared for real). Found and fixed a real bug along the way: auto-vivifying a `categories` key on a file that had none at all would have silently dropped the schema's implicit default category set.
 
 ## Not yet specified
 
@@ -189,15 +223,6 @@ thin.
   hundred entries; wants a cached centroid table or an index long before
   it's a real problem. Not ticketed because the trigger — what store size
   actually hurts — has not been measured.
-- **Should `neuron exec`'s pre-command lookup also become a hook?** Moved
-  from neuron-2.3.0 2026-08-10. Step 1 of the deterministic protocol block
-  (Command Execution) still asks the agent to wrap commands.
-  neuron-2.3.0's `10` confirmed every harness exposes *some*
-  `PreToolUse`-equivalent, so the prerequisite fact is known — but whether
-  to build on it is an adapter-architecture design call, and touching it
-  would mean reopening ADR 0014 rather than extending it. Best scoped as its
-  own ticket once `01`/`02` (the Copilot/Cursor adapters, on neuron-2.3.0)
-  make the question concrete, if ever.
 - **Confidently-wrong retrieval is unowned.** Moved from neuron-2.3.0
   2026-08-10. A `neuron-2.2.0` measurement found raw cosine *inverted* on
   wrong answers — top-1 cosine on queries retrieval got wrong (mean 0.7779)
