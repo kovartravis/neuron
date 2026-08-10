@@ -1178,6 +1178,36 @@ showing neuron's measured effect (favorable or not) versus raw harness, and
   whichever session picks it back up next. `npm test` 587/587 (no `src/`
   changes); `tsc --noEmit` clean. Frontier is now `20`, `22`, `28`, `32`,
   `39`.
+- **[39 — Git-Log Index: Refresh Mechanism and Search
+  Primitive](issues/39-git-log-index-design.md) resolved 2026-08-10,**
+  grilling all five original Scope items plus two it surfaced mid-session.
+  **Overturned its own original framing**: a small offline, zero-spend
+  comparison against `14`'s three real tasks
+  (`benchmarks/token-ab/results/39-git-log-term-extraction-ab/compare.mjs`)
+  found that no purely extractive method (tried both `Intl.Segmenter` word
+  candidates and a `compromise` noun-phrase candidate, both ranked by
+  embedding similarity) can reach `14`'s hand-verified `gitLogQuery` terms —
+  near-zero overlap on all three tasks, because those gold terms are
+  internal code-symbol names (`DualStorageRouter`, `rollEpoch`) that never
+  appear in the prompt's own words at all. `14`'s favorable result was
+  measured against an oracle, not a mechanism that could actually ship.
+  Ruled semantic embedding match instead of `git log --grep`: a new
+  `git_log_index` SQLite table (hash/subject/body/embedding BLOB), searched
+  by the same in-process linear dot-product scan `memories`/`query()`
+  already uses — no new dependency (the `compromise` install was reverted),
+  no markdown mirror (git itself is the source of truth; inline reasoning
+  in `39`'s own Answer rather than a new ADR). Refresh: check-HEAD-on-read,
+  incremental, one-time full-history backfill. Injection: pre-prompt only,
+  gated by the existing ADR 0012 relevance machinery (silence beats a weak
+  top-K). `history` write step: supplement, not replace — replace stays
+  deferred until commit-less entries have a real home. Ticket-number
+  collision across concurrent maps (inherited from `14`/`40`'s own Context):
+  accepted as a disclosed limitation, not solved here. Unblocks `40`.
+  Graduated [43 — Re-run the Git-Log A/B Against the Real (Semantic)
+  Mechanism](issues/43-rerun-gitlog-ab-semantic-mechanism.md), blocked by
+  `40`, at the maintainer's direct request — `14`'s numbers cannot be
+  assumed to carry over to the real mechanism and need their own
+  measurement. Frontier is now `20`, `22`, `28`, `32`, `40`.
 
 ## Not yet specified
 

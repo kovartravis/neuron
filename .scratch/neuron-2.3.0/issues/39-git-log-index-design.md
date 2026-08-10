@@ -1,5 +1,5 @@
 Type: grilling
-Status: unclaimed
+Status: resolved
 Blocked by: (none)
 Band: context cost
 
@@ -78,5 +78,31 @@ existing memory store) now that it's not just a measurement prototype.
 
 ## Deliverables
 
-- [ ] Rulings on all five Scope items, grilled with the maintainer
-- [ ] Unblocks [40 — Implement the Git-Log Index](40-implement-git-log-index.md)
+- [x] Rulings on all five Scope items, grilled with the maintainer
+- [x] Unblocks [40 — Implement the Git-Log Index](40-implement-git-log-index.md)
+
+## Answer
+
+Grilled all five original Scope items with the maintainer via `AskUserQuestion`. Item 3's answer overturned an assumption mid-session, which reopened item 1 and required two follow-on questions beyond the original five — recorded together below.
+
+**1. Refresh mechanism: check-HEAD-on-read, incremental, with a one-time backfill.** Compare a stored last-indexed commit SHA against `git rev-parse HEAD` at session-start/pre-prompt; embed only the commits since that SHA. First-ever run on a given repo pays a one-time full-history backfill (every commit gets embedded once); steady-state cost after that is proportional to commits-since-last-turn, not repo size. No install step, can't be silently bypassed — same reasoning as the map's original working lean, now load-bearing rather than moot (see item 3).
+
+**2. Replace vs. supplement: supplement, for now.** The `history` write step in `sessionEndStep()` (`src/config/protocolBlock.ts`) stays exactly as-is. A full replace is explicitly **deferred**, not ruled out — it needs a real home for commit-less entries (pure narrative/decision content with no matching commit, which this repo's own `.neuron/history.md` has real examples of) before it can be considered, and that's a separate, not-yet-chartered design question. Whoever eventually tackles replace should treat "where do commit-less entries go" as its own prerequisite ticket, not something to solve inline.
+
+**3. Storage/search primitive: semantic embedding match, not `git log --grep`** — this is a real revision of the ticket's own framing, not a straightforward pick between the two options originally scoped. Built and ran a small offline, zero-spend comparison (`benchmarks/token-ab/results/39-git-log-term-extraction-ab/compare.mjs`) against ticket 14's own three real tasks, each of which has a maintainer-hand-verified `gitLogQuery` (e.g. `['DualStorageRouter', 'reseed', 'strict mirror']`) that ticket 14 confirmed surfaces the right commit. Tested two ways of deriving `--grep` terms automatically from the raw prompt (`Intl.Segmenter` word candidates vs. `compromise` noun-phrase candidates, both ranked by embedding cosine similarity to the whole prompt) — **both scored near-zero overlap against the verified terms on all three tasks.** Root cause, confirmed by inspecting the actual commits each method surfaced: ticket 14's gold terms are internal code-symbol names (`DualStorageRouter`, `rollEpoch`, `clearLedger`) that **never appear in the prompt's own words at all** — they're vocabulary a domain expert would know to search for only after already knowing the answer, not something any purely extractive method can recover from the question text. This means ticket 14's favorable result was measured against an oracle, not the mechanism that could actually ship — a real, previously-undisclosed gap in what `14` had shown.
+
+Ruled instead: embed each commit's subject+body once into a new `git_log_index` SQLite table in neuron's existing DB (columns: hash, subject, body, embedding BLOB, committed_at, last-indexed-SHA meta), searched with the exact same in-process linear dot-product scan `memories`/`query()` already uses (embeddings are pre-normalized, so dot product is cosine similarity) — no new infra, no ANN index, no new dependency. At query time, embed the prompt and rank indexed commits by similarity. This sidesteps the vocabulary-mismatch problem entirely, the same way ordinary `memory.query({text: prompt})` already does for memory content.
+
+**No markdown mirror, and no ADR.** Unlike `memories`, `git_log_index` has no markdown counterpart — git itself, already versioned on disk, is the source of truth; this table is a derived cache over content that already exists elsewhere, not authoritative content neuron owns. ADR 0011/0016's md/vector storage-mode vocabulary doesn't apply to it, and no existing documented contract (ADR 0011, 0014, 0016) changes as a result — this is a new, separate mechanism alongside them, not a revision to any of them. Confirmed with the maintainer that this reasoning belongs inline here, not a new ADR (the same call `09` made about ADR 0014).
+
+**Consequence for the term-extraction sub-question this ticket's own grilling opened: moot.** Semantic match needs no discrete `--grep` terms — it embeds the whole (cleaned) prompt directly, the same input `memory.query` already takes. The `compromise` npm dependency installed mid-session to run the comparison above was uninstalled once semantic match was ruled; `package.json` has no new dependency from this ticket. Reusing the prompt embedding `hook.ts`'s ordinary pre-prompt relevance query already computes (rather than embedding the prompt a second time) is a real efficiency opportunity, but it's an implementation detail for `40`, not a structural decision — `memory.query()` has no exposed precomputed-embedding parameter today, so `40` will decide whether that's worth adding or whether a second local embed call (cheap, no network/LLM cost) is simply acceptable.
+
+**4. Injection point: pre-prompt only, keyed off the prompt's own embedding.** Same reasoning as originally scoped — ticket 14's own tasks were pre-prompt-shaped (a real question needing a specific past decision), and there's no natural query to embed against at session-start (no prompt exists yet). Unaffected by item 3's revision.
+
+**5. Scope: full history, bounded output only.** The index backfills every commit once (item 1), so "full history" no longer carries a live per-turn cost the way an unbounded live `git log --all` shell-out would have under the original grep framing — the ongoing cost is indexing new commits since last check, not searching the whole history every turn. Output stays bounded: top-K matches (mirroring `gitlog-search.mjs`'s `maxCommits=6`), each truncated (mirroring its `bodyChars=240`) — exact constants are `40`'s to tune, not a structural ruling.
+
+**6. Relevance gating (surfaced mid-session, not one of the original five).** The semantic search reuses the existing ADR 0012 relevance-gate machinery rather than always injecting its top-K regardless of score — silence on a genuinely unrelated prompt beats injecting weakly-related commits just because something has to rank #1, the same posture ordinary memory recall already takes.
+
+**7. Ticket-number collision across concurrent wayfinder maps (inherited from `14`'s own findings, surfaced again via `40`'s Context, not one of the original five).** Ruled to accept as a disclosed limitation for now, not solve in this ticket. No map/directory metadata exists on a commit to disambiguate from — a commit message just says "ticket 14," and semantic match is exactly as capable of conflating two same-numbered tickets from different maps as literal grep was (this repo's own commit convention, `(ticket N, <map-slug>)`, could resolve it in a future ticket, but that's new scope this one didn't chart). Ship with an explicit caveat in the injected note, same posture `gitlog-search.mjs`'s prototype already takes ("may be incomplete, verify yourself").
+
+Unblocks [40 — Implement the Git-Log Index](40-implement-git-log-index.md). Graduated [43 — Re-run the Git-Log A/B Against the Real (Semantic) Mechanism](43-rerun-gitlog-ab-semantic-mechanism.md), blocked by `40`, since `14`'s original favorable numbers were measured against oracle search terms this ticket's own evidence shows the real mechanism cannot reach on its own — the real mechanism needs its own measurement, not an inherited one.
