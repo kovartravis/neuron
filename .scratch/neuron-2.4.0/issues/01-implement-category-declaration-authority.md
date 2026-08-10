@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: (none)
 Band: seed
 
@@ -86,14 +86,82 @@ Per ADR 0017's Decision section:
 
 ## Deliverables
 
-- [ ] `neuron.yaml` read/write switched to `yaml`'s `Document` API
-- [ ] Auto-declare hook in `NeuronMemory.transact()`
-- [ ] `neuron status --check`/`--repair` extended to detect/declare
+- [x] `neuron.yaml` read/write switched to `yaml`'s `Document` API
+- [x] Auto-declare hook in `NeuronMemory.transact()`
+- [x] `neuron status --check`/`--repair` extended to detect/declare
       pre-existing undeclared categories
-- [ ] This repo's own `scan.category` alias reverted and re-verified
-- [ ] Docs swept (`docs/COMMANDS.md`, `CONTEXT.md`, packaged skill)
-- [ ] Tests per Verification section; `npm test` green
+- [x] This repo's own `scan.category` alias reverted and re-verified
+- [x] Docs swept (`docs/COMMANDS.md`, `CONTEXT.md`, packaged skill)
+- [x] Tests per Verification section; `npm test` green
 
 ## Answer
 
-_Pending._
+Built exactly against ADR 0017's Decision section, all six items:
+
+1. **`neuron.yaml` I/O on the `Document` API.** `parseNeuronYaml`/`loadNeuronYaml`
+   (`src/config/neuronYaml.ts`) now parse via `parseDocument(...).toJSON()`
+   instead of the plain `parse()`. New export `declareCategoryInNeuronYaml(configPath, category)`
+   re-reads the file fresh via `parseDocument`, no-ops if already declared
+   (`doc.getIn(['categories', category]) !== undefined`), and otherwise
+   `setIn`s a flow-style empty `YAMLMap` (`categories.<name>: {}`) and writes
+   `doc.toString()` back — comments, key order and formatting survive.
+
+   **Real bug found and fixed while testing this**: a `neuron.yaml` with no
+   top-level `categories` key at all relies on `NeuronConfigSchema`'s Zod
+   `.default(...)` for the whole block, which only fires when the key is
+   *absent*. Auto-vivifying `categories.<name>` via `setIn` on such a file
+   makes the key *present* with only the new entry, silently dropping every
+   implicit default category and breaking `pullRules.default`'s own
+   category reference. Fixed by seeding `DEFAULT_CONFIG.categories`
+   explicitly first when `doc.get('categories') === undefined`, before
+   appending the new category on top. Recorded as a `learning` entry.
+
+2. **Auto-declare hook.** `NeuronMemory.transact()` (`src/index.ts`) now
+   calls a private `autoDeclareCategory(m)` between `enrichUpsert` and
+   `enforceFieldSchema`, scoped to `op === 'upsert' | 'update'` (matches
+   `enforceFieldSchema`'s own op guard; `delete` never introduces a
+   category). It delegates to `declareCategory(category)`, which mutates
+   `this.config.categories[category] = {}` **in place** — `DualStorageRouter`
+   and `MultiRootMdStorage` hold the exact same config object reference, so
+   they see the declaration immediately with no extra wiring — then writes
+   to disk via `declareCategoryInNeuronYaml` if `this.configPath` (tracked
+   from `findNeuronYaml` at construction) is non-null. The in-memory check
+   makes a second write for the same category in the same process a no-op
+   before the disk-write path is ever reached.
+
+3. **Minimal blocks.** `categories.<name>: {}`, no invented description or
+   tags — a flow-style empty `YAMLMap`, not a block mapping.
+
+4. **Inference untouched.** Neither `matchDeclaredCategory`
+   (`enricher.ts`) nor the centroid path's `declared` set were touched.
+   Regression test asserts an omitted `--category` on a cold store (no
+   centroids yet) still hard-errors naming the cause, not silently landing
+   in an undeclared category.
+
+5. **This repo's own alias reverted, live.** Removed `scan: category: decisions`
+   from this repo's `neuron.yaml`. Running `neuron exec -- npm run build`
+   (which triggers `autoRescanIfDriftDetected`) live-declared
+   `categories.architecture: {}` for real — confirmed via `neuron status --check`
+   returning `{"compliant":true,"violations":[],"undeclaredCategories":[]}`.
+   One stale architecture-blueprint card left orphaned in `decisions.md`
+   from before the revert (the old alias-era scan write) was found and
+   deleted via `neuron memory delete`.
+
+6. **Docs disclosed.** `docs/COMMANDS.md` (a `[!NOTE]` on the Configuration
+   section, plus the `neuron status` `--check`/`--repair` table), `CONTEXT.md`
+   (new "category declaration authority (ADR 0017)" glossary entry), and the
+   packaged `.claude/skills/neuron-memory/SKILL.md` (a `[!NOTE]` in the
+   setup-interview section) all now disclose that `neuron.yaml` is a file
+   the tool writes to, not just reads.
+
+`neuron status --repair`/`--check` also gained `checkUndeclaredCategories`/
+`repairUndeclaredCategories` (`src/index.ts`), surfaced as a distinct
+`undeclaredCategories` JSON key — separate from `checkFieldCompliance`'s
+per-entry `violations` — for the backfill case (item 6 of the ADR): a
+category with real rows predating this hook.
+
+Verification: full suite (604 tests, including new coverage in
+`neuronYaml.test.ts`, `statusCheckRepair.test.ts`, `commands/status.test.ts`)
+and `tsc --noEmit` both green, run via `neuron exec --` per this repo's own
+protocol. Live dogfood run on this repo's real store confirmed the end-to-end
+behavior, not just fixtures.

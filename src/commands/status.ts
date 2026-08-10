@@ -26,15 +26,24 @@ export async function handleStatusCommand(memory: NeuronMemory, args: string[] =
 
   if (options.repair) {
     const repaired = await memory.repairFieldCompliance();
-    console.log(JSON.stringify({ repaired }));
+    // ADR 0017 Decision 6: a distinct finding kind from `repaired` — config-file
+    // drift (a category with real rows but no neuron.yaml entry), not a
+    // per-entry field defect.
+    const declaredCategories = await memory.repairUndeclaredCategories();
+    console.log(JSON.stringify({ repaired, declaredCategories }));
     if (repaired.some((o) => o.unresolved.length > 0)) process.exitCode = 1;
     return;
   }
 
   if (options.check) {
     const violations = await memory.checkFieldCompliance();
-    console.log(JSON.stringify({ compliant: violations.length === 0, violations }));
-    if (violations.length > 0) process.exitCode = 1;
+    const undeclaredCategories = await memory.checkUndeclaredCategories();
+    console.log(JSON.stringify({
+      compliant: violations.length === 0 && undeclaredCategories.length === 0,
+      violations,
+      undeclaredCategories,
+    }));
+    if (violations.length > 0 || undeclaredCategories.length > 0) process.exitCode = 1;
     return;
   }
 

@@ -3380,3 +3380,27 @@ tags:
 taskId: "04"
 ---
 v2.3.0 published for real, 2026-08-10 -- neuron-2.3.0's destination reached. Ticket 04's full cut checklist run against the real built binary: four-harness claim-vs-behaviour audit (harnessFidelity matched every adapter's capability() verdict exactly), config-safety matrix across all four adapters simultaneously (idempotent install, clean uninstall, no double-injection -- verified with a scratch project carrying .claude/.codex/.github/.cursor markers all at once), and a live pre-2.3.0 upgrade test (storage.mode: split plus a category's storage: dual) confirming zero data loss under the new binary. package.json bumped 2.3.0-rc2 to 2.3.0; CHANGELOG's [2.3.0] entry written superseding rc1/rc2. feat/2.3.0-rc3 fast-forwarded onto main and pushed (branch protection ruleset bypassed for the maintainer's own push, same as ticket 34's precedent), v2.3.0 tagged and pushed, the OIDC publish workflow (run 31392550964) went green in 3 minutes, independently confirmed against the live registry via npm view (dist-tags.latest: '2.3.0') rather than trusting the checkmark alone. One pre-existing disclosed limitation carried forward rather than fixed: concurrency-stress.test.ts's Pillar 8 reproduced three times during the cut with three different error signatures (dropped write, no column named scope, duplicate column name superseded_by), confirming a genuine concurrent SQLite migration race rather than one specific bug -- same disclosed-not-blocking posture 2.2.0's own CHANGELOG already took on this exact pillar. Also wrote a marketing handoff doc (.scratch/neuron-2.3.0/handoff-marketing.md) summarizing the release pitch, sourced proof points with caveats attached, and an explicit 'don't claim this' section (Cursor unverified, no universal token-savings multiplier, git-log A/B not a settled win) for whoever writes external release copy. This closes out the neuron-2.3.0 map entirely -- no further session needed on it.
+
+---
+id: 5534d4d1-6912-48d5-b334-923bf6d1e556
+createdAt: 2026-08-10T18:48:48.957Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: neuron-2.4.0
+---
+Wayfinder session on the neuron-2.4.0 map: ran a breadth-first grilling session on the maintainer's two loose ideas ('dogfood neuron everywhere possible' and 'clean up the repo for readability') and chartered five new tickets (12-16) rather than resolving any existing frontier ticket. Split dogfooding into a process-rigor audit track (13, blocked by 12) and a separate showcase track (16, the repo's own .neuron/ store as the demo, blocked by both audits). Graduated the map's standing hook-vs-exec fog item into ticket 12 (Should neuron exec's pre-command lookup become a hook instead?) since its stated prerequisite -- the Copilot/Cursor adapters shipping on neuron-2.3.0 -- was confirmed resolved. Mid-session, asking whether .scratch/ itself was in scope for cleanup surfaced a much bigger idea from the maintainer: replace .scratch/ as the tracker with neuron's own storage, chartered as ticket 14 (grilling type, HITL, includes deciding how to migrate 20+ existing .scratch/ efforts). True frontier is now 01, 06, 08, 12, 14, 15.
+
+---
+id: 07e51227-63f4-494b-8a63-08dcc4bee989
+createdAt: 2026-08-10T19:14:15.839Z
+importance: 4
+tags:
+  - rc2
+  - memory
+  - 2.2.0
+taskId: "01"
+---
+Wayfinder pickup session on the neuron-2.4.0 map: claimed and resolved ticket 01 (Implement Category Declaration Authority), building ADR 0017's design end to end. Switched src/config/neuronYaml.ts's I/O to the yaml package's Document API (parseNeuronYaml/loadNeuronYaml now use parseDocument().toJSON()) and added declareCategoryInNeuronYaml, a comment-and-formatting-preserving round-trip writer that appends a minimal 'categories.<name>: {}' flow-style block. Wired an auto-declare hook into NeuronMemory.transact() (scoped to upsert/update, mutating this.config.categories in place so DualStorageRouter and MultiRootMdStorage -- which share the same config object reference -- see it immediately, with a configPath tracked from findNeuronYaml at construction so the disk write is skipped cleanly when no neuron.yaml exists). Extended neuron status --check/--repair with checkUndeclaredCategories/repairUndeclaredCategories, reported as a distinct 'undeclaredCategories' finding kind separate from per-entry field violations. Left inferred-category strictness (matchDeclaredCategory, the centroid declared set) completely untouched per ADR 0017 Decision 4, with a regression test asserting omitted --category on a cold store still hard-errors. Swept docs/COMMANDS.md, CONTEXT.md, and the packaged .claude/skills/neuron-memory/SKILL.md to disclose neuron.yaml is now tool-writable. Reverted this repo's own scan.category: decisions alias (ADR 0017 Decision 5) and ran a real neuron scan live: categories.architecture: {} auto-declared for real in neuron.yaml, confirmed via neuron status --check reporting compliant:true, undeclaredCategories:[]. Found and deleted one stale orphaned architecture-blueprint card left in decisions.md from before the alias revert (old scan writes had landed there under the alias). Full suite (604 tests) and tsc both green. Resolved ticket 01, appended the Decisions-so-far entry to the neuron-2.4.0 map; frontier now advances to 06, 08, 12, 14, 15.

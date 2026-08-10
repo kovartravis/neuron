@@ -2325,3 +2325,15 @@ tags:
 taskId: null
 ---
 Fix for misleading hook-target prompt during 'neuron init': running init for a non-Claude harness (e.g. Copilot CLI) still showed a prompt naming .claude/settings.json paths for all three project-committed/project-local/user-global choices, discovered while doing ticket 20's real-install verification of the Copilot adapter. Root cause: resolveHookTarget in src/commands/init.ts hardcoded Claude Code's file paths in its interactive prompt copy even though this prompt is asked once per init run and applies across every harness being wired (ADR 0014 section 6) -- the actual write was always correct (CopilotAdapter.install() resolves its own real path via targetFilePath(), and the final JSON output's 'installed' field reports it truthfully), only the prompt text was wrong. Fixed by rewriting the three prompt lines to describe the scopes generically (committed/gitignored/user-wide) instead of one harness's concrete file names, and pointing users to the post-install report for exact paths -- no change needed in copilot.ts or any other adapter, this was purely init.ts copy shared incorrectly across harnesses. Edge case: any future harness-specific interactive copy in init.ts (there is currently none) should stay generic or be built dynamically from the adapters actually selected for that run, rather than hardcoding one harness's paths.
+
+---
+id: b742cf51-6d9a-4f65-99b1-bc15a811e12d
+createdAt: 2026-08-10T19:14:00.505Z
+importance: 4
+tags:
+  - llm
+  - enrichment
+  - memory
+taskId: null
+---
+Fix for declareCategoryInNeuronYaml (ADR 0017) silently dropping a config's implicit default categories: a neuron.yaml with no top-level 'categories' key relies on NeuronConfigSchema's zod .default(...) for the whole block, which only applies when the key is fully ABSENT from the parsed object. The initial implementation used the yaml package's Document.setIn(['categories', name], emptyMap) to auto-declare a category, which auto-vivifies a 'categories' key containing ONLY the new entry -- making the key present, so zod's default no longer fires, silently discarding every implicit default category (learning/history/decisions/architecture) and breaking pullRules.default's own category reference. Caught by a targeted unit test (auto-vivifies a missing top-level categories key) that round-tripped the write through loadNeuronYaml and asserted on the full config, not just the new key. Fix: before setIn-ing the new category, check doc.get('categories') === undefined; if so, seed the same DEFAULT_CONFIG.categories entries explicitly first via doc.setIn(['categories', name], cfg) for each, making the implicit set explicit, then append the new category on top.

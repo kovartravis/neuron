@@ -407,14 +407,21 @@ export const STATUS_HELP = `Usage: neuron status [flags]
 
 With no flags, prints database/model/storage/enrichment/drift status as JSON.
 
-With --check or --repair, reports on entries whose category's *currently*
-declared field schema (neuron.yaml categories.<name>.fields) they violate —
-most commonly a field that was declared required after the entry was
-written. Reads never hard-error on this; these flags are the only surface
-that reports it (ADR 0013).
+With --check or --repair, reports two independent kinds of drift:
+
+1. Entries whose category's *currently* declared field schema (neuron.yaml
+   categories.<name>.fields) they violate — most commonly a field that was
+   declared required after the entry was written. Reads never hard-error on
+   this; these flags are the only surface that reports it (ADR 0013).
+2. Categories holding live rows in the store but absent from neuron.yaml's
+   own "categories" block — config-file drift rather than a per-entry
+   defect, reported separately (ADR 0017). Most writes never reach this: a
+   category missing from neuron.yaml auto-declares itself on its first
+   write (neuron.yaml is edited on disk, comments and formatting preserved).
+   This only catches categories that predate that auto-declare hook.
 
 Options:
-  --check                        List entries missing a currently-required field
+  --check                        List field violations and undeclared categories
   --repair                       Fix what's safely fixable and report the result
 
 --repair applies a configured "default:" where one exists, and otherwise
@@ -424,7 +431,9 @@ fabricates a value for a free-text identity field (e.g. "reviewedBy",
 "ticket") — there is no content signal that could produce a person's name or
 a ticket number. Those, and any enum field with no other entry to build a
 confident centroid from yet, come back unresolved for a human or an agent
-told to go find the real answer.
+told to go find the real answer. Undeclared categories are always safely
+fixable — repair declares each one with a minimal "categories.<name>: {}"
+block, no invented description or tags.
 
 Exit codes (--check / --repair):
   0                              Compliant, or every violation repaired

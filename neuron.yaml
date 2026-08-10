@@ -24,12 +24,11 @@ categories:
       - adr
       - architecture
       - design
+  architecture: {}
 
 scan:
   enabled: true
-  category: decisions
   depth: 3
-
 
 pullRules:
   default:

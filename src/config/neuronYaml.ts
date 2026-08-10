@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { parse as parseYaml } from 'yaml';
+import { parseDocument, YAMLMap } from 'yaml';
 import { z } from 'zod';
 import { rawCategoryPath } from './categoryPath.js';
 import { sanitizeCategoryFilename } from '../storage/mdStorageAdapter.js';
@@ -683,7 +683,7 @@ function validateDeclaredFields(config: NeuronConfig): void {
 }
 
 export function parseNeuronYaml(yamlString: string): NeuronConfig {
-  const raw = parseYaml(yamlString);
+  const raw = parseDocument(yamlString).toJSON();
   return validateNeuronYaml(raw);
 }
 
@@ -699,8 +699,51 @@ export function loadNeuronYaml(startDir: string = process.cwd()): NeuronConfig {
     return DEFAULT_CONFIG;
   }
 
-  const raw = parseYaml(fs.readFileSync(configPath, 'utf8'));
+  const raw = parseDocument(fs.readFileSync(configPath, 'utf8')).toJSON();
   return validateNeuronYaml(raw);
+}
+
+// --- Config File Writing (ADR 0017) ---
+
+/**
+ * Auto-appends a minimal `categories.<name>: {}` block to `neuron.yaml` on
+ * disk, preserving the rest of the file byte-for-byte (comments, key order,
+ * blank lines) via the `yaml` package's `Document` API rather than a plain
+ * parse-mutate-`stringify()` round trip, which would discard both. A no-op
+ * if the category is already declared — callers are expected to check the
+ * in-memory config first (ADR 0017 Decision 3: no second write for a
+ * category declared earlier in the same process), but this re-checks against
+ * the file on disk too, since a hand-edit could have declared it since the
+ * in-memory config was loaded.
+ *
+ * The block is a flow-style empty map (`newthing: {}`), not a block mapping
+ * (`newthing:\n  {}` or an indented empty body) — ADR 0017 Decision 3 rules
+ * out inventing a description or tags, so there is nothing for a block form
+ * to hold.
+ */
+export function declareCategoryInNeuronYaml(configPath: string, category: string): void {
+  const source = fs.readFileSync(configPath, 'utf8');
+  const doc = parseDocument(source);
+  if (doc.getIn(['categories', category]) !== undefined) return;
+
+  // A file with no "categories" key at all is relying on
+  // `NeuronConfigSchema`'s own `.default(...)` for the whole block (only
+  // applied when the key is *absent* — Zod does not merge into a present
+  // key). Auto-vivifying a "categories" key containing only the new entry
+  // would silently replace that implicit default set instead of adding to
+  // it, dropping every category the caller was relying on being there. Seed
+  // the same default set explicitly first, then append the new category on
+  // top of it.
+  if (doc.get('categories') === undefined) {
+    for (const [name, cfg] of Object.entries(DEFAULT_CONFIG.categories)) {
+      doc.setIn(['categories', name], cfg);
+    }
+  }
+
+  const emptyMap = new YAMLMap();
+  emptyMap.flow = true;
+  doc.setIn(['categories', category], emptyMap);
+  fs.writeFileSync(configPath, doc.toString(), 'utf8');
 }
 
 export function loadConfig(startDir: string = process.cwd()): NeuronConfig {

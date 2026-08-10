@@ -154,4 +154,84 @@ pullRules:
       expect(JSON.parse(checkStdout).compliant).toBe(true);
     });
   });
+
+  describe('undeclared categories (ADR 0017)', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+
+    function makeProjectDir(): string {
+      const dir = path.join(tempDbDir, `proj-undeclared-cat-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'package.json'), '{}');
+      return dir;
+    }
+
+    const YAML_NO_SNIPPETS = `version: "1.0"
+storage:
+  mode: vector
+categories:
+  learning:
+    description: Agent conventions
+pullRules:
+  default:
+    categories: [learning]
+`;
+
+    it('auto-declares an undeclared category on its first write, and --check reports none left', () => {
+      const projectDir = makeProjectDir();
+      const dbPath = path.join(projectDir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      fs.writeFileSync(path.join(projectDir, 'neuron.yaml'), YAML_NO_SNIPPETS);
+      execSync(
+        `node ${cliPath} memory add "a reusable snippet" --category snippets`,
+        { env, cwd: projectDir }
+      );
+
+      const onDisk = fs.readFileSync(path.join(projectDir, 'neuron.yaml'), 'utf8');
+      expect(onDisk).toContain('snippets: {}');
+      expect(onDisk).toContain('description: Agent conventions');
+
+      const checkStdout = execSync(`node ${cliPath} status --check`, { env, cwd: projectDir }).toString();
+      const report = JSON.parse(checkStdout);
+      expect(report.compliant).toBe(true);
+      expect(report.undeclaredCategories).toEqual([]);
+    });
+
+    it('--check reports, and --repair declares, a category with rows from before the config declared it', () => {
+      const projectDir = makeProjectDir();
+      const dbPath = path.join(projectDir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      // Write against a config that doesn't yet mention "legacy" as declared,
+      // via an explicit --category override (ADR 0017 Decision 4's trusted
+      // human-override path) — this auto-declares it immediately, so to get
+      // a *pre-existing undeclared* category (simulating a pre-upgrade
+      // store), write it, then strip it back out of neuron.yaml by hand.
+      fs.writeFileSync(path.join(projectDir, 'neuron.yaml'), YAML_NO_SNIPPETS);
+      execSync(
+        `node ${cliPath} memory add "a pre-upgrade row" --category legacy`,
+        { env, cwd: projectDir }
+      );
+      fs.writeFileSync(path.join(projectDir, 'neuron.yaml'), YAML_NO_SNIPPETS);
+
+      let stdout: string;
+      let status = 0;
+      try {
+        stdout = execSync(`node ${cliPath} status --check`, { env, cwd: projectDir }).toString();
+      } catch (err: any) {
+        stdout = err.stdout.toString();
+        status = err.status;
+      }
+      const report = JSON.parse(stdout);
+      expect(report.compliant).toBe(false);
+      expect(report.undeclaredCategories).toEqual(['legacy']);
+      expect(status).toBe(1);
+
+      const repairStdout = execSync(`node ${cliPath} status --repair`, { env, cwd: projectDir }).toString();
+      expect(JSON.parse(repairStdout).declaredCategories).toEqual(['legacy']);
+
+      const onDisk = fs.readFileSync(path.join(projectDir, 'neuron.yaml'), 'utf8');
+      expect(onDisk).toContain('legacy: {}');
+    });
+  });
 });

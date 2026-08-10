@@ -236,16 +236,23 @@ already reconcile markdown into the index automatically.
 Prints database, Markdown storage, embedding model and architectural drift status
 as JSON.
 
-`--check`/`--repair` fold in the validation surface ADR 0013 describes: entries
-whose category's *currently*-declared `fields` schema (see Configuration below)
-they violate — most commonly a field declared `required` after the entry was
-written. Reads never hard-error on this; these flags are the only surface that
-reports it.
+`--check`/`--repair` fold in two validation surfaces:
+
+- ADR 0013: entries whose category's *currently*-declared `fields` schema
+  (see Configuration below) they violate — most commonly a field declared
+  `required` after the entry was written. Reads never hard-error on this;
+  these flags are the only surface that reports it.
+- ADR 0017: categories holding live rows in the store but absent from
+  `neuron.yaml`'s own `categories` block — config-file drift, reported as its
+  own finding kind (`undeclaredCategories`), distinct from the per-entry
+  `violations` above. Most writes never reach this, since a category missing
+  from `neuron.yaml` auto-declares itself on its first write (see
+  Configuration below); it only catches categories that predate that hook.
 
 | Flag | Description |
 |---|---|
-| `--check` | List entries missing a currently-required field; exits `1` if any |
-| `--repair` | Apply a configured `default:`, or centroid-based inference for enum-typed fields only. Never fabricates a value for a free-text field (e.g. `reviewedBy`, `ticket`) — those come back unresolved, and `--repair` exits `1` if anything is left unresolved |
+| `--check` | List entries missing a currently-required field and undeclared categories; exits `1` if either is non-empty |
+| `--repair` | Apply a configured `default:`, or centroid-based inference for enum-typed fields only, and declare every undeclared category found. Never fabricates a value for a free-text field (e.g. `reviewedBy`, `ticket`) — those come back unresolved, and `--repair` exits `1` if anything is left unresolved |
 
 ---
 
@@ -275,6 +282,16 @@ Generates pre-filled GitHub issue links.
 ---
 
 ## Configuration (`neuron.yaml`)
+
+> [!NOTE]
+> `neuron.yaml` is a file the tool can write to, not just read (ADR 0017).
+> Categories stay advisory, not validated: `neuron memory add --category <x>`
+> and `neuron scan` are never rejected for using an undeclared category.
+> Instead, the first write that introduces one auto-appends a minimal
+> `categories.<name>: {}` block to `neuron.yaml` on disk — preserving your own
+> comments and formatting via the `yaml` package's `Document` API, never
+> inventing a description or tags. `neuron status --repair` backfills any
+> category that already had rows before this hook existed.
 
 ```yaml
 version: "1.0"
