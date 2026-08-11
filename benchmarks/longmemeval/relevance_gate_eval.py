@@ -96,11 +96,17 @@ for i, q in enumerate(queries, 1):
     neg_docs, neg_meta = provider.retrieve(q.query, k=1, user_id=other_uid)
     neg_raw = (neg_meta or {}).get("results", [])
     neg_r1_cosine = neg_raw[0]["similarity"] if neg_raw else None
+    # Ticket 17: the gate's real accept/reject decision on the same
+    # cross-partition, no-evidence-guaranteed negative control Run 3 already
+    # queries — not just its cosine. True here means the shipped lexical gate
+    # would have let this no-evidence query through (a false accept).
+    neg_r1_fts = bool(neg_raw[0]["ftsMatched"]) if neg_raw else False
 
     records.append({
         "qid": q.user_id, "category": cat, "has_gold": bool(gold),
         "r1_cosine": r1_cosine, "r1_fts": r1_fts, "hit": hit,
         "pool_cosines": pool_cosines, "neg_r1_cosine": neg_r1_cosine,
+        "neg_r1_fts": neg_r1_fts,
         "pool_size": len(full_raw),
     })
     if i % 50 == 0:
@@ -184,6 +190,29 @@ def eval_full_gate(F):
         "false_silence_rate_of_scored": {k: round(false_silence[k] / max(n, 1), 4) for k in KS},
     }
 
+# --- Run 4: lexical leg false-accept rate (ticket 17) -------------------------
+# Mirror of Run 2. Every negative-control query is guaranteed to share no gold
+# evidence with the partition it's run against (a different, randomly chosen
+# user), so any query whose neg-r1 has an FTS match is the lexical leg letting
+# a no-evidence query through — the exact failure ADR 0012 opened with.
+neg_accept = [r for r in records if r["neg_r1_fts"]]
+gate_false_accept_rate = round(len(neg_accept) / max(len(records), 1), 4)
+
+per_cat_accept = defaultdict(lambda: {"n": 0, "false_accept": 0})
+for r in records:
+    per_cat_accept[r["category"]]["n"] += 1
+    if r["neg_r1_fts"]:
+        per_cat_accept[r["category"]]["false_accept"] += 1
+run4 = {
+    "overall_false_accept_rate": gate_false_accept_rate,
+    "false_accept_count": len(neg_accept),
+    "total_queries": len(records),
+    "per_category": {
+        c: {"n": v["n"], "false_accept": v["false_accept"], "rate": round(v["false_accept"] / max(v["n"], 1), 4)}
+        for c, v in sorted(per_cat_accept.items())
+    },
+}
+
 run1_conditioned_frontier = [eval_floor(F) for F in floor_values]
 run1_full_gate_frontier = [eval_full_gate(F) for F in floor_values]
 
@@ -230,6 +259,7 @@ out = {
     "retrieval_ms": {"p50": round(lat[len(lat)//2], 1), "p95": round(lat[int(len(lat)*0.95)-1], 1)} if lat else None,
     "cross_unit_leaks": leaks,
     "run2_lexical_false_silence": run2,
+    "run4_lexical_false_accept": run4,
     "run1_conditioned_frontier": run1_conditioned_frontier,
     "run1_full_gate_frontier": run1_full_gate_frontier,
     "run1_bar_passing_floors": [f["floor"] for f in bar_pass],
@@ -250,6 +280,12 @@ print(f"overall: {run2['lexical_fail_count']}/{run2['total_queries']} = {run2['o
 print(f"{'category':30} {'n':>5} {'lex_fail':>9} {'rate':>7}")
 for c, v in run2["per_category"].items():
     print(f"{c:30} {v['n']:>5} {v['lex_fail']:>9} {v['rate']:>6.1%}")
+
+print(f"\n--- Run 4: lexical leg false-accept rate (cross-partition negative control) ---")
+print(f"overall: {run4['false_accept_count']}/{run4['total_queries']} = {run4['overall_false_accept_rate']:.2%}")
+print(f"{'category':30} {'n':>5} {'false_accept':>13} {'rate':>7}")
+for c, v in run4["per_category"].items():
+    print(f"{c:30} {v['n']:>5} {v['false_accept']:>13} {v['rate']:>6.1%}")
 
 print(f"\n--- Run 1: cosine floor sweep, conditioned on lexical leg (population={len(lex_pass_scored)}) ---")
 print(f"{'floor':>6} {'rejected':>9} {'vol_reduc':>10} {'recall@1':>9} {'recall@5':>9} {'recall@10':>10} {'false_sil':>10}")

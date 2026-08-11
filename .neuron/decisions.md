@@ -1328,3 +1328,27 @@ tags:
 taskId: null
 ---
 ADR 0014 amended (ticket 12, neuron-2.4.0): pre-command lookup (today's agent-typed 'neuron exec -- <command>' wrapper) gets a real PreToolUse-driven hook, but only for Claude Code and Codex CLI, permanently — not a temporary gap. Unlike the three existing lifecycle points, where all four shipped adapters have SOME injecting mechanism, tool-use hooks split categorically: Claude Code's PreToolUse and Codex's PreToolUse both support hookSpecificOutput.additionalContext (Claude Code confirmed live against code.claude.com/docs/en/hooks), while Copilot CLI's preToolUse and Cursor's beforeShellExecution are both documented permission/gating-only with no context field at all. Copilot/Cursor keep the CLAUDE.md/AGENTS.md-instructed neuron exec step permanently. The amendment reuses CapabilityMap/SupportRecord unchanged (neuron never touches PreToolUse's permissionDecision gate, since neuron exec's own behavior never blocks the real command either) and rules that protocolBlock.ts's execStep() becomes fidelity-conditional the same way recallStep() already is. Implementation graduated as tickets 22/23/24 rather than designed further in the grilling ticket itself.
+
+---
+id: d2e219b7-8396-49b9-8a97-9326a4bdd06d
+createdAt: 2026-08-11T12:00:29.049Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+ADR 0018 (neuron-2.4.0 ticket 14): tickets are a new tickets category built entirely from ADR 0011's markdown-store-of-record machinery and ADR 0013's declared-field schema -- status (enum unclaimed/claimed/resolved), type (enum research/prototype/grilling/task), and blockedBy (string, comma-separated ids) as user-defined fields, mutation via the existing transact({op:'update'}) path, no new storage mechanism. Blocking stays a plain frontmatter field rather than tracker-native, per the wayfinder skill's own documented fallback, since adding a real dependency-graph/frontier command would be new product surface against ADR 0013's no-new-top-level-commands non-goal. docs/agents/issue-tracker.md's local-markdown section is removed outright (not kept alongside) and all 19 existing .scratch/ effort directories migrate in one bulk pass into the tickets category before .scratch/ is deleted, rejecting both a permanent archive (incompatible with fully removing .scratch references from the doc) and lazy on-touch migration (an indefinite, silently-decaying straggler set). Implementation graduated as tickets 25 (declare the category, rewrite the doc) and 26 (run the bulk migration, blocked by 25) rather than built in this grilling session.
+
+---
+id: 4f1d4942-b8bb-4840-8661-6eb6d0644444
+createdAt: 2026-08-11T13:54:12.969Z
+importance: 4
+tags:
+  - retrieval
+  - benchmark
+  - longmemeval
+taskId: "17"
+---
+Ticket 17 (neuron-2.4.0): measured the shipped lexical-only relevance gate's false-accept rate on no-evidence queries, deliberately did not ship a fix. Two real measurements: a hand-built resident E2E corpus (19 queries, adversarially disjoint vocabulary from the seeded store, verified via an FTS-prefix-collision script rather than eyeballed) measured 0% false-accept; relevance_gate_eval.py's extended negative control on the full real LongMemEval-S split (500 questions) measured 99.80% false-accept. The gap is explained by corpus construction, not a bug in either measurement: cleanFtsQuery's OR-across-any-shared-word design (src/components/fts-query.ts) means the gate only needs one incidental shared token to pass, so a genuinely disjoint-vocabulary query abstains reliably while a same-domain natural-language query (LongMemEval's negative control is drawn from the same conversational corpus family as its positive queries) almost always shares some word with an unrelated partition. Decision: follow ticket 39 -> ticket 41's precedent of measure-then-ship-separately rather than reacting to the bad number in the same session -- a cosine floor or LLM-adjudication fix, if warranted, is a new ticket informed by this measurement, chartered once someone picks it up. The 99.80% number, not a vaguer 'the gate seems loose', is now the load-bearing fact for that future ticket's motivation.

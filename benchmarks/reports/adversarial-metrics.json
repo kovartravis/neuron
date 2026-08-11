@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-08-10T13:07:35.410Z",
+  "timestamp": "2026-08-11T13:51:22.642Z",
   "tier": "sanity",
-  "suiteDurationMs": 15972,
+  "suiteDurationMs": 16766,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 27.92,
-      "p95Ms": 95.74,
-      "p99Ms": 116.5,
-      "minMs": 20.21,
-      "maxMs": 121.69,
-      "meanMs": 41.77,
-      "totalMs": 334.15,
-      "throughputPerSec": 23.94,
+      "p50Ms": 19.72,
+      "p95Ms": 47.86,
+      "p99Ms": 59.12,
+      "minMs": 16.91,
+      "maxMs": 61.94,
+      "meanMs": 24.78,
+      "totalMs": 198.25,
+      "throughputPerSec": 40.35,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
@@ -95,22 +95,58 @@
       }
     },
     {
+      "pillar": "Pillar 13: Antagonistic Recall & Abstention",
+      "samples": 19,
+      "p50Ms": 22.07,
+      "p95Ms": 25.51,
+      "p99Ms": 27.42,
+      "minMs": 16.3,
+      "maxMs": 27.9,
+      "meanMs": 21.3,
+      "totalMs": 404.62,
+      "throughputPerSec": 46.96,
+      "extra": {
+        "cases": 19,
+        "falseAccepts": 0,
+        "falseAcceptRate": 0,
+        "byFamily": {
+          "general-knowledge": {
+            "cases": 12,
+            "falseAcceptRate": 0
+          },
+          "weather-nature": {
+            "cases": 4,
+            "falseAcceptRate": 0
+          },
+          "small-talk": {
+            "cases": 2,
+            "falseAcceptRate": 0
+          },
+          "unrelated-codebase": {
+            "cases": 1,
+            "falseAcceptRate": 0
+          }
+        },
+        "falseAcceptDetail": []
+      }
+    },
+    {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 49.54,
-      "p95Ms": 49.54,
-      "p99Ms": 49.54,
-      "minMs": 49.54,
-      "maxMs": 49.54,
-      "meanMs": 49.54,
-      "totalMs": 49.54,
-      "throughputPerSec": 20.18,
+      "p50Ms": 39.43,
+      "p95Ms": 39.43,
+      "p99Ms": 39.43,
+      "minMs": 39.43,
+      "maxMs": 39.43,
+      "meanMs": 39.43,
+      "totalMs": 39.43,
+      "throughputPerSec": 25.36,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 49.543,
-            "p95Ms": 60.5,
+            "p50Ms": 39.433,
+            "p95Ms": 130.835,
             "recallAt1": 0.125
           }
         ]

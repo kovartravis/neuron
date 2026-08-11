@@ -18,9 +18,11 @@ import { NeuronMemory } from '../../src/index.js';
 import { MetricsRecorder } from './metrics.js';
 import { CONFIG, TIER, REPORT_DIR } from './tier.js';
 import { ADVERSARIAL_CASES, buildFiller, type AdversarialFamily } from './adversarial-corpus.js';
+import { ANTAGONISTIC_CASES, type AntagonisticFamily } from './antagonistic-corpus.js';
 
 const PILLAR = 'Pillar 7: Adversarial Retrieval Quality';
 const SCALE_PILLAR = 'Pillar 9: Retrieval Scale Curve';
+const ANTAGONISTIC_PILLAR = 'Pillar 13: Antagonistic Recall & Abstention';
 
 const metrics = new MetricsRecorder();
 const suiteStart = Date.now();
@@ -197,6 +199,69 @@ describe('Adversarial Retrieval Benchmark', () => {
     expect(hitsAt5 / total, 'adversarial recall@5 collapsed').toBeGreaterThanOrEqual(0.4);
     expect(mrrSum / total, 'adversarial MRR collapsed').toBeGreaterThanOrEqual(0.25);
   }, 900000);
+
+  it(ANTAGONISTIC_PILLAR, async () => {
+    // Mirror case of PILLAR (Pillar 7): every query here is engineered to share
+    // no keyword or topic with anything in the populated store (fillers, hard
+    // negatives, superseded entries, golds — see antagonistic-corpus.ts's own
+    // verification note). A correct system must return nothing at all; this
+    // pillar's headline number is the false-accept rate, reported honestly even
+    // if nonzero (ticket 17, matching ticket 39's measure-first posture — no
+    // fix is attempted here even if the rate is bad).
+    const byFamily = new Map<AntagonisticFamily, { n: number; falseAccepts: number }>();
+    const falseAcceptDetail: Array<{ id: string; family: string; rejected: number; topResult: string }> = [];
+
+    let total = 0;
+    let falseAcceptCount = 0;
+
+    for (const c of ANTAGONISTIC_CASES) {
+      const { results, rejected } = await metrics.time(ANTAGONISTIC_PILLAR, () =>
+        memory.queryGated({ text: c.query, categories: ['learning'], limit: 10 })
+      );
+
+      total++;
+      const falseAccept = results.length > 0;
+      if (falseAccept) falseAcceptCount++;
+
+      const fam = byFamily.get(c.family) ?? { n: 0, falseAccepts: 0 };
+      fam.n++;
+      if (falseAccept) fam.falseAccepts++;
+      byFamily.set(c.family, fam);
+
+      if (falseAccept) {
+        falseAcceptDetail.push({
+          id: c.id,
+          family: c.family,
+          rejected,
+          topResult: (results[0]?.content ?? '(none)').slice(0, 90),
+        });
+      }
+    }
+
+    const familyBreakdown = Object.fromEntries(
+      [...byFamily.entries()].map(([fam, s]) => [
+        fam,
+        { cases: s.n, falseAcceptRate: round(s.falseAccepts / s.n) },
+      ])
+    );
+
+    metrics.annotate(ANTAGONISTIC_PILLAR, {
+      cases: total,
+      falseAccepts: falseAcceptCount,
+      falseAcceptRate: round(falseAcceptCount / total),
+      byFamily: familyBreakdown,
+      falseAcceptDetail,
+    });
+
+    expect(total).toBe(ANTAGONISTIC_CASES.length);
+    // Not a fix-and-forget floor: a nonzero rate here is a real finding to be
+    // reported (ADR 0012's "report the spread honestly" discipline), not
+    // silently patched by loosening this assertion.
+    expect(
+      falseAcceptCount,
+      `gate false-accepted ${falseAcceptCount}/${total} antagonistic (no-evidence) queries: ${JSON.stringify(falseAcceptDetail)}`
+    ).toBe(0);
+  }, 300000);
 
   it(SCALE_PILLAR, async () => {
     // Sweep corpus size to expose where latency and quality degrade. One point

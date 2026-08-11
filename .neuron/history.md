@@ -3500,3 +3500,39 @@ tags:
 taskId: null
 ---
 Wayfinder session on the neuron-2.4.0 map: claimed ticket 11 (Re-run the Git-Log A/B Against the Real Semantic Mechanism), built its full harness (gitlog-semantic-search.mjs, gitlog-gate-task.mjs, run-gitlog-ab-semantic.mjs) reusing ticket 14's fixtures/session/report/grading verbatim, and validated it end-to-end with a free --dry-run (real semantic search fires correctly on all 3 reused tasks, genuine silence on a newly-constructed corpus-disjoint gate task). Left ticket 11 claimed but blocked: this environment has no ANTHROPIC_API_KEY and the ant CLI's OAuth profile was expired with no way to refresh from this session; asked the maintainer, who chose to leave it blocked rather than supply credentials. Picked up ticket 12 next (Should neuron exec's Pre-Command Lookup Become a Hook Instead?), ran a full /grilling session resolving all four of its open questions (scope: Claude Code + Codex only, permanently, since Copilot/Cursor's tool-use hooks are structurally permission-only with no context field; amend ADR 0014 rather than write a new one; PreToolUse's additionalContext timing confirmed functionally equivalent to today's neuron exec; execStep() becomes fidelity-conditional like recallStep()). Wrote ADR 0014's 2026-08-10 amendment, resolved ticket 12, graduated implementation tickets 22/23/24 (mirroring the map's own 08/09/10 split for the git-log index), and rewired ticket 13 to block on 24 instead of the now-resolved 12.
+
+---
+id: 8e2072a9-e12a-42f8-b0be-ef7533405869
+createdAt: 2026-08-11T12:00:39.577Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "14"
+---
+Wayfinder pickup session on the neuron-2.4.0 map: claimed the frontier's first unblocked ticket, 14 (Design: Should Neuron Replace .scratch/ as This Repo's Issue Tracker?), and ran a full grilling session with the maintainer through all five of its open design questions. Resolved: tickets become a new tickets category reusing ADR 0011/0013 machinery (declared status/type/blockedBy fields, existing transact update op for mutation), blocking stays a plain frontmatter field rather than tracker-native, docs/agents/issue-tracker.md's local-markdown section is removed outright rather than kept alongside a new one, and all 19 .scratch/ efforts migrate in one bulk pass before .scratch/ is deleted. Wrote ADR 0018 (Neuron as This Repo's Issue Tracker) recording the decision. Graduated two implementation tickets, 25 (declare the tickets category, rewrite issue-tracker.md) and 26 (bulk-migrate all 19 .scratch/ efforts including this map itself, then delete .scratch/, blocked by 25), rather than implementing here. Appended the resolution as a Decisions-so-far entry on the neuron-2.4.0 map; true frontier is now 15, 17, 18, 19, 20, 21, 22, 25.
+
+---
+id: d78d6fbe-57d2-44b8-bc1c-d085c637e05b
+createdAt: 2026-08-11T12:05:10.925Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "15"
+---
+Resolved wayfinder ticket 15 (neuron-2.4.0 map): swept the repo for readability and hygiene issues and published a punch list (.scratch/neuron-2.4.0/issues/15-repo-cleanup-punch-list.md). Graduated two sized candidates for a future session — delete three orphaned 2.0.0-era root docs (RELEASE_2.0.0.md, TEST_INFRA.md, TEST_READY.md, all zero-cross-reference and subsumed by CHANGELOG.md or npm test's own output) and decide tmp/'s gitignore fate (untracked, holds a stray benchmark dry-run file). Checked and cleared four other recon candidates without flagging them: the console.log audit (all 12 hits were fixture strings or intentional CLI output), src/ structure against the 14-subsystem architecture card (clean, no orphans), src/outside_dir.md and src/traversal_test.md (intentional path-traversal test fixtures, not stray files), and CHANGELOG.md's 58KB size (proportional to real release density, fine as-is). True frontier now: 17, 18, 19, 20, 21, 22, 25.
+
+---
+id: b2cb1431-f29d-4f3b-9605-c4220f79c585
+createdAt: 2026-08-11T13:53:59.830Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: "17"
+---
+Resolved wayfinder ticket 17 (neuron-2.4.0 map): Antagonistic Recall benchmark. Built a resident vitest pillar (Pillar 13, test/e2e/adversarial-corpus.ts sibling test/e2e/antagonistic-corpus.ts) with 19 off-topic queries programmatically verified to share zero FTS-prefix-matching vocabulary with Pillar 7's populated store, calling queryGated directly -- real run measured 0/19 (0%) false-accept. Extended relevance_gate_eval.py's existing negative control to record neg_r1_fts (the gate's real accept/reject decision, not just cosine) and re-ran it for real against the full LongMemEval-S split (500 questions, 23867 documents) -- measured 499/500 (99.80%) false-accept, uniform across categories. The two numbers disagree because of corpus construction, not a bug: the resident pillar's vocabulary is adversarially disjoint by design, while LongMemEval's cross-partition negative control still shares ordinary conversational words with its query, and the shipped OR-across-any-word lexical gate clears almost all of them. Measurement only, no fix attempted (mirrors ticket 39 -> ticket 41's split); results committed under benchmarks/reports/ and benchmarks/longmemeval/outputs/relevance_gate_longmemeval.json. Found one unrelated off-band bug during the real e2e-runner.js verification run: Pillar 8 (Multi-Process Contention) failed on a pre-existing 'no such column: scope' concurrent-migration race, reproduced in isolation, confirmed unrelated to this ticket's diff and left for ticket 18. Didn't unblock anything directly; true frontier now 18, 19, 20, 21, 22, 25.
