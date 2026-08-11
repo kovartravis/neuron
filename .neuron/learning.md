@@ -2373,3 +2373,15 @@ tags:
 taskId: null
 ---
 Second fix for the same false-positive class in the ticket-07 hint-follow instrument (src/harnesses/hintFollowLog.ts): after anchoring QUERY_COMMAND_PATTERN to require an invocation position (start of command or after a shell separator), a real neuron memory add call whose quoted --category learning content itself mentioned the phrase 'cd /repo && neuron memory query ...' as prose still matched, because the separator anchor landed inside a string literal, not at the shell's top level. Root cause: text-only pattern matching without any awareness of shell quoting can't tell 'a separator character appears before this position' from 'a separator character appears before this position AND we are not inside a quoted string'. Fixed by adding isInsideQuotes(), a lightweight quote-parity scan (not a real shell tokenizer) that walks the command up to the match index tracking single/double-quote depth, and only accepts a match when it falls outside both. Iterates every regex match via the g flag rather than stopping at the first, since an earlier match could be the false positive while a later one is real. Regression test covers this exact case: a neuron memory add command whose quoted content describes a chained invocation as an example.
+
+---
+id: cb66c444-ec60-4e3f-bb96-1d7a5fed7adf
+createdAt: 2026-08-11T00:15:30.146Z
+importance: 4
+tags:
+  - testing
+  - git
+  - failure-fix
+taskId: null
+---
+Fix for hook.test.ts's git-log tests silently coupling to the real repo's own git history: temp project dirs under src/__tests__/temp-hook/ have no .git of their own and sit nested inside this real repo's working tree, so once src/harnesses/gitLog.ts's git rev-parse/git log shell-outs entered the pre-prompt hook path, git silently walked up and found THIS repo's actual .git, breaking eight pre-existing deterministic tests. Root cause: git's directory-discovery walks up to the nearest ancestor .git with no notion that a test fixture wants isolation. Fixed by setting GIT_CEILING_DIRECTORIES in hook.test.ts's env() helper to tempDbDir (projectDir's PARENT), not projectDir itself -- empirically, listing a directory as its own ceiling does not stop git from ascending one level past it, only listing an ancestor does (verified manually: GIT_CEILING_DIRECTORIES=$(pwd) inside the dir still found the outer repo; GIT_CEILING_DIRECTORIES=<parent> correctly returned 'not a git repository'). Tests that specifically exercise git-backed features should git init their own fixture dir, which satisfies discovery before it would ever need to ascend at all.

@@ -1,4 +1,4 @@
-import { NeuronMemory } from '../index.js';
+import { NeuronMemory, GitLogHit } from '../index.js';
 import { loadConfig } from '../config/neuronYaml.js';
 import { withTimeout } from '../components/timeout.js';
 import { blueprintCardId, moduleCardId, parseModuleListFromIndex } from '../scanner/ingest.js';
@@ -17,6 +17,7 @@ import {
   recordToolUse,
   SESSION_START_CHAR_BUDGET,
   PRE_PROMPT_CHAR_BUDGET,
+  GIT_LOG_CHAR_BUDGET,
   LifecyclePoint,
 } from '../harnesses/index.js';
 
@@ -89,6 +90,47 @@ async function fetchArchitectureCardPayload(memory: NeuronMemory, category: stri
   }
 
   return { text: parts.join('\n'), includedIds };
+}
+
+/** Mirrors `benchmarks/token-ab/gitlog-search.mjs`'s prototype constants — ticket 39 (neuron-2.3.0) item 5 left the exact numbers to this ticket, not a structural ruling. */
+const GIT_LOG_MAX_COMMITS = 6;
+const GIT_LOG_BODY_CHARS = 240;
+
+function formatGitLogHit(hit: GitLogHit): string {
+  const shortHash = hit.hash.slice(0, 8);
+  const trimmedBody = hit.body.length > GIT_LOG_BODY_CHARS ? `${hit.body.slice(0, GIT_LOG_BODY_CHARS)}...` : hit.body;
+  const bodyLine = trimmedBody ? `\n  ${trimmedBody.replace(/\n+/g, ' ')}` : '';
+  return `- \`${shortHash}\` ${hit.subject}${bodyLine}`;
+}
+
+/**
+ * Packs gated git-log hits (already ranked by `searchGitLog`) into `charBudget`
+ * characters, header included — mirrors `buildPayload`'s drop-whole-entries
+ * discipline. Returns empty when nothing fits or nothing was passed in: ticket
+ * 39 item 6 rules silence over a hedge-with-nothing message when the gate
+ * finds nothing relevant, so there is no "no matches" branch here, unlike the
+ * prototype's `formatGitLogNote`.
+ */
+function buildGitLogPayload(hits: GitLogHit[], charBudget: number): { text: string; includedIds: string[] } {
+  const header =
+    '## Git History\n\nRelevant commits from this repository\'s history — may be incomplete, and ticket ' +
+    'numbers can collide across concurrent wayfinder maps (ticket 39, neuron-2.3.0); verify against `git ' +
+    'log`/`git show` yourself:';
+  if (charBudget <= header.length) return { text: '', includedIds: [] };
+
+  const includedIds: string[] = [];
+  const lines: string[] = [];
+  let used = header.length + 1;
+  for (const hit of hits) {
+    const line = formatGitLogHit(hit);
+    const cost = line.length + 1;
+    if (used + cost > charBudget) continue;
+    lines.push(line);
+    includedIds.push(hit.hash);
+    used += cost;
+  }
+  if (lines.length === 0) return { text: '', includedIds: [] };
+  return { text: `${header}\n${lines.join('\n')}`, includedIds };
 }
 
 /**
@@ -272,7 +314,17 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
       const totalMatches = memory.countFtsMatches(prompt);
       const hintBudget = PRE_PROMPT_CHAR_BUDGET - (body ? body.length + 1 : 0);
       const hint = buildDiscoveryHint(prompt, totalMatches, results.length, hintBudget);
-      const text = hint ? (body ? `${body}\n${hint}` : hint) : body;
+      const memoryText = hint ? (body ? `${body}\n${hint}` : hint) : body;
+
+      // Ticket 08: pre-prompt only, keyed off the prompt's own embedding.
+      // No ledger here either, so — same posture as the memory recall above —
+      // a git-log hit can repeat every turn rather than being deduped.
+      await memory.refreshGitLogIndex();
+      const gitLogCap = Math.min(GIT_LOG_CHAR_BUDGET, PRE_PROMPT_CHAR_BUDGET - (memoryText ? memoryText.length + 1 : 0));
+      const gitLogHits = gitLogCap > 0 ? await memory.searchGitLog(prompt, GIT_LOG_MAX_COMMITS) : [];
+      const gitLogBody = buildGitLogPayload(gitLogHits, gitLogCap).text;
+
+      const text = [memoryText, gitLogBody].filter(Boolean).join('\n\n');
       if (!text) return;
       emit(harness, 'UserPromptSubmit', text);
       return;
@@ -335,11 +387,24 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
     if (hint) recordHintFired(projectDir, sessionId, hintCommand(hint));
     const turnBodyWithHint = hint ? (turnBody ? `${turnBody}\n${hint}` : hint) : turnBody;
 
+    // Ticket 08: additive resident-footprint cost, carved out of whatever's
+    // left of the epoch budget after the card and this turn's memory recall
+    // — the same reservation shape the re-injected architecture card above
+    // already uses. Deduped against the same session ledger `filterUnseen`
+    // reads from: a commit hash is just another opaque id in that set.
+    await memory.refreshGitLogIndex();
+    const gitLogCap = Math.min(GIT_LOG_CHAR_BUDGET, remaining - cardBody.length - turnBodyWithHint.length);
+    const gitLogSeen = loadEpochState(projectDir, sessionId).injectedIds;
+    const gitLogHits = gitLogCap > 0 ? await memory.searchGitLog(prompt, GIT_LOG_MAX_COMMITS) : [];
+    const unseenGitLogHits = gitLogHits.filter(h => !gitLogSeen.has(h.hash));
+    const { text: gitLogBody, includedIds: gitLogIds } = buildGitLogPayload(unseenGitLogHits, gitLogCap);
+
     const sections: string[] = [];
     if (cardBody) sections.push(`## Architecture\n${cardBody}`);
     if (turnBodyWithHint) sections.push(cardBody ? `## Relevant\n${turnBodyWithHint}` : turnBodyWithHint);
+    if (gitLogBody) sections.push(gitLogBody);
     const text = sections.join('\n\n');
-    const includedIds = [...cardIds, ...turnIds];
+    const includedIds = [...cardIds, ...turnIds, ...gitLogIds];
 
     recordPrePromptTurn(projectDir, sessionId, includedIds, text.length);
     if (!text) return;

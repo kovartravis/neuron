@@ -219,6 +219,17 @@ thin.
   True frontier as of this session: `08`, `12`, `14`, `15`, `17`, `18`,
   `19`, `20`, `21` (all unclaimed and unblocked); `02`, `04`, `05` claimed
   and in progress; `03`, `09`, `10`, `11`, `13`, `16` blocked.
+- **Ticket 08 resolved, 2026-08-10.** Built the git-log index end to end
+  per `39`'s rulings; see its own Answer and the Decisions-so-far entry
+  above. Resolving it unblocks [09 — Update Generated Protocol Block,
+  Packaged Skill & README for the Git-Log
+  Index](issues/09-update-init-skill-readme-for-git-log-index.md) and
+  [11 — Re-run the Git-Log A/B Against the Real (Semantic)
+  Mechanism](issues/11-rerun-gitlog-ab-semantic-mechanism.md) directly;
+  [10](issues/10-dogfood-git-log-index.md) still waits on `09` too. True
+  frontier as of this session: `09`, `11`, `12`, `14`, `15`, `17`, `18`,
+  `19`, `20`, `21` (all unclaimed and unblocked); `02`, `04`, `05` claimed
+  and in progress; `03`, `10`, `13`, `16` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -236,6 +247,7 @@ thin.
 - [01 — Implement Category Declaration Authority](issues/01-implement-category-declaration-authority.md) — built ADR 0017 end to end: `neuron.yaml` I/O moved to the `yaml` package's `Document` API, an auto-declare hook in `NeuronMemory.transact()` appends a minimal `categories.<name>: {}` block on first write to an undeclared category (comments/formatting preserved), `neuron status --check`/`--repair` gained a distinct `undeclaredCategories` finding kind for pre-existing backfill, and this repo's own `scan: category: decisions` alias was reverted and re-verified live (`categories.architecture: {}` auto-declared for real). Found and fixed a real bug along the way: auto-vivifying a `categories` key on a file that had none at all would have silently dropped the schema's implicit default category set.
 - [06 — Per-Prompt Discovery-Command Hint](issues/06-per-prompt-discovery-command-hint.md) — built: `NeuronMemory.countFtsMatches()` (raw, unranked, store-wide `COUNT(*)` against the same FTS index/cleaned query as the keyword leg) feeds `buildDiscoveryHint()`, which appends a real `neuron memory query "<prompt>" --limit <total>` line, dropped whole rather than truncated, when a real gap exists. Had to resolve one design question the ticket left open by omission: the gap must be measured against this turn's gated `limit: 10` recall count (`results.length`), not the post-ledger-dedup injected count — comparing against the latter re-fires the hint every turn on an already-seen entry and broke four pre-existing ledger-dedup tests.
 - [07 — Measure Whether the Discovery-Command Hint Gets Used](issues/07-measure-discovery-hint-usage.md) — maintainer chose free dogfooding instrumentation over a paid `benchmarks/token-ab/` run (same funding question already open on `05`). Built a passive, zero-cost, always-on measurement: `hintFollowLog.ts` + a Claude-Code-only `post-tool-use` hook (hand-wired into this repo's own `.claude/settings.json`, not a `LifecyclePoint`, not installed by `neuron init`) log every hint firing and every matching `neuron memory query` Bash call; `npm run bench:hint-follow` joins them into a follow rate. Found and fixed two real false positives live, both stemming from this repo's self-referential nature (its own memory entries and commits routinely talk about its own commands): a bare substring match flagged commands that only *mentioned* the phrase in quoted text, and — after anchoring to shell-separator position — a `neuron memory add` entry whose quoted content described a chained invocation as prose still matched until a quote-parity check excluded matches inside string literals. The outcome-quality half of the question is unanswered — moved to fog, next to `05`'s.
+- [08 — Implement the Git-Log Index](issues/08-implement-git-log-index.md) — built exactly what `39` (neuron-2.3.0) ruled: `src/harnesses/gitLog.ts` (pure git shell-out, ASCII-delimiter-safe commit parsing), a new `git_log_index`/`git_log_fts` SQLite migration (v9) with `refreshGitLogIndex()` (check-HEAD-on-read, one-time backfill then incremental) and `searchGitLog()` (a literal reuse of the ADR 0012 gate — FTS-match required before a dot-product rank, so a topically-absent prompt yields true silence), and pre-prompt-only wiring in `hook.ts` with its own additive, epoch-budget-carved `GIT_LOG_CHAR_BUDGET`. Found and fixed a real test-isolation bug along the way: `hook.test.ts`'s temp project dirs have no `.git` of their own and sit inside this real repo's tree, so without `GIT_CEILING_DIRECTORIES` every hook test started picking up this repo's *actual* git history the moment git shell-outs entered the code path. Manually dogfooded against this repo's real history — a prompt naming ticket 06 correctly surfaced its real commit (`65b9fcf6`) and the real ticket-07 follow-on (`e4742a9`). Unblocks `09` and `11` directly.
 
 ## Not yet specified
 
