@@ -56,12 +56,14 @@ degraded rather than failing the whole bootstrap.
 The entrypoint `neuron init` wires into a harness's own hook configuration —
 not typically run by hand. `<harness>` is `claude-code` or `codex`; `<point>`
 is `session-start` (seeds the architecture blueprint card once), `pre-prompt`
-(queries the store with the submitted prompt and injects results), or
-`context-reset` (clears the per-session dedup ledger on compaction). Reads a
-harness-shaped JSON payload from stdin, writes `{"hookSpecificOutput": ...}`
-to stdout on a hit, and **always exits `0`** — a malformed payload, a query
-error, a timeout, or an unreachable store all degrade to printing nothing
-rather than blocking the harness's prompt.
+(queries the store with the submitted prompt and injects results, plus a
+gated search of an indexed commit-history table — see the README's "Your git
+history is a searchable resident source too"), or `context-reset` (clears the
+per-session dedup ledger on compaction). Reads a harness-shaped JSON payload
+from stdin, writes `{"hookSpecificOutput": ...}` to stdout on a hit, and
+**always exits `0`** — a malformed payload, a query error, a timeout, or an
+unreachable store all degrade to printing nothing rather than blocking the
+harness's prompt.
 
 ---
 

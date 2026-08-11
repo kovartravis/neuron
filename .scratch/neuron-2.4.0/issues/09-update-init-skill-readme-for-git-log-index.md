@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 08
 Band: context cost
 
@@ -75,8 +75,75 @@ this session (not assumed):
 
 ## Deliverables
 
-- [ ] `protocolBlock.ts` + tests updated
-- [ ] Packaged skill updated
-- [ ] README updated
-- [ ] `docs/COMMANDS.md`/`CONTEXT.md` swept if applicable
-- [ ] Unblocks [42](10-dogfood-git-log-index.md)
+- [x] `protocolBlock.ts` + tests updated
+- [x] Packaged skill updated
+- [x] README updated
+- [x] `docs/COMMANDS.md`/`CONTEXT.md` swept if applicable
+- [x] Unblocks [10](10-dogfood-git-log-index.md)
+
+## Answer
+
+Resolved 2026-08-10. Went scope item by scope item:
+
+**1. `protocolBlock.ts`: no code change, confirmed rather than assumed.**
+[39](../../neuron-2.3.0/issues/39-git-log-index-design.md) ruled *supplement,
+for now* on the history-write-step question — `sessionEndStep()` stays
+exactly as-is, a full replace was explicitly deferred pending a design for
+commit-less entries. Grepped `protocolBlock.ts` and its own tests to confirm
+no `git`/`gitLog` reference exists anywhere in the generated block, matching
+the existing precedent that hook-injected content the agent never has to
+invoke (the architecture card, ticket 06's discovery hint) isn't described
+in the protocol block either — only agent-actioned steps are. No new tests
+needed since no new output exists; the pre-existing `protocolBlock.test.ts`
+assertions (`## 3./4. Session Conclusion`) and `init.test.ts`'s "re-running
+init leaves an unchanged protocol block alone" test already pin this shape
+and both stayed green.
+
+**2. Packaged skill updated.** `.claude/skills/neuron-memory/SKILL.md`
+section 1's "skip this section on a deterministic harness" note now also
+says the same pre-prompt hook searches an indexed copy of this repo's own
+`git log` and injects relevant commits — so a manual `git log`/`git show`
+search for past-decision context is redundant here too, not just memory
+lookup — plus the ticket-number-collision caveat, since an agent trusting a
+specific number from injected content without that caveat could act on a
+decoy commit from a different wayfinder map.
+
+**3. README updated — honestly, per the ticket's own bar.** Added "Your git
+history is a searchable resident source too" right after the harness
+fidelity table: what it does (pre-prompt-only, semantic match, ADR
+0012-style gate), what it costs (~1,000 chars, additive, same epoch budget),
+which harnesses get it (Claude Code/Codex CLI only — Copilot/Cursor have no
+per-turn hook to key off), and the ticket-collision caveat. Deliberately
+**did not** claim `14`'s favorable numbers as the shipped mechanism's own
+result: `39`'s own Answer found that result was measured against
+hand-picked oracle search terms, and the real semantic mechanism's own A/B
+([11](11-rerun-gitlog-ab-semantic-mechanism.md)) hasn't run yet. Framed as
+"surfaces real, correct commits" (true, confirmed by `08`'s own live
+dogfood) rather than a quantified win — the same "no measured difference"
+honesty this ticket's own Context called for.
+
+**4. `docs/COMMANDS.md` swept, one line updated.** The `neuron hook
+<harness> pre-prompt` description now mentions the gated commit-history
+search alongside the memory query, pointing at the new README section for
+detail rather than duplicating it. **`CONTEXT.md` swept, one glossary entry
+added** ("git-log index") describing the table, the check-HEAD-on-read
+refresh, the ADR 0012-style gate reuse, and the no-markdown-mirror
+distinction from `memories` — matching the existing entries' depth and
+style. `TEST_INFRA.md` was in `06`'s (neuron-2.3.0) own sweep but not named
+in this ticket's own Scope item 4 — checked anyway: it documents only the
+`md-file-management` E2E pillars, nothing about hooks, protocol blocks, or
+git history, so there was nothing relevant to change.
+
+**5. Idempotent re-init re-verified, not assumed.** Since the generated
+block is byte-identical to before this ticket, `init.test.ts`'s existing
+"re-running init leaves an unchanged protocol block alone" integration test
+(asserting `action: 'unchanged'`) already covers this claim directly — ran
+it as part of the full suite rather than treating "nothing changed" as
+self-evidently safe.
+
+**Verification:** `npm test` (645/645) and `tsc --noEmit` both clean — no
+production code touched, only markdown/docs, so the only risk was a stale
+assumption about the generated block, which the pre-existing tests above
+rule out.
+
+Unblocks [10 — Dogfood the Git-Log Index in This Repo](10-dogfood-git-log-index.md).
