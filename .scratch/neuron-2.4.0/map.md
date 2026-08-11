@@ -248,6 +248,39 @@ thin.
   `12`, `14`, `15`, `17`, `18`, `19`, `20`, `21` (all unclaimed and
   unblocked); `02`, `04`, `05` claimed and in progress; `03`, `13`, `16`
   blocked.
+- **Ticket 11 claimed, 2026-08-10 — harness built, blocked on live-run
+  credentials.** Built the new `semantic` arm per Scope items 1-2, reusing
+  `14`'s harness verbatim: `gitlog-semantic-search.mjs` (shells out to the
+  real built CLI's `hook claude-code pre-prompt` path, zero-spend, local
+  git + local embedder only), `gitlog-gate-task.mjs` (Scope item 4's
+  silence case), and `run-gitlog-ab-semantic.mjs` (orchestrator; cites
+  `14`'s `agent` and oracle `gitlog` arms rather than re-running them, per
+  Scope item 3). `--dry-run` confirms the whole pipeline end to end for
+  free — real semantic notes fire on all 3 reused tasks, genuine silence on
+  the new gate task. Found a real result along the way: the shipped
+  relevance gate (`cleanFtsQuery`'s OR-across-any-shared-word design) is
+  much looser than "topically relevant" against this repo's own
+  self-referential commit corpus — see the ticket's own Comments for the
+  three failed silence-case attempts and how the passing one was
+  constructed (computed corpus vocabulary, not a guess). Blocked on the
+  live run itself: no `ANTHROPIC_API_KEY` in this environment, and the
+  `ant` CLI's OAuth profile was expired with no way to refresh or
+  interactively re-login from this session. Asked the maintainer directly
+  (same funding/execution-blocker shape as `05`'s own fog item, immediately
+  below); chose to leave `11` blocked rather than supply credentials this
+  session. True frontier as of this session (excluding `11`, claimed but
+  blocked): `12`, `14`, `15`, `17`, `18`, `19`, `20`, `21` (all unclaimed
+  and unblocked); `02`, `04`, `05` claimed and in progress; `03`, `13`,
+  `16` blocked.
+- **Ticket 12 resolved, 2026-08-11.** Grilled with the maintainer to a
+  four-part decision (scope, ADR treatment, injection timing, CLI-surface
+  impact); see its own Answer and the Decisions-so-far entry above.
+  Graduated `22`/`23`/`24` (unclaimed, unblocked/blocked-by-22/blocked-by-22-and-23
+  respectively) rather than implementing here. Rewired `13` to block on
+  `24` instead of `12`. True frontier as of this session (excluding `11`,
+  claimed but blocked on credentials): `14`, `15`, `17`, `18`, `19`, `20`,
+  `21`, `22` (all unclaimed and unblocked); `02`, `04`, `05` claimed and in
+  progress; `03`, `13`, `16`, `23`, `24` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -267,6 +300,7 @@ thin.
 - [07 — Measure Whether the Discovery-Command Hint Gets Used](issues/07-measure-discovery-hint-usage.md) — maintainer chose free dogfooding instrumentation over a paid `benchmarks/token-ab/` run (same funding question already open on `05`). Built a passive, zero-cost, always-on measurement: `hintFollowLog.ts` + a Claude-Code-only `post-tool-use` hook (hand-wired into this repo's own `.claude/settings.json`, not a `LifecyclePoint`, not installed by `neuron init`) log every hint firing and every matching `neuron memory query` Bash call; `npm run bench:hint-follow` joins them into a follow rate. Found and fixed two real false positives live, both stemming from this repo's self-referential nature (its own memory entries and commits routinely talk about its own commands): a bare substring match flagged commands that only *mentioned* the phrase in quoted text, and — after anchoring to shell-separator position — a `neuron memory add` entry whose quoted content described a chained invocation as prose still matched until a quote-parity check excluded matches inside string literals. The outcome-quality half of the question is unanswered — moved to fog, next to `05`'s.
 - [08 — Implement the Git-Log Index](issues/08-implement-git-log-index.md) — built exactly what `39` (neuron-2.3.0) ruled: `src/harnesses/gitLog.ts` (pure git shell-out, ASCII-delimiter-safe commit parsing), a new `git_log_index`/`git_log_fts` SQLite migration (v9) with `refreshGitLogIndex()` (check-HEAD-on-read, one-time backfill then incremental) and `searchGitLog()` (a literal reuse of the ADR 0012 gate — FTS-match required before a dot-product rank, so a topically-absent prompt yields true silence), and pre-prompt-only wiring in `hook.ts` with its own additive, epoch-budget-carved `GIT_LOG_CHAR_BUDGET`. Found and fixed a real test-isolation bug along the way: `hook.test.ts`'s temp project dirs have no `.git` of their own and sit inside this real repo's tree, so without `GIT_CEILING_DIRECTORIES` every hook test started picking up this repo's *actual* git history the moment git shell-outs entered the code path. Manually dogfooded against this repo's real history — a prompt naming ticket 06 correctly surfaced its real commit (`65b9fcf6`) and the real ticket-07 follow-on (`e4742a9`). Unblocks `09` and `11` directly.
 - [09 — Update Generated Protocol Block, Packaged Skill & README for the Git-Log Index](issues/09-update-init-skill-readme-for-git-log-index.md) — `protocolBlock.ts` needed **no code change**, confirmed rather than assumed: `39` ruled supplement (not replace) on the history write step, and hook-injected content the agent never invokes was already undocumented there by precedent (the architecture card, the discovery hint). Updated the three agent/human-facing surfaces that do need to match `08`'s shipped behavior: the packaged skill (`.claude/skills/neuron-memory/SKILL.md`, now telling agents the deterministic hook also covers `git log` search, not just memory), `README.md` (new "Your git history is a searchable resident source too" section — deliberately claims "surfaces real, correct commits," not a quantified win, since `39` found `14`'s favorable numbers were measured against oracle search terms the real semantic mechanism hasn't been re-verified against yet), and a `docs/COMMANDS.md`/`CONTEXT.md` sweep (one line, one new glossary entry). `TEST_INFRA.md` checked and left alone — scoped to `md-file-management`, nothing relevant. `npm test` 645/645, `tsc` clean. Unblocks `10`.
+- [12 — Should `neuron exec`'s Pre-Command Lookup Become a Hook Instead?](issues/12-precommand-hook-vs-exec.md) — yes, for Claude Code and Codex CLI only, permanently: both confirmed to support `PreToolUse`/`additionalContext` injection (Claude Code verified live against the docs mid-session), while Copilot CLI's `preToolUse` and Cursor's `beforeShellExecution` are both permission/gating-only with no context field at all — a structural ceiling, not a research gap, so those two keep the CLAUDE.md-instructed `neuron exec` step permanently. Amends ADR 0014 (new `pre-command` `LifecyclePoint`, `CapabilityMap`/`SupportRecord` shape unchanged) rather than a new ADR. `protocolBlock.ts`'s `execStep()` becomes fidelity-conditional like `recallStep()` already is; `neuron exec`'s CLI surface itself is unchanged. Implementation graduated as tickets 22/23/24 rather than built here, mirroring `08`/`09`/`10`'s split for the git-log index; `13` rewired to block on `24` instead of this now-resolved ticket.
 - [10 — Dogfood the Git-Log Index in This Repo](issues/10-dogfood-git-log-index.md) — re-`init`'d this repo for real and found live drift `09` didn't cause: `CLAUDE.md`'s protocol header still read `learning, history, decisions` / `category: decisions`, stale since `01`'s live auto-declare of `categories.architecture: {}` and its `scan.category` alias revert never got swept back into the header. Fixed by hand (the `--overwrite-hooks` write was blocked by the permission classifier as destructive) after confirming byte-for-byte match against the real generator output; re-init then reported `unchanged`. Packaged skill already matched `09`. Live-demonstrated the shipped injection path twice against real data (captured in `10-live-demo-capture.txt` and `10-commitless-gap-capture.txt`): a two-ticket-number prompt surfaced two real, verified commits; a prompt naming a real commit-less `history` entry (the session that chartered tickets 12–16, never committed on its own) confirmed it still surfaces via the ordinary memory-query leg per `39`'s supplement-not-replace ruling, while git-log correctly didn't fabricate a match for it. `npm test` 645/645, `tsc` clean. Unblocks nothing directly (was itself the last gate before `11`'s A/B could be trusted as measuring the real shipped thing) but confirms `08`/`09` actually work end to end, not just in tests.
 
 ## Not yet specified

@@ -2397,3 +2397,15 @@ tags:
 taskId: null
 ---
 Fix for stale CLAUDE.md protocol block header after a live neuron.yaml category change: this repo's own CLAUDE.md still listed categories as learning, history, decisions and scan.category as decisions after ticket 01's live session auto-declared categories.architecture: {} in neuron.yaml and reverted the scan.category alias to architecture — the protocol block's header line was never regenerated to match. Root cause: neuron init's upsertProtocolBlock only overwrites the marker-bounded region when --overwrite-hooks is passed or the run is interactive with consent; a non-interactive re-init just reports kept-existing and leaves the stale text in place, so drift between neuron.yaml and CLAUDE.md silently persists until someone notices the kept-existing warning and acts on it. Confirmed via loadConfig()+generateProtocolBlock() that the only diff was that one header line, then applied the exact generated text by hand (the CLI's --overwrite-hooks write was blocked by the permission classifier as a destructive file write) and re-verified byte-for-byte against the generator before re-running init to see it report unchanged. Edge case: also learned that a bare neuron init (no --harness filter) in a repo with any existing .github/ dir silently onboards the github harness and writes AGENTS.md plus .github/hooks|skills/ with no separate opt-in — scope with --harness <id> when you only want one harness's files touched.
+
+---
+id: cc6a4717-741b-4756-80db-b8634f1bd734
+createdAt: 2026-08-11T05:02:43.697Z
+importance: 4
+tags:
+  - retrieval
+  - rc2
+  - wayfinder
+taskId: null
+---
+Finding while building ticket 11's (neuron-2.4.0) git-log relevance-gate silence test: cleanFtsQuery's gate (src/components/fts-query.ts) is an OR across every non-stopword prefix term, so passing the FTS leg only requires ONE shared word between a query and this repo's own ~200-commit, self-referential corpus. A first attempt asking about 'CSV export' from 'the memory store' fired the gate anyway (matched on 'memory'/'store'/'ticket'); three more natural-sounding true-negative candidates using words like 'ship'/'storage'/'documented' also all fired. Building a genuine silence case required computing the full corpus vocabulary (git log --all --format=%s%n%b, ~2865 unique tokens) programmatically and picking content words verified to be neither a member of, nor a prefix match against, any token in it — a hand-picked 'obviously irrelevant' guess is not reliable for this corpus. Verified fix/approach: benchmarks/token-ab/gitlog-gate-task.mjs. Relevant to ticket 17's antagonistic-recall benchmark and the map's 'confidently-wrong retrieval' fog item — the shipped lexical gate is much looser in practice than 'topically relevant' for a repo whose commits are about itself.

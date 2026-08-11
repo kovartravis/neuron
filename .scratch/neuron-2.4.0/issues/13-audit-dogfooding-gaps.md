@@ -1,6 +1,6 @@
 Type: task
 Status: unclaimed
-Blocked by: 12
+Blocked by: 24
 
 # 13 — Audit: Dogfooding Gaps in This Repo
 
@@ -53,3 +53,10 @@ each into its own implementation ticket in a following session.
 - Blocked by [12](12-precommand-hook-vs-exec.md) at the maintainer's
   request: auditing against a convention (`neuron exec` wrapping) that
   ticket 12 might replace with a hook would waste the audit's own findings.
+- **Rewired 2026-08-11**: `12` resolved (Claude Code/Codex get a real
+  `pre-command` hook; Copilot/Cursor keep `neuron exec` permanently — see
+  `12`'s own Answer) and graduated three implementation tickets rather
+  than shipping the mechanism itself. Re-pointed this ticket's blocking
+  edge from `12` to [24](24-dogfood-precommand-hook.md), the terminal one
+  of the three — auditing needs the real mechanism dogfood-verified, not
+  just designed, to check compliance against.

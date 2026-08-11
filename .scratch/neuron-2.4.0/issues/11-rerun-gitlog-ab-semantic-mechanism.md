@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: 08
 Band: context cost
 
@@ -70,3 +70,59 @@ numbers cannot be assumed to carry over.
 - [ ] Feeds forward to ticket 15's already-published token-economics report
       (a follow-up refresh, not this ticket's own scope) and to `04`'s
       claim-versus-behavior audit
+
+## Comments
+
+**2026-08-10, claimed, harness built, blocked on live-run credentials.**
+
+Built the new arm per Scope items 1-2, reusing `14`'s harness verbatim:
+
+- `benchmarks/token-ab/gitlog-semantic-search.mjs` — shells out to the real
+  built CLI (`dist/cli.js hook claude-code pre-prompt`), sessionless, so
+  `NeuronMemory.refreshGitLogIndex()`/`searchGitLog()` (`08`) run for real
+  against a task's actual prompt text. Zero API spend — local git +
+  local embedder only. `warmGitLogIndex()` pays the one-time ~200-commit
+  backfill (~2.9s) once per shared `dbPath`, reused across every
+  session/task/repeat that targets the same fixture HEAD.
+- `benchmarks/token-ab/gitlog-gate-task.mjs` — Scope item 4's silence case.
+- `benchmarks/token-ab/run-gitlog-ab-semantic.mjs` — orchestrator. Runs only
+  the `semantic` arm live; cites `14`'s `agent` and oracle `gitlog` arms
+  from their own `results.json` (Scope item 3) via two `summarize()` calls
+  (`semantic` vs `agent`, `semantic` vs `oracle-gitlog`) rather than
+  re-deriving them.
+
+**Real finding while building Scope item 4's silence case**: a first draft
+asked about "CSV export" from "the memory store" and the real gate fired
+anyway — `cleanFtsQuery`'s gate is an OR across every non-stopword prefix
+(`src/components/fts-query.ts`), so any single shared word against this
+repo's own ~200-commit, self-referential corpus passes it. Ordinary
+engineering vocabulary ("ticket", "memory", "store", "repository",
+"documented") is already present somewhere in that history — three
+independent test prompts using words like "ship"/"storage"/"documented"
+all fired. Building a genuine silence case required computing the full
+~2865-word corpus vocabulary and picking content words verified to be
+neither a member of, nor a prefix match against, any token in it — not a
+hand-picked "obviously irrelevant" guess. The shipped gate is
+**substantially looser in practice than "topically relevant"** for a
+self-referential engineering corpus — worth a line in this ticket's own
+`findings.md` once the live run happens, and directly relevant to `17`'s
+antagonistic-recall benchmark and the "confidently-wrong retrieval" fog
+item.
+
+`--dry-run` confirms the whole pipeline end to end for free: the three
+reused tasks each get a real, non-empty semantic git-log note (~900-990
+chars, real relevant commits); the new gate task gets genuine silence
+(`gitLogFired=false`).
+
+**Blocked**: the live run needs a real Anthropic API call per session (10
+sessions: 3 tasks × 3 repeats + 1 gate check). No `ANTHROPIC_API_KEY` in
+this environment; the `ant` CLI's OAuth profile access token had expired
+(~30h) and refreshing/printing it hit a permission this session's auto-mode
+classifier blocks (credential dump), with no interactive browser available
+for `ant auth login` either. Asked the maintainer directly (same
+funding/execution-blocker precedent as `05`'s own fog item) — chose to
+leave this blocked rather than supply credentials or run it standalone this
+session. Next session picking this up: refresh `ant auth` (or supply
+`ANTHROPIC_API_KEY`) first, then `node
+benchmarks/token-ab/run-gitlog-ab-semantic.mjs` for the real run (est.
+$0.45-0.55, cap at $1.00 per `10`'s Scope item 6 precedent).
