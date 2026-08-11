@@ -47,6 +47,18 @@ import {
 } from './config/neuronYaml.js';
 import { resolveAllCategoryRoots } from './config/categoryPath.js';
 import { suggestClosest } from './shared/textMatch.js';
+import { getHeadSha, listAllCommits, listCommitsSince } from './harnesses/gitLog.js';
+
+/** A `searchGitLog` hit: an indexed commit that cleared the ADR 0012-style relevance gate. */
+export interface GitLogHit {
+  hash: string;
+  subject: string;
+  body: string;
+  committedAt: string;
+  similarity: number;
+}
+
+const GIT_LOG_LAST_INDEXED_SHA_KEY = 'git_log_last_indexed_sha';
 
 function findProjectRoot(startDir: string): { root: string; name: string } {
   let dir = path.resolve(startDir);
@@ -520,6 +532,46 @@ export class NeuronMemory {
       })();
       currentVersion = 8;
     }
+
+    // --- Migration v9: git-log index (ticket 08 / neuron-2.4.0, ruled by
+    // ticket 39 / neuron-2.3.0) ---
+    // A derived cache over content git itself already owns (ADR-scope note
+    // in ticket 39's Answer: no markdown mirror, no ADR — this isn't
+    // authoritative content the way `memories` is). `embedding` mirrors
+    // `memories`: a normalized BLOB, dot-product-comparable via the same
+    // `dotProduct`/`toFloat32` helpers. `git_log_fts` mirrors `memories_fts`
+    // exactly (content table + sync triggers) so `searchGitLog`'s relevance
+    // gate can reuse `queryGated`'s own predicate (`ftsMatched`) against a
+    // parallel table rather than inventing a new gate mechanism. Commits are
+    // immutable and hashes unique, so only an insert trigger is needed — no
+    // update/delete path ever fires against this table.
+    if (currentVersion < 9) {
+      this.db.transaction(() => {
+        this.db.exec(`
+          CREATE TABLE IF NOT EXISTS git_log_index (
+            hash TEXT PRIMARY KEY NOT NULL,
+            subject TEXT NOT NULL,
+            body TEXT NOT NULL,
+            embedding BLOB NOT NULL,
+            committed_at TEXT NOT NULL
+          );
+
+          CREATE VIRTUAL TABLE IF NOT EXISTS git_log_fts USING fts5(
+            subject, body,
+            content='git_log_index',
+            content_rowid='rowid'
+          );
+
+          CREATE TRIGGER IF NOT EXISTS git_log_index_ai AFTER INSERT ON git_log_index BEGIN
+            INSERT INTO git_log_fts(rowid, subject, body) VALUES (new.rowid, new.subject, new.body);
+          END;
+        `);
+        const insertMeta = this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+        insertMeta.run('schema_version', '9');
+        this.db.pragma('user_version = 9');
+      })();
+      currentVersion = 9;
+    }
   }
 
   /**
@@ -855,6 +907,84 @@ export class NeuronMemory {
       }
     }
     return best;
+  }
+
+  /**
+   * Check-HEAD-on-read refresh (ticket 39 / neuron-2.3.0, item 1): compares
+   * the stored last-indexed SHA against the repo's current `HEAD` and embeds
+   * only the delta. A store with no `git_log_last_indexed_sha` meta key yet
+   * pays a one-time full-history backfill; every call after that is
+   * proportional to commits-since-last-call, not repo size. Silently no-ops
+   * when `projectRoot` isn't a git repo (or has no commits yet) — this method
+   * is called from the pre-prompt hook path, which must degrade toward "skip
+   * this feature" rather than fail the turn (ADR 0014).
+   */
+  public async refreshGitLogIndex(): Promise<void> {
+    if (!this.db) return;
+    const head = getHeadSha(this.projectRoot);
+    if (!head) return;
+
+    const lastIndexed = this.getMeta(GIT_LOG_LAST_INDEXED_SHA_KEY);
+    if (lastIndexed === head) return;
+
+    const commits = lastIndexed ? listCommitsSince(this.projectRoot, lastIndexed) : listAllCommits(this.projectRoot);
+    if (commits.length > 0) {
+      const insert = this.db.prepare(`
+        INSERT OR IGNORE INTO git_log_index (hash, subject, body, embedding, committed_at)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      for (const commit of commits) {
+        const embedding = await this.embedder.embed(`${commit.subject}\n${commit.body}`.trim());
+        insert.run(commit.hash, commit.subject, commit.body, Buffer.from(embedding.buffer), commit.committedAt);
+      }
+    }
+    this.setMeta(GIT_LOG_LAST_INDEXED_SHA_KEY, head);
+  }
+
+  /**
+   * Ticket 39 (neuron-2.3.0) item 3: ranks indexed commits by the same
+   * pre-normalized dot-product scan `queryVector` already runs over
+   * `memories`, gated (item 6) by the same ADR 0012 predicate `queryGated`
+   * applies to memory recall — a genuine FTS match on `subject`/`body` — via
+   * `git_log_fts`, a parallel table built for exactly this reuse. This is a
+   * *conjunction*, not a re-ranking: rows failing the FTS leg are dropped
+   * before the top-K cut, not merely demoted, so a prompt with nothing
+   * topically present in this repo's history yields silence rather than an
+   * incidental top-1 by cosine alone.
+   */
+  public async searchGitLog(text: string, limit: number): Promise<GitLogHit[]> {
+    if (!this.db) return [];
+    const ftsQuery = cleanFtsQuery(text);
+    if (!ftsQuery) return [];
+
+    let ftsMatched: Set<string>;
+    try {
+      const ftsRows = this.db.prepare(`
+        SELECT g.hash FROM git_log_fts f
+        JOIN git_log_index g ON g.rowid = f.rowid
+        WHERE f.git_log_fts MATCH ?
+      `).all(ftsQuery) as Array<{ hash: string }>;
+      ftsMatched = new Set(ftsRows.map(r => r.hash));
+    } catch {
+      // Malformed FTS query — no lexical leg can pass, so nothing can gate through.
+      return [];
+    }
+    if (ftsMatched.size === 0) return [];
+
+    const queryVec = await this.embedder.embedQuery(text);
+    const rows = this.db.prepare(`SELECT hash, subject, body, embedding, committed_at FROM git_log_index`).all() as any[];
+    const gated = rows
+      .filter(row => ftsMatched.has(row.hash))
+      .map(row => ({
+        hash: row.hash as string,
+        subject: row.subject as string,
+        body: row.body as string,
+        committedAt: row.committed_at as string,
+        similarity: dotProduct(queryVec, toFloat32(row.embedding)),
+      }))
+      .sort((a, b) => b.similarity - a.similarity);
+
+    return gated.slice(0, limit);
   }
 
   /**

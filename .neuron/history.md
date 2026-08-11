@@ -3440,3 +3440,15 @@ tags:
 taskId: neuron-2.4.0
 ---
 Triaged a maintainer-reported dogfooding feedback batch (photographed travisos terminal output) into neuron-2.4.0's map: tickets 18-21 (concurrent-write data-loss race in mdStorageAdapter.ts, non-interactive cron write mode, neuron doctor, sessionsObserved:0 startup warning), plus two fog items (supersession-gate-never-fired needs live repro, importance decay unformed). Checked each of the batch's 7 recommendations against current src/ before ticketing rather than transcribing blindly — found 2 of 7 (supersedes-fail-loudly, auto-supersede-on-similarity) already shipped in current code, folded the real symptom into ticket 18 as the same race rather than duplicating already-working validation. One item (wiring travisos's own .github/hooks/neuron.json) confirmed out of scope for this repo and left for the maintainer.
+
+---
+id: bdc485fb-2520-47a5-8094-3965af6f79ca
+createdAt: 2026-08-11T00:15:40.596Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "08"
+---
+Resolved ticket 08 (Implement the Git-Log Index) on the neuron-2.4.0 wayfinder map, the frontier's first unclaimed/unblocked ticket, per ticket 39's (neuron-2.3.0) prior design rulings: check-HEAD-on-read incremental refresh with one-time backfill, semantic (embedding dot-product) search gated by a literal reuse of the ADR 0012 relevance-gate predicate against a new parallel git_log_fts table, pre-prompt-only injection wired into hook.ts with its own additive GIT_LOG_CHAR_BUDGET carved from the epoch budget. New files: src/harnesses/gitLog.ts (pure git shell-out parsing), migration v9 in src/index.ts (git_log_index + git_log_fts + refreshGitLogIndex/searchGitLog on NeuronMemory). Added 21 new tests (gitLog.test.ts, index.gitLog.test.ts, four hook.test.ts integration tests) plus fixed a real test-isolation bug (GIT_CEILING_DIRECTORIES) it exposed in eight pre-existing hook tests; npm test 645/645 and tsc clean. Manually dogfooded against this repo's real git history -- a prompt naming ticket 06 by name correctly surfaced its real commit (65b9fcf6) and the real ticket-07 follow-on commit (e4742a9). Resolution unblocks ticket 09 (protocol block / skill / README update) and ticket 11 (re-run the git-log A/B against the real semantic mechanism) directly; ticket 10 (dogfood in this repo) still waits on 09 too. Map and ticket file updated with the Answer, Decisions-so-far, and new frontier.

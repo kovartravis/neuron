@@ -24,6 +24,14 @@ export const SESSION_START_CHAR_BUDGET = 6000;
 /** Small and asymmetric: this cost repeats every turn, deduplicated by the session ledger. */
 export const PRE_PROMPT_CHAR_BUDGET = 1500;
 
+/**
+ * Ticket 08 (neuron-2.4.0): the git-log index's own reserved cap, carved out
+ * of what's left of the epoch's `remaining` budget the same way the
+ * re-injected architecture card already is — additive resident-footprint
+ * cost, not exempt from the epoch accounting `07` (neuron-2.3.0) introduced.
+ */
+export const GIT_LOG_CHAR_BUDGET = 1000;
+
 export function formatMemoryEntry(m: Memory): string {
   const tags = m.tags && m.tags.length > 0 ? ` (tags: ${m.tags.join(', ')})` : '';
   return `- [${m.category}] ${m.content}${tags}`;

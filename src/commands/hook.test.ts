@@ -31,6 +31,18 @@ describe('CLI Command: hook', () => {
       NEURON_DB_PATH: tempDbPath,
       NEURON_MOCK_EMBEDDER: 'true',
       NEURON_HOOK_CACHE_DIR: path.join(projectDir, '.hook-cache'),
+      // Ticket 08 (neuron-2.4.0): `projectDir` has no `.git` of its own, and
+      // sits nested inside this real repo's working tree — without a
+      // ceiling, `git rev-parse`/`git log` would silently walk up and find
+      // *this* repo's real history, making every test below coupled to
+      // whatever this repo's own git log happens to contain. The ceiling is
+      // `projectDir`'s own parent (`tempDbDir`), not `projectDir` itself —
+      // empirically, listing the search's starting directory as its own
+      // ceiling does not stop it from ascending one level, only listing an
+      // ancestor above it does. Tests that specifically exercise the
+      // git-log index `git init` their own `projectDir` first, which
+      // satisfies the search before it would ever need to ascend at all.
+      GIT_CEILING_DIRECTORIES: tempDbDir,
       ...extra,
     };
   }
@@ -622,5 +634,81 @@ describe('CLI Command: hook', () => {
     );
     expect(result.status).toBe(0);
     expect(withHookCacheDir(() => readHintEvents(projectDir))).toEqual([]);
+  });
+
+  // --- Ticket 08 (neuron-2.4.0): git-log index, pre-prompt injection ---
+  describe('git-log index', () => {
+    function git(args: string[]): void {
+      spawnSync('git', args, {
+        cwd: projectDir,
+        env: { ...process.env, GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.com', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.com' },
+      });
+    }
+    function gitCommit(subject: string, body = ''): void {
+      fs.writeFileSync(path.join(projectDir, `file-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`), 'x');
+      git(['add', '.']);
+      git(['commit', '-m', body ? `${subject}\n\n${body}` : subject]);
+    }
+
+    beforeEach(() => {
+      // `projectDir` becomes its own repo root here, so `GIT_CEILING_DIRECTORIES`
+      // (set in `env()` above) never needs to matter for these tests.
+      git(['init', '-q']);
+    });
+
+    it('injects a lexically-matching commit via pre-prompt, with the disclosure caveat', () => {
+      gitCommit('feat: add widget subsystem', 'widget rendering and layout logic.');
+      const result = run(
+        ['hook', 'claude-code', 'pre-prompt'],
+        JSON.stringify({ session_id: 'gitlog-session', prompt: 'tell me about the widget subsystem' })
+      );
+      expect(result.status).toBe(0);
+      const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+      expect(context).toContain('## Git History');
+      expect(context).toContain('feat: add widget subsystem');
+      expect(context).toContain('verify against `git log`/`git show` yourself');
+    });
+
+    it('stays silent (no git-log section, empty stdout) when nothing in history topically matches', () => {
+      gitCommit('feat: add widget subsystem', 'widget rendering and layout logic.');
+      const result = run(
+        ['hook', 'claude-code', 'pre-prompt'],
+        JSON.stringify({ session_id: 'gitlog-silent-session', prompt: 'completely unrelated kubernetes deployment question' })
+      );
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('dedupes a git-log hit within the same session epoch, and it reappears after a context-reset rolls the epoch', () => {
+      gitCommit('feat: add widget subsystem', 'widget rendering and layout logic.');
+      const stdin = JSON.stringify({ session_id: 'gitlog-dedupe-session', prompt: 'tell me about the widget subsystem' });
+
+      const first = run(['hook', 'claude-code', 'pre-prompt'], stdin);
+      expect(JSON.parse(first.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('## Git History');
+
+      const second = run(['hook', 'claude-code', 'pre-prompt'], stdin);
+      expect(second.stdout.toString().trim()).toBe('');
+
+      const resetResult = run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: 'gitlog-dedupe-session' }));
+      expect(resetResult.status).toBe(0);
+
+      const third = run(['hook', 'claude-code', 'pre-prompt'], stdin);
+      expect(JSON.parse(third.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain('## Git History');
+    });
+
+    it('injects nothing git-log-related when the project directory is not a git repo at all', () => {
+      // Overwrites the `git init` this describe block's own beforeEach just
+      // did, reproducing an ordinary non-git project.
+      fs.rmSync(path.join(projectDir, '.git'), { recursive: true, force: true });
+      execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+      const result = run(
+        ['hook', 'claude-code', 'pre-prompt'],
+        JSON.stringify({ session_id: 'gitlog-no-repo-session', prompt: 'how should I access the database here' })
+      );
+      expect(result.status).toBe(0);
+      const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+      expect(context).toContain('Repository Pattern');
+      expect(context).not.toContain('## Git History');
+    });
   });
 });
