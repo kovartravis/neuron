@@ -2385,3 +2385,15 @@ tags:
 taskId: null
 ---
 Fix for hook.test.ts's git-log tests silently coupling to the real repo's own git history: temp project dirs under src/__tests__/temp-hook/ have no .git of their own and sit nested inside this real repo's working tree, so once src/harnesses/gitLog.ts's git rev-parse/git log shell-outs entered the pre-prompt hook path, git silently walked up and found THIS repo's actual .git, breaking eight pre-existing deterministic tests. Root cause: git's directory-discovery walks up to the nearest ancestor .git with no notion that a test fixture wants isolation. Fixed by setting GIT_CEILING_DIRECTORIES in hook.test.ts's env() helper to tempDbDir (projectDir's PARENT), not projectDir itself -- empirically, listing a directory as its own ceiling does not stop git from ascending one level past it, only listing an ancestor does (verified manually: GIT_CEILING_DIRECTORIES=$(pwd) inside the dir still found the outer repo; GIT_CEILING_DIRECTORIES=<parent> correctly returned 'not a git repository'). Tests that specifically exercise git-backed features should git init their own fixture dir, which satisfies discovery before it would ever need to ascend at all.
+
+---
+id: a32b4b8c-e1eb-4876-bc5f-3845f6d5927b
+createdAt: 2026-08-11T03:10:39.124Z
+importance: 4
+tags:
+  - failure-fix
+  - memory
+  - adr
+taskId: null
+---
+Fix for stale CLAUDE.md protocol block header after a live neuron.yaml category change: this repo's own CLAUDE.md still listed categories as learning, history, decisions and scan.category as decisions after ticket 01's live session auto-declared categories.architecture: {} in neuron.yaml and reverted the scan.category alias to architecture — the protocol block's header line was never regenerated to match. Root cause: neuron init's upsertProtocolBlock only overwrites the marker-bounded region when --overwrite-hooks is passed or the run is interactive with consent; a non-interactive re-init just reports kept-existing and leaves the stale text in place, so drift between neuron.yaml and CLAUDE.md silently persists until someone notices the kept-existing warning and acts on it. Confirmed via loadConfig()+generateProtocolBlock() that the only diff was that one header line, then applied the exact generated text by hand (the CLI's --overwrite-hooks write was blocked by the permission classifier as a destructive file write) and re-verified byte-for-byte against the generator before re-running init to see it report unchanged. Edge case: also learned that a bare neuron init (no --harness filter) in a repo with any existing .github/ dir silently onboards the github harness and writes AGENTS.md plus .github/hooks|skills/ with no separate opt-in — scope with --harness <id> when you only want one harness's files touched.

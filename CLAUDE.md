@@ -3,7 +3,7 @@
 <!-- neuron:protocol:start -->
 ## Memory Store Protocol (`@kovartravis/neuron`)
 
-Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`. Architecture scan settings: enabled: true, category: `decisions`, depth: 3.
+Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`, `architecture`. Architecture scan settings: enabled: true, category: `architecture`, depth: 3.
 
 ## 1. Command Execution
 
