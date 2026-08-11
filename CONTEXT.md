@@ -28,6 +28,25 @@ The identifier used to link logged history entries back to specification artifac
 
 The mechanism that queries the memory store for relevant learnings before running a shell command. Results pass through the conjunctive relevance gate (ADR 0012) before printing to `stderr`; a rejected-everything result still prints a count rather than staying silent. It executes the target command with inherited `stdio`.
 
+### git-log index (`src/harnesses/gitLog.ts`, `src/index.ts`)
+
+A SQLite table (`git_log_index` + `git_log_fts`, migration v9) indexing every
+commit's subject and body by embedding, refreshed via check-HEAD-on-read
+(`refreshGitLogIndex`: compares the stored last-indexed SHA against `git
+rev-parse HEAD`, embeds only the delta, with a one-time full backfill on
+first use) rather than an installed git hook — nothing to silently bypass.
+Searched (`searchGitLog`) through the same ADR 0012-style gate ordinary
+memory recall uses: a candidate must first clear an FTS keyword match before
+it's ranked by embedding similarity, so a topically-absent prompt yields true
+silence rather than an incidental top hit. Wired into `hook.ts`'s
+`pre-prompt` point only, on harnesses with a per-turn hook, additive to and
+budgeted separately from ordinary memory recall (`GIT_LOG_CHAR_BUDGET`,
+`src/harnesses/payload.ts`). Unlike `memories`, it has no markdown mirror —
+git itself is already the versioned source of truth, so this table is a
+derived cache, not authoritative content neuron owns. Ticket numbers in
+commit messages can collide across concurrent wayfinder maps; the injected
+payload discloses this rather than attempting to disambiguate it.
+
 ### failure-triggered learning capture
 
 The closed-loop process where an agent automatically records a new learning (`neuron learn add ...`) immediately after investigating and resolving a command or build failure.

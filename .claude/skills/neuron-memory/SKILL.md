@@ -269,9 +269,16 @@ interview.
 > wired** (as of 2.2.0: Claude Code, Codex CLI — see `neuron init`'s
 > `hooks.installed` output). There, `neuron hook <harness> pre-prompt` already
 > injects matching memory into context before every turn, so a manual query
-> here would just repeat what the harness already delivered. The steps below
-> are the fallback for a harness with no such hook: query manually, because
-> nothing else will.
+> here would just repeat what the harness already delivered. As of 2.4.0 the
+> same hook also searches an indexed copy of this repo's own `git log`
+> (subject + body, semantically matched, gated the same way memory recall is)
+> and injects any relevant commits — so a manual `git log`/`git show` search
+> for "what changed and why" is also redundant here, not just memory lookup.
+> Ticket/issue numbers in a matched commit message can still collide across
+> concurrent planning efforts, so verify a specific number against `git show`
+> before treating it as certain. The steps below are the fallback for a
+> harness with no deterministic hook: query manually, because nothing else
+> will.
 
 At the very start of a session, before running any other commands or modifying files, load relevant past context:
 

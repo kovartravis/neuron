@@ -118,6 +118,33 @@ This matrix is static and harnesses change their own hook contracts without
 notice — treat "verified" as "true when last checked," not "guaranteed
 going forward."*
 
+### Your git history is a searchable resident source too
+
+On the two harnesses with a per-turn hook (Claude Code, Codex CLI), every
+prompt is also matched against an index of your repo's own commit history —
+subject and body, embedded and searched the same way memory content is,
+gated so an unrelated prompt surfaces nothing rather than a weak guess. The
+index backfills once on first use, then stays current incrementally (a
+`git rev-parse HEAD` check against the last-indexed commit) — no git hook to
+install, nothing to silently fall out of sync. It's additive and bounded:
+roughly 1,000 characters per turn, carved out of the same per-epoch budget
+the rest of recall already respects, never a separate cost.
+
+Two things worth knowing before you rely on it:
+- **Ticket/issue numbers in commit messages can collide** across concurrent
+  planning efforts that both call something "ticket 14" — the index has no
+  way to disambiguate them, and says so in what it injects. Verify against
+  `git log`/`git show` yourself before trusting a specific number.
+- **It's shipped and dogfooded, not yet independently re-measured.** An
+  earlier prototype (hand-picked, oracle search terms) showed a favorable
+  result, but the real mechanism — semantic embedding match, not keyword
+  search — turned out to need its own measurement; that re-run hasn't
+  landed yet. Treat it as "surfaces real, correct commits" (confirmed live
+  against this repo's own history), not yet as a quantified improvement.
+
+Copilot CLI and Cursor don't get this — both only have a session-start hook,
+and there's no prompt to match against until the first per-turn hook fires.
+
 ## 📁 What it looks like in your repo
 
 ```

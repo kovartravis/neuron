@@ -3452,3 +3452,27 @@ tags:
 taskId: "08"
 ---
 Resolved ticket 08 (Implement the Git-Log Index) on the neuron-2.4.0 wayfinder map, the frontier's first unclaimed/unblocked ticket, per ticket 39's (neuron-2.3.0) prior design rulings: check-HEAD-on-read incremental refresh with one-time backfill, semantic (embedding dot-product) search gated by a literal reuse of the ADR 0012 relevance-gate predicate against a new parallel git_log_fts table, pre-prompt-only injection wired into hook.ts with its own additive GIT_LOG_CHAR_BUDGET carved from the epoch budget. New files: src/harnesses/gitLog.ts (pure git shell-out parsing), migration v9 in src/index.ts (git_log_index + git_log_fts + refreshGitLogIndex/searchGitLog on NeuronMemory). Added 21 new tests (gitLog.test.ts, index.gitLog.test.ts, four hook.test.ts integration tests) plus fixed a real test-isolation bug (GIT_CEILING_DIRECTORIES) it exposed in eight pre-existing hook tests; npm test 645/645 and tsc clean. Manually dogfooded against this repo's real git history -- a prompt naming ticket 06 by name correctly surfaced its real commit (65b9fcf6) and the real ticket-07 follow-on commit (e4742a9). Resolution unblocks ticket 09 (protocol block / skill / README update) and ticket 11 (re-run the git-log A/B against the real semantic mechanism) directly; ticket 10 (dogfood in this repo) still waits on 09 too. Map and ticket file updated with the Answer, Decisions-so-far, and new frontier.
+
+---
+id: 6db27af3-dbba-4ced-9cf1-5d26f070aa2b
+createdAt: 2026-08-11T01:26:45.604Z
+importance: 3
+tags:
+  - release
+  - git
+  - wayfinder
+taskId: "08"
+---
+Pushed ticket-08 git-log index (neuron-2.4.0) to GitHub -- commit 3c677d6 on feat/2.4.0-rc1.
+
+---
+id: cb6384c9-5039-4b34-8f16-17de10e806e5
+createdAt: 2026-08-11T02:59:17.622Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "09"
+---
+Resolved neuron-2.4.0 ticket 09 (Update Generated Protocol Block, Packaged Skill & README for the Git-Log Index), the wayfinder frontier's first unclaimed/unblocked ticket after ticket 08 shipped the git-log index. protocolBlock.ts needed no code change -- confirmed via grep, not assumed, that ticket 39 (neuron-2.3.0) ruled supplement (not replace) on the history write step, and hook-injected content the agent never invokes (architecture card, discovery hint) was already undocumented there by existing precedent. Updated the three surfaces that do need to match ticket 08's shipped behavior: .claude/skills/neuron-memory/SKILL.md (agents told the deterministic hook also covers git-log search, plus the ticket-collision caveat), README.md (new 'Your git history is a searchable resident source too' section, deliberately not claiming ticket 14's oracle-term A/B numbers as the shipped semantic mechanism's own result since ticket 11 hasn't re-measured it yet), and docs/COMMANDS.md/CONTEXT.md (one line, one glossary entry). TEST_INFRA.md checked and left alone -- scoped to md-file-management only. npm test 645/645 and tsc clean. Unblocks ticket 10.
