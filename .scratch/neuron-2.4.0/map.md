@@ -281,6 +281,43 @@ thin.
   claimed but blocked on credentials): `14`, `15`, `17`, `18`, `19`, `20`,
   `21`, `22` (all unclaimed and unblocked); `02`, `04`, `05` claimed and in
   progress; `03`, `13`, `16`, `23`, `24` blocked.
+- **Ticket 14 resolved, 2026-08-11.** Grilled with the maintainer to a
+  five-part decision (category shape, blocking representation, tracker-doc
+  treatment, migration approach, ADR-or-amendment); see its own Answer and
+  the Decisions-so-far entry above. Wrote [ADR 0018 — Neuron as This Repo's
+  Issue Tracker](../../docs/adr/0018-neuron-as-issue-tracker.md). Graduated
+  `25` (declare the `tickets` category, rewrite `issue-tracker.md`;
+  unclaimed, unblocked) and `26` (bulk-migrate all 19 `.scratch/` efforts —
+  including this map itself — into the `tickets` category, then delete
+  `.scratch/`; unclaimed, blocked by `25`) rather than implementing here.
+  True frontier as of this session (excluding `11`, claimed but blocked on
+  credentials): `15`, `17`, `18`, `19`, `20`, `21`, `22`, `25` (all
+  unclaimed and unblocked); `02`, `04`, `05` claimed and in progress; `03`,
+  `13`, `16`, `23`, `24`, `26` blocked.
+- **Ticket 15 resolved, 2026-08-11.** Swept the repo for code readability
+  and hygiene per its own Question; full punch list published as
+  [15-repo-cleanup-punch-list.md](issues/15-repo-cleanup-punch-list.md). Two
+  items graduated to sized, low-risk candidates (delete three orphaned
+  `2.0.0`-era root docs; decide `tmp/`'s gitignore fate); everything else
+  recon'd (`console.log` audit, `src/` vs. the architecture card, the
+  traversal-test fixtures, `CHANGELOG.md` size) was checked and cleared, not
+  flagged — see its own Answer for detail. Didn't unblock anything directly
+  (no ticket here lists it as a blocker); its punch list is input for a
+  future graduation session, mirroring `13`'s relationship to `16`. True
+  frontier as of this session (excluding `11`, claimed but blocked on
+  credentials): `17`, `18`, `19`, `20`, `21`, `22`, `25` (all unclaimed and
+  unblocked); `02`, `04`, `05` claimed and in progress; `03`, `13`, `16`,
+  `23`, `24`, `26` blocked.
+- **Ticket 17 resolved, 2026-08-11.** Built and ran both measurements for
+  real; see its own Answer and the Decisions-so-far entry above. Didn't
+  unblock anything directly (no ticket here lists it as a blocker) — its
+  99.80% LongMemEval false-accept measurement is input for a future
+  cosine-floor/adjudication ticket, not chartered yet. One off-band finding
+  (`Pillar 8`'s pre-existing concurrent-migration race, `no such column:
+  "scope"`) confirmed unrelated and left for `18`. True frontier as of this
+  session (excluding `11`, claimed but blocked on credentials): `18`, `19`,
+  `20`, `21`, `22`, `25` (all unclaimed and unblocked); `02`, `04`, `05`
+  claimed and in progress; `03`, `13`, `16`, `23`, `24`, `26` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -302,6 +339,9 @@ thin.
 - [09 — Update Generated Protocol Block, Packaged Skill & README for the Git-Log Index](issues/09-update-init-skill-readme-for-git-log-index.md) — `protocolBlock.ts` needed **no code change**, confirmed rather than assumed: `39` ruled supplement (not replace) on the history write step, and hook-injected content the agent never invokes was already undocumented there by precedent (the architecture card, the discovery hint). Updated the three agent/human-facing surfaces that do need to match `08`'s shipped behavior: the packaged skill (`.claude/skills/neuron-memory/SKILL.md`, now telling agents the deterministic hook also covers `git log` search, not just memory), `README.md` (new "Your git history is a searchable resident source too" section — deliberately claims "surfaces real, correct commits," not a quantified win, since `39` found `14`'s favorable numbers were measured against oracle search terms the real semantic mechanism hasn't been re-verified against yet), and a `docs/COMMANDS.md`/`CONTEXT.md` sweep (one line, one new glossary entry). `TEST_INFRA.md` checked and left alone — scoped to `md-file-management`, nothing relevant. `npm test` 645/645, `tsc` clean. Unblocks `10`.
 - [12 — Should `neuron exec`'s Pre-Command Lookup Become a Hook Instead?](issues/12-precommand-hook-vs-exec.md) — yes, for Claude Code and Codex CLI only, permanently: both confirmed to support `PreToolUse`/`additionalContext` injection (Claude Code verified live against the docs mid-session), while Copilot CLI's `preToolUse` and Cursor's `beforeShellExecution` are both permission/gating-only with no context field at all — a structural ceiling, not a research gap, so those two keep the CLAUDE.md-instructed `neuron exec` step permanently. Amends ADR 0014 (new `pre-command` `LifecyclePoint`, `CapabilityMap`/`SupportRecord` shape unchanged) rather than a new ADR. `protocolBlock.ts`'s `execStep()` becomes fidelity-conditional like `recallStep()` already is; `neuron exec`'s CLI surface itself is unchanged. Implementation graduated as tickets 22/23/24 rather than built here, mirroring `08`/`09`/`10`'s split for the git-log index; `13` rewired to block on `24` instead of this now-resolved ticket.
 - [10 — Dogfood the Git-Log Index in This Repo](issues/10-dogfood-git-log-index.md) — re-`init`'d this repo for real and found live drift `09` didn't cause: `CLAUDE.md`'s protocol header still read `learning, history, decisions` / `category: decisions`, stale since `01`'s live auto-declare of `categories.architecture: {}` and its `scan.category` alias revert never got swept back into the header. Fixed by hand (the `--overwrite-hooks` write was blocked by the permission classifier as destructive) after confirming byte-for-byte match against the real generator output; re-init then reported `unchanged`. Packaged skill already matched `09`. Live-demonstrated the shipped injection path twice against real data (captured in `10-live-demo-capture.txt` and `10-commitless-gap-capture.txt`): a two-ticket-number prompt surfaced two real, verified commits; a prompt naming a real commit-less `history` entry (the session that chartered tickets 12–16, never committed on its own) confirmed it still surfaces via the ordinary memory-query leg per `39`'s supplement-not-replace ruling, while git-log correctly didn't fabricate a match for it. `npm test` 645/645, `tsc` clean. Unblocks nothing directly (was itself the last gate before `11`'s A/B could be trusted as measuring the real shipped thing) but confirms `08`/`09` actually work end to end, not just in tests.
+- [14 — Design: Should Neuron Replace `.scratch/` as This Repo's Issue Tracker?](issues/14-neuron-as-tracker-design.md) — yes: a new `tickets` category built entirely from ADR 0011 (markdown store of record) and ADR 0013 (declared-field schema) machinery, no new storage mechanism. `status`/`type`/`blockedBy` are declared user-defined fields; mutation is the existing `transact({ op: 'update' })` path. Blocking stays a plain frontmatter field, not tracker-native, per the wayfinder skill's own documented fallback. `docs/agents/issue-tracker.md`'s local-markdown section is removed outright, not kept alongside. Migration is bulk — all 19 `.scratch/` efforts at once, `.scratch/` deleted once verified — rejecting both a permanent archive (incompatible with fully removing `.scratch` references from the doc) and lazy/on-touch migration (an indefinite, silently-decaying straggler set). Recorded as [ADR 0018](../../docs/adr/0018-neuron-as-issue-tracker.md). Implementation graduated as `25`/`26` rather than built here, mirroring `12`'s own split.
+- [15 — Audit: Repo Cleanup Punch List](issues/15-audit-repo-cleanup-punch-list.md) — full sweep published as [15-repo-cleanup-punch-list.md](issues/15-repo-cleanup-punch-list.md). Two sized candidates graduated for a future session (delete three orphaned `2.0.0`-era root docs; decide `tmp/`'s gitignore fate); `console.log` audit, `src/` structure, the traversal-test fixtures, and `CHANGELOG.md` size were all checked and cleared.
+- [17 — Antagonistic Recall: Does Neuron Abstain When Nothing Is Relevant?](issues/17-antagonistic-recall-abstention-benchmark.md) — built both measurements; they sharply disagree, which is the finding. New resident `Pillar 13: Antagonistic Recall & Abstention` (19 queries verified disjoint from Pillar 7's store) measures **0% false-accept**. `relevance_gate_eval.py`'s extended negative control on the real LongMemEval-S split (500 questions) measures **99.80% false-accept**. Gap is corpus construction, not a bug: the resident pillar's vocabulary is adversarially disjoint by design, while LongMemEval's cross-partition negative control still shares ordinary conversational words with its query — the shipped OR-across-any-word lexical gate clears almost all of them. Measurement only, no fix attempted (mirrors `39`→`41`'s split); the 99.80% number is the input a future cosine-floor or adjudication ticket would need. One unrelated off-band finding: `Pillar 8`'s real e2e-runner.js run failed on a `no such column: "scope"` concurrent-migration race, confirmed pre-existing and squarely `18`'s territory, not fixed here.
 
 ## Not yet specified
 

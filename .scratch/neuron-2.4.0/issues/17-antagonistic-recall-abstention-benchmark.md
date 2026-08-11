@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: context cost
 
@@ -111,6 +111,87 @@ Three things already exist adjacent to this and none of them answer it:
 
 ## Answer
 
-(none yet)
+Resolved 2026-08-11. Built both measurements per Scope; the two disagree
+sharply, which is itself the finding.
+
+**Resident E2E pillar — `Pillar 13: Antagonistic Recall & Abstention`**
+(`test/e2e/adversarial-recall.test.ts`, corpus in the new
+`test/e2e/antagonistic-corpus.ts`). 19 genuinely off-topic queries across four
+families (general-knowledge, weather-nature, small-talk, unrelated-codebase),
+each verified programmatically — not just eyeballed — to share no
+FTS-prefix-matching token with anything in Pillar 7's populated store
+(fillers, hard negatives, superseded entries, golds). Calls `queryGated`
+directly against that shared store and asserts `results.length === 0` per
+query. **False-accept rate: 0/19 (0%)**, real run against the real embedder
+and the real shipped gate (`ftsMatched === true` predicate, ticket 41),
+registered and green in a real `benchmarks/e2e-runner.js` sanity-tier run —
+it required no new wiring in the runner itself, since the suite file was
+already in `SUITES` and the pillar writes into the already-registered
+`adversarial-metrics.json` via the shared `MetricsRecorder`.
+
+**LongMemEval negative control** (`relevance_gate_eval.py`'s Run 3, now
+recording `neg_r1_fts` alongside the `neg_r1_cosine` it already computed — no
+new ingestion, the retrieve() call already ran every time this script does).
+Real run: 500 questions, 23,867 documents. **False-accept rate: 499/500
+(99.80%)**, uniform across every question category (100% on five of six,
+98.6% on `single-session-user`). Full results:
+[relevance_gate_longmemeval.json](../../../benchmarks/longmemeval/outputs/relevance_gate_longmemeval.json).
+
+**Why the two numbers disagree this sharply — not a contradiction, a
+corpus-construction difference.** The resident pillar's antagonistic queries
+were hand-built to share zero vocabulary with the store by design (that's
+the whole point of the family list: cooking, geography, sailing, small talk —
+domains with no lexical contact with a software-engineering memory store).
+LongMemEval's negative control instead draws its "wrong" partition from the
+*same* corpus family as the query — real, paraphrased, everyday conversational
+text — so a cross-partition query and its accidental partition routinely
+share ordinary words (names, common verbs, topic nouns) even with zero
+semantic relationship. The shipped gate's `cleanFtsQuery` OR-across-any-word
+design (confirmed at ticket 11's own dry-run) means *any* shared token
+clears it. **0% is the ceiling case (adversarially disjoint vocabulary);
+99.80% is closer to the realistic floor for natural-language cross-topic
+queries against a natural-language store.** Neither number is wrong; they
+measure different antagonism shapes, and the gap itself is the answer to the
+map's "Confidently-wrong retrieval is unowned" fog item's easier sibling
+question — abstention on no-evidence queries is real only when the query's
+vocabulary is genuinely disjoint from the store's, which is not the common
+case for natural conversational corpora.
+
+**Measurement only, per Scope item 4 — no fix attempted.** The 99.80% number
+is bad enough that a fix is clearly warranted, but per this ticket's own
+posture (matching ticket 39 → ticket 41's measure-then-ship split), that's a
+new ticket informed by this measurement, not folded in here.
+
+**One off-band finding, unrelated to this ticket's own changes.** The real
+`benchmarks/e2e-runner.js` sanity-tier run that confirmed Pillar 13's green
+result also surfaced `Pillar 8: Multi-Process Contention & Crash Recovery`
+failing red — `no such column: "scope"` / `duplicate column name: scope`
+during concurrent multi-process database init, reproduced again in isolation
+(`vitest run test/e2e/concurrency-stress.test.ts -t "Pillar 8"`). Confirmed
+unrelated to this ticket's diff (only `antagonistic-corpus.ts`,
+`adversarial-recall.test.ts`, and `relevance_gate_eval.py` touched — no
+schema, migration, or concurrency code) and squarely in the territory
+[18](18-fix-concurrent-write-data-loss.md) already charters (racy
+read-modify-write cycles in the markdown storage layer). Not fixed here —
+flagged for whichever session picks up `18`.
+
+**Deliverables, all shipped:**
+- `test/e2e/antagonistic-corpus.ts` — the 19-query off-topic set, with its
+  own verification note on how disjointness was checked.
+- `Pillar 13: Antagonistic Recall & Abstention` in
+  `test/e2e/adversarial-recall.test.ts`, registered in
+  `benchmarks/e2e-runner.js` (no code change needed — automatic via the
+  existing `SUITES`/`extraMetrics` convention).
+- `relevance_gate_eval.py` updated and re-run for real against the full
+  LongMemEval-S split; `neg_r1_fts`/false-accept rate reported as `run4` in
+  its JSON output and console report, alongside the existing `run2`
+  false-silence measurement.
+- Results committed: `benchmarks/reports/adversarial-metrics.json` (Pillar 13
+  detail) and `benchmarks/longmemeval/outputs/relevance_gate_longmemeval.json`.
+
+Unblocks nothing directly (no ticket here lists it as a blocker) — its
+99.80% false-accept measurement is the input a future ticket (a cosine floor,
+or an LLM adjudication pass) would need, mirroring how `39`'s measurement fed
+`41`.
 
 ## Comments
