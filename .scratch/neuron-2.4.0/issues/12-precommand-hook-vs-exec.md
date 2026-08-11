@@ -1,5 +1,5 @@
 Type: grilling
-Status: unclaimed
+Status: resolved
 Blocked by: none
 
 # 12 — Should `neuron exec`'s Pre-Command Lookup Become a Hook Instead?
@@ -46,6 +46,47 @@ This ticket's resolution is a direct input to
 which should audit against whatever mechanism this ticket lands on rather
 than the current `neuron exec` convention it might replace — hence the
 blocking edge.
+
+## Answer
+
+Resolved by direct maintainer grilling, 2026-08-10/11 — four decisions,
+recorded as [ADR 0014's 2026-08-10 amendment](../../../docs/adr/0014-recall-adapter-architecture.md#2026-08-10--fourth-lifecycle-point-pre-command-claude-code-and-codex-only):
+
+1. **Scope: Claude Code and Codex CLI only, permanently.** Both confirmed
+   to support `PreToolUse`/`additionalContext` injection (Claude Code
+   verified live against `code.claude.com/docs/en/hooks`; Codex from
+   ticket 10's 2.2.0 research). Copilot CLI's `preToolUse` and Cursor's
+   `beforeShellExecution` are both documented permission/gating-only, with
+   no context-carrying field at all — a structural ceiling, not a research
+   gap. They keep the CLAUDE.md/AGENTS.md-instructed `neuron exec` step
+   permanently, the same as they already do for recall.
+2. **Amends ADR 0014; does not need a new ADR.** `pre-command` reuses
+   `CapabilityMap`/`SupportRecord` unchanged. `neuron exec`'s behavior is
+   purely informational (never blocks the real command), so the new
+   handler only ever sets `additionalContext`, never `PreToolUse`'s
+   `permissionDecision` gate field — no new field earns its place on
+   `SupportRecord`.
+3. **Timing nuance, raised and resolved live**: Claude Code's docs place
+   `PreToolUse`'s `additionalContext` "next to the tool result" — after
+   the command runs, not before. Confirmed as functionally equivalent to
+   today's `neuron exec` (which also can't let the agent reconsider
+   mid-execution — it queries, prints, then spawns the real command
+   synchronously in the same tool call), not a regression.
+4. **`protocolBlock.ts`'s `execStep()` becomes fidelity-conditional**, the
+   same way `recallStep()` already is — excluded for Claude Code/Codex once
+   the hook ships, kept for Copilot/Cursor. `neuron exec`'s CLI surface is
+   otherwise unchanged: same `onExec`/`queryGated` logic
+   (`src/commands/exec.ts`), called from a hook instead of an
+   agent-typed wrapper for the two harnesses that get one.
+
+Implementation graduated as three tickets rather than designed further
+here, mirroring this map's own `08`/`09`/`10` split for the git-log index:
+[22 — Implement the Pre-Command Hook](22-implement-precommand-hook.md)
+(adapter capability wiring + the `pre-command` handler),
+[23 — Fidelity-Conditional Command Execution Step](23-fidelity-conditional-exec-step.md)
+(`execStep()` + CLAUDE.md/packaged-skill/README updates), and
+[24 — Dogfood the Pre-Command Hook in This Repo](24-dogfood-precommand-hook.md)
+(live verification against this repo's own install).
 
 ## Comments
 

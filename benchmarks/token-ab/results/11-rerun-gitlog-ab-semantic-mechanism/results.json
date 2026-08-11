@@ -1,0 +1,292 @@
+{
+  "generatedAt": "2026-08-11T04:03:29.328Z",
+  "model": "claude-sonnet-5",
+  "dryRun": true,
+  "taskCount": 3,
+  "repeats": 3,
+  "sessionCount": 10,
+  "totalCostUsd": 0,
+  "citedFrom": "benchmarks/token-ab/results/14-git-log-hook-vs-agent-log-ab/results.json",
+  "vsAgent": {
+    "semantic": {
+      "sessions": 9,
+      "passed": 0,
+      "failed": 9,
+      "failureRate": 1,
+      "tokens": {
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "min": 0,
+        "max": 0
+      },
+      "costUsd": 0
+    },
+    "agent": {
+      "sessions": 9,
+      "passed": 8,
+      "failed": 1,
+      "failureRate": 0.1111111111111111,
+      "tokens": {
+        "mean": 49598,
+        "median": 43024,
+        "p95": 68784,
+        "min": 30536,
+        "max": 88259
+      },
+      "costUsd": 1.0404
+    }
+  },
+  "vsOracleGitlog": {
+    "semantic": {
+      "sessions": 9,
+      "passed": 0,
+      "failed": 9,
+      "failureRate": 1,
+      "tokens": {
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "min": 0,
+        "max": 0
+      },
+      "costUsd": 0
+    },
+    "oracle-gitlog": {
+      "sessions": 9,
+      "passed": 9,
+      "failed": 0,
+      "failureRate": 0,
+      "tokens": {
+        "mean": 17427,
+        "median": 16177,
+        "p95": 25327,
+        "min": 7490,
+        "max": 34493
+      },
+      "costUsd": 0.4109
+    }
+  },
+  "gateCheck": {
+    "task": "no-git-history-match",
+    "gitLogFired": false,
+    "expectedSilence": true,
+    "crashedOrAutoFailed": null,
+    "passed": false,
+    "gradeDetail": "dry-run placeholder, not a real grade"
+  },
+  "results": [
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "semantic",
+      "sessionLabel": "isolation-gap-fixed-twice-semantic-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "semantic",
+      "sessionLabel": "isolation-gap-fixed-twice-semantic-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "isolation-gap-fixed-twice",
+      "arm": "semantic",
+      "sessionLabel": "isolation-gap-fixed-twice-semantic-r2",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "semantic",
+      "sessionLabel": "reconcile-data-loss-fix-semantic-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "semantic",
+      "sessionLabel": "reconcile-data-loss-fix-semantic-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "reconcile-data-loss-fix",
+      "arm": "semantic",
+      "sessionLabel": "reconcile-data-loss-fix-semantic-r2",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "semantic",
+      "sessionLabel": "session-budget-granularity-semantic-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "semantic",
+      "sessionLabel": "session-budget-granularity-semantic-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    },
+    {
+      "task": "session-budget-granularity",
+      "arm": "semantic",
+      "sessionLabel": "session-budget-granularity-semantic-r2",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": true
+    }
+  ],
+  "gateResults": [
+    {
+      "task": "no-git-history-match",
+      "arm": "semantic",
+      "sessionLabel": "no-git-history-match-semantic-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade",
+      "gitLogFired": false
+    }
+  ]
+}

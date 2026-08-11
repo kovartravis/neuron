@@ -227,6 +227,67 @@ Four consequences follow:
 
 ## Amendments
 
+### 2026-08-10 — Fourth lifecycle point: `pre-command`, Claude Code and Codex only
+
+[Ticket 12 (neuron-2.4.0)](../../.scratch/neuron-2.4.0/issues/12-precommand-hook-vs-exec.md)
+extends this ADR with a fourth `LifecyclePoint`, `pre-command` — the same
+reliability gap this ADR closed for recall (an agent-followed instruction
+vs. a harness-executed hook) applied to `neuron exec -- <command>`, the
+CLAUDE.md-instructed wrapper around the `onExec` gated query
+(`src/commands/exec.ts`). Resolved by direct maintainer grilling, four
+decisions:
+
+1. **Scope: Claude Code and Codex CLI only — a permanent split, not a
+   temporary one.** Unlike the three existing points, where all four
+   shipped adapters have *some* injecting mechanism (a matter of degree —
+   deterministic vs. session-start-only best-effort), tool-use/shell hooks
+   split the four adapters in two categorically: Claude Code's
+   `PreToolUse` and Codex's `PreToolUse` both support
+   `hookSpecificOutput.additionalContext` (Claude Code confirmed directly
+   against `code.claude.com/docs/en/hooks` on 2026-08-10; Codex confirmed
+   in ticket 10's original 2.2.0 research, high confidence). Copilot CLI's
+   `preToolUse` and Cursor's `beforeShellExecution` are both documented as
+   **permission/gating-only** — no context-carrying field exists on either
+   at all. This is not an unresearched gap ticket 13 or a future adapter
+   version could close; it is what those two harnesses' hook models can
+   do. Copilot CLI and Cursor keep the CLAUDE.md/AGENTS.md-instructed
+   `neuron exec` step permanently, the same way they already keep the
+   manual recall-query instruction today.
+2. **This ADR is amended, not superseded by a new one.** `pre-command`
+   reuses `CapabilityMap`/`SupportRecord` (`src/harnesses/types.ts`)
+   unchanged — `injects`, `payloadCapChars`, `failurePosture`, `timeoutMs`.
+   `PreToolUse` also carries a `permissionDecision` field neuron does not
+   use: `neuron exec`'s existing behavior is purely informational (it
+   always runs the real command; a match never blocks it), so the new
+   handler only ever sets `additionalContext`, never touches the gate.
+   No new field earns its place on `SupportRecord` for a capability this
+   ADR's design has no use for.
+3. **`additionalContext` for `PreToolUse` renders next to the tool
+   result — after the command has already run, not before.** Raised and
+   resolved live: `neuron exec` today already can't let the agent
+   reconsider mid-execution either (it queries, prints, then spawns the
+   real command synchronously in the same tool call, no intervening turn).
+   The hook-based version is functionally equivalent on this axis, not a
+   regression — in both cases the agent has the memory content in front of
+   it before its *next* decision, never before the command that triggered
+   the lookup.
+4. **Protocol block and CLI surface.** `protocolBlock.ts`'s `execStep()`
+   becomes fidelity-conditional the same way `recallStep()` already is —
+   omitted from the generated CLAUDE.md for Claude Code/Codex once the
+   hook ships, kept for Copilot/Cursor. `neuron exec`'s CLI surface is
+   unchanged: it remains the Copilot/Cursor-instructed path, the
+   manual/scripted/CI path, and the same underlying `onExec`
+   category-matching/`queryGated` logic (`exec.ts`) the new `PreToolUse`
+   handler calls too — the same reuse relationship `neuron memory
+   query`'s CLI command already has with the pre-prompt hook's internal
+   `memory.query()` call.
+
+Implementation graduates as tickets 22 (adapter capability wiring + the
+`pre-command` hook handler), 23 (fidelity-conditional `execStep()` +
+CLAUDE.md/packaged-skill/README updates, mirroring ticket 09's role for
+the git-log index), and 24 (dogfood-verify against this repo's own
+install, mirroring ticket 10's role) — not designed further here.
+
 ### 2026-08-04 — `rc4` dropped; §1's Copilot CLI/Cursor line does not ship in 2.2.0
 
 The destination narrowed to a fast, focused 3-pillar cut (deterministic

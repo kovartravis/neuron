@@ -1316,3 +1316,15 @@ tags:
 taskId: null
 ---
 Ticket 07 (neuron-2.4.0, measure whether the discovery-command hint gets used): chose free passive dogfooding instrumentation over a paid benchmarks/token-ab/ A/B run, per direct maintainer choice when asked (the map's own fog already flagged that exact funding/execution-path question as unresolved and blocking ticket 05, so the same question was asked again rather than assumed). Built src/harnesses/hintFollowLog.ts plus a new 'post-tool-use' hook point that is deliberately NOT a LifecyclePoint — no HarnessAdapter capability contract, no install()/uninstall()/verify() support across the four harnesses, hand-wired only into this repo's own .claude/settings.json (Claude Code only) rather than researched and shipped cross-harness via neuron init, since only this repo dogfoods itself and the alternative would have meant committing to PostToolUse's documented shape for Codex/Copilot/Cursor for a measurement instrument that doesn't need it. The outcome-quality half of the original question (does the hint change task success, not just get followed) stays unanswered, moved to the map's fog next to ticket 05's funding question.
+
+---
+id: f0fdc8c0-c710-4549-b89a-423d61039b89
+createdAt: 2026-08-11T05:02:34.087Z
+importance: 4
+tags:
+  - 2.2.0
+  - rc2
+  - adr
+taskId: null
+---
+ADR 0014 amended (ticket 12, neuron-2.4.0): pre-command lookup (today's agent-typed 'neuron exec -- <command>' wrapper) gets a real PreToolUse-driven hook, but only for Claude Code and Codex CLI, permanently — not a temporary gap. Unlike the three existing lifecycle points, where all four shipped adapters have SOME injecting mechanism, tool-use hooks split categorically: Claude Code's PreToolUse and Codex's PreToolUse both support hookSpecificOutput.additionalContext (Claude Code confirmed live against code.claude.com/docs/en/hooks), while Copilot CLI's preToolUse and Cursor's beforeShellExecution are both documented permission/gating-only with no context field at all. Copilot/Cursor keep the CLAUDE.md/AGENTS.md-instructed neuron exec step permanently. The amendment reuses CapabilityMap/SupportRecord unchanged (neuron never touches PreToolUse's permissionDecision gate, since neuron exec's own behavior never blocks the real command either) and rules that protocolBlock.ts's execStep() becomes fidelity-conditional the same way recallStep() already is. Implementation graduated as tickets 22/23/24 rather than designed further in the grilling ticket itself.
