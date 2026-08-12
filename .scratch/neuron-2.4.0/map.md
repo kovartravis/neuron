@@ -473,6 +473,28 @@ thin.
   `25`, `28`, `30`, `31`, `32`, `33`, `34`, `35`, `36` (all unclaimed and
   unblocked); `02`, `04`, `05` claimed and in progress; `03`, `26`, `29`
   blocked.
+- **Tickets 37 and 38 added, 2026-08-12**, direct maintainer request: this
+  map's first cut tickets, [37 — Cut and Publish
+  2.4.0-rc1](issues/37-cut-rc1.md) and [38 — Cut and Publish
+  2.4.0-rc2](issues/38-cut-rc2.md). Neither waits for the map's still-wide-open
+  frontier to close — both snapshot trunk at cut time, matching every prior
+  rc cut's own precedent. `37` is unblocked and takes trunk as of this
+  charter (`package.json` still `2.3.0`, 25 unshipped commits since
+  `v2.3.0`); `38` is also unblocked but sequentially meaningless before `37`
+  lands (mirrors `neuron-2.3.0`'s `34`, which carried no formal blocking
+  edge on its own rc1 predecessor either). Chartering `37` surfaced a real
+  structural change worth recording here: `publish.yml` (shipped
+  neuron-2.3.0 ticket `21`, proven live only for a bare-semver stable
+  publish so far) triggers on every push to `main` and auto-publishes +
+  auto-tags from `package.json`'s version — so **merging to `main` is now
+  the irreversible publish trigger**, not a separate manual `npm publish`
+  step like every earlier rc cut on `neuron-2.2.0`/`neuron-2.3.0` used. `37`
+  is also the first live test of that pipeline against a `-rcN` version
+  string (the `rc` dist-tag derivation is confirmed by regex inspection,
+  not yet by a real push). True frontier as of this session (excluding
+  `11`, claimed but blocked on credentials): `25`, `28`, `30`, `31`, `32`,
+  `33`, `34`, `35`, `36`, `37`, `38` (all unclaimed and unblocked); `02`,
+  `04`, `05` claimed and in progress; `03`, `26`, `29` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
