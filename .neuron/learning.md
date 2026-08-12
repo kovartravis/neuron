@@ -1520,3 +1520,15 @@ tags:
 taskId: null
 ---
 Adding a new always-injecting LifecyclePoint (pre-command, ticket 22 neuron-2.4.0) silently corrupted init.ts's recall-fidelity report (resolveHarnessFidelity/buildHarnessFidelityReport), which computed wired-ness by filtering the full CapabilityMap for injects===true. Root cause: those functions conflate 'every injecting point' with 'recall,' an assumption that held while LifecyclePoint had only session-start/pre-prompt/context-reset but breaks the moment a fourth, differently-purposed injecting point (pre-command, not part of recall) is added — an upgraded-but-not-re-init'd project would report recall as newly un-wired purely because the new point wasn't installed yet, even though recall itself never changed. Fix: scope those two functions to a new RECALL_LIFECYCLE_POINTS constant (session-start/pre-prompt/context-reset) instead of the raw LIFECYCLE_POINTS/full capability map — e.g. const RECALL_LIFECYCLE_POINTS: readonly LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset']; then filter against that instead of LIFECYCLE_POINTS. Any future LifecyclePoint addition that isn't a recall mechanism (as pre-command wasn't) needs the same audit of every LIFECYCLE_POINTS.filter(injects===true)-shaped consumer, not just the adapters' own capability() methods.
+
+---
+id: fd5a1413-a593-4cfb-924a-36535e47edf4
+createdAt: 2026-08-12T16:16:43.749Z
+importance: 4
+tags:
+  - 2.2.0
+  - rc2
+  - wayfinder
+taskId: null
+---
+Fix for a blocked neuron.yaml field declaration: wayfinder ticket 25 (neuron-2.4.0) tried to declare a tickets category field named 'type' per ADR 0018's literal wording, but validateDeclaredFields (src/config/neuronYaml.ts) hard-errors with 'would become the flag --type, which collides with a reserved built-in flag' because --type is already in RESERVED_FLAG_NAMES. Root cause: ADR 0018 was written without cross-checking the field name against the existing CLI flag vocabulary. Resolution: renamed the declared field to 'kind' (same enum values: research/prototype/grilling/task), documented the rename inline in neuron.yaml and in docs/agents/issue-tracker.md so it doesn't read as unexplained drift from the ADR text. Edge case: any future declared-field name should be checked against RESERVED_FLAG_NAMES and RESERVED_COLUMN_NAMES in neuronYaml.ts before it's written into an ADR, not after.

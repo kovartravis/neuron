@@ -3,7 +3,7 @@
 <!-- neuron:protocol:start -->
 ## Memory Store Protocol (`@kovartravis/neuron`)
 
-Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`, `architecture`. Architecture scan settings: enabled: true, category: `architecture`, depth: 3.
+Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`, `architecture`, `tickets`. Architecture scan settings: enabled: true, category: `architecture`, depth: 3.
 
 ## 1. Failure-Fix Recording
 
@@ -37,5 +37,5 @@ neuron exec -- neuron scan          # upsert the blueprint card
 ---
 
 ## Agent Skills & Domain Docs
-- **Issue Tracker**: Markdown tickets under `.scratch/`. See `docs/agents/issue-tracker.md`.
+- **Issue Tracker**: Tickets live in neuron's own `tickets` category (ADR 0018). See `docs/agents/issue-tracker.md`. (`.scratch/` is still the tracker for efforts not yet migrated — see ticket 26 — until it's deleted.)
 - **Domain Docs**: Read `CONTEXT.md` and relevant `docs/adr/*.md` before modifying module boundaries. See `docs/agents/domain.md`.

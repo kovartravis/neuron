@@ -2662,3 +2662,15 @@ tags:
 taskId: null
 ---
 Resolved ticket 37 (Cut and Publish 2.4.0-rc1) on the neuron-2.4.0 wayfinder map, working from feat/2.4.0-rc1: version bump, CHANGELOG audited from git log v2.3.0..HEAD, npm test 678/678, npm run test:e2e clean (0 dropped/lost writes on the historically-flaky Pillar 8). Found and reverted a real bug hit while cutting -- test:e2e's isolated concurrency-stress fixture has no neuron.yaml of its own, so ticket 01's category auto-declare write path climbed unbounded and mutated this repo's real config -- chartered as ticket 39 rather than fixed inline. Confirmed main's branch ruleset (pull_request + code_scanning + code_quality, all active, owner bypass available) live via the GitHub API; maintainer chose to open PR #6 rather than bypass. Maintainer merged PR #6 on GitHub (b919c00), fast-forward, no conflicts -- the first real push of a -rcN version through publish.yml, which worked exactly as the dist-tag regex predicted: npm dist-tags now shows rc: '2.4.0-rc1', v2.4.0-rc1 auto-tagged and pushed by the workflow. feat/2.4.0-rc1 deleted (local + remote) at maintainer request; local work moved to main. A same-day follow-up commit (af093a3) recording ticket 37's resolution in the tracker was pushed directly to main (bypassed as owner) and correctly triggered a second publish.yml run whose publish job no-opped on already_published, proving that guard works live too. Ticket 38 (rc2) is queued next, unblocked but untouched this session.
+
+---
+id: f86603e5-e39e-45e3-901a-7c497127cb10
+createdAt: 2026-08-12T16:16:44.358Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "25"
+---
+Wayfinder pickup on the neuron-2.4.0 map: scanned .scratch/neuron-2.4.0/issues/ directly (the map's own Notes narrative was one session stale after ticket 37's resolution) and claimed the frontier's lowest-numbered unclaimed-unblocked ticket, 25 (Implement the Neuron-Backed Tracker). Declared the tickets category in neuron.yaml per ADR 0018, discovering and working around a real collision: ADR 0018's literal field name 'type' collides with the reserved --type CLI flag, so it shipped as 'kind' instead. Verified the whole add/update/delete mutation path live against the real store (all test entries cleaned up afterward), and found memory list (not memory query) is the correct no-relevance-filtering primitive for the wayfinder frontier scan. Rewrote docs/agents/issue-tracker.md end to end and fixed CLAUDE.md's now-stale .scratch pointer as a direct consequence. Resolved ticket 25, appended its Answer and the map's Decisions-so-far entry, and unblocked ticket 26 (bulk .scratch migration), now the map's new frontier alongside 28/30/31/32/33/34/35/36/38/39. npm test 678/678, tsc clean, no src/ changes.

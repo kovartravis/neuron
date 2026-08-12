@@ -26,6 +26,23 @@ categories:
       - design
   architecture: {}
 
+  tickets:
+    description: Wayfinder maps and tickets (issue tracker) — ADR 0018
+    fields:
+      status:
+        type: enum
+        values: [unclaimed, claimed, resolved]
+        default: unclaimed
+      # ADR 0018 names this field "type"; renamed to "kind" here because
+      # "type" is already a reserved built-in CLI flag (--type,
+      # neuronYaml.ts's RESERVED_FLAG_NAMES) and validateDeclaredFields
+      # hard-errors on the collision. Same enum, same semantics.
+      kind:
+        type: enum
+        values: [research, prototype, grilling, task]
+      blockedBy:
+        type: string
+
 scan:
   enabled: true
   depth: 3
