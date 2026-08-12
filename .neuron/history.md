@@ -2698,3 +2698,15 @@ tags:
 taskId: null
 ---
 Wayfinder pickup session on the neuron-2.4.0 map: claimed and resolved ticket 28 (Research: Find a Local ONNX Cross-Encoder Reranker), the frontier's lowest-numbered unclaimed-and-unblocked ticket. Ran the research via a background agent against primary Hugging Face Hub sources (model files, cards, transformers.js's model registry), which recommended Xenova/ms-marco-MiniLM-L-6-v2 (22.7M params, Apache-2.0, confirmed ONNX, plain-BERT cross-encoder) with mixedbread-ai/mxbai-rerank-xsmall-v1 as backup, and found a real gotcha worth remembering: jina-reranker-v1-turbo-en has valid ONNX files but an unsupported custom architecture in transformers.js. Findings published to .scratch/neuron-2.4.0/issues/28-reranker-research.md; appended the Answer to ticket 28 and a Decisions-so-far entry to the map. Resolving 28 unblocks ticket 29 (build and pilot the reranker gate), which now joins the frontier alongside 30-36, 38-41.
+
+---
+id: 8c674110-200f-4270-b667-a7f141e2ae87
+createdAt: 2026-08-12T22:10:58.606Z
+importance: 4
+tags:
+  - retrieval
+  - wayfinder
+  - rc2
+taskId: "29"
+---
+Wayfinder pickup session on the neuron-2.4.0 map: committed a trailing complete-but-uncommitted prior session's ticket 28 resolution (reranker model research), then claimed and resolved ticket 29 (Build and Pilot the Reranker Gate Layer), the frontier's lowest-numbered unclaimed-and-unblocked ticket. Built Xenova/ms-marco-MiniLM-L-6-v2 (ticket 28's pick) as a second gate-layer conjunct in queryGated. At the model's own raw-logit-0 decision boundary the pilot failed ticket 27's pre-committed bar badly: a full LongMemEval-S run showed false-accept dropping 99.80%->1.00% but false-silence exploding 0%->61.60% and recall@10 collapsing 98.3%->38.0%. A resident-fixture spot-check and then a full threshold sweep (mirroring ticket 39's cosine-floor methodology, reusing the already-ingested LongMemEval corpus rather than re-spending the ~36-minute ingest) confirmed no threshold reaches 27's original ~zero-false-silence bar on either candidate model from ticket 28's research -- same structural score-distribution overlap ticket 39 found for the cosine floor. Mid-session live maintainer decision amended 27's bar with the swept frontier in hand: ships at threshold -8 (false-accept 19.4%, false-silence 19.8%, roughly symmetric), unconditionally alongside the lexical leg rather than behind a config switch, a direct reversal of 27's own original config-switch plan once real evidence existed. Two pre-existing tests needed fixture rewording for real (not spurious) false-silence at the new threshold; Pillar 13 re-verified unaffected at 0%. Full artifact trail committed under benchmarks/reports/ and benchmarks/reranker-gate/. Resolving 29 leaves the frontier at 30-36, 38-41 (excluding 11, still blocked on credentials).

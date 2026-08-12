@@ -14,7 +14,7 @@ taskId: null
 # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 14 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 15 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
@@ -38,6 +38,7 @@ Default: `ast/2`
 @kovartravis/neuron
 ├── benchmarks (benchmarks)
 ├── longmemeval (benchmarks/longmemeval)
+├── reranker-gate (benchmarks/reranker-gate)
 ├── src (src)
 ├── commands (src/commands)
 ├── components (src/components)
@@ -54,10 +55,11 @@ Default: `ast/2`
 
 ## 📦 Primary Subsystems
 - **benchmarks** — `benchmarks` (3 files)
-- **longmemeval** — `benchmarks/longmemeval` (3 files)
+- **longmemeval** — `benchmarks/longmemeval` (4 files)
+- **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **src** — `src` (12 files)
 - **commands** — `src/commands` (29 files)
-- **components** — `src/components` (10 files)
+- **components** — `src/components` (12 files)
 - **config** — `src/config` (10 files)
 - **e2e** — `src/e2e` (1 file)
 - **harnesses** — `src/harnesses` (22 files)
@@ -102,6 +104,7 @@ taskId: null
 Primary longmemeval module containing core application capabilities.
 
 **Key Components & Export Contracts:**
+- **`benchmarks/longmemeval/dump_queries.py`**: Methods: set(), get_dataset(), load_queries(), get().
 - **`benchmarks/longmemeval/neuron.py`** (Exports: `NeuronMemoryProvider`): Methods: NeuronMemoryProvider(), embeddings(), Fusion(), __init__().
 - **`benchmarks/longmemeval/relevance_gate_eval.py`** (Exports: `eval_floor, eval_full_gate, reject, pctl`): Methods: leg(), prose(), fix(), result().
 - **`benchmarks/longmemeval/retrieval_eval.py`**: Methods: len(), int(), max(), get_dataset().
@@ -201,6 +204,8 @@ Primary components module containing core application capabilities.
 - **`src/components/fts-query.ts`** (Exports: `isStopword, cleanFtsQuery`): Converts a natural language query string into a safe SQLite FTS5 MATCH expression. ## Why stopwords are dropped The keyword leg is fused with the semantic leg by Reciprocal Rank Fusion, which rewards a document's rank position in each list rather than how well it actually matched. Because terms are joined with `OR`, a document matching a single common word enters the FTS ranking at all — and if it is the only match, it enters at rank 1 and collects the full RRF contribution. Observed: the query "what payment provider do we use" ranked a document about a Rust auth daemon above the correct billing document, because `"do"`, `"we"` and `"use"` were searchable terms. Noise words give noise a guaranteed seat. Dropping them means an all-stopword query produces an empty expression, which the caller treats as "no keyword leg" and answers semantically — the correct degradation, and far better than a MATCH that hits every row.
 - **`src/components/generator.ts`** (Exports: `GeneratorProgress, getTextGenerator, isTextGeneratorLoaded, resetTextGenerator`): The shared text-generation model (`Xenova/Qwen1.5-0.5B-Chat`). Loading it costs ~3.2s and dominates its total cost — the load is 87% of a single-inference invocation, and every CLI command is its own process. The loader is therefore a module-level singleton so that a `neuron scan` which has already paid for the model can hand it to write-side enrichment for free, rather than each consumer loading its own copy.
 - **`src/components/index.ts`**: No exported symbols detected.
+- **`src/components/reranker.test.ts`**: Methods: describe(), it(), TransformersReranker(), score().
+- **`src/components/reranker.ts`** (Exports: `Reranker, TransformersReranker`): Raw cross-encoder relevance logit for one query/passage pair — not a probability. Positive means the model predicts the pair relevant, negative means not; callers threshold at 0, not at 0.5.
 - **`src/components/summarizer.test.ts`**: Handles dual storage reads and writes across Markdown and SQLite
 - **`src/components/summarizer.ts`** (Exports: `SmolLM2Summarizer`): Delegates to the process-wide loader so write-side enrichment (which calls `getTextGenerator()` directly, `enricher.ts`) and anything else warming the model in the same process share one load rather than paying for it twice. Kept on this class only because `neuron init` already calls `preloadModel()` here to warm enrichment's model ahead of time (ticket 26 removed this class's own use of it \u2014 per-file architecture summaries are deterministic now, not model-generated).
 - **`src/components/timeout.ts`** (Exports: `TimeoutError, withTimeout`): The timeout primitive. Before this, the only `timeout` in the codebase was SQLite's `busy_timeout`; a hung `generate()` hung its caller forever. ADR 0010 §3 requires every model call to be a bounded wait. It bounds the wait, not the work: the underlying ONNX generation cannot be cancelled, so a timed-out call keeps running to completion in the background and its result is discarded. That is acceptable because the process is short-lived — but it means a timeout does not free the CPU it was spending.
@@ -431,3 +436,21 @@ Primary e2e module containing core application capabilities.
 - **`test/e2e/metrics.ts`** (Exports: `PillarMetrics, percentile, MetricsRecorder`): Latency/throughput recorder for the E2E benchmark suite. The suite is both a correctness gate and a benchmark, so every pillar records real measurements here rather than only asserting pass/fail. The collected numbers are written to a metrics file that the runner merges into its scorecard — the runner never has to infer results by scraping stdout.
 - **`test/e2e/synthetic-generator.ts`** (Exports: `SyntheticGeneratorOptions, generateSyntheticPolyglotWorkspace`): Class SyntheticClass (Methods: generateSyntheticPolyglotWorkspace(), rmSync(), mkdirSync(), writeFileSync()).
 - **`test/e2e/tier.ts`** (Exports: `BenchTier, byTier`): Benchmark tiering. The same pillar definitions run at two very different intensities: sanity — a fast pre-merge gate. Every pillar still executes end to end against the real pipeline, but at the smallest workload that can still fail meaningfully. Target: a couple of minutes. full   — the adversarial benchmark. Large corpora, deep sweeps, real multi-process contention, and hard negatives designed to drive scores off their ceiling. Target: long enough to hurt. Tier is selected with NEURON_BENCH_TIER; anything other than 'full' is treated as sanity so a bare `vitest run` on these files stays quick.
+
+---
+id: 881df7c6-e2ce-6531-2f0e-2236f5892e59
+createdAt: 2026-08-12T22:10:57.517Z
+importance: 5
+tags:
+  - architecture
+  - topology
+  - scan
+  - deep
+taskId: null
+---
+### 🧩 reranker-gate (`benchmarks/reranker-gate`)
+Primary reranker-gate module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/reranker-gate/calibrate-threshold.ts`**: Ticket 29 threshold calibration: reuses the already-ingested LongMemEval-S database (500 questions, 23867 documents — the expensive part) and, for each query, records the RAW reranker score for its top-`ftsMatched` candidate (own partition) and a cross-partition negative control — without hard-filtering on it. Mirrors relevance_gate_eval.py's Run 1 cosine-floor sweep methodology (ticket 39), but for the reranker's raw logit instead of cosine similarity: measure first, choose a threshold from the swept frontier, never assume one. Bypasses `queryGated` entirely — calls the public `queryVector` directly so nothing gets rejected before this script sees it.
+- **`benchmarks/reranker-gate/pilot-antagonistic-recall.ts`**: Ticket 29 pilot: re-runs Pillar 13 (Antagonistic Recall & Abstention, ticket 17) twice against the real pipeline — once with the shipped lexical-only gate, once with the new reranker leg (`relevance.gate.reranker.enabled`) also active — and reports both false-accept rates side by side. Not a vitest suite: a one-off pilot script per ticket 29's Verification section ("Results committed under `benchmarks/reports/`"). Seeds the exact same corpus `test/e2e/adversarial-recall.test.ts` seeds for this pillar (fillers, hard negatives, superseded entries, golds) so both runs face the same accidental-match surface, then asks every case in `ANTAGONISTIC_CASES` — queries verified to share no vocabulary with that corpus at all.

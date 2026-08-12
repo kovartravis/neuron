@@ -1234,3 +1234,15 @@ tags:
 taskId: "20"
 ---
 Ticket 20 follow-up (neuron-2.4.0): neuron status --health --repair auto-merges only byte-identical-content duplicate subgroups within a near-duplicate cluster, never merges across genuinely different wording even at similarity 0.985-1.0. Rationale: embedding similarity is a candidate signal, not a correctness signal -- two entries can be near-identical vectors while saying meaningfully different things (verified live: this repo's own architecture-card duplicates across decisions/architecture categories share ~0.985-1.0 similarity but describe different module states). Exact string equality is the only zero-judgment bar available without either fabricating a merge decision or asking an LLM to arbitrate, and this codebase already has a precedent against both (repairFieldCompliance never fabricates free-text identity fields; the write-time supersession gate deliberately never auto-decides reversal, only shortlists). Second decision: --repair now combines with --health rather than staying three-way mutually exclusive with --check/--health -- --check still can't combine with either since it answers an unrelated question (config-schema compliance), but --health and --repair together is a coherent single request (repair store health), unlike --check+--repair which would conflate two different report shapes into one JSON payload.
+
+---
+id: deb8a17a-48d7-43a8-98d2-b9af943da90f
+createdAt: 2026-08-12T22:11:21.662Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - rc2
+taskId: null
+---
+Ticket 29 (neuron-2.4.0) amends ADR 0012 / ticket 27's relevance-gate acceptance bar: the original '~zero new false-silence' requirement for a second-stage reranker leg is unreachable at any threshold on real LongMemEval-S data (full sweep confirmed the same overlap-too-far distribution shape ticket 39 found for the deprecated cosine floor, on both Xenova/ms-marco-MiniLM-L-6-v2 and the mxbai-rerank-xsmall-v1 backup). Live maintainer decision, made with the swept false-accept/false-silence frontier in hand rather than guessed: accept a real recall cost for a real noise reduction. The reranker leg ships at raw-logit threshold -8 (not the model's own 0 boundary), landing false-accept at 19.4% (from 99.80%) and false-silence at 19.8% (from 0%) — roughly symmetric, not the asymmetric zero-cost win originally specified. Ships unconditionally alongside the lexical leg in queryGated, with no separate config switch for this leg specifically — a reversal of 27's own original Scope item 4 ('wire it in behind a config switch, default off'), decided once real evidence existed rather than assumed in advance. Rationale for no config: the maintainer's explicit call mid-session, not a technical constraint — the threshold itself (RERANKER_ACCEPT_THRESHOLD in src/index.ts) is the tunable surface if a future session wants to revisit the tradeoff point, not a boolean gate.
