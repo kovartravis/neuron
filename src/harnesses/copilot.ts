@@ -91,6 +91,15 @@ function capability(): CapabilityMap {
         'Low practical risk as designed: session-start is the only point that ever spends against the epoch (pre-prompt is never wired, so there is no repeated per-turn spend to accumulate), and its own per-injection cap (SESSION_START_CHAR_BUDGET, 6,000 chars) is well under the default 18,000-char epoch budget on its own. The gap would only matter if Copilot re-fires sessionStart more than once within a single session_id — undocumented, not observed, and would need a real report before building anything for it.',
       ],
     },
+    'pre-command': {
+      injects: false,
+      payloadCapChars: 'unknown',
+      failurePosture: 'unknown',
+      timeoutMs: 'unknown',
+      caveats: [
+        'A structural ceiling, not an undocumented gap (ticket 12, neuron-2.4.0): preToolUse only returns permissionDecision/permissionDecisionReason/modifiedArgs (confirmed via direct fetch of docs.github.com/en/copilot/reference/hooks-reference) — additionalContext is documented as specific to postToolUse/notification, not preToolUse, so there is no context-carrying field to inject here at all. Never wired by neuron init, permanently, the same as pre-prompt above. The CLAUDE.md/AGENTS.md-instructed `neuron exec` step stays as this harness\'s only path to the same lookup.',
+      ],
+    },
   };
 }
 
@@ -201,6 +210,7 @@ export class CopilotAdapter implements HarnessAdapter {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

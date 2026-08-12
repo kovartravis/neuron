@@ -102,6 +102,15 @@ function capability(): CapabilityMap {
         'preCompact exists and is wired — unlike Copilot CLI, which has no compaction-equivalent event at all — and does run in cloud/background agents per Cursor\'s own supported-hooks table. But its stdin carries no session_id field (confirmed via direct fetch, unlike sessionStart\'s), so the session ledger epoch never actually rolls from this point despite the hook firing. verify() firing evidence still records that it ran; only rollEpoch\'s effect is unreachable.',
       ],
     },
+    'pre-command': {
+      injects: false,
+      payloadCapChars: 'unknown',
+      failurePosture: 'unknown',
+      timeoutMs: 'unknown',
+      caveats: [
+        'A structural ceiling, not an undocumented gap (ticket 12, neuron-2.4.0): beforeShellExecution is documented as permission/gating-only ({permission, user_message, agent_message}, confirmed via direct fetch of cursor.com/docs/agent/hooks) — no context-carrying field at all, unlike Claude Code/Codex\'s PreToolUse. Never wired by neuron init, permanently, the same as pre-prompt above. The CLAUDE.md/AGENTS.md-instructed `neuron exec` step stays as this harness\'s only path to the same lookup.',
+      ],
+    },
   };
 }
 
@@ -215,6 +224,7 @@ export class CursorAdapter implements HarnessAdapter {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

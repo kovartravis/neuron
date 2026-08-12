@@ -21,6 +21,7 @@ const EVENT_NAME: Record<LifecyclePoint, string> = {
   'session-start': 'SessionStart',
   'pre-prompt': 'UserPromptSubmit',
   'context-reset': 'PreCompact',
+  'pre-command': 'PreToolUse',
 };
 
 /**
@@ -34,6 +35,7 @@ const HOOK_TIMEOUT_SECONDS: Record<LifecyclePoint, number> = {
   'session-start': 20,
   'pre-prompt': 10,
   'context-reset': 5,
+  'pre-command': 10,
 };
 
 /**
@@ -70,6 +72,17 @@ function capability(): CapabilityMap {
       failurePosture: 'fail-open',
       timeoutMs: 600000,
       caveats: ['Only clears the session ledger; no payload is ever sent from this point.'],
+    },
+    'pre-command': {
+      injects: true,
+      payloadCapChars: 10000,
+      failurePosture: 'fail-open',
+      timeoutMs: 600000,
+      caveats: [
+        'Sourced from a direct fetch of code.claude.com/docs/en/hooks during ticket 22 (neuron-2.4.0), not assumed from pre-prompt\'s own record: the 10,000-char output cap is shared across every hook point (confirmed the same figure applies to PreToolUse), but the timeout is not — PreToolUse uses the general 600s command-hook default, not UserPromptSubmit\'s own 30s figure.',
+        'A timed-out, erroring, or non-zero-exit PreToolUse hook does not block the tool call — it fails open and the call proceeds through the normal permission flow regardless. Matches ADR 0014\'s existing fail-safe posture; neuron never sets a permissionDecision here either way.',
+        'Fires for every tool call, not just Bash — additionalContext also renders after the tool has already run, next to its result, not before (ADR 0014\'s 2026-08-10 amendment, item 3). The hook handler no-ops for non-Bash tool calls rather than relying on the matcher to filter them.',
+      ],
     },
   };
 }
@@ -180,6 +193,7 @@ export class ClaudeCodeAdapter implements HarnessAdapter {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

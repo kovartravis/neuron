@@ -26,6 +26,7 @@ const EVENT_NAME: Record<LifecyclePoint, string> = {
   'session-start': 'SessionStart',
   'pre-prompt': 'UserPromptSubmit',
   'context-reset': 'PreCompact',
+  'pre-command': 'PreToolUse',
 };
 
 /**
@@ -38,6 +39,7 @@ const HOOK_TIMEOUT_SECONDS: Record<LifecyclePoint, number> = {
   'session-start': 20,
   'pre-prompt': 10,
   'context-reset': 5,
+  'pre-command': 10,
 };
 
 /**
@@ -89,6 +91,17 @@ function capability(): CapabilityMap {
       timeoutMs: 600000,
       caveats: [
         'PreCompact ignores stdout entirely (confirmed via direct fetch) — only clears the session ledger; no payload is ever sent from this point.',
+      ],
+    },
+    'pre-command': {
+      injects: true,
+      payloadCapChars: 7500,
+      failurePosture: 'fail-open',
+      timeoutMs: 600000,
+      caveats: [
+        'Sourced from a direct fetch of learn.chatgpt.com/docs/hooks during ticket 22 (neuron-2.4.0), not assumed from pre-prompt\'s own record. `tool_name`/`tool_input.command` fields are confirmed identical to Claude Code\'s for a Bash call — same conversion caveat as session-start/pre-prompt applies to the 7,500-char figure (documented as ~2,500 tokens via additionalContextLimit, not a directly quoted character count).',
+        'A PreToolUse hook that errors is marked failed and reported, but the tool call proceeds regardless (confirmed fail-open, same posture as every other point here) — a supported denial still requires an explicit permissionDecision, which neuron never sets.',
+        'Fires for every tool call, not just Bash — the hook handler no-ops for non-Bash tool calls rather than relying on the matcher to filter them, same as Claude Code.',
       ],
     },
   };
@@ -213,6 +226,7 @@ export class CodexAdapter implements HarnessAdapter {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

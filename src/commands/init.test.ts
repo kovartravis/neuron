@@ -350,6 +350,7 @@ describe('CLI Command: init', () => {
         'session-start': 'unchanged',
         'pre-prompt': 'unchanged',
         'context-reset': 'unchanged',
+        'pre-command': 'unchanged',
       });
 
       const settings = JSON.parse(fs.readFileSync(path.join(initTempDir, '.claude', 'settings.json'), 'utf8'));
@@ -371,7 +372,7 @@ describe('CLI Command: init', () => {
       const result = JSON.parse(stdout);
 
       expect(result.status).toBe('hooks-uninstalled');
-      expect(result.results[0].removed[0].removedCount).toBe(3);
+      expect(result.results[0].removed[0].removedCount).toBe(4);
 
       const settings = JSON.parse(fs.readFileSync(path.join(initTempDir, '.claude', 'settings.json'), 'utf8'));
       expect(settings.hooks).toBeUndefined();

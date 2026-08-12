@@ -35,12 +35,18 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
     expect(capability['session-start'].timeoutMs).toBe('unknown');
     expect(capability['pre-prompt'].injects).toBe(false);
     expect(capability['context-reset'].injects).toBe(false);
+    expect(capability['pre-command'].injects).toBe(false);
     expect(deriveFidelity(capability)).toBe('best-effort');
   });
 
-  it('installs hooks for session-start and context-reset, leaving pre-prompt untouched', async () => {
+  it('installs hooks for session-start and context-reset, leaving pre-prompt and pre-command untouched', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
-    expect(result.points).toEqual({ 'session-start': 'written', 'pre-prompt': 'unchanged', 'context-reset': 'written' });
+    expect(result.points).toEqual({
+      'session-start': 'written',
+      'pre-prompt': 'unchanged',
+      'context-reset': 'written',
+      'pre-command': 'unchanged',
+    });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     // Documented as part of Cursor's own schema (unlike Copilot's), so neuron
@@ -64,6 +70,7 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));

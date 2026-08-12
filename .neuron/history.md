@@ -3746,3 +3746,15 @@ tags:
 taskId: "21"
 ---
 Resolved wayfinder ticket 21 (neuron-2.4.0, Warn When Recall Is Never Invoked): built a proactive session-start hook warning for the write-only-store failure mode, distinct from --health's existing opt-in report of the same sessionsObserved signal. buildZeroSessionsWarning() in ledger.ts fires only on literal sessionsObserved === 0 with a non-empty store; hook.ts's session-start branch now emits whenever it has a card, a warning, or both, rather than returning early on no card. npm test 670/670 (663 prior + 7 new), tsc clean. Updated map.md's Decisions-so-far and Notes; true frontier is now 22, 25, 28, 30.
+
+---
+id: e6fcb24c-83da-47a9-9235-ac6af2c2aa65
+createdAt: 2026-08-12T03:41:13.474Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "22"
+---
+Wayfinder pickup session on the neuron-2.4.0 map: claimed the frontier's first unblocked ticket, ticket 22 (Implement the Pre-Command Hook), and built it end to end per ticket 12's ADR 0014 amendment ruling. Added 'pre-command' as LifecyclePoint's fourth value; wired real capability records verified via direct fetch of each harness's own docs (Claude Code and Codex CLI get injects:true with PreToolUse's own 600s timeout default, not UserPromptSubmit's 30s; Copilot CLI and Cursor get injects:false permanently, confirmed structural — neither's shell hook has any context-carrying output field). Built the hook.ts handler reusing exec.ts's resolveExecCategories/queryGated verbatim, no-oping for non-Bash tool calls, packing results under a new fixed PRE_COMMAND_CHAR_BUDGET deliberately outside the session-ledger epoch (fires per tool call, not per turn). Found and fixed a real latent bug along the way in init.ts's recall-fidelity report, which would have misreported an unaffected recall setup as un-wired the moment pre-command wasn't yet installed on an upgraded project — scoped to a new RECALL_LIFECYCLE_POINTS constant instead. Updated adapter tests across all four harnesses plus init.test.ts for the new point, and added new hook.test.ts coverage for pre-command (real match injects, no match stays silent, non-Bash no-ops, malformed/missing input degrades silently). npm test 676/676 (was 670), tsc clean. Resolved ticket 22, appended its Answer and the map's Decisions-so-far entry; unblocked ticket 23 (Fidelity-Conditional Command Execution Step) directly. Next wayfinder session's frontier: 23, 25, 28, 30.

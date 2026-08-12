@@ -27,17 +27,23 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
     expect(adapter.detect(path.join(tempRoot, 'no-such-dir'))).toBe(false);
   });
 
-  it('reports deterministic fidelity for session-start and pre-prompt', () => {
+  it('reports deterministic fidelity for session-start, pre-prompt, and pre-command', () => {
     const capability = adapter.capability();
     expect(capability['session-start'].injects).toBe(true);
     expect(capability['pre-prompt'].injects).toBe(true);
     expect(capability['context-reset'].injects).toBe(false);
+    expect(capability['pre-command'].injects).toBe(true);
     expect(deriveFidelity(capability)).toBe('deterministic');
   });
 
-  it('installs hooks for all three lifecycle points into a fresh hooks.json', async () => {
+  it('installs hooks for all four lifecycle points into a fresh hooks.json', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
-    expect(result.points).toEqual({ 'session-start': 'written', 'pre-prompt': 'written', 'context-reset': 'written' });
+    expect(result.points).toEqual({
+      'session-start': 'written',
+      'pre-prompt': 'written',
+      'context-reset': 'written',
+      'pre-command': 'written',
+    });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.hooks.SessionStart[0].hooks[0]).toEqual({
@@ -47,6 +53,7 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
     });
     expect(file.hooks.UserPromptSubmit[0].hooks[0].command).toBe('neuron hook codex pre-prompt');
     expect(file.hooks.PreCompact[0].hooks[0].command).toBe('neuron hook codex context-reset');
+    expect(file.hooks.PreToolUse[0].hooks[0].command).toBe('neuron hook codex pre-command');
     // No `args` field — Codex's schema documents a single command string, not Claude Code's command+args split.
     expect(file.hooks.SessionStart[0].hooks[0].args).toBeUndefined();
   });
@@ -58,6 +65,7 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
@@ -151,7 +159,7 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
 
     const result = await adapter.uninstall(projectDir);
     expect(result.removed).toHaveLength(1);
-    expect(result.removed[0].removedCount).toBe(3);
+    expect(result.removed[0].removedCount).toBe(4);
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.someOtherSetting).toBe(true);
