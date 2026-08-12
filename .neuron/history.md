@@ -2674,3 +2674,15 @@ tags:
 taskId: "25"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: scanned .scratch/neuron-2.4.0/issues/ directly (the map's own Notes narrative was one session stale after ticket 37's resolution) and claimed the frontier's lowest-numbered unclaimed-unblocked ticket, 25 (Implement the Neuron-Backed Tracker). Declared the tickets category in neuron.yaml per ADR 0018, discovering and working around a real collision: ADR 0018's literal field name 'type' collides with the reserved --type CLI flag, so it shipped as 'kind' instead. Verified the whole add/update/delete mutation path live against the real store (all test entries cleaned up afterward), and found memory list (not memory query) is the correct no-relevance-filtering primitive for the wayfinder frontier scan. Rewrote docs/agents/issue-tracker.md end to end and fixed CLAUDE.md's now-stale .scratch pointer as a direct consequence. Resolved ticket 25, appended its Answer and the map's Decisions-so-far entry, and unblocked ticket 26 (bulk .scratch migration), now the map's new frontier alongside 28/30/31/32/33/34/35/36/38/39. npm test 678/678, tsc clean, no src/ changes.
+
+---
+id: 1b73fe1b-84d2-4f20-83e6-ca4d6940624a
+createdAt: 2026-08-12T16:31:50.708Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "26"
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed ticket 26 (Migrate All 19 .scratch Efforts into the tickets Category), the map's lowest-numbered unclaimed-unblocked frontier ticket. Live investigation before touching anything found the ticket's own framing didn't match reality -- only 9 of .scratch's 13 top-level directories are real wayfinder efforts with a map.md and issues/; 4 more (configurable-pruning, salvage-expansion, md-first, write-side-enrichment) are linked assets for already-resolved neuron-2.2.0 tickets, not efforts; 5 loose .py scripts are dead pre-CLI cruft. A repo-wide grep also found .scratch/ referenced from README.md, CHANGELOG.md, CLAUDE.md, ten ADRs, four .claude/skills files, settings.local.json, and src/components/enricher.ts -- far beyond the ticket's own tree. Given that blast radius plus the ticket's own destructive delete-.scratch/ ending, resolved it as a scoping pass rather than a one-shot mechanical migration: decided a UUID-based identity scheme with two-pass create-then-wire id/blockedBy rewiring, snapshot-then-cutover for migrating this map's own in-flight state, and relocate-not-migrate for the 4 asset dirs (to benchmarks/ and a new docs/design/). Graduated three execution tickets -- 40 (migrate the 9 real efforts), 41 (relocate the 4 asset dirs, fix ADR 0010/0011 links), 42 (sweep every remaining repo-wide .scratch/ reference and delete .scratch/, blocked by 40 and 41) -- mirroring this map's own precedent (ticket 12 to 22/23/24, ticket 14 to 25/26) for splitting design from execution rather than cramming a ~200-file destructive migration into one session. Also committed a trailing, fully-complete but never-committed prior session's work resolving ticket 25 (declare the tickets category, rewrite issue-tracker.md) before starting this session's own work.

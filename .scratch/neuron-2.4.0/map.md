@@ -513,6 +513,34 @@ thin.
   but blocked on credentials): `26`, `28`, `30`, `31`, `32`, `33`, `34`,
   `35`, `36`, `38`, `39` (all unclaimed and unblocked); `02`, `04`, `05`
   claimed and in progress; `03` blocked.
+- **Ticket 26 resolved, 2026-08-12 — as a scoping pass, not a completed
+  migration.** Live investigation before touching anything found the
+  ticket's own "19 efforts, one mechanical pass" framing didn't match
+  `.scratch/`'s real shape: only 9 top-level directories are actual
+  wayfinder efforts (have their own `map.md` + `issues/`); 4 more
+  (`configurable-pruning`, `salvage-expansion`, `md-first`,
+  `write-side-enrichment`) are linked assets for already-resolved
+  `neuron-2.2.0` tickets, not efforts; 5 loose `.py` scripts are dead
+  pre-CLI cruft. A repo-wide grep also found `.scratch/` linked from
+  `README.md`, `CHANGELOG.md`, `CLAUDE.md`, ten ADRs, four
+  `.claude/skills/*` files, `settings.local.json`, and
+  `src/components/enricher.ts` — far past the ticket's own tree. Given
+  that blast radius (and the destructive `.scratch/` deletion at the end),
+  resolved by deciding the open questions (UUID-based id scheme with a
+  two-pass create-then-wire, snapshot-then-cutover for this map's own
+  self-referential migration, relocate-not-migrate for the 4 asset dirs)
+  and graduating execution rather than running it inline — mirrors `12`'s
+  and `14`'s own design→implementation splits on this map. Graduated
+  [40 — Migrate the 9 Wayfinder Efforts into the `tickets`
+  Category](issues/40-migrate-wayfinder-efforts-to-tickets.md) (unblocked),
+  [41 — Relocate `.scratch` Asset Directories & Fix Their ADR
+  Links](issues/41-relocate-scratch-asset-dirs.md) (unblocked, independent
+  of `40`), and [42 — Sweep Repo-Wide `.scratch/` References & Delete
+  `.scratch/`](issues/42-sweep-scratch-references-and-delete.md) (blocked
+  by `40` and `41`). True frontier as of this session (excluding `11`,
+  claimed but blocked on credentials): `28`, `30`, `31`, `32`, `33`, `34`,
+  `35`, `36`, `38`, `39`, `40`, `41` (all unclaimed and unblocked); `02`,
+  `04`, `05` claimed and in progress; `03`, `42` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -550,6 +578,7 @@ thin.
 - [13 — Audit: Dogfooding Gaps in This Repo](issues/13-audit-dogfooding-gaps.md) — full sweep published as [13-dogfooding-gaps-audit.md](issues/13-dogfooding-gaps-audit.md). One of the ticket's own four recon candidates (unwrapped `npm test`/`git commit`) turned out to already be resolved as a side effect of `22`-`24`'s pre-command hook; checked against source, not assumed. Five real gaps found and prioritized: **F1** CI never invokes `neuron` (recommend an architecture-drift `neuron scan --check` gate; recommend *against* CI write-back — no safe way to persist a `.neuron/` commit against a concurrent human push); **F2** the stale-global-binary trap (bitten twice already, both on record) now also covers every `.claude/settings.json` hook since `22`, not just `neuron exec`, with nothing detecting a version mismatch; **F3** `CLAUDE.md`'s generated protocol block can drift from `neuron.yaml` silently (already happened once, per `10`'s fix); **F4** no scheduled cadence for `neuron status --health`, so store rot is only ever caught manually; **F5** the free dry-run benchmark harnesses have no CI regression gate. Mirrors `15`'s own precedent: recon only, no tickets graduated this session — the backlog is input for a following session's implementation tickets. Resolving it unblocks [16](issues/16-curate-neuron-store-showcase.md) (its other blocker, `14`, was already resolved).
 - [37 — Cut and Publish 2.4.0-rc1](issues/37-cut-rc1.md) — published for real: version bumped, CHANGELOG audited from `git log v2.3.0..HEAD`, 678/678 unit + clean e2e (0 dropped/lost writes on the flaky Pillar 8). Found and reverted a real bug mid-cut — `test:e2e`'s isolated stress fixture has no `neuron.yaml` of its own, so ticket `01`'s category auto-declare write path climbed unbounded and mutated this repo's *real* config — chartered as [39](issues/39-config-autodeclare-escapes-projectroot.md) rather than fixed here. `main`'s branch ruleset (`pull_request` + `code_scanning` + `code_quality`, all active) meant the maintainer chose a real PR ([#6](https://github.com/kovartravis/neuron/pull/6)) over the available owner-bypass path; merged clean, fast-forward. First live push of a `-rcN` version through `publish.yml` — worked exactly as the regex predicted: `npm view` shows `rc: '2.4.0-rc1'`, `v2.4.0-rc1` tag auto-created and pushed. `feat/2.4.0-rc1` deleted post-merge at maintainer request; further work continues directly on `main`.
 - [25 — Implement the Neuron-Backed Tracker: Declare `tickets` Category & Rewrite `issue-tracker.md`](issues/25-implement-neuron-tracker.md) — built exactly what `14`/ADR 0018 decided, with one forced rename: `neuron.yaml` declares `tickets` with `status` (enum, `default: unclaimed`), `blockedBy` (string), and the ADR's `type` field renamed to **`kind`** — `--type` is already a reserved built-in CLI flag, and a declared field colliding with one is a hard config error (`validateDeclaredFields`), confirmed live. Verified the whole mutation path for real (`add`/enum-rejection/`update`/`delete`, all cleaned up after) with no new storage code, and found that the frontier scan's right primitive is `memory list` (real enumeration, no relevance ranking), not `memory query` — documented explicitly so a future session doesn't reach for the wrong one. Rewrote `docs/agents/issue-tracker.md` end to end (no `.scratch` references survive) and, as a direct consequence not in the ticket's original scope, fixed `CLAUDE.md`'s own now-stale tracker pointer, with a caveat that `.scratch/` remains the tracker for anything `26` hasn't migrated yet. Also caught and fixed the same protocol-block-drift class `10` hit once before — declaring `tickets` left `CLAUDE.md`'s generated header line stale, fixed by hand and re-verified byte-for-byte against `generateProtocolBlock()`. Did not touch `.scratch/` itself or migrate anything — that's `26`, now unblocked. `npm test` 678/678, `tsc` clean; no `src/` changes.
+- [26 — Migrate All 19 `.scratch/` Efforts into the `tickets` Category, Then Delete `.scratch/`](issues/26-migrate-scratch-to-tickets-category.md) — resolved as a scoping pass, not a completed migration: live investigation found the ticket's "19 efforts" framing overcounted (only 9 directories are real wayfinder efforts; 4 more are assets for already-resolved `neuron-2.2.0` tickets; 5 loose scripts are dead cruft) and that `.scratch/` is linked from far more of the committed repo (README, CHANGELOG, CLAUDE.md, ten ADRs, four skills, `settings.local.json`, `enricher.ts`) than the ticket's own tree. Decided the open questions — UUID-based identity with a two-pass create-then-wire scheme (old numbers survive only in prose, never as the real id), snapshot-then-cutover for migrating this map's own in-flight state, relocate-not-migrate for the 4 asset dirs (`benchmarks/` and a new `docs/design/`) — then graduated [40](issues/40-migrate-wayfinder-efforts-to-tickets.md) (the mechanical content migration), [41](issues/41-relocate-scratch-asset-dirs.md) (asset relocation + ADR link fixes), and [42](issues/42-sweep-scratch-references-and-delete.md) (repo-wide reference sweep + delete, blocked by `40`/`41`) rather than running a ~200-file, repo-wide, destructive migration inline.
 
 ## Not yet specified
 
