@@ -720,4 +720,106 @@ Body content.
       expect(warnings.some(w => w.includes('[neuron warning]') && w.includes(filePath) && /\bid\b/.test(w))).toBe(true);
     });
   });
+
+  describe('Concurrent Writer Durability (ticket 18)', () => {
+    it('18-01: N genuinely concurrent writeEntry calls against the same category all survive', async () => {
+      const adapter = new MdStorageAdapter({ storagePath: testDir });
+      await adapter.ensureScaffolded(['learning']);
+
+      const concurrency = 8;
+      // Fired via Promise.all, not sequential awaits, so every call's
+      // internal await points (ensureScaffolded, readCategory) genuinely
+      // interleave with the others — the same shape as two racing
+      // `neuron memory add` processes, reproduced within one process.
+      const writes = await Promise.all(
+        Array.from({ length: concurrency }, (_, i) =>
+          adapter.writeEntry('learning', {
+            id: `concurrent-${i}`,
+            content: `## Entry ${i}\n\nBody ${i}.`,
+            tags: [],
+            importance: 3,
+          })
+        )
+      );
+      expect(writes).toHaveLength(concurrency);
+
+      const persisted = await adapter.readCategory('learning');
+      const persistedIds = persisted.map(m => m.id).sort();
+      const expectedIds = Array.from({ length: concurrency }, (_, i) => `concurrent-${i}`).sort();
+      expect(persistedIds).toEqual(expectedIds);
+    });
+
+    it('18-02: a concurrent write and its own follow-up update (a supersession-style race) both survive', async () => {
+      const adapter = new MdStorageAdapter({ storagePath: testDir });
+      await adapter.ensureScaffolded(['learning']);
+
+      await adapter.writeEntry('learning', {
+        id: 'old-entry',
+        content: '## Old\n\nOriginal content.',
+        tags: [],
+        importance: 3,
+      });
+
+      // A new entry being written races against an update marking a prior
+      // entry superseded — the exact shape of the field-reported loss
+      // (ticket 18's Context: the vanished entry's `--supersedes` follow-up
+      // vanished with it).
+      await Promise.all([
+        adapter.writeEntry('learning', {
+          id: 'new-entry',
+          content: '## New\n\nReplacement content.',
+          tags: [],
+          importance: 3,
+        }),
+        adapter.updateEntry('learning', {
+          id: 'old-entry',
+          supersededBy: 'new-entry',
+          supersededAt: '2026-08-11T00:00:00.000Z',
+        }),
+      ]);
+
+      const persisted = await adapter.readCategory('learning');
+      const byId = new Map(persisted.map(m => [m.id, m]));
+      expect(byId.has('new-entry')).toBe(true);
+      expect(byId.get('old-entry')?.supersededBy).toBe('new-entry');
+    });
+
+    it('18-03: concurrent deleteEntry calls for different ids both survive', async () => {
+      const adapter = new MdStorageAdapter({ storagePath: testDir });
+      await adapter.ensureScaffolded(['learning']);
+
+      await adapter.writeEntry('learning', { id: 'keep', content: '## Keep', tags: [], importance: 3 });
+      await adapter.writeEntry('learning', { id: 'gone-1', content: '## Gone 1', tags: [], importance: 3 });
+      await adapter.writeEntry('learning', { id: 'gone-2', content: '## Gone 2', tags: [], importance: 3 });
+
+      const results = await Promise.all([
+        adapter.deleteEntry('learning', 'gone-1'),
+        adapter.deleteEntry('learning', 'gone-2'),
+      ]);
+      expect(results).toEqual([true, true]);
+
+      const persisted = await adapter.readCategory('learning');
+      expect(persisted.map(m => m.id).sort()).toEqual(['keep']);
+    });
+
+    it('18-04: a lock left behind by a crashed writer is stolen once stale, not deadlocked forever', async () => {
+      const adapter = new MdStorageAdapter({ storagePath: testDir });
+      await adapter.ensureScaffolded(['learning']);
+
+      // Simulate a process that acquired the lock and never released it.
+      const lockPath = path.join(testDir, 'learning.md.lock');
+      fs.mkdirSync(lockPath);
+      const staleTime = new Date(Date.now() - 60_000);
+      fs.utimesSync(lockPath, staleTime, staleTime);
+
+      const written = await adapter.writeEntry('learning', {
+        id: 'after-stale-lock',
+        content: '## Recovered\n\nWritten after stealing a stale lock.',
+        tags: [],
+        importance: 3,
+      });
+      expect(written.id).toBe('after-stale-lock');
+      expect(fs.existsSync(lockPath)).toBe(false);
+    });
+  });
 });

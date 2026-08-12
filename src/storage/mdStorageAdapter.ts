@@ -132,114 +132,216 @@ export class MdStorageAdapter implements MdStorage {
     category: string,
     entry: Partial<Memory> & { content?: string }
   ): Promise<Memory> {
-    await this.ensureScaffolded([category]);
-    const existingEntries = await this.readCategory(category);
+    return this.withCategoryLock(category, async () => {
+      await this.ensureScaffolded([category]);
+      const existingEntries = await this.readCategory(category);
 
-    const memoryId = entry.id || crypto.randomUUID();
-    const existingIndex = existingEntries.findIndex(m => m.id === memoryId);
-    // An upsert onto an id that already exists is a replace, not a rebirth —
-    // createdAt must survive it the same way updateEntry already preserves
-    // it, or every repeat write (e.g. a re-run `neuron scan`) looks like a
-    // brand new entry in a diff even when nothing else changed (ticket 37).
-    const createdAt = entry.createdAt
-      || (existingIndex >= 0 ? existingEntries[existingIndex].createdAt : undefined)
-      || new Date().toISOString();
+      const memoryId = entry.id || crypto.randomUUID();
+      const existingIndex = existingEntries.findIndex(m => m.id === memoryId);
+      // An upsert onto an id that already exists is a replace, not a rebirth —
+      // createdAt must survive it the same way updateEntry already preserves
+      // it, or every repeat write (e.g. a re-run `neuron scan`) looks like a
+      // brand new entry in a diff even when nothing else changed (ticket 37).
+      const createdAt = entry.createdAt
+        || (existingIndex >= 0 ? existingEntries[existingIndex].createdAt : undefined)
+        || new Date().toISOString();
 
-    // A brand-new entry is never born superseded, so an upsert only ever
-    // preserves an existing mark rather than setting one — the write-time
-    // gate marks the OLD row via `updateEntry`, not this path (ticket 17 /
-    // ADR 0015).
-    const supersededBy = entry.supersededBy !== undefined
-      ? entry.supersededBy
-      : (existingIndex >= 0 ? existingEntries[existingIndex].supersededBy : null) ?? null;
-    const supersededAt = entry.supersededAt !== undefined
-      ? entry.supersededAt
-      : (existingIndex >= 0 ? existingEntries[existingIndex].supersededAt : null) ?? null;
+      // A brand-new entry is never born superseded, so an upsert only ever
+      // preserves an existing mark rather than setting one — the write-time
+      // gate marks the OLD row via `updateEntry`, not this path (ticket 17 /
+      // ADR 0015).
+      const supersededBy = entry.supersededBy !== undefined
+        ? entry.supersededBy
+        : (existingIndex >= 0 ? existingEntries[existingIndex].supersededBy : null) ?? null;
+      const supersededAt = entry.supersededAt !== undefined
+        ? entry.supersededAt
+        : (existingIndex >= 0 ? existingEntries[existingIndex].supersededAt : null) ?? null;
 
-    const fullMemory: Memory = {
-      id: memoryId,
-      category,
-      kind: category,
-      content: entry.content || '',
-      tags: Array.isArray(entry.tags) ? entry.tags : [],
-      importance: entry.importance !== undefined ? entry.importance : 3,
-      taskId: entry.taskId !== undefined ? entry.taskId : null,
-      createdAt,
-      supersededBy,
-      supersededAt,
-      fields: entry.fields,
-    };
+      const fullMemory: Memory = {
+        id: memoryId,
+        category,
+        kind: category,
+        content: entry.content || '',
+        tags: Array.isArray(entry.tags) ? entry.tags : [],
+        importance: entry.importance !== undefined ? entry.importance : 3,
+        taskId: entry.taskId !== undefined ? entry.taskId : null,
+        createdAt,
+        supersededBy,
+        supersededAt,
+        fields: entry.fields,
+      };
 
-    if (existingIndex >= 0) {
-      existingEntries[existingIndex] = fullMemory;
-    } else {
-      existingEntries.push(fullMemory);
-    }
+      if (existingIndex >= 0) {
+        existingEntries[existingIndex] = fullMemory;
+      } else {
+        existingEntries.push(fullMemory);
+      }
 
-    const formattedContent = this.formatMarkdown(existingEntries, category);
-    const filePath = this.getFilePath(category);
-    this.atomicWriteFile(filePath, formattedContent);
+      const formattedContent = this.formatMarkdown(existingEntries, category);
+      const filePath = this.getFilePath(category);
+      this.atomicWriteFile(filePath, formattedContent);
+      this.verifyWrite(filePath, formattedContent, category, memoryId);
 
-    return fullMemory;
+      return fullMemory;
+    });
   }
 
   /**
    * Updates an existing entry in the specified category file by ID.
    */
   async updateEntry(category: string, entry: Partial<Memory> & { id: string }): Promise<Memory> {
-    const existingEntries = await this.readCategory(category);
-    const existingIndex = existingEntries.findIndex(m => m.id === entry.id);
+    return this.withCategoryLock(category, async () => {
+      const existingEntries = await this.readCategory(category);
+      const existingIndex = existingEntries.findIndex(m => m.id === entry.id);
 
-    if (existingIndex === -1) {
-      throw new Error(`Memory entry with id "${entry.id}" not found in category "${category}"`);
-    }
+      if (existingIndex === -1) {
+        throw new Error(`Memory entry with id "${entry.id}" not found in category "${category}"`);
+      }
 
-    const current = existingEntries[existingIndex];
-    const updatedMemory: Memory = {
-      ...current,
-      ...entry,
-      id: current.id,
-      category,
-      kind: category,
-      content: entry.content !== undefined ? entry.content : current.content,
-      tags: entry.tags !== undefined ? entry.tags : current.tags,
-      importance: entry.importance !== undefined ? entry.importance : current.importance,
-      taskId: entry.taskId !== undefined ? entry.taskId : current.taskId,
-      createdAt: entry.createdAt !== undefined ? entry.createdAt : current.createdAt,
-      supersededBy: entry.supersededBy !== undefined ? entry.supersededBy : current.supersededBy,
-      supersededAt: entry.supersededAt !== undefined ? entry.supersededAt : current.supersededAt,
-      // Per-key merge, not a full replace: an update that only touches one
-      // declared field must not clobber the entry's other declared fields,
-      // matching how tags/importance/taskId are already preserved when a
-      // caller omits them.
-      fields: entry.fields !== undefined ? { ...current.fields, ...entry.fields } : current.fields,
-    };
+      const current = existingEntries[existingIndex];
+      const updatedMemory: Memory = {
+        ...current,
+        ...entry,
+        id: current.id,
+        category,
+        kind: category,
+        content: entry.content !== undefined ? entry.content : current.content,
+        tags: entry.tags !== undefined ? entry.tags : current.tags,
+        importance: entry.importance !== undefined ? entry.importance : current.importance,
+        taskId: entry.taskId !== undefined ? entry.taskId : current.taskId,
+        createdAt: entry.createdAt !== undefined ? entry.createdAt : current.createdAt,
+        supersededBy: entry.supersededBy !== undefined ? entry.supersededBy : current.supersededBy,
+        supersededAt: entry.supersededAt !== undefined ? entry.supersededAt : current.supersededAt,
+        // Per-key merge, not a full replace: an update that only touches one
+        // declared field must not clobber the entry's other declared fields,
+        // matching how tags/importance/taskId are already preserved when a
+        // caller omits them.
+        fields: entry.fields !== undefined ? { ...current.fields, ...entry.fields } : current.fields,
+      };
 
-    existingEntries[existingIndex] = updatedMemory;
+      existingEntries[existingIndex] = updatedMemory;
 
-    const formattedContent = this.formatMarkdown(existingEntries, category);
-    const filePath = this.getFilePath(category);
-    this.atomicWriteFile(filePath, formattedContent);
+      const formattedContent = this.formatMarkdown(existingEntries, category);
+      const filePath = this.getFilePath(category);
+      this.atomicWriteFile(filePath, formattedContent);
+      this.verifyWrite(filePath, formattedContent, category, entry.id);
 
-    return updatedMemory;
+      return updatedMemory;
+    });
   }
 
   /**
    * Deletes an entry by ID from the specified category file.
    */
   async deleteEntry(category: string, id: string): Promise<boolean> {
-    const existingEntries = await this.readCategory(category);
-    const filteredEntries = existingEntries.filter(m => m.id !== id);
+    return this.withCategoryLock(category, async () => {
+      const existingEntries = await this.readCategory(category);
+      const filteredEntries = existingEntries.filter(m => m.id !== id);
 
-    if (filteredEntries.length === existingEntries.length) {
-      return false;
+      if (filteredEntries.length === existingEntries.length) {
+        return false;
+      }
+
+      const formattedContent = this.formatMarkdown(filteredEntries, category);
+      const filePath = this.getFilePath(category);
+      this.atomicWriteFile(filePath, formattedContent);
+      this.verifyWrite(filePath, formattedContent, category, id);
+
+      return true;
+    });
+  }
+
+  /**
+   * Serializes the read-modify-write cycle of `writeEntry`/`updateEntry`/
+   * `deleteEntry` against every other writer of the same category file —
+   * both other processes (e.g. two `neuron memory add` CLI invocations, the
+   * real-world case that lost data) and other async calls in this same
+   * process (e.g. `Promise.all`), since either can interleave between this
+   * class's `await` points otherwise. `mkdir` is used as the mutex primitive
+   * because directory creation is atomic at the OS/filesystem level and
+   * needs no extra dependency (ticket 18).
+   */
+  private async withCategoryLock<T>(category: string, fn: () => Promise<T>): Promise<T> {
+    const release = await this.acquireLock(category);
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  }
+
+  private async acquireLock(category: string): Promise<() => void> {
+    const lockPath = `${this.getFilePath(category)}.lock`;
+    const dir = path.dirname(lockPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
 
-    const formattedContent = this.formatMarkdown(filteredEntries, category);
-    const filePath = this.getFilePath(category);
-    this.atomicWriteFile(filePath, formattedContent);
+    // A lock older than this is assumed to belong to a process that crashed
+    // (or was killed) while holding it, rather than a genuinely slow writer
+    // — without a steal path a single crash would wedge every future writer
+    // of the category forever.
+    const staleAfterMs = 30_000;
+    const maxWaitMs = 10_000;
+    const retryDelayMs = 25;
+    const start = Date.now();
 
-    return true;
+    while (true) {
+      try {
+        fs.mkdirSync(lockPath);
+        return () => {
+          try {
+            fs.rmdirSync(lockPath);
+          } catch {
+            // Already gone (e.g. stolen as stale by another writer) — fine.
+          }
+        };
+      } catch (err) {
+        if (!(err instanceof Error) || (err as NodeJS.ErrnoException).code !== 'EEXIST') {
+          throw err;
+        }
+
+        try {
+          const heldFor = Date.now() - fs.statSync(lockPath).mtimeMs;
+          if (heldFor > staleAfterMs) {
+            fs.rmdirSync(lockPath);
+            continue;
+          }
+        } catch {
+          // Lock vanished between the failed mkdir and this stat — another
+          // writer released or stole it; retry immediately.
+          continue;
+        }
+
+        if (Date.now() - start > maxWaitMs) {
+          throw new Error(
+            `Timed out waiting ${maxWaitMs}ms for the storage lock on category "${category}" `
+            + `(${lockPath}) — another process may have crashed while holding it.`
+          );
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      }
+    }
+  }
+
+  /**
+   * Interim safety floor (ticket 18 scope item 3), kept regardless of the
+   * locking fix above: re-reads the just-written file and byte-compares it
+   * against what was meant to land on disk. Locking removes the known race
+   * that let two racing writers silently discard one another's change, but
+   * this still turns any *other* way that invariant could break (a bug in
+   * the lock, a non-atomic filesystem, a concurrent writer outside this
+   * adapter entirely) into a loud failure instead of a reported success that
+   * quietly lost data.
+   */
+  private verifyWrite(filePath: string, expectedContent: string, category: string, id: string | undefined): void {
+    const actual = fs.readFileSync(filePath, 'utf8');
+    if (actual !== expectedContent) {
+      throw new Error(
+        `Write verification failed for entry "${id}" in category "${category}": `
+        + `${filePath} does not contain the content just written. Refusing to report success.`
+      );
+    }
   }
 
   /**
