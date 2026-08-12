@@ -15,6 +15,8 @@ import {
   recordFired,
   recordHintFired,
   recordToolUse,
+  summarizeRecallCost,
+  buildZeroSessionsWarning,
   SESSION_START_CHAR_BUDGET,
   PRE_PROMPT_CHAR_BUDGET,
   GIT_LOG_CHAR_BUDGET,
@@ -291,8 +293,20 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
       const cap = sessionId
         ? Math.min(SESSION_START_CHAR_BUDGET, remainingEpochBudget(projectDir, sessionId, epochCharBudget))
         : SESSION_START_CHAR_BUDGET;
-      const { text, includedIds } = await fetchArchitectureCardPayload(memory, category, cap);
-      if (includedIds.length === 0) return;
+      const { text: cardText, includedIds } = await fetchArchitectureCardPayload(memory, category, cap);
+
+      // Ticket 21: a proactive session-start warning for the write-only-store
+      // failure mode, distinct from `status --health`'s own opt-in report of
+      // the same signal (ticket 20) — this fires unprompted, once per session,
+      // rather than requiring a maintainer to run a command to notice it.
+      const sessionsObserved = summarizeRecallCost(projectDir, epochCharBudget).sessionsObserved;
+      const totalEntries = memory.getStatus().totalCount;
+      const warningBudget = cap - (cardText ? cardText.length + 1 : 0);
+      const warning = buildZeroSessionsWarning(sessionsObserved, totalEntries);
+      const fittingWarning = warning && warning.length <= warningBudget ? warning : null;
+
+      const text = [cardText, fittingWarning].filter(Boolean).join('\n');
+      if (!text) return;
       if (sessionId) recordSessionStartInjection(projectDir, sessionId, includedIds, text.length);
       emit(harness, 'SessionStart', text);
       return;

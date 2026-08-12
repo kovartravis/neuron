@@ -9,6 +9,7 @@ import {
   recordPrePromptTurn,
   rollEpoch,
   summarizeRecallCost,
+  buildZeroSessionsWarning,
 } from './ledger.js';
 import { hookCacheDir } from './cacheDir.js';
 import { Memory } from '../models/index.js';
@@ -177,6 +178,27 @@ describe('session ledger (src/harnesses/ledger.ts)', () => {
     it('does not throw when the hook cache directory does not exist yet', () => {
       const freshRoot = '/fake/project/never-touched';
       expect(() => summarizeRecallCost(freshRoot, 18000)).not.toThrow();
+    });
+  });
+
+  // Ticket 21: the write-only-store failure mode.
+  describe('buildZeroSessionsWarning', () => {
+    it('warns when sessionsObserved is literally 0 and the store has entries', () => {
+      expect(buildZeroSessionsWarning(0, 42)).toContain('recall has never fired');
+    });
+
+    it('does not warn once at least one session has been observed', () => {
+      expect(buildZeroSessionsWarning(1, 42)).toBeNull();
+    });
+
+    it('does not warn against a genuinely empty store, even at 0 sessions observed', () => {
+      expect(buildZeroSessionsWarning(0, 0)).toBeNull();
+    });
+
+    it('does not treat a low-but-nonzero count as the same failure mode', () => {
+      // Scope is explicit: literal `=== 0`, not a low band — general
+      // recall-rate tuning is a separate, unscoped question.
+      expect(buildZeroSessionsWarning(1, 1000)).toBeNull();
     });
   });
 });

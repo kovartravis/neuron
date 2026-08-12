@@ -66,6 +66,38 @@ describe('CLI Command: hook', () => {
     expect(parsed.hookSpecificOutput.additionalContext).toContain('Repository Architectural Blueprint');
   });
 
+  // --- Ticket 21: proactive session-start warning for the write-only-store failure mode ---
+
+  it('includes a zero-sessions-observed warning in SessionStart when the store has entries but recall has never fired', () => {
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    const result = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 's1' }));
+    expect(result.status).toBe(0);
+    const parsed = JSON.parse(result.stdout.toString().trim());
+    expect(parsed.hookSpecificOutput.additionalContext).toContain('recall has never fired');
+  });
+
+  it('omits the zero-sessions-observed warning once a prior session has exercised pre-prompt recall', () => {
+    execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
+    run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'observed-session', prompt: 'database access pattern' })
+    );
+
+    // No architecture card and no warning (recall has been observed) means
+    // this session-start call has nothing to inject at all.
+    const result = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 's2' }));
+    expect(result.status).toBe(0);
+    expect(result.stdout.toString().trim()).toBe('');
+  });
+
+  it('appends the warning alongside a real architecture card rather than replacing it', () => {
+    execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+    const result = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 's1' }));
+    const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+    expect(context).toContain('Repository Architectural Blueprint');
+    expect(context).toContain('recall has never fired');
+  });
+
   it('injects relevant results via UserPromptSubmit for pre-prompt', () => {
     execAdd('Use the Repository Pattern for database access in this codebase', 'learning');
     const result = run(
