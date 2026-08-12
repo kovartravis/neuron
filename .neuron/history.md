@@ -3560,3 +3560,15 @@ tags:
 taskId: "27"
 ---
 Wayfinder session on the neuron-2.4.0 map: grilled ticket 27 (Should Anything Be Done About the Gate's 99.80% False-Accept Rate?) live with the maintainer through six dependency-ordered decisions. Verdict: fix it (the gate now runs on every agent turn post-ticket-12, so 99.80% is near-constant noise, not a rare edge case). The cosine floor stays rejected, not revisited -- ticket 39's null result is structural (on-topic/negative-control cosine distributions overlap too much), not a bar-too-strict problem. Direction: local-only (hard maintainer constraint, no remote API ever) second-stage gate layer using a small cross-encoder reranker instead of another chat model -- purpose-built for query-passage relevance, no ChatML/few-shot scaffolding needed, materially smaller (22M-100M params vs the current 500M chat model). Integration: a pure gate layer ANDed onto the existing lexical leg on the small already-filtered candidate set, ranking/RRF left untouched since this is a precision problem not a ranking problem. Acceptance bar pre-committed before any pilot: false-accept rate must drop more than 5x (99.80% to under 20%) with ~zero new false-silence on Pillar 7's on-topic corpus and LongMemEval's gold queries. Graduated two tickets rather than building here, mirroring ticket 12's and ticket 14's own design-then-implementation splits: ticket 28 (research, find a real local ONNX cross-encoder reranker with confirmed availability/license/size) and ticket 29 (build the gate layer and pilot it against the bar, blocked by 28). True frontier now 18, 19, 20, 21, 22, 25, 28.
+
+---
+id: 3f8e2660-7cff-48b3-b015-b85fd294c023
+createdAt: 2026-08-12T01:51:15.036Z
+importance: 4
+tags:
+  - drift
+  - failure-fix
+  - wayfinder
+taskId: "30"
+---
+Chartered ticket 30 (neuron-2.4.0 map) at the maintainer's request: fix autoRescanIfDriftDetected's cwd/storage project-root mismatch. This is the root-cause writeup for the architecture-card corruption caught and worked around earlier this same session mid-ticket-27's grilling -- traced to source rather than filed as a vague bug report: autoRescanIfDriftDetected(memory, projectRoot = process.cwd()) (src/scanner/diff.ts:410-412) uses literal process.cwd() as the scan root with no upward-walk or package.json check, flowing through ingestScanResults into analyzer.ts:83's path.basename(projectRoot) for the card's project name, while the NeuronMemory instance actually being written to was resolved via NeuronMemory.open()'s own separate upward-walking discovery -- the two can silently diverge whenever cwd is a project-marker-less subdirectory (any .scratch/*/issues/ dir qualifies), causing a scan of the wrong directory to silently overwrite the real project's architecture card. Second confirmed live instance of this bug class (first: 2026-08-08, harness-idempotent-test). Unclaimed, unblocked. True frontier now 18, 19, 20, 21, 22, 25, 28, 30.

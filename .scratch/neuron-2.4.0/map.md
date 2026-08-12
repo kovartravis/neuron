@@ -331,6 +331,22 @@ thin.
   (excluding `11`, claimed but blocked on credentials): `18`, `19`, `20`,
   `21`, `22`, `25`, `28` (all unclaimed and unblocked); `02`, `04`, `05`
   claimed and in progress; `03`, `13`, `16`, `23`, `24`, `26`, `29` blocked.
+- **Ticket 30 added, 2026-08-11**, direct maintainer request: [30 — Fix
+  `autoRescanIfDriftDetected`'s cwd/storage Project-Root
+  Mismatch](issues/30-fix-autorescan-cwd-storage-mismatch.md). Caught live,
+  mid-`27`'s grilling session: `neuron exec`'s own drift-auto-rescan
+  overwrote the real architecture card with a scan of an unrelated
+  subdirectory (`process.cwd()` used as the scan root with no upward-walk
+  guard, while the storage write it lands in resolves the real project root
+  via a separate upward walk — the two can silently diverge). Root cause
+  traced to source before filing (`src/scanner/diff.ts:410-412`,
+  `src/scanner/analyzer.ts:83`), not filed as a vague investigation.
+  Second confirmed live instance of this bug class (first: 2026-08-08,
+  `harness-idempotent-test`). Unclaimed, unblocked. True frontier as of
+  this session (excluding `11`, claimed but blocked on credentials): `18`,
+  `19`, `20`, `21`, `22`, `25`, `28`, `30` (all unclaimed and unblocked);
+  `02`, `04`, `05` claimed and in progress; `03`, `13`, `16`, `23`, `24`,
+  `26`, `29` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
