@@ -1,4 +1,4 @@
-import { NeuronMemory, StoreHealth } from '../index.js';
+import { NeuronMemory, StoreHealth, StoreHealthRepairReport } from '../index.js';
 import { loadNeuronConfig } from '../config/neuronYaml.js';
 import { getArchitecturalDrift } from '../scanner/diff.js';
 import { summarizeRecallCost } from '../harnesses/index.js';
@@ -38,6 +38,30 @@ function formatStoreHealthText(health: StoreHealth, sessionsObserved: number): s
   return lines.join('\n');
 }
 
+function formatStoreHealthRepairText(report: StoreHealthRepairReport): string {
+  const lines: string[] = ['Store health repair'];
+
+  lines.push('');
+  lines.push(`Merged (exact-duplicate content, no judgment needed): ${report.merged.length} group(s)`);
+  for (const outcome of report.merged) {
+    lines.push(`  - kept [${outcome.category}] ${outcome.keptId}  "${preview(outcome.content)}"`);
+    for (const id of outcome.supersededIds) {
+      lines.push(`      superseded: ${id}`);
+    }
+  }
+
+  lines.push('');
+  lines.push(`Left unresolved (wording differs — needs a human call via --supersedes/--not-a-reversal): ${report.unresolved.length} group(s)`);
+  for (const group of report.unresolved) {
+    lines.push(`  - ${group.entries.length} entries, min similarity ${group.minSimilarity.toFixed(3)}:`);
+    for (const entry of group.entries) {
+      lines.push(`      [${entry.category}] ${entry.id}  "${preview(entry.content)}"`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
 /**
  * Ticket 13 / ADR 0013: the validation surface `neuron doctor` was ruled out
  * twice for, reopened folded into `status` instead of a new top-level
@@ -48,8 +72,11 @@ function formatStoreHealthText(health: StoreHealth, sessionsObserved: number): s
  * question again, for store-health signals (duplicates, importance
  * distribution, superseded count) rather than config-schema compliance —
  * same "no new commands" precedent applies, so `--health` joins `--check`/
- * `--repair` as a third mutually-exclusive report mode rather than shipping
- * a `neuron doctor` binary.
+ * `--repair` as a third report mode rather than shipping a `neuron doctor`
+ * binary. Unlike `--check`/`--repair`, `--health` and `--repair` combine
+ * (`--health --repair`) rather than being mutually exclusive with each
+ * other — `--check` still can't combine with either, since it answers a
+ * different question (config-schema compliance) than `--health` does.
  */
 export async function handleStatusCommand(memory: NeuronMemory, args: string[] = []): Promise<void> {
   const { options } = parseFlags(args.slice(1));
@@ -59,14 +86,24 @@ export async function handleStatusCommand(memory: NeuronMemory, args: string[] =
     return;
   }
 
-  const reportModes = [options.check, options.repair, options.health].filter(Boolean).length;
-  if (reportModes > 1) {
-    console.error('Error: --check, --repair, and --health are mutually exclusive');
+  if (options.check && (options.repair || options.health)) {
+    console.error('Error: --check cannot be combined with --repair or --health');
     process.exitCode = 1;
     return;
   }
 
   if (options.health) {
+    if (options.repair) {
+      const report = await memory.repairStoreHealth();
+      if (options.json) {
+        console.log(JSON.stringify(report));
+      } else {
+        console.log(formatStoreHealthRepairText(report));
+      }
+      if (report.unresolved.length > 0) process.exitCode = 1;
+      return;
+    }
+
     const health = await memory.getStoreHealth();
     // sessionsObserved (ticket 21's own subject) is surfaced here rather
     // than delegated, per the ticket's own fallback — 21 hasn't landed yet.

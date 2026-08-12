@@ -117,11 +117,61 @@ status --health`), not just fixtures. Found two real, previously-invisible
 things along the way: leftover exact-duplicate test-fixture strings
 ("Always test first", "Fix for build error: pass --no-cache...", "original
 content") that leaked into this repo's real dev database from
-pre-isolation test runs — store pollution, not a code bug, left for a
-future cleanup rather than fixed here since this ticket is measurement, not
-remediation. And a legitimate near-dup class: several architecture-card
-bodies duplicated across the `decisions` and `architecture` categories at
-~0.985-1.0 similarity, dating from the `scan: category: decisions` alias
-period ticket 01 reverted — the old `decisions`-category cards were never
-cleaned up after the revert. Both are exactly the kind of finding this
-ticket exists to surface, not fix.
+pre-isolation test runs — store pollution, not a code bug. And a legitimate
+near-dup class: several architecture-card bodies duplicated across the
+`decisions` and `architecture` categories at ~0.985-1.0 similarity, dating
+from the `scan: category: decisions` alias period ticket 01 reverted — the
+old `decisions`-category cards were never cleaned up after the revert.
+
+### Addendum: `--health --repair`, same session, direct follow-up request
+
+The maintainer asked immediately after the above: does this actually fix
+anything, or only report? Correctly just reports — added a repair mode
+rather than chartering a separate ticket, since it's squarely inside this
+ticket's own subject and the maintainer was live in the session.
+
+**Design:** within each near-duplicate cluster `getStoreHealth` already
+finds, split members by byte-identical `content`. A content-identical
+subgroup (>1 member) is safely mergeable with zero judgment — there is no
+wording difference to adjudicate, so the latest-created member survives and
+the rest are marked `supersededBy` it (never deleted, per ADR 0015,
+`memory.transact`'s ordinary `update` path). A cluster that still has more
+than one *distinct* content string after that merge — real near-duplicates,
+similar embedding but different wording — is left in `unresolved` rather
+than guessed at, mirroring `repairFieldCompliance`'s own refusal to
+fabricate a free-text field: a human resolves those via
+`--supersedes`/`--not-a-reversal`.
+
+**CLI:** `neuron status --health --repair`. Unlike `--check`/`--repair`,
+which stay mutually exclusive with `--health`, `--repair` now *combines*
+with `--health` (different meaning than bare `--repair`, which still means
+field-compliance repair) — `--check` is the only flag that still can't
+combine with either. Human-readable by default, `--json` for scripting;
+exits 1 if anything is left unresolved, matching `--repair`'s own exit-code
+convention.
+
+**Implementation:** `NeuronMemory.repairStoreHealth()` (`src/index.ts`, next
+to `getStoreHealth`) and `formatStoreHealthRepairText`
+(`src/commands/status.ts`). `DuplicateGroupEntry` gained a `createdAt` field
+(needed to pick the survivor) — a straightforward, non-breaking addition
+since it's an ordinary new object property, not a signature change.
+`DuplicateMergeOutcome`/`StoreHealthRepairReport` added to
+`src/models/memory.ts`. `STATUS_HELP`/`MASTER_HELP` updated.
+
+**Testing:** 4 new cases in `status.health.test.ts` — full-group exact
+merge (nothing unresolved), a mixed cluster (2 exact dupes + 1 differently
+worded, merge the dupes, leave the pair unresolved), exit-code behavior,
+and the human-readable-vs-`--json` switch. `npm test` 663/663 (was 659),
+`tsc` clean.
+
+**Run for real against this repo's own store**, at the maintainer's
+explicit go-ahead (confirmed first, since this mutates real data with no
+CLI path to reverse a supersession mark once set): merged 30 of the 34
+groups found earlier — 155 stale test-fixture-pollution entries marked
+superseded by their most-recent duplicate. Left the 5 real architecture-card
+near-dups unresolved, exactly as designed — their wording genuinely differs
+by module, so no automatic merge guessed at which one was "right". Verified
+via `git diff .neuron/`: every change is an in-place frontmatter addition
+(`supersededBy`/`supersededAt` on the existing entry block), zero content
+deletions or duplications. `neuron exec -- npm test` 663/663 after the real
+repair ran.

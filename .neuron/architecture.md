@@ -303,7 +303,7 @@ Primary models module containing core application capabilities.
 **Key Components & Export Contracts:**
 - **`src/models/index.ts`**: No exported symbols detected.
 - **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): No exported symbols detected.
-- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome, DuplicateGroupEntry, DuplicateGroup, StoreHealth`): @deprecated Use plain `string` for category names instead.
+- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome, DuplicateGroupEntry, DuplicateGroup, StoreHealth, DuplicateMergeOutcome, StoreHealthRepairReport`): @deprecated Use plain `string` for category names instead.
 - **`src/models/options.ts`** (Exports: `NeuronMemoryOptions`): Injected write-side enricher. Tests supply a stub so the transaction seam can be exercised without loading a 500M-parameter model; production leaves it unset and gets `LocalEnrichmentModel`.
 
 ---

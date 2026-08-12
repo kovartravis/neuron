@@ -408,6 +408,7 @@ Commands:
   status               Display status details for active database, project, embedding cache, and architectural drift
                         (--check/--repair reports and fixes entries violating a category's declared field schema)
                         (--health reports duplicate clusters, importance histogram, superseded count, sessionsObserved)
+                        (--health --repair merges exact-duplicate clusters; leaves differently-worded near-dupes for a human)
   memory <subcommand>  Manage memories across any category (use --category <name>)
   scan                 Scan project topology and manifests, ingest an architectural blueprint, and detect drift
   sync                 Sync memories between .neuron/*.md files and the vector database
@@ -444,35 +445,46 @@ histogram (1-5), the superseded-entry count, and whether recall has ever
 actually fired (sessionsObserved). Prints a human-readable report by
 default; pass --json for the scriptable form.
 
+With --health --repair together, also fixes what's safely fixable: within
+each near-duplicate cluster, entries sharing byte-identical content are
+merged (the latest-created one survives; the rest are marked superseded,
+never deleted). A cluster whose members' *wording* actually differs is left
+unresolved — no content signal says which version is "right", so that stays
+a human call via --supersedes/--not-a-reversal, the same never-fabricate
+posture --repair already applies to free-text fields.
+
 Options:
-  --check                        List field violations and undeclared categories
-  --repair                       Fix what's safely fixable and report the result
-  --health                       Report duplicate clusters, importance histogram, superseded count, sessionsObserved
-  --json                         With --health, print JSON instead of the human-readable report
+  --check                   List field violations and undeclared categories
+  --repair                  Fix what's safely fixable and report the result
+  --health                  Report duplicate clusters, importance histogram, superseded count, sessionsObserved
+  --health --repair         Merge exact-duplicate clusters found by --health; leaves differently-worded near-dupes unresolved
+  --json                    With --health, print JSON instead of the human-readable report
 
---repair applies a configured "default:" where one exists, and otherwise
-offers centroid-based inference for enum-typed fields only (the same
-content-to-label mechanism write-side tag/category inference uses). It never
-fabricates a value for a free-text identity field (e.g. "reviewedBy",
-"ticket") — there is no content signal that could produce a person's name or
-a ticket number. Those, and any enum field with no other entry to build a
-confident centroid from yet, come back unresolved for a human or an agent
-told to go find the real answer. Undeclared categories are always safely
-fixable — repair declares each one with a minimal "categories.<name>: {}"
-block, no invented description or tags.
+--repair (without --health) applies a configured "default:" where one
+exists, and otherwise offers centroid-based inference for enum-typed fields
+only (the same content-to-label mechanism write-side tag/category inference
+uses). It never fabricates a value for a free-text identity field (e.g.
+"reviewedBy", "ticket") — there is no content signal that could produce a
+person's name or a ticket number. Those, and any enum field with no other
+entry to build a confident centroid from yet, come back unresolved for a
+human or an agent told to go find the real answer. Undeclared categories are
+always safely fixable — repair declares each one with a minimal
+"categories.<name>: {}" block, no invented description or tags.
 
-Exit codes (--check / --repair):
-  0                              Compliant, or every violation repaired
-  1                              Violations found (--check), or some left unresolved (--repair)
+Exit codes (--check / --repair / --health --repair):
+  0                              Compliant/merged, or every violation repaired
+  1                              Violations found, or something left unresolved
 
---check, --repair, and --health are mutually exclusive.
+--check cannot be combined with --repair or --health. --health and --repair
+combine freely with each other.
 
 Examples:
-  neuron status                  Full status JSON
-  neuron status --check          List non-compliant entries, exit 1 if any
-  neuron status --repair         Fix what's fixable, exit 1 if anything is left unresolved
-  neuron status --health         Human-readable store-health report
-  neuron status --health --json  Same report, as JSON`;
+  neuron status                    Full status JSON
+  neuron status --check            List non-compliant entries, exit 1 if any
+  neuron status --repair           Fix what's fixable, exit 1 if anything is left unresolved
+  neuron status --health           Human-readable store-health report
+  neuron status --health --json    Same report, as JSON
+  neuron status --health --repair  Merge exact-duplicate clusters, exit 1 if any near-dup wording is left unresolved`;
 
 export const SCAN_HELP = `Usage: neuron scan [flags]
 

@@ -27,7 +27,10 @@ import {
   FieldComplianceViolation,
   FieldRepairOutcome,
   StoreHealth,
-  DuplicateGroup
+  DuplicateGroup,
+  DuplicateGroupEntry,
+  DuplicateMergeOutcome,
+  StoreHealthRepairReport
 } from './models/index.js';
 
 export { openDatabase };
@@ -931,7 +934,7 @@ export class NeuronMemory {
     await this.router.query({ limit: 0 });
 
     const rows = this.db.prepare(`
-      SELECT id, category, content, embedding, importance, superseded_by FROM memories
+      SELECT id, category, content, embedding, importance, superseded_by, created_at FROM memories
       WHERE project_id = ?
     `).all(this.projectId) as any[];
 
@@ -945,7 +948,7 @@ export class NeuronMemory {
 
     const live = rows
       .filter((r) => r.superseded_by === null || r.superseded_by === undefined)
-      .map((r) => ({ id: r.id as string, category: r.category as string, content: r.content as string, vec: toFloat32(r.embedding) }));
+      .map((r) => ({ id: r.id as string, category: r.category as string, content: r.content as string, createdAt: r.created_at as string, vec: toFloat32(r.embedding) }));
 
     const parent = new Map<string, string>();
     for (const e of live) parent.set(e.id, e.id);
@@ -993,13 +996,73 @@ export class NeuronMemory {
     for (const [root, members] of idsByRoot) {
       if (members.length < 2) continue;
       duplicateGroups.push({
-        entries: members.map((m) => ({ id: m.id, category: m.category, content: m.content })),
+        entries: members.map((m) => ({ id: m.id, category: m.category, content: m.content, createdAt: m.createdAt })),
         minSimilarity: minSimilarityByRoot.get(root)!,
       });
     }
     duplicateGroups.sort((a, b) => b.minSimilarity - a.minSimilarity);
 
     return { duplicateGroups, importanceHistogram, supersededCount };
+  }
+
+  /**
+   * Auto-repairs what `getStoreHealth`'s near-duplicate clustering finds,
+   * but only the judgment-free part: within each cluster, entries sharing
+   * byte-identical `content` are safely mergeable — no wording difference
+   * means no call to make about which one is "right". The latest-created
+   * member of each exact-content subgroup survives; the rest are marked
+   * `supersededBy` it (never deleted, per ADR 0015) via the ordinary
+   * `transact` update path.
+   *
+   * A cluster that still has more than one *distinct* content string after
+   * that merge (a real near-duplicate — similar wording, not identical) is
+   * left in `unresolved` rather than guessed at, matching
+   * `repairFieldCompliance`'s own refusal to fabricate a free-text field: a
+   * human resolves those via `--supersedes`/`--not-a-reversal`.
+   */
+  public async repairStoreHealth(): Promise<StoreHealthRepairReport> {
+    const health = await this.getStoreHealth();
+    const merged: DuplicateMergeOutcome[] = [];
+    const unresolved: DuplicateGroup[] = [];
+    const now = new Date().toISOString();
+
+    for (const group of health.duplicateGroups) {
+      const byContent = new Map<string, DuplicateGroupEntry[]>();
+      for (const entry of group.entries) {
+        const bucket = byContent.get(entry.content);
+        if (bucket) bucket.push(entry);
+        else byContent.set(entry.content, [entry]);
+      }
+
+      const representatives: DuplicateGroupEntry[] = [];
+      for (const entries of byContent.values()) {
+        if (entries.length === 1) {
+          representatives.push(entries[0]);
+          continue;
+        }
+        const sorted = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        const survivor = sorted[sorted.length - 1];
+        const superseded = sorted.slice(0, -1);
+        for (const dup of superseded) {
+          await this.transact([
+            { op: 'update', category: dup.category, id: dup.id, supersededBy: survivor.id, supersededAt: now },
+          ]);
+        }
+        merged.push({
+          keptId: survivor.id,
+          category: survivor.category,
+          content: survivor.content,
+          supersededIds: superseded.map((s) => s.id),
+        });
+        representatives.push(survivor);
+      }
+
+      if (representatives.length > 1) {
+        unresolved.push({ entries: representatives, minSimilarity: group.minSimilarity });
+      }
+    }
+
+    return { merged, unresolved };
   }
 
   /**

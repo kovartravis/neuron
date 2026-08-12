@@ -124,6 +124,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -135,6 +137,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -145,6 +149,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -155,6 +161,8 @@ importance: 5
 tags:
   - updated
 taskId: null
+supersededBy: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Updated learning content
 
@@ -166,6 +174,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1114,6 +1124,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1125,6 +1137,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1135,6 +1149,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1144,6 +1160,8 @@ createdAt: 2026-08-04T01:51:32.541Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1155,6 +1173,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1164,6 +1184,8 @@ createdAt: 2026-08-04T01:51:32.916Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: e80e0fdf-d21b-4f45-8ea5-79c8d500d129
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 tree sitter grammar caching at init time
 
@@ -1174,6 +1196,8 @@ importance: 5
 tags:
   - db
 taskId: null
+supersededBy: e776ea27-c607-4d35-8d70-7bc608f5163b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Prefer WAL journal mode when many agents write concurrently
 
@@ -1183,6 +1207,8 @@ createdAt: 2026-08-04T01:51:33.219Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 2906736a-ffcb-4c97-8646-c4c8f8a699fe
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Alpha rule
 
@@ -1192,6 +1218,8 @@ createdAt: 2026-08-04T01:51:33.515Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1201,6 +1229,8 @@ createdAt: 2026-08-04T01:51:33.764Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1210,6 +1240,8 @@ createdAt: 2026-08-04T01:51:33.961Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1219,6 +1251,8 @@ createdAt: 2026-08-04T01:51:36.614Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1228,6 +1262,8 @@ createdAt: 2026-08-04T01:51:37.117Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -1239,6 +1275,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1250,6 +1288,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1260,6 +1300,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1270,6 +1312,8 @@ importance: 5
 tags:
   - updated
 taskId: null
+supersededBy: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Updated learning content
 
@@ -1281,6 +1325,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1290,6 +1336,8 @@ createdAt: 2026-08-04T01:56:42.777Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1299,6 +1347,8 @@ createdAt: 2026-08-04T01:56:43.135Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: e80e0fdf-d21b-4f45-8ea5-79c8d500d129
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 tree sitter grammar caching at init time
 
@@ -1309,6 +1359,8 @@ importance: 5
 tags:
   - db
 taskId: null
+supersededBy: e776ea27-c607-4d35-8d70-7bc608f5163b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Prefer WAL journal mode when many agents write concurrently
 
@@ -1318,6 +1370,8 @@ createdAt: 2026-08-04T01:56:43.261Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 2906736a-ffcb-4c97-8646-c4c8f8a699fe
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Alpha rule
 
@@ -1327,6 +1381,8 @@ createdAt: 2026-08-04T01:56:43.570Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1336,6 +1392,8 @@ createdAt: 2026-08-04T01:56:43.986Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1345,6 +1403,8 @@ createdAt: 2026-08-04T01:56:44.234Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1354,6 +1414,8 @@ createdAt: 2026-08-04T01:56:46.385Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1363,6 +1425,8 @@ createdAt: 2026-08-04T01:56:46.847Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -1374,6 +1438,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1385,6 +1451,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1395,6 +1463,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1404,6 +1474,8 @@ createdAt: 2026-08-04T02:13:12.082Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1414,6 +1486,8 @@ importance: 5
 tags:
   - updated
 taskId: null
+supersededBy: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Updated learning content
 
@@ -1425,6 +1499,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1435,6 +1511,8 @@ importance: 5
 tags:
   - db
 taskId: null
+supersededBy: e776ea27-c607-4d35-8d70-7bc608f5163b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Prefer WAL journal mode when many agents write concurrently
 
@@ -1444,6 +1522,8 @@ createdAt: 2026-08-04T02:13:13.231Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1453,6 +1533,8 @@ createdAt: 2026-08-04T02:13:13.278Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1462,6 +1544,8 @@ createdAt: 2026-08-04T02:13:13.460Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1471,6 +1555,8 @@ createdAt: 2026-08-04T02:13:15.552Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1480,6 +1566,8 @@ createdAt: 2026-08-04T02:13:16.244Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -1491,6 +1579,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1502,6 +1592,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1512,6 +1604,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1522,6 +1616,8 @@ importance: 5
 tags:
   - updated
 taskId: null
+supersededBy: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Updated learning content
 
@@ -1531,6 +1627,8 @@ createdAt: 2026-08-04T02:14:35.761Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1542,6 +1640,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1551,6 +1651,8 @@ createdAt: 2026-08-04T02:14:36.130Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: e80e0fdf-d21b-4f45-8ea5-79c8d500d129
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 tree sitter grammar caching at init time
 
@@ -1560,6 +1662,8 @@ createdAt: 2026-08-04T02:14:36.314Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 2906736a-ffcb-4c97-8646-c4c8f8a699fe
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Alpha rule
 
@@ -1570,6 +1674,8 @@ importance: 5
 tags:
   - db
 taskId: null
+supersededBy: e776ea27-c607-4d35-8d70-7bc608f5163b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Prefer WAL journal mode when many agents write concurrently
 
@@ -1579,6 +1685,8 @@ createdAt: 2026-08-04T02:14:36.727Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1588,6 +1696,8 @@ createdAt: 2026-08-04T02:14:37.013Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1597,6 +1707,8 @@ createdAt: 2026-08-04T02:14:37.233Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1606,6 +1718,8 @@ createdAt: 2026-08-04T02:14:39.628Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1615,6 +1729,8 @@ createdAt: 2026-08-04T02:14:40.119Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -1626,6 +1742,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1637,6 +1755,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1647,6 +1767,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1657,6 +1779,8 @@ importance: 5
 tags:
   - updated
 taskId: null
+supersededBy: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Updated learning content
 
@@ -1668,6 +1792,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1677,6 +1803,8 @@ createdAt: 2026-08-04T02:23:07.947Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1686,6 +1814,8 @@ createdAt: 2026-08-04T02:23:08.444Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: e80e0fdf-d21b-4f45-8ea5-79c8d500d129
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 tree sitter grammar caching at init time
 
@@ -1695,6 +1825,8 @@ createdAt: 2026-08-04T02:23:08.581Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 2906736a-ffcb-4c97-8646-c4c8f8a699fe
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Alpha rule
 
@@ -1704,6 +1836,8 @@ createdAt: 2026-08-04T02:23:08.993Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1713,6 +1847,8 @@ createdAt: 2026-08-04T02:23:09.424Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1722,6 +1858,8 @@ createdAt: 2026-08-04T02:23:09.639Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1731,6 +1869,8 @@ createdAt: 2026-08-04T02:23:12.102Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1740,6 +1880,8 @@ createdAt: 2026-08-04T02:23:12.633Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -1751,6 +1893,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1762,6 +1906,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1772,6 +1918,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1782,6 +1930,8 @@ importance: 5
 tags:
   - updated
 taskId: null
+supersededBy: 8ab84fe9-7c95-4827-b437-2b86c0509baa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Updated learning content
 
@@ -1793,6 +1943,8 @@ tags:
   - failure-fix
   - build
 taskId: null
+supersededBy: eedc797c-29f3-4150-add8-3da38a88edfa
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Fix for build error: pass --no-cache to avoid stale artifacts
 
@@ -1803,6 +1955,8 @@ importance: 5
 tags:
   - db
 taskId: null
+supersededBy: e776ea27-c607-4d35-8d70-7bc608f5163b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Prefer WAL journal mode when many agents write concurrently
 
@@ -1812,6 +1966,8 @@ createdAt: 2026-08-04T02:52:03.965Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 2906736a-ffcb-4c97-8646-c4c8f8a699fe
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Alpha rule
 
@@ -1821,6 +1977,8 @@ createdAt: 2026-08-04T02:52:04.216Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1830,6 +1988,8 @@ createdAt: 2026-08-04T02:52:04.330Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1839,6 +1999,8 @@ createdAt: 2026-08-04T02:52:04.453Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1848,6 +2010,8 @@ createdAt: 2026-08-04T02:52:06.915Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1857,6 +2021,8 @@ createdAt: 2026-08-04T02:52:07.595Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -1868,6 +2034,8 @@ tags:
   - vitest
   - test
 taskId: null
+supersededBy: 7ff68e51-1719-4033-8090-233f5bbf252b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Vitest test runner requires --runInBand
 
@@ -1879,6 +2047,8 @@ tags:
   - test
   - tdd
 taskId: null
+supersededBy: 8cf3fe20-6a3e-4478-8ceb-30e35f549ba7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Always test first
 
@@ -1889,6 +2059,8 @@ importance: 5
 tags:
   - design
 taskId: null
+supersededBy: a8df395e-86d4-43be-9d76-58ca07aae097
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Important design rule
 
@@ -1898,6 +2070,8 @@ createdAt: 2026-08-04T02:53:42.590Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1917,6 +2091,8 @@ createdAt: 2026-08-04T02:53:42.950Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: e80e0fdf-d21b-4f45-8ea5-79c8d500d129
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 tree sitter grammar caching at init time
 
@@ -1927,6 +2103,8 @@ importance: 5
 tags:
   - db
 taskId: null
+supersededBy: e776ea27-c607-4d35-8d70-7bc608f5163b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Prefer WAL journal mode when many agents write concurrently
 
@@ -1936,6 +2114,8 @@ createdAt: 2026-08-04T02:53:43.777Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 3af45a96-e515-41ca-a285-5ecdb2bc7c7f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Scope Beta rule
 
@@ -1945,6 +2125,8 @@ createdAt: 2026-08-04T02:53:43.823Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 5477de38-65ed-4441-b19b-ede3de52ad9c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 --dash-leading content
 
@@ -1954,6 +2136,8 @@ createdAt: 2026-08-04T02:53:44.030Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 84feb750-c706-4cb7-a736-096340b3311c
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a learning entry
 
@@ -1963,6 +2147,8 @@ createdAt: 2026-08-04T02:53:46.121Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: fe0e2b46-436d-4cbc-93e7-06061e90bfd1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 original content
 
@@ -1972,6 +2158,8 @@ createdAt: 2026-08-04T02:53:46.848Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 
@@ -2098,6 +2286,8 @@ createdAt: 2026-08-04T02:55:48.344Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 6fe9e06c-332b-4427-931e-2dc332f2a6a8
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 updated content
 

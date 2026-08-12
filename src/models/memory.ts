@@ -105,6 +105,7 @@ export interface DuplicateGroupEntry {
   id: string;
   category: string;
   content: string;
+  createdAt: string;
 }
 
 /**
@@ -132,4 +133,34 @@ export interface StoreHealth {
   /** Keyed by importance 1-5 (string keys, JSON-object convention); an absent key means zero entries at that level. */
   importanceHistogram: Record<number, number>;
   supersededCount: number;
+}
+
+/**
+ * One exact-content duplicate subgroup `repairStoreHealth` resolved on its
+ * own authority: every member of a {@link DuplicateGroup} sharing
+ * byte-identical `content` is safely mergeable with no judgment call (unlike
+ * differently-worded near-duplicates, where "which one is right" is a
+ * question only a human can answer — the same never-fabricate posture
+ * `repairFieldCompliance` already applies to free-text identity fields).
+ * `keptId` is the latest-created member; the rest are marked
+ * `supersededBy` it, never deleted, matching ADR 0015.
+ */
+export interface DuplicateMergeOutcome {
+  keptId: string;
+  category: string;
+  content: string;
+  supersededIds: string[];
+}
+
+/**
+ * `neuron status --health --repair`'s report (ticket 20 follow-up / neuron-2.4.0):
+ * `merged` is what got safely auto-resolved; `unresolved` is every
+ * {@link DuplicateGroup} that still has more than one distinct `content`
+ * after merging — near-duplicates whose wording actually differs, left for
+ * a human to resolve via `--supersedes`/`--not-a-reversal` rather than
+ * guessed at.
+ */
+export interface StoreHealthRepairReport {
+  merged: DuplicateMergeOutcome[];
+  unresolved: DuplicateGroup[];
 }
