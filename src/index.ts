@@ -9,6 +9,8 @@ import {
   cleanFtsQuery,
   EnrichmentModel,
   LocalEnrichmentModel,
+  Reranker,
+  TransformersReranker,
   Centroid,
   buildTagVocabulary,
   buildCategoryCentroids,
@@ -113,6 +115,7 @@ export class NeuronMemory {
   private router: DualStorageRouter;
   private config: NeuronConfig;
   private enricher: EnrichmentModel;
+  private reranker: Reranker;
   /**
    * Computed once per process and never persisted. Each command invocation is
    * its own process, so per-process is always fresh — which matters more than
@@ -158,6 +161,7 @@ export class NeuronMemory {
     this.enricher =
       options.enricher ??
       new LocalEnrichmentModel({ timeoutMs: config.llm.enrichment.timeoutMs });
+    this.reranker = options.reranker ?? new TransformersReranker();
     const mdAdapter = new MultiRootMdStorage(config, options.projectRoot);
 
     // Every storage mode keeps the database now: `md-only` (which set
@@ -673,14 +677,44 @@ export class NeuronMemory {
    * see the comment at its computation in `queryVector`). Structured as a single
    * conjunct so ticket 39's cosine floor — measured and found to clear no bar on
    * LongMemEval — can be added as a second conjunct without reshaping this.
+   * Ticket 29 adds that second conjunct: a small local cross-encoder reranker,
+   * run only on the (already small, ≤`limit`) candidates that clear the
+   * lexical leg — a ranking change was explicitly ruled out (27 §5), so this
+   * never touches RRF order, only whether a row survives the gate at all.
+   * Runs unconditionally alongside the lexical leg whenever the gate itself is
+   * on — direct maintainer call on ticket 29, not a separate opt-in switch.
+   *
+   * `RERANKER_ACCEPT_THRESHOLD` is calibrated, not assumed: a raw-logit cutoff
+   * at 0 (the model's own decision boundary) was tried first and produced
+   * 61.6% false-silence on LongMemEval-S — the model's negative and
+   * genuinely-relevant score distributions overlap far more than a
+   * cross-encoder's nominal boundary suggests. A full threshold sweep on the
+   * same 500-question corpus (mirroring ticket 39's cosine-floor sweep
+   * methodology) found no cutoff reaches ticket 27's original "~zero new
+   * false-silence" bar — this is an amendment to that bar, a direct
+   * maintainer call made with the sweep's frontier in hand: -8 lands both
+   * legs at ~20% (false-accept 99.80%→19.4%, false-silence 0%→19.8%), the
+   * point on the frontier judged worth the trade. See ticket 29's Answer for
+   * the full frontier and the case for -8 specifically.
    */
   public async queryGated(q: MemoryQuery): Promise<{ results: Memory[]; rejected: number }> {
+    const RERANKER_ACCEPT_THRESHOLD = -8;
     const all = await this.router.query(q);
     if (!q.text || !this.config.relevance.gate.enabled) {
       return { results: all, rejected: 0 };
     }
-    const results = all.filter(m => m.ftsMatched === true);
-    const rejected = all.length - results.length;
+    let results = all.filter(m => m.ftsMatched === true);
+    let rejected = all.length - results.length;
+
+    if (results.length > 0) {
+      await Promise.all(results.map(async m => {
+        m.rerankerScore = await this.reranker.score(q.text!, m.content);
+      }));
+      const beforeReranker = results.length;
+      results = results.filter(m => (m.rerankerScore ?? -Infinity) >= RERANKER_ACCEPT_THRESHOLD);
+      rejected += beforeReranker - results.length;
+    }
+
     // ADR 0012 Amendment: "rejection counts belong in neuron status alongside
     // the enrichment degradation counters" — a structural (unfitted) gate has
     // no threshold to tune, so its cumulative impact is the only visibility

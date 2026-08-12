@@ -350,8 +350,12 @@ export const DEFAULT_LLM: LlmConfig = LlmConfigSchema.parse({});
  * ADR 0012 / ticket 27's relevance gate. `enabled` is the single retrieval-layer
  * on/off switch — one gate, one behaviour, on both `neuron exec` and
  * `neuron memory query` (a per-path split was proposed and declined). It
- * governs only the **lexical leg** (`normRrf > 0.5`, a topicality predicate),
- * shipped structurally by ticket 41.
+ * governs both legs: the **lexical leg** (`normRrf > 0.5`, a topicality
+ * predicate, shipped structurally by ticket 41) and ticket 29's **reranker
+ * leg** (a small local cross-encoder, ticket 28's pick, ANDed onto it and run
+ * only on candidates that already pass it). There is no separate switch for
+ * the reranker leg — direct maintainer call on ticket 29: it ships as part of
+ * the one gate, not as an opt-in layered on top of it.
  *
  * There is deliberately no `cosineFloor` key. Ticket 39 measured it on
  * LongMemEval (500 questions, ~24k documents, zero LLM calls) and found no

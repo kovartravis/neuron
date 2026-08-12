@@ -174,10 +174,12 @@ describe('NeuronMemory DB Migrations', () => {
     expect(res1.status).toBe('created');
     expect(res1.id).toBeDefined();
 
-    // Includes "checkouts" so both entries clear the relevance gate (ticket 41):
-    // a result with no FTS match at all is rejected regardless of semantic similarity.
-    const queryResult = await memory.queryLearnings('query for run tests checkouts', { limit: 5 });
-    expect(queryResult.query).toBe('query for run tests checkouts');
+    // Includes "checkouts" so both entries clear the lexical leg (ticket 41):
+    // a result with no FTS match at all is rejected regardless of semantic
+    // similarity. Phrased so both also clear ticket 29's reranker leg —
+    // verified against the calibrated threshold, not assumed.
+    const queryResult = await memory.queryLearnings('run tests and checkouts', { limit: 5 });
+    expect(queryResult.query).toBe('run tests and checkouts');
     expect(queryResult.results).toHaveLength(2);
 
     const first = queryResult.results[0];
@@ -640,6 +642,44 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     const plain = await memory.query({ text: 'gate', kind: 'learning' });
     expect(plain).toHaveLength(1);
     expect(memory.getStatus().relevance.rejectedTotal).toBe(2);
+  });
+
+  it('gates queries through the reranker leg unconditionally alongside the lexical leg (ticket 29 / ADR 0012)', async () => {
+    const matchVec = new Float32Array(384);
+    matchVec[0] = 1.0;
+
+    const queryVec = new Float32Array(384);
+    queryVec[0] = 0.8;
+    queryVec[1] = 0.6;
+
+    const mockEmbedder = {
+      embed: async () => matchVec,
+      embedQuery: async () => queryVec
+    };
+
+    // Both entries share the FTS keyword 'gate', so both clear the lexical
+    // leg — the reranker is the only thing that can tell them apart.
+    const mockReranker = {
+      score: async (_query: string, passage: string) => (passage.startsWith('gate relevant') ? 5 : -15)
+    };
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector',
+      projectName: 'test-project',
+      embedder: mockEmbedder,
+      reranker: mockReranker
+    });
+
+    await memory.addLearning('gate relevant content', ['gate'], { importance: 3 });
+    await memory.addLearning('gate irrelevant content', ['gate'], { importance: 3 });
+
+    const { results, rejected } = await memory.queryGated({ text: 'gate', kind: 'learning' });
+    expect(results).toHaveLength(1);
+    expect(results[0].content).toBe('gate relevant content');
+    expect(results[0].rerankerScore).toBe(5);
+    expect(rejected).toBe(1);
   });
 });
 

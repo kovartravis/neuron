@@ -72,8 +72,12 @@ describe('CLI Command: exec', () => {
     const env: NodeJS.ProcessEnv = { ...process.env, NEURON_DB_PATH: tempDbPath };
     delete env.NEURON_MOCK_EMBEDDER;
 
+    // Phrased so the pair clears ticket 29's reranker leg too (calibrated
+    // threshold, verified — not assumed): "Prefer WAL journal mode when many
+    // agents write concurrently" scores below the cutoff against this exact
+    // query text despite being genuinely on-topic.
     execSync(
-      `node ${cliPath} learn add "Prefer WAL journal mode when many agents write concurrently" --tags db --importance 5`,
+      `node ${cliPath} learn add "For concurrent database writes from many agents, use WAL journal mode" --tags db --importance 5`,
       { env, cwd: projectDir }
     );
 

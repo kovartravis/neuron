@@ -1,0 +1,24 @@
+{
+  "dataset": "resident-e2e-pillar13",
+  "timestamp": "2026-08-12T22:08:21.844Z",
+  "baseline": {
+    "rerankerEnabled": false,
+    "fillerCount": 300,
+    "cases": 19,
+    "falseAcceptCount": 0,
+    "falseAcceptRate": 0,
+    "detail": [],
+    "seedMs": 882,
+    "queryMs": 63
+  },
+  "withReranker": {
+    "rerankerEnabled": true,
+    "fillerCount": 300,
+    "cases": 19,
+    "falseAcceptCount": 0,
+    "falseAcceptRate": 0,
+    "detail": [],
+    "seedMs": 759,
+    "queryMs": 54
+  }
+}

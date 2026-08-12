@@ -35,6 +35,13 @@ export interface Memory {
   /** Whether the FTS5 lexical leg matched this entry at all. Ticket 39 gate calibration; not persisted. */
   ftsMatched?: boolean;
   /**
+   * Raw cross-encoder relevance logit from ticket 29's reranker leg — not a
+   * probability, threshold at 0. Only set when `relevance.gate.enabled` and
+   * the entry already cleared the lexical leg (the reranker never runs on a
+   * candidate `queryGated` was already going to reject). Not persisted.
+   */
+  rerankerScore?: number;
+  /**
    * Config-declared per-category fields (ticket 43 / ADR 0013), keyed by
    * config key. Round-trips through markdown frontmatter, and — since
    * ticket 44 — as additive SQLite columns on `memories`, so a value set

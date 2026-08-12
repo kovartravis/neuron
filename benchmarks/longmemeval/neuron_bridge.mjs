@@ -45,11 +45,21 @@ rl.on('line', async (line) => {
       // storageMode pinned to 'vector': the schema default became 'md'
       // in ticket 31, which would run per-write markdown files + reconcile
       // for a throwaway benchmark ingest of tens of thousands of documents.
+      //
+      // Ticket 29 pilot: NEURON_BENCH_RERANKER_PASSTHROUGH swaps in a
+      // stub reranker that always accepts, reconstructing pre-ticket-29
+      // (lexical-leg-only) behaviour for a same-codebase baseline arm —
+      // harness-only, never a product config surface (mirrors
+      // NEURON_MOCK_EMBEDDER's existing precedent in src/index.ts).
+      const reranker = process.env.NEURON_BENCH_RERANKER_PASSTHROUGH === 'true'
+        ? { score: async () => Infinity }
+        : undefined;
       neuron = new NeuronMemory({
         dbPath: dbPath || ':memory:',
         projectRoot: process.cwd(),
         projectName: 'benchmark',
-        storageMode: 'vector'
+        storageMode: 'vector',
+        reranker
       });
       console.log(JSON.stringify({ id, status: 'ok' }));
     } else if (action === 'ingest') {
@@ -93,7 +103,9 @@ rl.on('line', async (line) => {
         // for gate calibration since the gate itself (ticket 41) hasn't
         // shipped in production code yet.
         similarity: r.similarity,
-        ftsMatched: r.ftsMatched
+        ftsMatched: r.ftsMatched,
+        // Ticket 29: raw reranker leg, calibration parity with similarity/ftsMatched above.
+        rerankerScore: r.rerankerScore
       }));
       console.log(JSON.stringify({ id, status: 'ok', documents: docs }));
     } else if (action === 'cleanup') {

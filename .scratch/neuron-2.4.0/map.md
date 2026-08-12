@@ -558,6 +558,34 @@ thin.
   blocked on credentials): `29`, `30`, `31`, `32`, `33`, `34`, `35`, `36`,
   `38`, `39`, `40`, `41` (all unclaimed and unblocked); `02`, `04`, `05`
   claimed and in progress; `03`, `42` blocked.
+- **Ticket 29 resolved, 2026-08-12.** Built `28`'s pick as a second gate
+  conjunct and piloted it for real against `27`'s pre-committed bar — which
+  it failed badly at the model's own decision boundary (raw logit > 0):
+  full LongMemEval-S run showed false-accept dropping 99.80%→1.00% but
+  false-silence exploding 0%→61.60%, recall@10 collapsing 98.3%→38.0%. A
+  full threshold sweep (mirroring `39`'s cosine-floor methodology, reusing
+  the already-ingested corpus so nothing was re-spent) confirmed **no
+  threshold reaches `27`'s original "~zero new false-silence" bar** —
+  same overlap-too-far structural shape `39` found for the cosine floor,
+  now confirmed for the reranker leg too, on two candidate models. Live
+  mid-session maintainer decision **amended `27`'s bar** with the swept
+  frontier in hand: threshold **-8** (false-accept 19.4%, false-silence
+  19.8%, roughly symmetric cost/benefit) ships instead of the impossible
+  "~zero" target. Shipped unconditionally alongside the lexical leg — no
+  separate opt-in config for this leg, direct maintainer call, a real
+  reversal of `27`'s own original Scope item 4 ("wire it in behind a
+  config switch") once the calibration evidence was in hand. Two
+  pre-existing tests needed fixture rewording (real false-silence
+  instances of the accepted ~20% rate, verified against the real model,
+  not assumed); Pillar 13 re-verified unaffected at 0%. Full artifact
+  trail in `benchmarks/reports/` (baseline, threshold-0, threshold
+  calibration sweep, Pillar 13 pilot) and
+  `benchmarks/reranker-gate/`. Didn't unblock anything directly (no
+  ticket here lists it as a blocker). True frontier as of this session
+  (excluding `11`, claimed but blocked on credentials): `30`, `31`, `32`,
+  `33`, `34`, `35`, `36`, `38`, `39`, `40`, `41` (all unclaimed and
+  unblocked); `02`, `04`, `05` claimed and in progress; `03`, `42`
+  blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -597,6 +625,7 @@ thin.
 - [25 — Implement the Neuron-Backed Tracker: Declare `tickets` Category & Rewrite `issue-tracker.md`](issues/25-implement-neuron-tracker.md) — built exactly what `14`/ADR 0018 decided, with one forced rename: `neuron.yaml` declares `tickets` with `status` (enum, `default: unclaimed`), `blockedBy` (string), and the ADR's `type` field renamed to **`kind`** — `--type` is already a reserved built-in CLI flag, and a declared field colliding with one is a hard config error (`validateDeclaredFields`), confirmed live. Verified the whole mutation path for real (`add`/enum-rejection/`update`/`delete`, all cleaned up after) with no new storage code, and found that the frontier scan's right primitive is `memory list` (real enumeration, no relevance ranking), not `memory query` — documented explicitly so a future session doesn't reach for the wrong one. Rewrote `docs/agents/issue-tracker.md` end to end (no `.scratch` references survive) and, as a direct consequence not in the ticket's original scope, fixed `CLAUDE.md`'s own now-stale tracker pointer, with a caveat that `.scratch/` remains the tracker for anything `26` hasn't migrated yet. Also caught and fixed the same protocol-block-drift class `10` hit once before — declaring `tickets` left `CLAUDE.md`'s generated header line stale, fixed by hand and re-verified byte-for-byte against `generateProtocolBlock()`. Did not touch `.scratch/` itself or migrate anything — that's `26`, now unblocked. `npm test` 678/678, `tsc` clean; no `src/` changes.
 - [26 — Migrate All 19 `.scratch/` Efforts into the `tickets` Category, Then Delete `.scratch/`](issues/26-migrate-scratch-to-tickets-category.md) — resolved as a scoping pass, not a completed migration: live investigation found the ticket's "19 efforts" framing overcounted (only 9 directories are real wayfinder efforts; 4 more are assets for already-resolved `neuron-2.2.0` tickets; 5 loose scripts are dead cruft) and that `.scratch/` is linked from far more of the committed repo (README, CHANGELOG, CLAUDE.md, ten ADRs, four skills, `settings.local.json`, `enricher.ts`) than the ticket's own tree. Decided the open questions — UUID-based identity with a two-pass create-then-wire scheme (old numbers survive only in prose, never as the real id), snapshot-then-cutover for migrating this map's own in-flight state, relocate-not-migrate for the 4 asset dirs (`benchmarks/` and a new `docs/design/`) — then graduated [40](issues/40-migrate-wayfinder-efforts-to-tickets.md) (the mechanical content migration), [41](issues/41-relocate-scratch-asset-dirs.md) (asset relocation + ADR link fixes), and [42](issues/42-sweep-scratch-references-and-delete.md) (repo-wide reference sweep + delete, blocked by `40`/`41`) rather than running a ~200-file, repo-wide, destructive migration inline.
 - [28 — Research: Find a Local ONNX Cross-Encoder Reranker](issues/28-research-local-reranker-model.md) — recommends `Xenova/ms-marco-MiniLM-L-6-v2` (22.7M params, Apache-2.0, confirmed ONNX via the HF Hub files tab, plain-BERT cross-encoder matching this repo's existing `AutoModelForSequenceClassification` pattern), with `mixedbread-ai/mxbai-rerank-xsmall-v1` as a documented backup. Full evaluation, including two real rejections (`jina-reranker-v1-turbo-en`'s unsupported ALiBi architecture despite valid ONNX files; `bge-reranker-v2-m3`'s missing port and oversize), in [28-reranker-research.md](issues/28-reranker-research.md). Unblocks `29`.
+- [29 — Build and Pilot the Reranker Gate Layer](issues/29-build-pilot-reranker-gate.md) — built `28`'s pick as `queryGated`'s second conjunct; failed `27`'s original bar at threshold 0 (61.60% false-silence on real LongMemEval-S, vs. a target of ~zero), and a full threshold sweep confirmed no cutoff reaches that bar — same structural overlap `39` found for the cosine floor. **Amends `27`'s bar**, live maintainer call with the frontier in hand: ships at threshold -8 (false-accept 99.80%→19.4%, false-silence 0%→19.8%), unconditionally alongside the lexical leg, no separate config switch — a reversal of `27`'s own original "config switch, default off" plan once real evidence was in hand.
 
 ## Not yet specified
 

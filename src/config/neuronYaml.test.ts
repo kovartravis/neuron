@@ -387,6 +387,11 @@ pullRules:
       expect(config.relevance.gate.enabled).toBe(false);
     });
 
+    it('has no separate switch for ticket 29 reranker leg — it runs whenever the gate does', () => {
+      const config = validateNeuronYaml({ categories: { learning: {} } });
+      expect(config.relevance.gate).not.toHaveProperty('reranker');
+    });
+
     it('still parses a config carrying the deprecated minScore, unchanged and warning', () => {
       const warnSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
       const config = validateNeuronYaml({
