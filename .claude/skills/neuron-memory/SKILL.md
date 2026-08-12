@@ -296,6 +296,20 @@ At the very start of a session, before running any other commands or modifying f
 
 ## 2. Pre-Command Memory Lookup & Execution
 
+> [!IMPORTANT]
+> **Skip this section entirely on a harness with the `pre-command` hook
+> wired** (as of 2.4.0: Claude Code, Codex CLI — see `neuron init`'s
+> `hooks.installed` output). There, `neuron hook <harness> pre-command`
+> already fires the same `onExec` lookup before every Bash tool call, so a
+> manually-typed `neuron exec -- <command>` wrapper would just repeat what
+> the harness already delivered. Unlike §1's recall hook, this one is a
+> permanent structural ceiling for Copilot CLI and Cursor — neither exposes a
+> context-carrying hook field for shell commands at all (ADR 0014's
+> 2026-08-10 amendment) — so they keep this section indefinitely, not just
+> until a future adapter update. The steps below are the fallback for a
+> harness with no `pre-command` hook: wrap manually, because nothing else
+> will.
+
 Before executing critical build, test, database, or tool commands:
 
 1. Wrap command execution with `neuron exec`:

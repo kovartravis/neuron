@@ -145,6 +145,23 @@ Two things worth knowing before you rely on it:
 Copilot CLI and Cursor don't get this — both only have a session-start hook,
 and there's no prompt to match against until the first per-turn hook fires.
 
+### Command execution gets the same treatment as recall
+
+The pre-execution lookup below (`neuron exec`) doesn't have to be an
+instruction the agent remembers to follow either. On Claude Code and Codex
+CLI, `neuron init` also wires a `pre-command` hook that fires automatically
+on every shell tool call and runs the identical lookup, injecting a hit as
+context instead of printing to `stderr` — informational only, it never
+blocks the command. `neuron init`'s generated instructions file drops the
+manual `neuron exec -- <command>` step the moment this hook is confirmed
+wired, the same way it already drops the manual recall step above; the two
+are tracked and dropped independently; a project can have one without the
+other.
+
+Copilot CLI and Cursor keep the manual step permanently — neither exposes a
+context-carrying hook field for shell commands at all (only a
+permission-decision one), so there's no automatic path to wire.
+
 ## 📁 What it looks like in your repo
 
 ```

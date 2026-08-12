@@ -20,23 +20,42 @@ function config(overrides: Partial<NeuronConfig> = {}): NeuronConfig {
 
 describe('generateProtocolBlock', () => {
   it('wraps the block in marker comments', () => {
-    const block = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
+    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
     expect(block.startsWith(PROTOCOL_MARKER_START)).toBe(true);
     expect(block.endsWith(PROTOCOL_MARKER_END)).toBe(true);
   });
 
-  it('deletes the manual recall step on a deterministic harness', () => {
-    const block = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
+  it('deletes both manual steps once recall and command execution are both hooked', () => {
+    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
     expect(block).not.toContain('## 1. Recall');
     expect(block).not.toContain('neuron memory query');
-    // Steps renumber down to 1-3 once the recall step is gone.
+    expect(block).not.toContain('Command Execution');
+    expect(block).not.toContain('neuron exec -- <command>');
+    // Steps renumber down to 1-2 once both manual steps are gone.
+    expect(block).toContain('## 1. Failure-Fix Recording');
+    expect(block).toContain('## 2. Session Conclusion');
+  });
+
+  it('keeps the manual command-execution step when only recall is hooked', () => {
+    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'fallback', config: config() });
+    expect(block).not.toContain('## 1. Recall');
     expect(block).toContain('## 1. Command Execution');
+    expect(block).toContain('neuron exec');
+    expect(block).toContain('## 2. Failure-Fix Recording');
+    expect(block).toContain('## 3. Session Conclusion');
+  });
+
+  it('keeps the manual recall step when only command execution is hooked', () => {
+    const block = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'deterministic', config: config() });
+    expect(block).toContain('## 1. Recall');
+    expect(block).toContain('neuron memory query');
+    expect(block).not.toContain('Command Execution');
     expect(block).toContain('## 2. Failure-Fix Recording');
     expect(block).toContain('## 3. Session Conclusion');
   });
 
   it('keeps the manual recall step as step 1 on a fallback harness', () => {
-    const block = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const block = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     expect(block).toContain('## 1. Recall');
     expect(block).toContain('neuron memory query');
     expect(block).toContain('## 2. Command Execution');
@@ -45,14 +64,14 @@ describe('generateProtocolBlock', () => {
   });
 
   it('never claims something is MANDATORY when nothing enforces it', () => {
-    const deterministic = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
-    const fallback = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const deterministic = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const fallback = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     expect(deterministic).not.toMatch(/MANDATORY/);
     expect(fallback).not.toMatch(/MANDATORY/);
   });
 
   it('lists the declared categories', () => {
-    const block = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const block = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     expect(block).toContain('`learning`');
     expect(block).toContain('`history`');
     expect(block).toContain('`decisions`');
@@ -61,17 +80,18 @@ describe('generateProtocolBlock', () => {
   it('reports scan settings only when scanning is enabled', () => {
     const enabled = generateProtocolBlock({
       fidelity: 'deterministic',
+      execFidelity: 'deterministic',
       config: config({ scan: { enabled: true, category: 'decisions', depth: 3 } }),
     });
     expect(enabled).toContain('Architecture scan settings: enabled: true, category: `decisions`, depth: 3');
 
-    const disabled = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
+    const disabled = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
     expect(disabled).not.toContain('Architecture scan settings');
   });
 
   it('preserves the metadata-flags guidance on both variants', () => {
-    const deterministic = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
-    const fallback = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const deterministic = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const fallback = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     for (const block of [deterministic, fallback]) {
       expect(block).toContain('### Metadata flags');
       expect(block).toContain('`--importance`: omit defaults to `3`');
@@ -80,7 +100,7 @@ describe('generateProtocolBlock', () => {
 });
 
 describe('upsertProtocolBlock', () => {
-  const block = generateProtocolBlock({ fidelity: 'deterministic', config: config() });
+  const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
 
   it('creates a new file when none exists', async () => {
     const result = await upsertProtocolBlock(null, block);
@@ -104,7 +124,7 @@ describe('upsertProtocolBlock', () => {
   });
 
   it('touches only the marked region, leaving surrounding content untouched', async () => {
-    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     const existing = `# My Project\n\nBefore.\n\n${oldBlock}\n\nAfter.\n`;
     const result = await upsertProtocolBlock(existing, block, { overwrite: 'overwrite' });
     expect(result.action).toBe('written');
@@ -115,7 +135,7 @@ describe('upsertProtocolBlock', () => {
   });
 
   it('keeps a differing existing block by default (policy "ask", no prompt available)', async () => {
-    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     const existing = `${oldBlock}\n`;
     const result = await upsertProtocolBlock(existing, block);
     expect(result.action).toBe('kept-existing');
@@ -123,7 +143,7 @@ describe('upsertProtocolBlock', () => {
   });
 
   it('keeps a differing existing block when policy is "keep"', async () => {
-    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     const existing = `${oldBlock}\n`;
     const result = await upsertProtocolBlock(existing, block, { overwrite: 'keep' });
     expect(result.action).toBe('kept-existing');
@@ -131,7 +151,7 @@ describe('upsertProtocolBlock', () => {
   });
 
   it('consults onConflict under policy "ask" and honours a false answer', async () => {
-    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     const existing = `${oldBlock}\n`;
     const onConflict = vi.fn().mockResolvedValue(false);
     const result = await upsertProtocolBlock(existing, block, { overwrite: 'ask', onConflict });
@@ -140,7 +160,7 @@ describe('upsertProtocolBlock', () => {
   });
 
   it('consults onConflict under policy "ask" and honours a true answer', async () => {
-    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', config: config() });
+    const oldBlock = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     const existing = `${oldBlock}\n`;
     const onConflict = vi.fn().mockResolvedValue(true);
     const result = await upsertProtocolBlock(existing, block, { overwrite: 'ask', onConflict });

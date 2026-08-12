@@ -12,11 +12,14 @@ Every command also responds to `--help`.
 Bootstraps a project: writes a `neuron.yaml` if the project has none, detects
 every harness present (`CLAUDE.md`/`.claude/`, `AGENTS.md`, `.codex/`,
 `.github/`, `.cursor/` — writing `AGENTS.md` if none exist), installs
-deterministic recall hooks for every harness with an adapter (Claude Code,
-Codex CLI), writes the capability-aware memory-store instructions block into
-each detected harness's instructions file, pre-downloads the local ONNX
-models with a progress bar, fetches Tree-Sitter grammars, and runs the
-initial scan if configured.
+deterministic recall hooks (`session-start`/`pre-prompt`/`context-reset`) and
+a `pre-command` hook for every harness with an adapter (Claude Code, Codex
+CLI — `pre-command` is a fourth, independent lifecycle point, ticket 22/23),
+writes the capability-aware memory-store instructions block into each
+detected harness's instructions file (the Recall and Command Execution steps
+are each dropped independently, per whichever of the two hook groups that
+harness has wired), pre-downloads the local ONNX models with a progress bar,
+fetches Tree-Sitter grammars, and runs the initial scan if configured.
 
 | Flag | Description |
 |---|---|
@@ -58,12 +61,16 @@ not typically run by hand. `<harness>` is `claude-code` or `codex`; `<point>`
 is `session-start` (seeds the architecture blueprint card once), `pre-prompt`
 (queries the store with the submitted prompt and injects results, plus a
 gated search of an indexed commit-history table — see the README's "Your git
-history is a searchable resident source too"), or `context-reset` (clears the
-per-session dedup ledger on compaction). Reads a harness-shaped JSON payload
-from stdin, writes `{"hookSpecificOutput": ...}` to stdout on a hit, and
-**always exits `0`** — a malformed payload, a query error, a timeout, or an
-unreachable store all degrade to printing nothing rather than blocking the
-harness's prompt.
+history is a searchable resident source too"), `context-reset` (clears the
+per-session dedup ledger on compaction), or `pre-command` (fires on every
+`Bash` tool call — a non-`Bash` call is a silent no-op — and runs the same
+gated `onExec` lookup `neuron exec` performs, injecting a hit as
+`additionalContext` instead of printing to `stderr`; ticket 22/23, 2.4.0).
+Reads a harness-shaped JSON payload from stdin, writes
+`{"hookSpecificOutput": ...}` to stdout on a hit, and **always exits `0`** —
+a malformed payload, a query error, a timeout, or an unreachable store all
+degrade to printing nothing rather than blocking the harness's prompt or
+tool call.
 
 ---
 
