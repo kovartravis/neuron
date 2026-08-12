@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: dogfooding feedback (travisos)
 
@@ -84,3 +84,63 @@ for this failure mode today.
   that batch — silent data loss with a success response — and the only one
   confirmed as a still-open bug against current `src/` rather than
   already-shipped behavior or unformed fog.
+
+## Answer
+
+Picked **direction 1 (file locking)** as the durable fix, plus **direction
+3 (re-read-and-verify)** layered in regardless, exactly as the Scope
+suggested. Direction 2 (append-only journal) was rejected as a bigger
+storage-format rearchitecture than this bug needs.
+
+**Locking** (`MdStorageAdapter.withCategoryLock`/`acquireLock`,
+`src/storage/mdStorageAdapter.ts`): `writeEntry`, `updateEntry`, and
+`deleteEntry` each now wrap their whole read-modify-write cycle in a
+per-category-file mutex before touching disk. The mutex primitive is
+`fs.mkdirSync('<category>.md.lock')` — directory creation is atomic at the
+OS/filesystem level, so it serializes both cross-process writers (the
+`travisos` case: two separate `neuron memory add` CLI invocations) and
+same-process writers racing via `Promise.all` (the code's `await` points
+between `ensureScaffolded`/`readCategory`/the eventual write let the event
+loop interleave otherwise). No new dependency added — `proper-lockfile`
+wasn't needed. A lock older than 30s is treated as belonging to a crashed
+holder and stolen rather than waited on forever; a fresh contender otherwise
+retries for up to 10s before throwing a loud timeout error.
+
+**Verify-after-write** (`verifyWrite`): after `atomicWriteFile` returns,
+each of the three methods re-reads the file and byte-compares it against
+the content just written, throwing if they don't match. With the lock in
+place this is a belt-and-suspenders floor, not the primary fix — it exists
+to turn any *other* way the "reports success, loses data" invariant could
+break (a bug in the lock itself, a non-atomic filesystem, a writer outside
+this adapter entirely) into a loud failure rather than a silent one, per the
+ticket's explicit ask that #3 be layered in "regardless of which
+longer-term direction is chosen."
+
+**Item 2 folded in, confirmed no separate work needed**: the vanished
+`--supersedes` follow-up in the field report was this same race hitting the
+`updateEntry` call that marks the old row superseded — now serialized by
+the same per-category lock as the entry it targets, verified by test
+`18-02` below (a concurrent new-entry write and old-entry supersession
+update, both surviving).
+
+**Regression tests** added to `src/storage/mdStorageAdapter.test.ts` under
+`Concurrent Writer Durability (ticket 18)`, all firing genuine
+`Promise.all` concurrency rather than sequential `await`s:
+- `18-01`: 8 concurrent `writeEntry` calls against the same category — all
+  8 ids survive.
+- `18-02`: a concurrent write + supersession-update pair — both survive
+  (the exact field-reported shape).
+- `18-03`: concurrent `deleteEntry` calls for different ids — both take
+  effect.
+- `18-04`: a lock directory backdated to look 60s old (simulating a crashed
+  holder) is stolen rather than deadlocking a fresh writer.
+
+Confirmed the tests actually catch the bug: reverted `mdStorageAdapter.ts`
+only (`git stash` on that one file) and reran — `18-01`/`18-02`/`18-03` all
+failed with real data loss (e.g. `gone-1` surviving a delete it raced), and
+`18-04` hung/failed with no steal path, before restoring the fix. `npm
+test` (which rebuilds first): 649/649 passing, `tsc --noEmit` clean.
+
+Didn't unblock anything directly — no ticket on this map lists `18` as a
+blocker — but the same field-feedback batch's `19`, `20`, `21` remain
+open and unrelated to this race.

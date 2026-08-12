@@ -3572,3 +3572,15 @@ tags:
 taskId: "30"
 ---
 Chartered ticket 30 (neuron-2.4.0 map) at the maintainer's request: fix autoRescanIfDriftDetected's cwd/storage project-root mismatch. This is the root-cause writeup for the architecture-card corruption caught and worked around earlier this same session mid-ticket-27's grilling -- traced to source rather than filed as a vague bug report: autoRescanIfDriftDetected(memory, projectRoot = process.cwd()) (src/scanner/diff.ts:410-412) uses literal process.cwd() as the scan root with no upward-walk or package.json check, flowing through ingestScanResults into analyzer.ts:83's path.basename(projectRoot) for the card's project name, while the NeuronMemory instance actually being written to was resolved via NeuronMemory.open()'s own separate upward-walking discovery -- the two can silently diverge whenever cwd is a project-marker-less subdirectory (any .scratch/*/issues/ dir qualifies), causing a scan of the wrong directory to silently overwrite the real project's architecture card. Second confirmed live instance of this bug class (first: 2026-08-08, harness-idempotent-test). Unclaimed, unblocked. True frontier now 18, 19, 20, 21, 22, 25, 28, 30.
+
+---
+id: 46555ace-fc02-4b1f-bc30-251614d3e6d8
+createdAt: 2026-08-12T01:57:16.761Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "18"
+---
+Wayfinder pickup session on the neuron-2.4.0 map: scanned the frontier (18, 19, 20, 21, 22, 25, 28, 30 unclaimed/unblocked; 02, 04, 05 claimed in progress; the rest blocked or fogged) and claimed the lowest-numbered frontier ticket, 18 (Fix Concurrent-Write Data Loss in Markdown Storage). Read the ticket's root-cause analysis (unlocked read-modify-write cycles in MdStorageAdapter.writeEntry/updateEntry/deleteEntry) and picked direction 1 (per-category fs.mkdirSync-based locking, no new dependency) as the durable fix, layering in direction 3 (read-back-and-verify after write) as the ticket suggested doing regardless of which durable direction was chosen. Added 4 new Promise.all-driven regression tests to mdStorageAdapter.test.ts and confirmed by reverting just the fix file that they genuinely reproduce the reported data loss before restoring it. npm test 649/649, tsc clean. Resolved ticket 18 (Answer section written), closed it, and appended the resolution to the map's Decisions-so-far and Notes. Did not unblock any other ticket. Next wayfinder session's frontier: 19, 20, 21, 22, 25, 28, 30 unclaimed/unblocked (11 also claimed but still blocked on missing ANTHROPIC_API_KEY / expired OAuth from a prior session).

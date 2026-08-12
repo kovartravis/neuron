@@ -2421,3 +2421,15 @@ tags:
 taskId: null
 ---
 Fix for real .neuron/architecture.md pollution, recurrence of the 2026-08-08 class of bug: while wrapping a plain 'neuron memory add --category history' call with neuron exec during a wayfinder session, the wrapper's own drift-detection auto-rescan ('Architectural drift detected (264 change(s))') silently overwrote the real architecture card with a scan of a project named 'issues' and 0 modules, deleting 406 of 411 lines. Root cause not yet isolated -- neuron.yaml's scan config has no explicit roots/include narrowing (just enabled: true, depth: 3), and no package.json named 'issues' exists anywhere in the repo, so the resolved project root for that particular rescan is still unknown; the repo has multiple .scratch/*/issues/ directories (bare markdown ticket dirs, no package.json) that are a plausible but unconfirmed culprit if some code path derives a project name from a directory basename rather than package.json. Caught before commit by treating a large unexplained .neuron/ diff as a tripwire (git diff --stat .neuron/architecture.md showed 406 deletions for 5 insertions) per the existing 2026-08-08 learning's own rule, not by any tooling catching it automatically. Recovery: git show HEAD:.neuron/architecture.md was clean (the prior commit's own scan was correct), so 'git checkout HEAD -- .neuron/architecture.md' fully restored it with zero manual reconstruction needed, unlike the 2026-08-08 incident which required hand-reappending legitimate new entries. This is the second confirmed live instance of neuron exec's own auto-rescan silently corrupting its own real project's memory store -- worth a dedicated investigation ticket to find the actual project-root resolution bug rather than continuing to catch it by tripwire.
+
+---
+id: 1b518353-4214-4fb6-96c3-a84ecacc200b
+createdAt: 2026-08-12T01:57:08.912Z
+importance: 4
+tags:
+  - md-storage
+  - adr
+  - failure-fix
+taskId: null
+---
+Fix for silent concurrent-write data loss in MdStorageAdapter: two racing neuron memory add calls (separate processes or same-process Promise.all) each read a category's .md file before either writes, so whichever atomicWriteFile/rename lands last silently discards the other's change while both callers still see status: created. Root cause was an unlocked read-modify-write cycle in writeEntry/updateEntry/deleteEntry. Fixed by wrapping each method's whole cycle in a per-category fs.mkdirSync-based lock (src/storage/mdStorageAdapter.ts, MdStorageAdapter.withCategoryLock/acquireLock) — mkdir is atomic at the OS level so it serializes both cross-process and same-process racers with no new dependency, and a lock older than 30s is treated as a crashed holder's and stolen rather than deadlocking forever. Layered in a read-back-and-byte-compare verifyWrite() after every write regardless, so any other way the invariant breaks throws loudly instead of reporting false success. Edge case: tests must fire genuine Promise.all concurrency, not sequential awaits, to actually reproduce the race — verified by reverting just the fix file and confirming the new tests fail with real data loss before restoring it.
