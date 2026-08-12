@@ -67,6 +67,23 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "neuron",
+            "args": [
+              "hook",
+              "claude-code",
+              "pre-command"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

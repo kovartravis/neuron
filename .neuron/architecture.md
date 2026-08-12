@@ -159,7 +159,7 @@ Primary commands module containing core application capabilities.
 - **`src/commands/hook.ts`** (Exports: `handleHookCommand`): Extracts the exact suggested command from a `buildDiscoveryHint` line — everything after `run: `.
 - **`src/commands/index.ts`**: No exported symbols detected.
 - **`src/commands/init.test.ts`**: The end-to-end claim ticket 31 exists to make true: the README's Quick Start, run verbatim, leaves markdown in the repo rather than an invisible database.
-- **`src/commands/init.ts`** (Exports: `HarnessFidelityReport, ProtocolWriteReport, handleInitCommand`): Every harness with a real adapter.
+- **`src/commands/init.ts`** (Exports: `HarnessFidelityReport, ProtocolWriteReport, handleInitCommand`): The three points `recallStep()`/this file's own fidelity reporting have always meant by "recall" — deliberately excludes `pre-command` (ticket 22, neuron-2.4.0). Filtering the full `LIFECYCLE_POINTS` instead would mean a harness upgraded to a neuron version that knows about `pre-command` but not yet re-`init`'d reports recall as un-wired the moment `pre-command` isn't registered, even though session-start/pre-prompt recall itself never changed — exactly the kind of self-inflicted regression the capability-map design exists to avoid. `pre-command`'s own wiring is a separate question for `execStep()` (ticket 23) to answer, not this one.
 - **`src/commands/learn.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
 - **`src/commands/learn.ts`** (Exports: `handleLearnCommand`): Function handleLearnCommand (Methods: handleLearnCommand(), error(), exit(), log()).
 - **`src/commands/memory.supersession.test.ts`**: Methods: process(), vecAt(), Float32Array(), makeMemory().
