@@ -218,7 +218,7 @@ export const RESERVED_COLUMN_NAMES = [
  * never silently shadow a built-in flag.
  */
 export const RESERVED_FLAG_NAMES = [
-  '--format', '--json', '--no-progress', '--diff', '--check', '--repair',
+  '--format', '--json', '--no-progress', '--diff', '--check', '--repair', '--health',
   '--tags', '--task-id', '--limit', '--file', '-f', '--importance', '--scope',
   '--scopes', '--days', '--category', '--categories', '--depth', '--dry-run',
   '--force', '--type', '--title', '--help', '-h',

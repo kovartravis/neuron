@@ -56,7 +56,7 @@ Default: `ast/2`
 - **benchmarks** — `benchmarks` (3 files)
 - **longmemeval** — `benchmarks/longmemeval` (3 files)
 - **src** — `src` (12 files)
-- **commands** — `src/commands` (28 files)
+- **commands** — `src/commands` (29 files)
 - **components** — `src/components` (10 files)
 - **config** — `src/config` (10 files)
 - **e2e** — `src/e2e` (1 file)
@@ -169,8 +169,9 @@ Primary commands module containing core application capabilities.
 - **`src/commands/scan.fidelity.test.ts`**: The `--check` exit-code contract, which is what CI gates on: 0  clean and comparable 1  real architectural drift 2  incomparable — the baseline was produced by a different parser Code 2 is deliberately distinct from 1: failing a build for drift the user introduced is correct, and failing it because they upgraded neuron is a different problem with a different fix.
 - **`src/commands/scan.test.ts`**: Methods: describe(), join(), it(), execSync().
 - **`src/commands/scan.ts`** (Exports: `handleScanCommand`): Function handleScanCommand (Methods: handleScanCommand(), log(), parseFlags(), cwd()).
+- **`src/commands/status.health.test.ts`**: Methods: process(), hookCacheDir(), on(), beforeEach().
 - **`src/commands/status.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
-- **`src/commands/status.ts`** (Exports: `handleStatusCommand`): Ticket 13 / ADR 0013: the validation surface `neuron doctor` was ruled out twice for, reopened folded into `status` instead of a new top-level command. `--check` and `--repair` are mutually exclusive report modes — neither touches the default `status` JSON payload below them.
+- **`src/commands/status.ts`** (Exports: `handleStatusCommand`): Truncates a content preview for the human-readable `--health` report only — the JSON payload always carries the full string.
 - **`src/commands/sync.test.ts`**: A genuine content conflict (both sides present, different content) used to be silently resolved by comparing createdAt, which ties in the common case and defaulted to markdown winning — including when markdown was the stale side. Without --force, `sync` must now report the conflict, leave both stores untouched, and exit non-zero so a script or CI run notices rather than silently accepting a guessed resolution.
 - **`src/commands/sync.ts`** (Exports: `handleSyncCommand, scaffoldNeuronDirectory`): Function handleSyncCommand (Methods: handleSyncCommand(), some(), includes(), error()).
 - **`src/commands/ui.test.ts`**: Methods: describe(), afterEach(), close(), it().
@@ -302,7 +303,7 @@ Primary models module containing core application capabilities.
 **Key Components & Export Contracts:**
 - **`src/models/index.ts`**: No exported symbols detected.
 - **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): No exported symbols detected.
-- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome`): @deprecated Use plain `string` for category names instead.
+- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome, DuplicateGroupEntry, DuplicateGroup, StoreHealth`): @deprecated Use plain `string` for category names instead.
 - **`src/models/options.ts`** (Exports: `NeuronMemoryOptions`): Injected write-side enricher. Tests supply a stub so the transaction seam can be exercised without loading a 500M-parameter model; production leaves it unset and gets `LocalEnrichmentModel`.
 
 ---

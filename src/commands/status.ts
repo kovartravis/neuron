@@ -1,14 +1,55 @@
-import { NeuronMemory } from '../index.js';
+import { NeuronMemory, StoreHealth } from '../index.js';
 import { loadNeuronConfig } from '../config/neuronYaml.js';
 import { getArchitecturalDrift } from '../scanner/diff.js';
 import { summarizeRecallCost } from '../harnesses/index.js';
 import { parseFlags, STATUS_HELP } from './utils.js';
+
+/** Truncates a content preview for the human-readable `--health` report only — the JSON payload always carries the full string. */
+function preview(content: string, max = 80): string {
+  const oneLine = content.replace(/\s+/g, ' ').trim();
+  return oneLine.length > max ? `${oneLine.slice(0, max - 1)}…` : oneLine;
+}
+
+function formatStoreHealthText(health: StoreHealth, sessionsObserved: number): string {
+  const lines: string[] = ['Store health'];
+
+  lines.push('');
+  lines.push(`Duplicate/near-duplicate groups: ${health.duplicateGroups.length}`);
+  for (const group of health.duplicateGroups) {
+    lines.push(`  - ${group.entries.length} entries, min similarity ${group.minSimilarity.toFixed(3)}:`);
+    for (const entry of group.entries) {
+      lines.push(`      [${entry.category}] ${entry.id}  "${preview(entry.content)}"`);
+    }
+  }
+
+  lines.push('');
+  lines.push('Importance histogram:');
+  for (let level = 1; level <= 5; level++) {
+    lines.push(`  ${level}: ${health.importanceHistogram[level] ?? 0}`);
+  }
+
+  lines.push('');
+  lines.push(`Superseded entries: ${health.supersededCount}`);
+  lines.push(`Sessions observed (recall invoked): ${sessionsObserved}`);
+  if (sessionsObserved === 0) {
+    lines.push('  Warning: recall has never been observed firing in a recorded session.');
+  }
+
+  return lines.join('\n');
+}
 
 /**
  * Ticket 13 / ADR 0013: the validation surface `neuron doctor` was ruled out
  * twice for, reopened folded into `status` instead of a new top-level
  * command. `--check` and `--repair` are mutually exclusive report modes —
  * neither touches the default `status` JSON payload below them.
+ *
+ * Ticket 20 / neuron-2.4.0 asked the same "new command or status extension"
+ * question again, for store-health signals (duplicates, importance
+ * distribution, superseded count) rather than config-schema compliance —
+ * same "no new commands" precedent applies, so `--health` joins `--check`/
+ * `--repair` as a third mutually-exclusive report mode rather than shipping
+ * a `neuron doctor` binary.
  */
 export async function handleStatusCommand(memory: NeuronMemory, args: string[] = []): Promise<void> {
   const { options } = parseFlags(args.slice(1));
@@ -18,9 +59,26 @@ export async function handleStatusCommand(memory: NeuronMemory, args: string[] =
     return;
   }
 
-  if (options.check && options.repair) {
-    console.error('Error: --check and --repair are mutually exclusive');
+  const reportModes = [options.check, options.repair, options.health].filter(Boolean).length;
+  if (reportModes > 1) {
+    console.error('Error: --check, --repair, and --health are mutually exclusive');
     process.exitCode = 1;
+    return;
+  }
+
+  if (options.health) {
+    const health = await memory.getStoreHealth();
+    // sessionsObserved (ticket 21's own subject) is surfaced here rather
+    // than delegated, per the ticket's own fallback — 21 hasn't landed yet.
+    // Read from the same recorded-ledger summary `status`'s default payload
+    // already uses, not recomputed.
+    const config = loadNeuronConfig(process.cwd());
+    const sessionsObserved = summarizeRecallCost(process.cwd(), config.recall.epochCharBudget).sessionsObserved;
+    if (options.json) {
+      console.log(JSON.stringify({ ...health, sessionsObserved }));
+    } else {
+      console.log(formatStoreHealthText(health, sessionsObserved));
+    }
     return;
   }
 

@@ -107,6 +107,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     diff?: boolean;
     check?: boolean;
     repair?: boolean;
+    health?: boolean;
     yes?: boolean;
     noHooks?: boolean;
     overwriteHooks?: boolean;
@@ -147,6 +148,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let diff: boolean | undefined;
   let check: boolean | undefined;
   let repair: boolean | undefined;
+  let health: boolean | undefined;
   let yes: boolean | undefined;
   let noHooks: boolean | undefined;
   let overwriteHooks: boolean | undefined;
@@ -193,6 +195,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       check = true;
     } else if (arg === '--repair') {
       repair = true;
+    } else if (arg === '--health') {
+      health = true;
     } else if (arg === '--tags') {
 
       const val = args[++i];
@@ -339,6 +343,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       diff,
       check,
       repair,
+      health,
       yes,
       noHooks,
       overwriteHooks,
@@ -402,6 +407,7 @@ Commands:
   exec -- <command>    Run a command with pre-command memory lookup
   status               Display status details for active database, project, embedding cache, and architectural drift
                         (--check/--repair reports and fixes entries violating a category's declared field schema)
+                        (--health reports duplicate clusters, importance histogram, superseded count, sessionsObserved)
   memory <subcommand>  Manage memories across any category (use --category <name>)
   scan                 Scan project topology and manifests, ingest an architectural blueprint, and detect drift
   sync                 Sync memories between .neuron/*.md files and the vector database
@@ -432,9 +438,17 @@ With --check or --repair, reports two independent kinds of drift:
    write (neuron.yaml is edited on disk, comments and formatting preserved).
    This only catches categories that predate that auto-declare hook.
 
+With --health, reports store-health signals instead: near-duplicate entry
+clusters that slipped past the write-time supersession gate, an importance
+histogram (1-5), the superseded-entry count, and whether recall has ever
+actually fired (sessionsObserved). Prints a human-readable report by
+default; pass --json for the scriptable form.
+
 Options:
   --check                        List field violations and undeclared categories
   --repair                       Fix what's safely fixable and report the result
+  --health                       Report duplicate clusters, importance histogram, superseded count, sessionsObserved
+  --json                         With --health, print JSON instead of the human-readable report
 
 --repair applies a configured "default:" where one exists, and otherwise
 offers centroid-based inference for enum-typed fields only (the same
@@ -451,10 +465,14 @@ Exit codes (--check / --repair):
   0                              Compliant, or every violation repaired
   1                              Violations found (--check), or some left unresolved (--repair)
 
+--check, --repair, and --health are mutually exclusive.
+
 Examples:
   neuron status                  Full status JSON
   neuron status --check          List non-compliant entries, exit 1 if any
-  neuron status --repair         Fix what's fixable, exit 1 if anything is left unresolved`;
+  neuron status --repair         Fix what's fixable, exit 1 if anything is left unresolved
+  neuron status --health         Human-readable store-health report
+  neuron status --health --json  Same report, as JSON`;
 
 export const SCAN_HELP = `Usage: neuron scan [flags]
 
