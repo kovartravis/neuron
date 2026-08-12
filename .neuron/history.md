@@ -2638,3 +2638,15 @@ tags:
 taskId: "16"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 16 (Curate This Repo's .neuron/ Store as the Showcase). Ran neuron status --health and found 5 live duplicate groups -- the exact 5 architecture-card near-dups ticket 20's repair pass had already found and deliberately left for a human --supersedes call, misfiled under decisions from the pre-ticket-01 scan.category alias bug. Deleted the 5 stale decisions-category copies (maintainer-confirmed), matching neuron-2.2.0 ticket 37's own precedent. A follow-on content-length sweep then found 204 of 653 entries (31%) were pure junk from two already-dead historical bugs -- 141 test-fixture leaks from before tickets 42/47 isolated CLI and e2e tests from this real repo's store, 63 argv-truncations from before the v2.1.2 shell-quoting fix. Verified both root causes dead (nothing matching either pattern after 2026-08-05) and deleted all 204, maintainer-confirmed given the scale. npm test 678/678, tsc clean, --health now reports 0 duplicate groups. Added a direct README.md pointer to this repo's own .neuron/*.md files as the real, actively-used example alongside the existing synthetic schema-demo snippet. Resolving it didn't unblock any other ticket. Next wayfinder session's frontier: 25, 28, 30, 31 (all unclaimed and unblocked); 02, 04, 05 claimed and in progress; 03, 26, 29 blocked; 11 claimed but still blocked on missing ANTHROPIC_API_KEY.
+
+---
+id: 82094a3a-10c1-4968-ad1a-8722db1b87fc
+createdAt: 2026-08-12T13:38:32.826Z
+importance: 4
+tags:
+  - release
+  - wayfinder
+  - 2.2.0
+taskId: null
+---
+Charted tickets 37 (Cut and Publish 2.4.0-rc1) and 38 (Cut and Publish 2.4.0-rc2) on the neuron-2.4.0 wayfinder map at the maintainer's direct request. Neither waits for the map's still-wide-open frontier (13+ open/blocked tickets) to close -- both snapshot trunk at cut time, matching every prior rc cut's own precedent. While chartering ticket 37, found that publish.yml (shipped neuron-2.3.0 ticket 21) now triggers npm publish and git-tag creation automatically on every push to main, so merging feat/2.4.0-rc1 to main is now the real irreversible step -- there is no longer a separate manual 'npm publish' step to leave to the maintainer like every earlier rc cut used. Neither ticket was resolved this session; both are open, unblocked, unclaimed.

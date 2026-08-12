@@ -2,6 +2,64 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.0-rc1] - 2026-08-12
+
+Interim release candidate — most of the [neuron-2.4.0
+map](.scratch/neuron-2.4.0/map.md) remains open (13+ tickets unclaimed or
+blocked, including the reranker-gate work chartered off the finding below).
+This tag is an installable checkpoint of everything that landed on trunk
+since `v2.3.0`, audited directly from `git log v2.3.0..HEAD` rather than
+assumed from the map's nominal ticket numbering.
+
+- **Categories declare themselves.** Writing to an undeclared category in
+  `neuron.yaml` now auto-appends a minimal `categories.<name>: {}` block on
+  first write (comments and formatting preserved) instead of relying on an
+  implicit default; `neuron status --check`/`--repair` gained a distinct
+  finding kind to backfill pre-existing configs. See [ADR
+  0017](docs/adr/0017-category-declaration-authority.md).
+- **Your git history is a searchable resident source too.** A new
+  `git_log_index` joins the existing memory recall path: commits are indexed
+  incrementally (check-HEAD-on-read, one-time backfill) and searched through
+  the same FTS-gated relevance mechanism as memory entries, so a prompt
+  naming a ticket or feature can surface the real commit that shipped it —
+  live-verified against this repo's own history.
+- **Pre-command hook: deterministic recall on every shell command, not just
+  every turn.** Claude Code and Codex CLI now get relevant memory/git-log
+  context injected ahead of each `Bash` tool call (10,000/7,500-char caps,
+  fail-open), not only at prompt time — confirmed structural for Copilot CLI
+  and Cursor to stay instruction-only, since neither's pre-execution hook
+  has any context-carrying field. `neuron init`'s generated protocol block
+  and recall-fidelity reporting are conditional on this independently of
+  prompt-time recall.
+- **`neuron status --health` (and `--repair`).** Reports near-duplicate
+  entry groups (embedding-cosine, union-find clustering), an importance
+  histogram, and superseded-entry counts; `--repair` auto-merges
+  exact-content duplicate subgroups and leaves genuinely different-worded
+  near-dups for a human `--supersedes` call.
+- **Discovery-command hint.** When a prompt has real, unrecalled matches in
+  the store beyond what was injected, a `neuron memory query` line
+  suggesting the full search is appended — measured passively via a
+  zero-cost dogfooding instrument rather than a paid A/B run; outcome
+  quality (not just fire-rate) is still open.
+- **Fixed a real concurrent-write data-loss bug** in markdown storage:
+  simultaneous writers to the same category file could silently lose one
+  side's change. Now serialized with a per-category-file lock plus a
+  read-back verify.
+- **`--if-novel` on `memory add`**, for cron/scheduled writers: a
+  supersession-gate hit now skips the write (exit 0, reason on stderr,
+  `{"skipped": true, ...}` on stdout) instead of hard-erroring the job.
+- **Proactive warning when recall is never invoked** (`sessionsObserved:
+  0`): fires once per session at session-start alongside the architecture
+  card, not gated behind an explicit health check.
+
+**Known issue, not fixed in this rc:** the lexical relevance gate's
+false-accept rate on out-of-corpus negatives measures **99.80%** against the
+real LongMemEval-S split (this repo's own adversarially-disjoint benchmark
+corpus measures 0%, by contrast — the gap is corpus construction, not a
+flaky bug). A local, offline cross-encoder reranker as a second-stage gate
+is decided (>5x false-accept reduction, ~zero new false-silence is the
+acceptance bar) but not yet built.
+
 ## [2.3.0] - 2026-08-10
 
 **Four harnesses now supported, and `neuron init` tells you truthfully what

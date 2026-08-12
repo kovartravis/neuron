@@ -1,5 +1,5 @@
 Type: task
-Status: open
+Status: claimed
 Blocked by: none
 Band: 2.4.0-rc1
 
