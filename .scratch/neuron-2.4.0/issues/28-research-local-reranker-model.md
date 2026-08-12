@@ -1,5 +1,5 @@
 Type: research
-Status: unclaimed
+Status: resolved
 Blocked by: none
 Band: context cost
 
@@ -40,6 +40,39 @@ constraint is a hard one, not a preference to work around.
 
 ## Answer
 
-(none yet)
+Full findings: [28-reranker-research.md](28-reranker-research.md) (linked asset).
+
+**Recommendation: `Xenova/ms-marco-MiniLM-L-6-v2`**, with
+`mixedbread-ai/mxbai-rerank-xsmall-v1` as a documented backup. Both are
+verified on the Hugging Face Hub to ship real ONNX weights loadable today via
+`@huggingface/transformers`'s `AutoModelForSequenceClassification`, carry
+Apache-2.0 licenses (compatible with this repo's MIT posture — confirmed by
+reading `LICENSE` directly; noted in passing that `package.json` itself has
+no `license` field, a pre-existing packaging gap, not a blocker here), and
+land inside or near `27`'s 22M–100M parameter expectation (22.7M and 70.8M
+respectively) — far below the 500M-parameter chat model.
+
+L6-v2 is the primary pick: plain `BertForSequenceClassification` architecture
+(zero exotic-attention risk in transformers.js), same WordPiece tokenizer
+family already used by this repo's embedder, smallest on-disk footprint of
+any real candidate (~23MB quantized), and published MS MARCO Dev MRR@10
+39.01 / TREC-DL19 NDCG@10 74.30 as a real (if modest) starting signal for
+`27`'s acceptance bar. `mxbai-rerank-xsmall-v1` is the fallback if `29`'s
+pilot finds L6-v2's MS-MARCO-only training too narrow for this store's real
+query distribution — BEIR-validated, still small, but 3x the size and a
+second (SentencePiece) tokenizer family.
+
+One live-verified rejection worth flagging for future model searches:
+`jinaai/jina-reranker-v1-turbo-en` had the best raw benchmark of anything
+checked and real ONNX files, but its custom `JinaBertModel`/ALiBi
+architecture has zero support in transformers.js's model registry — an
+"ONNX file exists, but the library can't correctly run it" trap, exactly the
+kind of assumption the ticket warned against. `BAAI/bge-reranker-v2-m3` has
+no ONNX/JS port at all and is oversized (568M); `Xenova/bge-reranker-base`
+has a valid ONNX port and MIT license but is 278M params, 3–12x over the
+size bar.
+
+Unblocks [29 — Build and Pilot the Reranker Gate
+Layer](29-build-pilot-reranker-gate.md) directly (its only blocker).
 
 ## Comments

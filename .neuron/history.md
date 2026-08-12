@@ -2686,3 +2686,15 @@ tags:
 taskId: "26"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed ticket 26 (Migrate All 19 .scratch Efforts into the tickets Category), the map's lowest-numbered unclaimed-unblocked frontier ticket. Live investigation before touching anything found the ticket's own framing didn't match reality -- only 9 of .scratch's 13 top-level directories are real wayfinder efforts with a map.md and issues/; 4 more (configurable-pruning, salvage-expansion, md-first, write-side-enrichment) are linked assets for already-resolved neuron-2.2.0 tickets, not efforts; 5 loose .py scripts are dead pre-CLI cruft. A repo-wide grep also found .scratch/ referenced from README.md, CHANGELOG.md, CLAUDE.md, ten ADRs, four .claude/skills files, settings.local.json, and src/components/enricher.ts -- far beyond the ticket's own tree. Given that blast radius plus the ticket's own destructive delete-.scratch/ ending, resolved it as a scoping pass rather than a one-shot mechanical migration: decided a UUID-based identity scheme with two-pass create-then-wire id/blockedBy rewiring, snapshot-then-cutover for migrating this map's own in-flight state, and relocate-not-migrate for the 4 asset dirs (to benchmarks/ and a new docs/design/). Graduated three execution tickets -- 40 (migrate the 9 real efforts), 41 (relocate the 4 asset dirs, fix ADR 0010/0011 links), 42 (sweep every remaining repo-wide .scratch/ reference and delete .scratch/, blocked by 40 and 41) -- mirroring this map's own precedent (ticket 12 to 22/23/24, ticket 14 to 25/26) for splitting design from execution rather than cramming a ~200-file destructive migration into one session. Also committed a trailing, fully-complete but never-committed prior session's work resolving ticket 25 (declare the tickets category, rewrite issue-tracker.md) before starting this session's own work.
+
+---
+id: 397857e6-7354-46df-9b04-e1de3a8c9533
+createdAt: 2026-08-12T18:26:32.577Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Wayfinder pickup session on the neuron-2.4.0 map: claimed and resolved ticket 28 (Research: Find a Local ONNX Cross-Encoder Reranker), the frontier's lowest-numbered unclaimed-and-unblocked ticket. Ran the research via a background agent against primary Hugging Face Hub sources (model files, cards, transformers.js's model registry), which recommended Xenova/ms-marco-MiniLM-L-6-v2 (22.7M params, Apache-2.0, confirmed ONNX, plain-BERT cross-encoder) with mixedbread-ai/mxbai-rerank-xsmall-v1 as backup, and found a real gotcha worth remembering: jina-reranker-v1-turbo-en has valid ONNX files but an unsupported custom architecture in transformers.js. Findings published to .scratch/neuron-2.4.0/issues/28-reranker-research.md; appended the Answer to ticket 28 and a Decisions-so-far entry to the map. Resolving 28 unblocks ticket 29 (build and pilot the reranker gate), which now joins the frontier alongside 30-36, 38-41.
