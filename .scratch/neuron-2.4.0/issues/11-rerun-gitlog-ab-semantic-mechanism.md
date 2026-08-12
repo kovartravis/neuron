@@ -1,5 +1,5 @@
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: 08
 Band: context cost
 
@@ -65,11 +65,44 @@ numbers cannot be assumed to carry over.
 
 ## Deliverables
 
-- [ ] Live semantic-arm vs. agent-arm A/B run, real sessions
-- [ ] `findings.md` reporting real-vs-oracle gap honestly
-- [ ] Feeds forward to ticket 15's already-published token-economics report
+- [x] Live semantic-arm vs. agent-arm A/B run, real sessions
+- [x] `findings.md` reporting real-vs-oracle gap honestly
+- [x] Feeds forward to ticket 15's already-published token-economics report
       (a follow-up refresh, not this ticket's own scope) and to `04`'s
       claim-versus-behavior audit
+
+## Answer
+
+Live run, 2026-08-12, 10 real sessions (9 scored + 1 gate-silence check),
+$0.7128 total. Full findings:
+[findings.md](../../../benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md).
+
+**`14`'s premise holds under the real mechanism; its exact numbers don't
+carry over.** The real, shipped semantic git-log search (ticket `08`) beats
+the no-search agent baseline outright — 0% failure vs. `agent`'s 11.1%, and
+matches `oracle-gitlog`'s 0% failure rate — confirming hook-injected git-log
+search beats the agent invoking `git log` itself under the real mechanism,
+not just under `14`'s hand-picked oracle terms. Token usage lands between
+the floor and ceiling: ~39% fewer tokens than `agent` (30,480 vs. 49,598
+mean), ~75% more than `oracle-gitlog` (30,480 vs. 17,427) — the gap `39`
+predicted when it found no extractive method reaches oracle's hit rate on
+real code-symbol vocabulary. That token gap does **not** clear this
+harness's own conservative noise-floor guard (`report.mjs`'s
+`noMeasuredDifference`) given `semantic`'s wide session-to-session spread
+(7,686-64,487 tokens) — reported as a directional result, not a confirmed
+percentage, per this band's own honesty discipline.
+
+Scope item 4's gate-silence check passed for real: `gitLogFired=false` on a
+task built to have no git-history match, the session correctly declined to
+fabricate an answer rather than crashing or auto-failing.
+
+Unblocked by the live-credential blocker clearing (maintainer logged in via
+`ant` mid-session); harness itself needed no changes from its 2026-08-10
+dry-run-validated state — re-verified working after this session's own
+ticket-29 changes to `queryGated` before spending anything (those changes
+touch ordinary memory recall, not `searchGitLog`'s separate structural
+gate, so no interaction). No fix or follow-up ticket needed — this was a
+measurement, matching `39`→`41`'s and `17`'s own measure-only precedent.
 
 ## Comments
 

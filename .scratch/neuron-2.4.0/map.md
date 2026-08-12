@@ -586,6 +586,25 @@ thin.
   `33`, `34`, `35`, `36`, `38`, `39`, `40`, `41` (all unclaimed and
   unblocked); `02`, `04`, `05` claimed and in progress; `03`, `42`
   blocked.
+- **Ticket 11 resolved, 2026-08-12** — the credentials blocker cleared
+  mid-session (maintainer logged in via `ant`). Live 10-session run
+  ($0.7128, capped at $1.00) confirmed `14`'s premise carries over to the
+  real shipped semantic git-log mechanism even though its exact numbers
+  don't: `semantic` matched `oracle-gitlog`'s 0% failure rate and beat
+  `agent`'s 11.1%, landing token usage between the two (~39% below `agent`,
+  ~75% above `oracle-gitlog`) — the gap `39` predicted, now measured for
+  real rather than assumed. That token gap doesn't clear the harness's own
+  conservative noise-floor guard given wide session-to-session variance;
+  reported as directional, not a confirmed percentage, per this band's
+  honesty discipline. Full findings in
+  [findings.md](../../benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md).
+  Re-verified the harness still worked correctly after this same session's
+  own ticket-29 changes before spending anything (no interaction — `29`
+  touches ordinary memory recall, not `searchGitLog`'s separate gate).
+  Didn't unblock anything directly (nothing else was blocked by `11`). True
+  frontier as of this session: `30`, `31`, `32`, `33`, `34`, `35`, `36`,
+  `38`, `39`, `40`, `41` (all unclaimed and unblocked); `02`, `04`, `05`
+  claimed and in progress; `03`, `42` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -626,6 +645,7 @@ thin.
 - [26 — Migrate All 19 `.scratch/` Efforts into the `tickets` Category, Then Delete `.scratch/`](issues/26-migrate-scratch-to-tickets-category.md) — resolved as a scoping pass, not a completed migration: live investigation found the ticket's "19 efforts" framing overcounted (only 9 directories are real wayfinder efforts; 4 more are assets for already-resolved `neuron-2.2.0` tickets; 5 loose scripts are dead cruft) and that `.scratch/` is linked from far more of the committed repo (README, CHANGELOG, CLAUDE.md, ten ADRs, four skills, `settings.local.json`, `enricher.ts`) than the ticket's own tree. Decided the open questions — UUID-based identity with a two-pass create-then-wire scheme (old numbers survive only in prose, never as the real id), snapshot-then-cutover for migrating this map's own in-flight state, relocate-not-migrate for the 4 asset dirs (`benchmarks/` and a new `docs/design/`) — then graduated [40](issues/40-migrate-wayfinder-efforts-to-tickets.md) (the mechanical content migration), [41](issues/41-relocate-scratch-asset-dirs.md) (asset relocation + ADR link fixes), and [42](issues/42-sweep-scratch-references-and-delete.md) (repo-wide reference sweep + delete, blocked by `40`/`41`) rather than running a ~200-file, repo-wide, destructive migration inline.
 - [28 — Research: Find a Local ONNX Cross-Encoder Reranker](issues/28-research-local-reranker-model.md) — recommends `Xenova/ms-marco-MiniLM-L-6-v2` (22.7M params, Apache-2.0, confirmed ONNX via the HF Hub files tab, plain-BERT cross-encoder matching this repo's existing `AutoModelForSequenceClassification` pattern), with `mixedbread-ai/mxbai-rerank-xsmall-v1` as a documented backup. Full evaluation, including two real rejections (`jina-reranker-v1-turbo-en`'s unsupported ALiBi architecture despite valid ONNX files; `bge-reranker-v2-m3`'s missing port and oversize), in [28-reranker-research.md](issues/28-reranker-research.md). Unblocks `29`.
 - [29 — Build and Pilot the Reranker Gate Layer](issues/29-build-pilot-reranker-gate.md) — built `28`'s pick as `queryGated`'s second conjunct; failed `27`'s original bar at threshold 0 (61.60% false-silence on real LongMemEval-S, vs. a target of ~zero), and a full threshold sweep confirmed no cutoff reaches that bar — same structural overlap `39` found for the cosine floor. **Amends `27`'s bar**, live maintainer call with the frontier in hand: ships at threshold -8 (false-accept 99.80%→19.4%, false-silence 0%→19.8%), unconditionally alongside the lexical leg, no separate config switch — a reversal of `27`'s own original "config switch, default off" plan once real evidence was in hand.
+- [11 — Re-run the Git-Log A/B Against the Real (Semantic) Mechanism](issues/11-rerun-gitlog-ab-semantic-mechanism.md) — `14`'s premise (hook-injected git-log search beats the agent's own `git log` calls) carries over to the real shipped mechanism; its exact numbers don't. Live 10-session run: `semantic` matched `oracle-gitlog`'s 0% failure and beat `agent`'s 11.1%, with token usage landing between the two (~39% below `agent`, ~75% above `oracle-gitlog`) — the real-vs-oracle gap `39` predicted, now measured. That token gap doesn't clear the harness's own conservative noise-floor guard given wide session variance, reported as directional rather than a confirmed percentage.
 
 ## Not yet specified
 
