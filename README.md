@@ -193,6 +193,14 @@ Readable, greppable, diffable, and safe to hand-edit if something needs
 correcting — a missing or malformed value on a pre-existing entry is reported
 by `neuron status`, never silently guessed at.
 
+**This isn't a toy example.** Neuron dogfoods itself: this repository's own
+[`.neuron/learning.md`](.neuron/learning.md),
+[`.neuron/history.md`](.neuron/history.md),
+[`.neuron/decisions.md`](.neuron/decisions.md), and
+[`.neuron/architecture.md`](.neuron/architecture.md) are the real store this
+project's own agent sessions have been reading from and writing to across
+every release. Open them to see what real usage looks like, warts and all.
+
 ## ⚙️ Configuration (`neuron.yaml`)
 
 This is exactly what `neuron init` generates for a new project — not a
