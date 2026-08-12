@@ -3782,3 +3782,15 @@ tags:
 taskId: "24"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 24, Dogfood the Pre-Command Hook in This Repo. Re-init'd this repo for real, installing a genuine PreToolUse -> pre-command entry in .claude/settings.json; captured two live additionalContext injections fired by real Bash tool calls in this session (saved to tmp/24-live-capture-1.txt and tmp/24-live-capture-2.txt), each matching a different onExec rule. Used --overwrite-hooks to confirm CLAUDE.md's Command Execution step is genuinely gone (not just theorized), and protocolBlock.test.ts's fallback/fallback fixture to confirm Copilot/Cursor still get the step. Found and reverted an unintended side effect: a bare neuron init also auto-onboarded the GitHub/Copilot harness via this repo's .github/ directory (recreated AGENTS.md, .github/hooks|skills/), out of this ticket's scope, so reverted. npm test 678/678 (no regression from tickets 22/23), tsc clean. True frontier now 25, 28, 30 (unclaimed/unblocked); 02, 04, 05 claimed/in-progress; 03, 13, 16, 26, 29 blocked; 11 still claimed but blocked on missing credentials.
+
+---
+id: ee98daa5-bd56-49e7-ae8b-87d4a0a6b3df
+createdAt: 2026-08-12T12:21:15.182Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "13"
+---
+Wayfinder pickup on the neuron-2.4.0 map: picked up ticket 13 (Audit: Dogfooding Gaps in This Repo), the true next frontier ticket by the tracker's own file-scan rule even though the map's narrative hadn't caught that resolving ticket 24 unblocked it. Audited CI (publish.yml), package.json scripts, git hooks, CLAUDE.md, neuron.yaml, and .claude/settings.json against source rather than assumption, closing one of the ticket's own four recon candidates (unwrapped npm test/git commit is already covered by the pre-command hook's resolveExecCategories reuse) and surfacing five real open gaps (F1-F5): no CI architecture-drift gate, the stale-global-binary trap now covering every hook not just neuron exec, CLAUDE.md protocol-block drift with no automated check, no scheduled store-health cadence, and no CI regression gate for the free dry-run benchmarks. Published the full audit as issues/13-dogfooding-gaps-audit.md, resolved ticket 13, and updated map.md's Decisions-so-far and frontier notes — resolving it unblocks ticket 16 (Curate This Repo's .neuron/ Store as the Showcase), which is now the frontier's first unblocked ticket alongside 25, 28, 30, and 31.

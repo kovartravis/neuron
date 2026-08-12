@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: resolved
 Blocked by: 24
 
 # 13 — Audit: Dogfooding Gaps in This Repo
@@ -60,3 +60,41 @@ each into its own implementation ticket in a following session.
   edge from `12` to [24](24-dogfood-precommand-hook.md), the terminal one
   of the three — auditing needs the real mechanism dogfood-verified, not
   just designed, to check compliance against.
+
+## Answer
+
+Full audit published as
+[13-dogfooding-gaps-audit.md](13-dogfooding-gaps-audit.md). Checked all
+four of this ticket's own recon candidates against current source rather
+than transcribing them; one (unwrapped `npm test`/`git commit`) turned out
+to already be resolved as a side effect of tickets 22-24's pre-command
+hook, which reuses `exec.ts`'s exact `resolveExecCategories` matching.
+
+Five real open gaps found, prioritized: **F1** — CI (`publish.yml`) never
+invokes `neuron` at all; splits into an architecture-drift gate worth
+adding (`neuron scan --check` in `build-and-test`) and a write-back mode
+explicitly *not* recommended (no safe way to persist a CI-authored
+`.neuron/` commit against a concurrent human push). **F2** — the
+stale-global-binary trap (already bitten twice, both on record as
+learnings) now also applies to every hook in `.claude/settings.json`
+since ticket 22, not just `neuron exec`, and nothing detects a
+version/build mismatch automatically. **F3** — `CLAUDE.md`'s generated
+protocol block can drift from `neuron.yaml` with no automated check (this
+already happened once for real, caught only by ticket 10's manual
+dogfood pass). **F4** — no scheduled cadence for `neuron status
+--health`; store rot only ever gets caught by a human remembering to run
+it. **F5** — the free, dry-run-capable benchmark harnesses have no CI
+regression gate.
+
+Three items checked and explicitly cleared, not flagged: this repo's
+Claude-Code-only harness scope (not a gap, a scope choice), no human-run
+local git pre-commit hook (inventing one would be a new feature, out of
+this ticket's scope), and `neuron scan` being run only ad hoc (fine in
+practice today — F1's drift-gate finding is the same observation from the
+other, unguaranteed, direction).
+
+Deliverable does not implement anything itself, per the ticket's own
+scope — F1a and F3 are the two lowest-friction graduation candidates for
+a following session (no open design questions, small and additive);
+F2 needs one small design call (fold into `status` or stand alone) before
+it can be sized as a ticket.
