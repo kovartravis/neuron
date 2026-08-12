@@ -3734,3 +3734,15 @@ tags:
 taskId: "20"
 ---
 Ticket 20 addendum, same session: maintainer asked directly whether neuron status --health actually fixes anything or just reports -- correctly just reports -- and asked for a repair mode. Added --health --repair rather than a new ticket, since it stayed inside ticket 20's own subject with the maintainer live. Design: within each near-duplicate cluster getStoreHealth already finds, split members by byte-identical content. A content-identical subgroup is safely mergeable with zero judgment (no wording difference to adjudicate) -- latest-created survives, rest marked supersededBy it via the ordinary transact update path, never deleted (ADR 0015). A cluster still holding more than one distinct content string after that merge is left unresolved rather than guessed at, mirroring repairFieldCompliance's refusal to fabricate free-text fields -- a human resolves those via --supersedes/--not-a-reversal. --repair now combines with --health (different meaning than bare --repair, which still means field-compliance repair); --check remains the only flag that can't combine with either. NeuronMemory.repairStoreHealth() in src/index.ts, formatStoreHealthRepairText in status.ts, DuplicateGroupEntry gained createdAt, new DuplicateMergeOutcome/StoreHealthRepairReport types. 4 new tests in status.health.test.ts. npm test 663/663 (was 659), tsc clean. Confirmed with the maintainer before running it for real against this repo's own store (no CLI path to reverse a supersession mark once set) -- merged 30 of 34 duplicate groups (155 stale test-fixture-pollution entries), correctly left the 5 real architecture-card near-dups unresolved since their wording genuinely differs by module. Verified via git diff .neuron/ that every change is an in-place frontmatter addition, zero content deletions or duplications.
+
+---
+id: 609ea9ea-f5cf-462a-8a39-bf65a7750def
+createdAt: 2026-08-12T02:34:19.500Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "21"
+---
+Resolved wayfinder ticket 21 (neuron-2.4.0, Warn When Recall Is Never Invoked): built a proactive session-start hook warning for the write-only-store failure mode, distinct from --health's existing opt-in report of the same sessionsObserved signal. buildZeroSessionsWarning() in ledger.ts fires only on literal sessionsObserved === 0 with a non-empty store; hook.ts's session-start branch now emits whenever it has a card, a warning, or both, rather than returning early on no card. npm test 670/670 (663 prior + 7 new), tsc clean. Updated map.md's Decisions-so-far and Notes; true frontier is now 22, 25, 28, 30.

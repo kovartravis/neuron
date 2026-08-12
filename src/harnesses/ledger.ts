@@ -265,3 +265,17 @@ export function summarizeRecallCost(projectRoot: string, epochCharBudget: number
     meanCharsPerTurn: Math.round(meanCharsPerTurn),
   };
 }
+
+/**
+ * Ticket 21 (neuron-2.4.0): the write-only-store failure mode —
+ * `sessionsObserved` is the signature of memories being added but recall
+ * never firing, meaning the whole point of the tool isn't happening.
+ * Literal `=== 0` only, not a low-but-nonzero band (that's general
+ * recall-rate tuning, a separate, unscoped question), and only once the
+ * store actually holds entries — a genuinely empty store hasn't failed at
+ * anything yet, it just hasn't been used.
+ */
+export function buildZeroSessionsWarning(sessionsObserved: number, totalEntries: number): string | null {
+  if (sessionsObserved !== 0 || totalEntries === 0) return null;
+  return '[neuron] Warning: recall has never fired in a recorded session — memories are being written but never queried back. Run `neuron status --health` for detail.';
+}
