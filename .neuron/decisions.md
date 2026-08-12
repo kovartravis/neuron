@@ -14,18 +14,6 @@ supersededAt: 2026-08-12T02:24:27.692Z
 Use SQLite WAL mode for concurrency
 
 ---
-id: c2d1928c-3e58-40a5-b478-6e3c955e89b0
-createdAt: 2026-07-28T01:29:23.063Z
-importance: 5
-tags:
-  - adr
-  - benchmark
-  - provider
-taskId: null
----
-Integrated
-
----
 id: a2606013-e06b-469c-850c-c49b619bd302
 createdAt: 2026-07-28T02:05:04.380Z
 importance: 5
@@ -51,31 +39,6 @@ taskId: null
 Implemented Zod schema validation for neuron.yaml configuration in src/config/neuronYaml.ts (replacing neuronrc naming). Configured storage.mode schema to support vector-only, md-only, dual, and split modes, defaulting storage.path to .neuron for flat Markdown storage inside project repositories. All 63 unit tests passed across 13 test files.
 
 ---
-id: a9f5e6d8-c92f-43fb-9130-f353c8e239f3
-createdAt: 2026-07-29T04:22:32.438Z
-importance: 3
-tags:
-  - adr
-  - md-sync
-  - architecture
-taskId: null
----
-Architectural
-
----
-id: 3e83b18a-998d-4a3b-b7c3-77f08e992660
-createdAt: 2026-07-29T04:22:38.165Z
-importance: 3
-tags:
-  - adr
-  - cli
-  - sync
-  - scaffolding
-taskId: null
----
-Designed
-
----
 id: f57972b4-2aae-4f6b-a661-49c451b485f5
 createdAt: 2026-07-29T04:30:31.573Z
 importance: 3
@@ -86,19 +49,6 @@ tags:
 taskId: null
 ---
 E2E testing architecture for md-file-management uses Vitest co-located with src/ modules (src/storage/*.test.ts, src/commands/*.test.ts, src/e2e/*.test.ts) using isolated temp directories, NEURON_DB_PATH overrides, and NEURON_MOCK_EMBEDDER='true'. This ensures rapid headless test execution (~2.5s duration) without requiring model downloads or external network access while achieving 100% test coverage across unit, boundary, integration, and real-world application scenarios.
-
----
-id: 44146804-b923-4c4b-a4bd-0d2b473063f4
-createdAt: 2026-07-31T20:19:10.420Z
-importance: 3
-tags:
-  - adr
-  - architecture
-  - drift
-  - ticket-03
-taskId: null
----
-Recorded
 
 ---
 id: f23f7d38-c988-475c-88b6-ae4e7f18278c
@@ -965,33 +915,6 @@ Primary longmemeval module containing core application capabilities.
 - **`benchmarks/longmemeval/retrieval_eval.py`**: Methods: len(), int(), max(), get_dataset().
 
 ---
-id: 7ff014f5-6449-6941-88f1-92b642271852
-createdAt: 2026-08-09T19:13:08.027Z
-importance: 5
-tags:
-  - architecture
-  - topology
-  - scan
-  - deep
-taskId: null
----
-### 🧩 src (`src`)
-Primary src module containing core application capabilities.
-
-**Key Components & Export Contracts:**
-- **`src/cli.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
-- **`src/cli.ts`**: Methods: main(), slice(), log(), exit().
-- **`src/db.test.ts`**: Methods: describe(), it(), openDatabase(), expect().
-- **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase`): Function createNodeSqliteWrapper (Methods: createRequire(), createNodeSqliteWrapper(), mkdirSync(), require()).
-- **`src/enrichment.test.ts`**: Write-side enrichment, asserted at the transaction entry point — what ends up in the store. That was once two seams; the query seam carried the enrichment backlog's drain guarantee, and ticket 26 removed the only deferred job, so a read has no enrichment behaviour left to assert. Nothing here asserts how a tag was chosen. The category strategy in particular was A/B'd precisely because its winner was unknown, so tests that pinned the mechanism would have been rewritten by the experiment they existed to support.
-- **`src/fieldSchema.test.ts`**: Declarable per-category frontmatter fields (ticket 43 / ADR 0013), asserted at the `transact()` choke point — required-but-missing, defaults, enum membership, and the reject-undeclared-field guard — plus the markdown round-trip that makes a written field value durable. Storage: SQLite column support for `vector`-storage categories shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column migration and round-trip coverage. These tests use `storage.mode: md` where the markdown round-trip is meaningful.
-- **`src/index.supersession.test.ts`**: Methods: primitives(), vecAt(), Float32Array(), describe().
-- **`src/index.test.ts`**: Methods: describe(), it(), NeuronMemory(), getDb().
-- **`src/index.ts`** (Exports: `NeuronMemory`): Resolve a `category` from a mutation/query, supporting the deprecated `kind` field. Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
-- **`src/sqliteFieldSchema.test.ts`**: SQLite additive auto-migration for declared category fields (ticket 44 / ADR 0013) — the `vector`-storage counterpart to `fieldSchema.test.ts`'s markdown round-trip. Covers the migration mechanics (additive, idempotent, never `DROP COLUMN`) and the write-then-query round trip through real SQLite columns rather than frontmatter.
-- **`src/statusCheckRepair.test.ts`**: `neuron status --check`/`--repair` (ticket 13 / ADR 0013): reporting and fixing live entries that violate a category's currently-declared field schema. The interesting case is always the same shape — a field became required (or was newly declared with a default, or newly declared enum) after some entries were already written — simulated below by writing against one `neuron.yaml`, then reopening a fresh `NeuronMemory` against the same store with an evolved config, exactly as a real upgrade would.
-
----
 id: f86ea70a-3ba9-e98e-cde5-726e1af0c92d
 createdAt: 2026-08-09T19:13:08.077Z
 importance: 5
@@ -1064,32 +987,6 @@ Primary components module containing core application capabilities.
 - **`src/components/timeout.ts`** (Exports: `TimeoutError, withTimeout`): The timeout primitive. Before this, the only `timeout` in the codebase was SQLite's `busy_timeout`; a hung `generate()` hung its caller forever. ADR 0010 §3 requires every model call to be a bounded wait. It bounds the wait, not the work: the underlying ONNX generation cannot be cancelled, so a timed-out call keeps running to completion in the background and its result is discarded. That is acceptable because the process is short-lived — but it means a timeout does not free the CPU it was spending.
 
 ---
-id: 43114571-0ab1-a26b-34f4-bb53dc2ec147
-createdAt: 2026-08-09T19:13:08.181Z
-importance: 5
-tags:
-  - architecture
-  - topology
-  - scan
-  - deep
-taskId: null
----
-### 🧩 config (`src/config`)
-Primary config module containing core application capabilities.
-
-**Key Components & Export Contracts:**
-- **`src/config/categoryPath.test.ts`**: Methods: describe(), it(), baseConfig(), expect().
-- **`src/config/categoryPath.ts`** (Exports: `resolveCategoryPath, rawCategoryPath, resolveAllCategoryRoots`): `categories.<name>.path > storage.path > '.neuron'` (ticket 05). Absolute per-category paths are allowed by design — a shared notes directory outside the repo is a plausible want, and `storage.path` itself already permitted absolute values. The `path.resolve` below is a no-op for an already-absolute `raw`.
-- **`src/config/harness.ts`** (Exports: `AgentHarness, detectHarnesses, copySkill`): Function detectHarnesses (Methods: detectHarnesses(), filter(), map(), copySkill()).
-- **`src/config/index.ts`**: No exported symbols detected.
-- **`src/config/neuronYaml.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
-- **`src/config/neuronYaml.ts`** (Exports: `StorageMode, StorageConfig, CategoryField, CategoryConfig, fieldKeyToFlagName, fieldKeyToColumnName, isValidColumnIdentifier, DeclaredFieldFlag, collectDeclaredFieldFlags, PullRuleDefault, PullRuleOnExec, PullRulesConfig, ScanConfig, LlmEnrichmentConfig, LlmConfig, RelevanceGateConfig, RelevanceConfig, RecallConfig, NeuronConfig, findNeuronYaml, findConfigFile, validateNeuronYaml, parseNeuronYaml, loadNeuronYaml, loadConfig, resolveExecCategories`): Four deprecated spellings, all deleted by ticket 06 (neuron-2.3.0) or its predecessor ticket 28, all aliased rather than hard-failing — a config that errors on upgrade turns a rename into an outage (ADR 0011 §7): - `md-only` and `dual` are pre-2.2.0-rc5 spellings: `md-only` because every one of its defects traced to `this.db = null`, and `dual` because it was renamed to `md` — same mechanism, correct name now that `md-only` no longer exists to be confused with. - `vector-only` is the pre-2.3.0 top-level spelling of the vector-only mode, renamed to `vector` to converge with the per-category vocabulary (which never had an "-only" suffix to begin with). - `split` is deleted outright (ticket 06): the per-category override (`categories.<name>.storage`) is now always live regardless of the top-level mode, so `split` was never a third storage behaviour — it was a flag meaning "honour the overrides," which every mode now does. It aliases to `md` rather than `vector` because that is split's own pre-existing default for a category with no explicit override (`mdCategoriesForSplit` treated anything not explicitly `vector` as `md`) — aliasing to `md` reproduces every existing split config's behaviour byte-for-byte, overrides included, where aliasing to `vector` would silently flip every override-less category to vector-only.
-- **`src/config/protocolBlock.test.ts`**: Methods: config(), parse(), describe(), it().
-- **`src/config/protocolBlock.ts`** (Exports: `ProtocolFidelity, ProtocolBlockOptions, generateProtocolBlock, ProtocolWriteAction, UpsertProtocolBlockResult, upsertProtocolBlock`): Ticket 14: hooks own the read side on a harness with a deterministic adapter, so the generated protocol block only needs to teach the write side there. A harness with no such adapter (including every harness without a `HarnessAdapter` at all — 'best-effort' ones fall into this bucket too, since neither can guarantee the model ever sees a result) has nothing else performing recall, so it keeps the manual query step.
-- **`src/config/scaffold.test.ts`**: The template is a contract with the user: a key in it that the schema does not read looks configured and does nothing. `llm.enrichment.importance` is the concrete hazard — removed by ticket 26, and silently dropped by Zod, so it would fail invisibly rather than loudly.
-- **`src/config/scaffold.ts`** (Exports: `ScaffoldResult, scaffoldNeuronYaml`): The config `neuron init` writes when a project has none (ticket 31). Two rules govern what may appear here: 1. Every key is one the schema actually reads. An aspirational key in a generated file is worse than an undocumented one — it looks configured and does nothing. `llm.enrichment.importance` is the cautionary example: it was removed by ticket 26, and Zod silently strips it, so a template carrying it would advertise a setting that cannot take effect. `pullRules.default.minScore` is the same trap in a louder form: ticket 39 deprecated it (it cannot reject a top hit at any relevance, ADR 0012) and every command now warns on stderr when it's present — a template carrying it would make a fresh `neuron init` noisy on its very first run. 2. `architecture` is declared even though `scan.enabled` is `false`. `scan.category` defaults to `architecture`, so a config that sets up the scan without declaring the category it writes into leaves those entries outside `categories` — which in `md` mode means the reconcile pass never covers them. Declaring it costs one no-op reconcile per command and removes the trap for anyone who later flips `enabled: true`. 3. Nothing here turns on behaviour the schema defaults leave off. `scan.enabled` stays `false`, matching a config-less project, so generating this file changes what a project says rather than what it does. An `init` that quietly started scanning — loading the summarizer and filing a blueprint card nobody asked for — would be a behaviour change disguised as a convenience. The pull rules are the one place the template is opinionated rather than default, and they are opinionated in the file, where the user can read and change them. The `llm` block is deliberately omitted. Its defaults are the values ticket 06's A/B selected on evidence (`categoryStrategy: centroid`, 9/9 against the model's 1/9); pinning them into every generated file would freeze a measured result as a user setting and make future corrections invisible.
-
----
 id: be342f30-531a-1eb9-5f1c-6c3f6580c7f7
 createdAt: 2026-08-09T19:13:08.230Z
 importance: 5
@@ -1107,58 +1004,6 @@ Primary e2e module containing core application capabilities.
 
 **Key Components & Export Contracts:**
 - **`src/e2e/mdFileManagement.e2e.test.ts`**: Methods: describe(), beforeEach(), mkdtempSync(), afterEach().
-
----
-id: 9da41114-e7b4-9e70-c442-c55a93a2d7d3
-createdAt: 2026-08-09T19:13:08.243Z
-importance: 5
-tags:
-  - architecture
-  - topology
-  - scan
-  - deep
-taskId: null
----
-### 🧩 harnesses (`src/harnesses`)
-Primary harnesses module containing core application capabilities.
-
-**Key Components & Export Contracts:**
-- **`src/harnesses/cacheDir.ts`** (Exports: `projectHash, hookCacheDir, sessionFileKey`): Same hash scheme `NeuronMemory` uses for its SQLite filename (`src/index.ts`), reused here so ledger/hook-state files land in a predictable, collision-resistant per-project directory without importing `NeuronMemory` itself — this module only ever touches the filesystem, never the memory store.
-- **`src/harnesses/claudeCode.test.ts`**: Methods: describe(), join(), ClaudeCodeAdapter(), beforeEach().
-- **`src/harnesses/claudeCode.ts`** (Exports: `ClaudeCodeAdapter`): Neuron's own lifecycle vocabulary, translated to Claude Code's event names.
-- **`src/harnesses/codex.test.ts`**: Methods: describe(), join(), CodexAdapter(), beforeEach().
-- **`src/harnesses/codex.ts`** (Exports: `CodexAdapter`): Neuron's own lifecycle vocabulary, translated to Codex CLI's event names. Confirmed identical to Claude Code's naming (`learn.chatgpt.com/docs/hooks`, fetched directly during this ticket): `SessionStart`, `UserPromptSubmit`, and `PreCompact` are named exactly the same on both harnesses.
-- **`src/harnesses/copilot.test.ts`**: Methods: describe(), join(), CopilotAdapter(), beforeEach().
-- **`src/harnesses/copilot.ts`** (Exports: `CopilotAdapter`): Neuron's own lifecycle vocabulary, translated to Copilot CLI's event names — camelCase, unlike Claude Code/Codex's PascalCase (confirmed via direct fetch of `docs.github.com/en/copilot/reference/hooks-reference` during this ticket). Only `session-start` has an entry: `pre-prompt` and `context-reset` are deliberately never wired (see `capability()` below), so the map only needs to cover the one point neuron can actually use.
-- **`src/harnesses/cursor.test.ts`**: Methods: describe(), join(), CursorAdapter(), beforeEach().
-- **`src/harnesses/cursor.ts`** (Exports: `CursorAdapter`): Neuron's own lifecycle vocabulary, translated to Cursor's event names (camelCase, confirmed via direct fetch of `cursor.com/docs/hooks` during this ticket — the same naming-convention family as Claude Code/Codex). `pre-prompt` has no entry: `beforeSubmitPrompt` fires every turn but its documented output is `{continue, user_message}` — permission allow/deny only, no context-carrying field — so neuron never wires a hook there at all, same design call ticket 01 made for Copilot CLI's `userPromptSubmitted`. Unlike Copilot, `context-reset` does get a real event (`preCompact`) — see `capability()` below for why wiring it still doesn't make the epoch reliably roll.
-- **`src/harnesses/hookState.ts`** (Exports: `recordFired, readFiringState`): Firing evidence, not inference from file contents. Ticket 10 found no harness researched documents an external way to confirm a registered hook actually fired — so neuron manufactures its own evidence: the hook command records a timestamp the moment it runs, before doing any of the work that could fail. `verify()` reads this file to answer "is this hook firing" as a fact, not a guess from `settings.json` being present.
-- **`src/harnesses/index.ts`**: No exported symbols detected.
-- **`src/harnesses/ledger.test.ts`**: Methods: entry(), describe(), join(), beforeEach().
-- **`src/harnesses/ledger.ts`** (Exports: `EpochRecord, EpochState, loadEpochState, filterUnseen, remainingEpochBudget, recordSessionStartInjection, recordPrePromptTurn, rollEpoch, RecallCostSummary, summarizeRecallCost`): Session-scoped recall state (ADR 0014 §3 dedupe, extended by ticket 07 / neuron-2.3.0 with a per-epoch cost budget). An epoch is the span between session start (or the last compaction) and the next `context-reset` — not the whole session — because compaction deletes everything neuron previously injected, so re-injecting after one is recovery, not repetition. Both the dedupe ledger and the char-spend budget therefore share one lifecycle: `rollEpoch` resets both together rather than treating them as two files with two reset rules. A ledger older than this is treated as abandoned rather than tracked forever — sessions that never fire `context-reset` (compaction) or end cleanly would otherwise leak one file per session indefinitely.
-- **`src/harnesses/payload.test.ts`**: Methods: entry(), describe(), it(), buildPayload().
-- **`src/harnesses/payload.ts`** (Exports: `formatMemoryEntry, PayloadResult, buildPayload`): The payload budget, per ADR 0014 §4: no relevance floor ships (ticket 39 found every cosine floor from 0.50-0.70 regresses recall on real conversational text), so the character ceiling is the sole volume control, and it must sit strictly below the smallest known harness cap so neuron never relies on spill-to-file — spill hands the model a preview and a path, which turns deterministic recall back into agent-invoked recall at exactly the moment the payload is largest. Claude Code's own documented cap is 10,000 characters (`additionalContext` / `systemMessage` / stdout). Codex CLI's is ~2,500 tokens, which neuron counts as characters rather than tokens (exact, free, and tokenising on the hook path would spend per-turn latency approximating a limit one harness already states in characters) — even a generous 4 chars/token reading of that cap is 10,000 chars, and a conservative 3 chars/token reading is 7,500. Both budgets below are chosen to sit under every one of those readings, not just Claude Code's own cap, since this module is shared by every adapter (ticket 13 onward).
-- **`src/harnesses/types.ts`** (Exports: `LifecyclePoint, SupportRecord, CapabilityMap, FidelityLabel, deriveFidelity, HookTarget, OverwritePolicy, InstallOptions, InstallResult, UninstallResult, VerifyPointStatus, VerifyResult, HarnessAdapter`): The recall adapter interface, per ADR 0014 / ticket 11. Capability is a per-lifecycle-point map, not a single enum: two harnesses can occupy the same `deterministic`/`best-effort` label while differing on exactly what they leave undocumented. The enum is derived for display only (`neuron init` output, the README matrix) and is never itself stored — see `deriveFidelity` below.
-
----
-id: 1db07416-beb4-68ae-1d7a-8459adfbb649
-createdAt: 2026-08-09T19:13:08.292Z
-importance: 5
-tags:
-  - architecture
-  - topology
-  - scan
-  - deep
-taskId: null
----
-### 🧩 models (`src/models`)
-Primary models module containing core application capabilities.
-
-**Key Components & Export Contracts:**
-- **`src/models/index.ts`**: No exported symbols detected.
-- **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): No exported symbols detected.
-- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome`): @deprecated Use plain `string` for category names instead.
-- **`src/models/options.ts`** (Exports: `NeuronMemoryOptions`): Injected write-side enricher. Tests supply a stub so the transaction seam can be exercised without loading a 500M-parameter model; production leaves it unset and gets `LocalEnrichmentModel`.
 
 ---
 id: e8371683-83e1-bae0-ab0a-67529912a213
@@ -1267,31 +1112,6 @@ Primary ui module containing core application capabilities.
 - **`src/ui/progress.test.ts`**: Methods: describe(), it(), PassThrough(), on().
 - **`src/ui/progress.ts`** (Exports: `ScanProgress, ScanProgressBarOptions, ScanProgressBar`): Class ScanProgressBar (Methods: update(), max(), round(), repeat()).
 - **`src/ui/server.ts`** (Exports: `UiServerOptions, UiServer, startUiServer`): Function startUiServer (Methods: close(), startUiServer(), createServer(), URL()).
-
----
-id: 1b4c1c02-41aa-5c6a-5700-31133e12874c
-createdAt: 2026-08-09T19:13:08.462Z
-importance: 5
-tags:
-  - architecture
-  - topology
-  - scan
-  - deep
-taskId: null
----
-### 🧩 e2e (`test/e2e`)
-Primary e2e module containing core application capabilities.
-
-**Key Components & Export Contracts:**
-- **`test/e2e/adversarial-corpus.ts`** (Exports: `AdversarialFamily, AdversarialCase, buildFiller`): Adversarial retrieval corpus. The baseline recall pillar scores 1.0 because its distractors are only lexically noisy — templated strings that share vocabulary but are semantically unrelated, which hybrid search separates trivially. A metric pinned at its ceiling can detect a regression but can never show an improvement, and it predicts nothing about real retrieval quality. These cases are built to be genuinely hard, in four families: lexical-decoy  the wrong answer shares MORE query keywords than the right one, so keyword scoring alone picks the decoy paraphrase     near-miss neighbours that are topically identical but answer a different question contradiction  an outdated memory superseded by a newer one; the newer must win multi-hop      the query names none of the gold's salient terms and must be bridged conceptually
-- **`test/e2e/adversarial-recall.test.ts`**: Pillar 7 — Adversarial Retrieval Quality. Runs the real embedder against hard negatives engineered to beat the gold answer on keyword overlap, topical proximity, or staleness. Unlike the baseline recall pillar this is expected to sit below ceiling: the point is a metric with headroom that can move in both directions when retrieval changes. Thresholds are therefore deliberately loose — this pillar earns its keep as a tracked score, not as a tripwire.
-- **`test/e2e/benchmark-suite.test.ts`**: Neuron Deep E2E Benchmark & Correctness Suite. This suite is deliberately NOT a unit test. It exercises the real production pipeline end to end — the real ONNX embedder and the real Qwen1.5-0.5B code summarizer — and records latency distributions alongside its assertions. IMPORTANT: vitest sets NODE_ENV=test, and both summarizer.preloadModel() and summarizer.summarizeFile() short-circuit on that value. Left alone, the whole suite would silently benchmark a string-heuristic fallback instead of the product, which is why the previous revision "passed" its SLAs by ~40x while completing in seconds. Pillar 6 exists to keep that regression from reappearing. ESM hoists the imports below above these assignments, which is fine: both flags are read at call time (inside summarizeFile / NeuronMemory.open), not at module evaluation, so setting them here still takes effect for every test.
-- **`test/e2e/concurrency-stress.test.ts`**: Pillar 8 — Multi-Process Contention & Crash Recovery. Spawns real OS processes against one SQLite file. The original concurrency pillar ran `Promise.all` over a single in-process NeuronMemory handle, which shares one connection and one WAL writer — it can never produce cross-process lock contention, torn writes, or a dirty WAL, so "0 failures" there said nothing about multi-agent safety. Checks, in order of severity: 1. lost writes    — every committed record must be readable afterwards 2. lock handling  — SQLITE_BUSY is acceptable if surfaced, not if it eats data 3. crash recovery — SIGKILL mid-write must leave a readable, uncorrupted store
-- **`test/e2e/enrichment-corpus.ts`** (Exports: `ImportanceLabel, LabelledEntry, CategoryCase`): The polarized corpus for the enrichment pillar. Discrimination is measured against entries that are unambiguous at both ends, so the corpus design supplies the labels and no human labelling session is required. There is deliberately no middle tier: whether a "4" is objectively a 4 is out of scope, but whether a note about irreversible data loss outranks a note about tab width is not a judgement call.
-- **`test/e2e/enrichment.test.ts`**: Pillars 10-12 — Write-side enrichment. Pillar 10 was Importance Inference & Prune Safety and measured both halves. The inference half is gone: it measured the judgement as noise (discrimination -0.5 then +0.167, per-entry stability 0.5, a production-data-loss note rated `1`), the job shipped `off` on that evidence, and ticket 26 removed it. The prune-safety half is kept and is now the whole pillar, because ticket 23 left the underlying hazard live: the entry default and the `neuron memory prune` ceiling are both 3 and the comparison is inclusive. Runs against the real Qwen1.5-0.5B model. It is disabled under NODE_ENV=test, so this suite is the only place these jobs can be measured at all.
-- **`test/e2e/metrics.ts`** (Exports: `PillarMetrics, percentile, MetricsRecorder`): Latency/throughput recorder for the E2E benchmark suite. The suite is both a correctness gate and a benchmark, so every pillar records real measurements here rather than only asserting pass/fail. The collected numbers are written to a metrics file that the runner merges into its scorecard — the runner never has to infer results by scraping stdout.
-- **`test/e2e/synthetic-generator.ts`** (Exports: `SyntheticGeneratorOptions, generateSyntheticPolyglotWorkspace`): Class SyntheticClass (Methods: generateSyntheticPolyglotWorkspace(), rmSync(), mkdirSync(), writeFileSync()).
-- **`test/e2e/tier.ts`** (Exports: `BenchTier, byTier`): Benchmark tiering. The same pillar definitions run at two very different intensities: sanity — a fast pre-merge gate. Every pillar still executes end to end against the real pipeline, but at the smallest workload that can still fail meaningfully. Target: a couple of minutes. full   — the adversarial benchmark. Large corpora, deep sweeps, real multi-process contention, and hard negatives designed to drive scores off their ceiling. Target: long enough to hurt. Tier is selected with NEURON_BENCH_TIER; anything other than 'full' is treated as sanity so a bare `vitest run` on these files stays quick.
 
 ---
 id: 5c997296-45ec-4ae0-872b-56c18de46b7c
