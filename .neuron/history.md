@@ -127,6 +127,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -136,6 +138,8 @@ createdAt: 2026-07-29T12:38:42.473Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old entry
 
@@ -146,6 +150,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -155,6 +161,8 @@ createdAt: 2026-07-29T12:38:46.767Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -164,6 +172,8 @@ createdAt: 2026-07-29T12:38:49.691Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -406,6 +416,8 @@ tags:
   - wayfinder
   - db-schema
 taskId: 05-multi-tenant-isolation
+supersededBy: 94618b29-7b77-4b30-a299-e450843fa0fc
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Deferred multi-tenant isolation ticket as wontfix (SaaS features out of scope for now)
 
@@ -2254,6 +2266,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2265,6 +2279,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2274,6 +2290,8 @@ createdAt: 2026-08-04T01:51:34.358Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old entry
 
@@ -2283,6 +2301,8 @@ createdAt: 2026-08-04T01:51:34.441Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2292,6 +2312,8 @@ createdAt: 2026-08-04T01:51:34.796Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2301,6 +2323,8 @@ createdAt: 2026-08-04T01:51:34.954Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2310,6 +2334,8 @@ createdAt: 2026-08-04T01:51:35.103Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2319,6 +2345,8 @@ createdAt: 2026-08-04T01:51:35.718Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: ca1f174b-63af-4833-93be-870d8ba13a74
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 New entry
 
@@ -2329,6 +2357,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2340,6 +2370,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2349,6 +2381,8 @@ createdAt: 2026-08-04T01:56:44.026Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old entry
 
@@ -2358,6 +2392,8 @@ createdAt: 2026-08-04T01:56:44.396Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2367,6 +2403,8 @@ createdAt: 2026-08-04T01:56:44.575Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2376,6 +2414,8 @@ createdAt: 2026-08-04T01:56:44.679Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2385,6 +2425,8 @@ createdAt: 2026-08-04T01:56:45.008Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2394,6 +2436,8 @@ createdAt: 2026-08-04T01:56:45.152Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: ca1f174b-63af-4833-93be-870d8ba13a74
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 New entry
 
@@ -2416,6 +2460,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2427,6 +2473,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2436,6 +2484,8 @@ createdAt: 2026-08-04T02:13:13.719Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old entry
 
@@ -2445,6 +2495,8 @@ createdAt: 2026-08-04T02:13:13.757Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2454,6 +2506,8 @@ createdAt: 2026-08-04T02:13:14.156Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2463,6 +2517,8 @@ createdAt: 2026-08-04T02:13:14.308Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2472,6 +2528,8 @@ createdAt: 2026-08-04T02:13:14.499Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2481,6 +2539,8 @@ createdAt: 2026-08-04T02:13:14.885Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: ca1f174b-63af-4833-93be-870d8ba13a74
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 New entry
 
@@ -2491,6 +2551,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2502,6 +2564,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2511,6 +2575,8 @@ createdAt: 2026-08-04T02:14:37.388Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old entry
 
@@ -2520,6 +2586,8 @@ createdAt: 2026-08-04T02:14:37.694Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2529,6 +2597,8 @@ createdAt: 2026-08-04T02:14:37.801Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2538,6 +2608,8 @@ createdAt: 2026-08-04T02:14:38.128Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2547,6 +2619,8 @@ createdAt: 2026-08-04T02:14:38.205Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2556,6 +2630,8 @@ createdAt: 2026-08-04T02:14:38.581Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: ca1f174b-63af-4833-93be-870d8ba13a74
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 New entry
 
@@ -2578,6 +2654,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2589,6 +2667,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2598,6 +2678,8 @@ createdAt: 2026-08-04T02:23:10.075Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2607,6 +2689,8 @@ createdAt: 2026-08-04T02:23:10.385Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2616,6 +2700,8 @@ createdAt: 2026-08-04T02:23:10.624Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2625,6 +2711,8 @@ createdAt: 2026-08-04T02:23:10.787Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2635,6 +2723,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2646,6 +2736,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2655,6 +2747,8 @@ createdAt: 2026-08-04T02:52:04.831Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2664,6 +2758,8 @@ createdAt: 2026-08-04T02:52:05.306Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2673,6 +2769,8 @@ createdAt: 2026-08-04T02:52:05.492Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2682,6 +2780,8 @@ createdAt: 2026-08-04T02:52:05.801Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2692,6 +2792,8 @@ importance: 4
 tags:
   - CI
 taskId: null
+supersededBy: 35a09410-98da-47e0-9e23-19e78d8aab1d
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Crucial pipeline update
 
@@ -2703,6 +2805,8 @@ tags:
   - cli
   - test
 taskId: task-123
+supersededBy: c0581bb2-7fbf-4e40-ba5b-efab535c4a69
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Wrote test for CLI
 
@@ -2712,6 +2816,8 @@ createdAt: 2026-08-04T02:53:44.418Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -2721,6 +2827,8 @@ createdAt: 2026-08-04T02:53:44.642Z
 importance: 1
 tags: []
 taskId: null
+supersededBy: 5f02fff8-6306-45e8-a3d2-ca3dfe043db4
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old entry
 
@@ -2730,6 +2838,8 @@ createdAt: 2026-08-04T02:53:45.065Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: 83f94dab-5c8f-4c15-991d-634dc6475ff5
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old default entry
 
@@ -2739,6 +2849,8 @@ createdAt: 2026-08-04T02:53:45.471Z
 importance: 4
 tags: []
 taskId: null
+supersededBy: 6dadf2cc-3d0e-4f65-b5f6-0b36632d8f0f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Old important entry
 
@@ -2787,6 +2899,8 @@ createdAt: 2026-08-04T02:55:45.673Z
 importance: 3
 tags: []
 taskId: null
+supersededBy: f68f1fce-153e-4b6f-adf5-d0f92fb98ec6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 a history entry
 
@@ -3608,3 +3722,15 @@ tags:
 taskId: "20"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: found ticket 19's implementation work fully done but uncommitted from a prior session (tests passing, ticket Answer written, map updated) -- verified with npm test and committed it first, then claimed and resolved ticket 20 (Ship neuron doctor), the next unclaimed/unblocked frontier ticket. Decided doctor vs status extension the same way ADR 0013's ticket 36 already ruled for config-validation: no new command, folded into a third neuron status --health report mode alongside --check/--repair. Built NeuronMemory.getStoreHealth() reusing findSupersessionCandidate's embedding-cosine machinery pairwise across the whole live store (union-find grouping so a near-duplicate chain reads as one group, not overlapping pairs), an importance histogram (1-5), and a superseded count. Human-readable text by default, --json for scripting, sessionsObserved surfaced inline since ticket 21 (which owns the proactive-warning half) hasn't landed. Live-verified against this repo's own real store and found two genuine findings left unfixed: leftover exact-duplicate test-fixture strings that leaked into the dev DB from pre-isolation test runs, and a real near-dup class -- architecture cards duplicated across decisions/architecture categories from the pre-ticket-01-revert alias period. New test file status.health.test.ts drives handleStatusCommand in-process with a content-dependent embedder (same pattern as memory.supersession.test.ts) since near-dup detection needs a real similarity signal the subprocess NEURON_MOCK_EMBEDDER tests can't provide; isolated NEURON_HOOK_CACHE_DIR per test so sessionsObserved didn't pick up this repo's own real dogfooded ledger data. npm test 659/659 (was 653), tsc clean. Resolved ticket 20 (Answer written, closed), appended the resolution to the map's Decisions-so-far and Notes. Next frontier: 21, 22, 25, 28, 30 unclaimed/unblocked (11 also claimed but still blocked on missing ANTHROPIC_API_KEY from a prior session).
+
+---
+id: 785dccd1-7260-401d-98ec-89ae8f2fa5fb
+createdAt: 2026-08-12T02:26:13.588Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.4.0
+  - rc2
+taskId: "20"
+---
+Ticket 20 addendum, same session: maintainer asked directly whether neuron status --health actually fixes anything or just reports -- correctly just reports -- and asked for a repair mode. Added --health --repair rather than a new ticket, since it stayed inside ticket 20's own subject with the maintainer live. Design: within each near-duplicate cluster getStoreHealth already finds, split members by byte-identical content. A content-identical subgroup is safely mergeable with zero judgment (no wording difference to adjudicate) -- latest-created survives, rest marked supersededBy it via the ordinary transact update path, never deleted (ADR 0015). A cluster still holding more than one distinct content string after that merge is left unresolved rather than guessed at, mirroring repairFieldCompliance's refusal to fabricate free-text fields -- a human resolves those via --supersedes/--not-a-reversal. --repair now combines with --health (different meaning than bare --repair, which still means field-compliance repair); --check remains the only flag that can't combine with either. NeuronMemory.repairStoreHealth() in src/index.ts, formatStoreHealthRepairText in status.ts, DuplicateGroupEntry gained createdAt, new DuplicateMergeOutcome/StoreHealthRepairReport types. 4 new tests in status.health.test.ts. npm test 663/663 (was 659), tsc clean. Confirmed with the maintainer before running it for real against this repo's own store (no CLI path to reverse a supersession mark once set) -- merged 30 of 34 duplicate groups (155 stale test-fixture-pollution entries), correctly left the 5 real architecture-card near-dups unresolved since their wording genuinely differs by module. Verified via git diff .neuron/ that every change is an in-place frontmatter addition, zero content deletions or duplications.

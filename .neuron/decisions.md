@@ -8,6 +8,8 @@ tags:
   - adr
   - db
 taskId: null
+supersededBy: 25959b56-2e3b-43f3-b490-b0600e7f81e6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Use SQLite WAL mode for concurrency
 
@@ -494,6 +496,8 @@ tags:
   - adr
   - db
 taskId: null
+supersededBy: 25959b56-2e3b-43f3-b490-b0600e7f81e6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Use SQLite WAL mode for concurrency
 
@@ -517,6 +521,8 @@ tags:
   - adr
   - db
 taskId: null
+supersededBy: 25959b56-2e3b-43f3-b490-b0600e7f81e6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Use SQLite WAL mode for concurrency
 
@@ -540,6 +546,8 @@ tags:
   - adr
   - db
 taskId: null
+supersededBy: 25959b56-2e3b-43f3-b490-b0600e7f81e6
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 Use SQLite WAL mode for concurrency
 
@@ -924,6 +932,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: e1d4e4de-a20f-2d75-c34d-9d3df1116eb7
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 benchmarks (`benchmarks`)
 Primary benchmarks module containing core application capabilities.
@@ -943,6 +953,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: d2e6ac08-26ec-d547-852f-3e6caeead816
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 longmemeval (`benchmarks/longmemeval`)
 Primary longmemeval module containing core application capabilities.
@@ -1033,6 +1045,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: 7897e42e-c8c6-5178-0018-f26ebcd3a5f3
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 components (`src/components`)
 Primary components module containing core application capabilities.
@@ -1085,6 +1099,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: 6e5f19ef-c872-03a7-7893-f8fcbca2cb3b
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 e2e (`src/e2e`)
 Primary e2e module containing core application capabilities.
@@ -1154,6 +1170,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: 7f35f81f-66b7-133b-1489-159eff5d10f1
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 scanner (`src/scanner`)
 Primary scanner module containing core application capabilities.
@@ -1188,6 +1206,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: ffa8d0d4-65bd-991a-bd89-847b5a0ea43f
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 shared (`src/shared`)
 Primary shared module containing core application capabilities.
@@ -1205,6 +1225,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: f201921e-b8f4-7115-84d4-d1aa1534dff0
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 storage (`src/storage`)
 Primary storage module containing core application capabilities.
@@ -1234,6 +1256,8 @@ tags:
   - scan
   - deep
 taskId: null
+supersededBy: c8bf6476-d242-f304-be92-1693759439f2
+supersededAt: 2026-08-12T02:24:27.692Z
 ---
 ### 🧩 ui (`src/ui`)
 Primary ui module containing core application capabilities.
@@ -1377,3 +1401,16 @@ tags:
 taskId: "20"
 ---
 Ticket 20 (neuron-2.4.0): store-health signals (near-duplicate clusters, importance histogram, superseded count, sessionsObserved) shipped as a third neuron status --health report mode, not a new neuron doctor command. This re-applies ADR 0013's own precedent for the config-validation surface (ticket 36, neuron-2.2.0: doctor ruled out twice, once on cost, once via the repo's no-new-commands non-goal, folded into status --check/--repair instead) to a different kind of finding -- data-quality rather than config-schema compliance -- rather than treating it as a fresh question. Near-duplicate detection deliberately reuses findSupersessionCandidate's existing embedding-cosine machinery and SUPERSESSION_SIMILARITY_THRESHOLD (0.97) rather than introducing a second similarity concept, run pairwise across the whole live store and grouped via union-find rather than reported as raw overlapping pairs. Output is human-readable text by default with --json for scripting, matching scan.ts's --format md|json convention rather than status's own historically all-JSON default -- a deliberate divergence because this is a maintainer-read report, not machine-polled state. sessionsObserved is surfaced inline within --health rather than waiting on ticket 21, which still owns the proactive (every-status-run or session-start-hook) warning surface the dogfood feedback actually asked for; ticket 20 only reads the existing metric on-demand, so 21 remains open.
+
+---
+id: 34dfb326-4cd1-4a35-9e2e-fb0ae6610370
+createdAt: 2026-08-12T02:26:23.634Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.4.0
+  - rc2
+  - adr
+taskId: "20"
+---
+Ticket 20 follow-up (neuron-2.4.0): neuron status --health --repair auto-merges only byte-identical-content duplicate subgroups within a near-duplicate cluster, never merges across genuinely different wording even at similarity 0.985-1.0. Rationale: embedding similarity is a candidate signal, not a correctness signal -- two entries can be near-identical vectors while saying meaningfully different things (verified live: this repo's own architecture-card duplicates across decisions/architecture categories share ~0.985-1.0 similarity but describe different module states). Exact string equality is the only zero-judgment bar available without either fabricating a merge decision or asking an LLM to arbitrate, and this codebase already has a precedent against both (repairFieldCompliance never fabricates free-text identity fields; the write-time supersession gate deliberately never auto-decides reversal, only shortlists). Second decision: --repair now combines with --health rather than staying three-way mutually exclusive with --check/--health -- --check still can't combine with either since it answers an unrelated question (config-schema compliance), but --health and --repair together is a coherent single request (repair store health), unlike --check+--repair which would conflate two different report shapes into one JSON payload.
