@@ -3770,3 +3770,15 @@ tags:
 taskId: "23"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 23 (Fidelity-Conditional Command Execution Step), the first unblocked frontier ticket, following 22's ruling. Made protocolBlock.ts's execStep() independently fidelity-conditional the same way recallStep() already is (generateProtocolBlock now takes a separate execFidelity and numbers surviving steps by position), generalized init.ts's resolveHarnessFidelity to take a points parameter and added EXEC_LIFECYCLE_POINTS=['pre-command'] beside RECALL_LIFECYCLE_POINTS so exec fidelity is derived from real verify() state rather than assumed to track recall. Swept the packaged skill, README, docs/COMMANDS.md, and CONTEXT.md (two glossary entries were stale post-22); hand-verified this repo's own CLAUDE.md is already byte-identical to the new generator output and left it un-run since pre-command isn't wired here yet (ticket 24's job). npm test 678/678, tsc clean. Resolved on .scratch/neuron-2.4.0/issues/23-fidelity-conditional-exec-step.md; unblocks ticket 24 (Dogfood the Pre-Command Hook in This Repo), now the frontier's next pickup alongside 25, 28, 30.
+
+---
+id: 375f408c-c60d-478b-9d40-ec46c10dd333
+createdAt: 2026-08-12T12:11:46.654Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "24"
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 24, Dogfood the Pre-Command Hook in This Repo. Re-init'd this repo for real, installing a genuine PreToolUse -> pre-command entry in .claude/settings.json; captured two live additionalContext injections fired by real Bash tool calls in this session (saved to tmp/24-live-capture-1.txt and tmp/24-live-capture-2.txt), each matching a different onExec rule. Used --overwrite-hooks to confirm CLAUDE.md's Command Execution step is genuinely gone (not just theorized), and protocolBlock.test.ts's fallback/fallback fixture to confirm Copilot/Cursor still get the step. Found and reverted an unintended side effect: a bare neuron init also auto-onboarded the GitHub/Copilot harness via this repo's .github/ directory (recreated AGENTS.md, .github/hooks|skills/), out of this ticket's scope, so reverted. npm test 678/678 (no regression from tickets 22/23), tsc clean. True frontier now 25, 28, 30 (unclaimed/unblocked); 02, 04, 05 claimed/in-progress; 03, 13, 16, 26, 29 blocked; 11 still claimed but blocked on missing credentials.

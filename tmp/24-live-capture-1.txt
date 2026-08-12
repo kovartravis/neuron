@@ -1,0 +1,15 @@
+=== Live pre-command injection capture #1 ===
+Command run (matches onExec pattern ".*" -> category: learning, limit: 8):
+  git diff --stat; echo ---; cat .claude/settings.json | python3 -m json.tool | sed -n '/PreToolUse/,/^    ]/p'
+
+Real system-reminder injected by Claude Code's PreToolUse hook (neuron hook claude-code pre-command),
+verbatim as received in this session:
+
+<system-reminder>
+PreToolUse:Bash hook additional context: - [learning] Fix for a false-positive Bash-command match in the ticket-07 hint-follow instrument: recordToolUse's QUERY_COMMAND_PATTERN was a bare substring test (/neuron\s+memory\s+query/), so any Bash command that merely quoted or echoed that phrase (found live: this ticket's own smoke test, 'echo <json containing the phrase> | neuron hook claude-code post-tool-use') got logged as a real query invocation. Root cause: substring matching can't distinguish 'runs the command' from 'contains the text of the command'. Fixed by anchoring the pattern to require an actual invocation position — start of command or immediately after a shell separator (;, &, |, a subshell's ( or backtick, or a newline): /(^|[;&|\n(`]\s*)neuron\s+memory\s+query(\s|$)/ in src/harnesses/hintFollowLog.ts. Edge case covered by a regression test: a chained real invocation like 'cd /repo && neuron memory query ...' still matches correctly. (tags: exec, adr, failure-fix)
+</system-reminder>
+
+Confirms: the pre-command hook (ticket 22) fires for real on a genuine Bash tool call
+through Claude Code, matches this repo's own neuron.yaml onExec rule, and Claude Code
+actually surfaces the resulting additionalContext to the agent turn -- not just passing
+in hook.test.ts.

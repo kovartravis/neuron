@@ -5,22 +5,14 @@
 
 Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`, `architecture`. Architecture scan settings: enabled: true, category: `architecture`, depth: 3.
 
-## 1. Command Execution
-
-Never run raw shell commands for builds, tests, or git operations directly. Wrap them with `neuron exec`:
-```bash
-neuron exec -- <command>
-```
-*Example:* `neuron exec -- npm test` or `neuron exec -- git commit`
-
-## 2. Failure-Fix Recording
+## 1. Failure-Fix Recording
 
 When a failing command/build/test gets fixed, record it before moving on. Write 3-4 sentences: context/symptom, root cause, exact resolution (with a command/code example), any edge cases:
 ```bash
 neuron memory add --category learning "Fix for <error>: <context & symptom>. <verified root cause>. <exact resolution steps & code/command example>." --importance 4
 ```
 
-## 3. Session Conclusion
+## 2. Session Conclusion
 
 Before finishing: log a history entry, plus any new learnings/decisions (3-4 sentences each):
 ```bash

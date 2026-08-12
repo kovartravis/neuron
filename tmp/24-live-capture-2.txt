@@ -1,0 +1,13 @@
+=== Live pre-command injection capture #2 ===
+Command run (matches onExec pattern "^(npm test|git commit)" -> categories: learning, history, decisions, limit: 5):
+  npm test
+
+This run additionally injected a *different* set of real system-reminder blocks than
+capture #1 (which matched only the catch-all ".*" -> learning rule), confirming the
+pre-command hook selects onExec rules by real command-text pattern match, not a fixed
+payload -- e.g. a tree-sitter grammar-delivery learning entry and an onnxruntime-node
+crash learning entry surfaced here that did not surface for the git/cat/sed command in
+capture #1.
+
+Result: 678/678 tests passed, tsc --noEmit clean -- no regression from tickets 22/23,
+matching ticket 23's Answer exactly (678/678 going in).
