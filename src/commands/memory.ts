@@ -163,7 +163,7 @@ export async function handleMemoryCommand(
       console.error('Error: query text is required for memory query');
       process.exit(1);
     }
-    await autoRescanIfDriftDetected(memory, process.cwd());
+    await autoRescanIfDriftDetected(memory);
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
     // `rejected` (ticket 41 / ADR 0012) lets an empty `results` mean "the
     // relevance gate rejected N candidates" rather than being indistinguishable

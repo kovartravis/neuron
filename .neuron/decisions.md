@@ -1246,3 +1246,15 @@ tags:
 taskId: null
 ---
 Ticket 29 (neuron-2.4.0) amends ADR 0012 / ticket 27's relevance-gate acceptance bar: the original '~zero new false-silence' requirement for a second-stage reranker leg is unreachable at any threshold on real LongMemEval-S data (full sweep confirmed the same overlap-too-far distribution shape ticket 39 found for the deprecated cosine floor, on both Xenova/ms-marco-MiniLM-L-6-v2 and the mxbai-rerank-xsmall-v1 backup). Live maintainer decision, made with the swept false-accept/false-silence frontier in hand rather than guessed: accept a real recall cost for a real noise reduction. The reranker leg ships at raw-logit threshold -8 (not the model's own 0 boundary), landing false-accept at 19.4% (from 99.80%) and false-silence at 19.8% (from 0%) — roughly symmetric, not the asymmetric zero-cost win originally specified. Ships unconditionally alongside the lexical leg in queryGated, with no separate config switch for this leg specifically — a reversal of 27's own original Scope item 4 ('wire it in behind a config switch, default off'), decided once real evidence existed rather than assumed in advance. Rationale for no config: the maintainer's explicit call mid-session, not a technical constraint — the threshold itself (RERANKER_ACCEPT_THRESHOLD in src/index.ts) is the tunable surface if a future session wants to revisit the tradeoff point, not a boolean gate.
+
+---
+id: 9995dcb3-a8a8-45b5-8f4d-20e2dd0d30f0
+createdAt: 2026-08-12T23:39:35.514Z
+importance: 4
+tags:
+  - drift
+  - release
+  - wayfinder
+taskId: null
+---
+Ticket 30 (neuron-2.4.0): when autoRescanIfDriftDetected/neuron scan/neuron status derive their scan root, they now resolve it exactly once via the shared src/shared/projectRoot.ts findProjectRoot walk (surfaced through NeuronMemory.getProjectRoot()), rather than each call site deriving its own copy from process.cwd(). This closes a real, twice-confirmed incident class: a CLI invocation from a project-marker-less subdirectory (e.g. any .scratch effort's issues/ dir) could scan a degenerate 0-module topology while the write landed, upward-resolved, in the real project's store. Considered and rejected a second policy for the marker-less-cwd edge case (refuse to auto-rescan at all) in favor of reusing NeuronMemory.open()'s existing upward-walk-then-literal-fallback behavior -- introducing a distinct refuse-mode for scanning specifically would itself be a second, divergent resolution of the same question this ticket exists to unify. Precedent for 'two surfaces must resolve the same way, not drift into two heuristics' already existed in src/shared/textMatch.ts (ticket 43); this is the same pattern applied to project-root discovery, and future scan/storage-root call sites should default their root parameter to memory.getProjectRoot() rather than process.cwd().

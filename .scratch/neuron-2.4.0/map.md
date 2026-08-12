@@ -605,6 +605,28 @@ thin.
   frontier as of this session: `30`, `31`, `32`, `33`, `34`, `35`, `36`,
   `38`, `39`, `40`, `41` (all unclaimed and unblocked); `02`, `04`, `05`
   claimed and in progress; `03`, `42` blocked.
+- **Ticket 30 resolved, 2026-08-12** — picked up as the frontier's lowest
+  id, unblocked. Fixed the traced-to-source `process.cwd()`/storage-root
+  divergence by making them the same resolution rather than two that happen
+  to usually agree: deduplicated `findProjectRoot` into
+  `src/shared/projectRoot.ts`, added `NeuronMemory.getProjectRoot()`, and
+  defaulted `autoRescanIfDriftDetected`/`getArchitecturalDrift`'s
+  `projectRoot` param to it instead of literal `process.cwd()`. Audit (Scope
+  item 4) found the identical bug in `neuron scan`'s own direct invocation
+  and, not originally scoped, in `neuron status`'s drift check — both fixed
+  the same way. Design question on refuse-vs-resolve-upward for a
+  marker-less subdirectory (Scope item 2) resolved by reusing the existing
+  `NeuronMemory.open()` fallback rather than inventing a second policy —
+  see the ticket's own Answer for why a new refuse-mode would have
+  re-created a smaller version of the same bug. Live-verified against this
+  repo's own store by reproducing both historical incidents' exact shape
+  (`neuron exec` run from inside `.scratch/neuron-2.4.0/issues/` itself):
+  correct incremental update, no overwrite, `neuron scan --check` clean
+  after. `npm test` 684/684, `tsc` clean. Didn't unblock anything directly
+  (nothing else was blocked by `30`). True frontier as of this session:
+  `31`, `32`, `33`, `34`, `35`, `36`, `38`, `39`, `40`, `41` (all unclaimed
+  and unblocked); `02`, `04`, `05` claimed and in progress; `03`, `42`
+  blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -646,6 +668,7 @@ thin.
 - [28 — Research: Find a Local ONNX Cross-Encoder Reranker](issues/28-research-local-reranker-model.md) — recommends `Xenova/ms-marco-MiniLM-L-6-v2` (22.7M params, Apache-2.0, confirmed ONNX via the HF Hub files tab, plain-BERT cross-encoder matching this repo's existing `AutoModelForSequenceClassification` pattern), with `mixedbread-ai/mxbai-rerank-xsmall-v1` as a documented backup. Full evaluation, including two real rejections (`jina-reranker-v1-turbo-en`'s unsupported ALiBi architecture despite valid ONNX files; `bge-reranker-v2-m3`'s missing port and oversize), in [28-reranker-research.md](issues/28-reranker-research.md). Unblocks `29`.
 - [29 — Build and Pilot the Reranker Gate Layer](issues/29-build-pilot-reranker-gate.md) — built `28`'s pick as `queryGated`'s second conjunct; failed `27`'s original bar at threshold 0 (61.60% false-silence on real LongMemEval-S, vs. a target of ~zero), and a full threshold sweep confirmed no cutoff reaches that bar — same structural overlap `39` found for the cosine floor. **Amends `27`'s bar**, live maintainer call with the frontier in hand: ships at threshold -8 (false-accept 99.80%→19.4%, false-silence 0%→19.8%), unconditionally alongside the lexical leg, no separate config switch — a reversal of `27`'s own original "config switch, default off" plan once real evidence was in hand.
 - [11 — Re-run the Git-Log A/B Against the Real (Semantic) Mechanism](issues/11-rerun-gitlog-ab-semantic-mechanism.md) — `14`'s premise (hook-injected git-log search beats the agent's own `git log` calls) carries over to the real shipped mechanism; its exact numbers don't. Live 10-session run: `semantic` matched `oracle-gitlog`'s 0% failure and beat `agent`'s 11.1%, with token usage landing between the two (~39% below `agent`, ~75% above `oracle-gitlog`) — the real-vs-oracle gap `39` predicted, now measured. That token gap doesn't clear the harness's own conservative noise-floor guard given wide session variance, reported as directional rather than a confirmed percentage.
+- [30 — Fix `autoRescanIfDriftDetected`'s cwd/storage Project-Root Mismatch](issues/30-fix-autorescan-cwd-storage-mismatch.md) — made the scan root and the storage root the same resolution instead of two that happen to usually agree: deduplicated `findProjectRoot` into `src/shared/projectRoot.ts`, added `NeuronMemory.getProjectRoot()`, and defaulted `autoRescanIfDriftDetected`/`getArchitecturalDrift` to it. Audit found and fixed the identical bug in `neuron scan`'s direct invocation and `neuron status`'s drift check, both outside the ticket's original two named call sites. Design question on a subdirectory with no resolvable root answered by reusing `NeuronMemory.open()`'s existing upward-walk-then-fallback behavior rather than inventing a second policy. Live-verified by reproducing both historical incidents' exact shape (`neuron exec` run from inside this map's own `issues/` directory) — correct incremental update, no overwrite, `neuron scan --check` clean after. `npm test` 684/684, `tsc` clean.
 
 ## Not yet specified
 

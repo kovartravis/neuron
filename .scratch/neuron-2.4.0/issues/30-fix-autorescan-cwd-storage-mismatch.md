@@ -1,5 +1,5 @@
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: none
 Band: context cost
 
@@ -92,7 +92,74 @@ just by running a wrapped command from the wrong subdirectory.
 
 ## Answer
 
-(none yet)
+Fixed by making the scan root and the storage root **the same value**, not
+two independent resolutions that happen to usually agree — Scope item 1's
+first option, not the thread-it-down alternative, because a shared function
+generalizes to every future call site instead of just the two existing ones.
+
+- **Deduplicated `findProjectRoot`** into a new `src/shared/projectRoot.ts`
+  (matching the existing `shared/textMatch.ts` precedent for "two surfaces
+  must resolve the same way, not drift into two heuristics"). It was
+  byte-for-byte duplicated between a module-private copy in `src/index.ts`
+  and an exported copy in `src/commands/utils.ts`; both now import the one
+  function, and `commands/utils.ts` re-exports it so `cli.ts`'s existing
+  import is unaffected.
+- **Added `NeuronMemory.getProjectRoot()`**, the same public-getter pattern
+  as `getConfig()`/`getProjectId()` right above it — the one thing every
+  other resolution must now match rather than re-derive.
+- **`autoRescanIfDriftDetected`** (`src/scanner/diff.ts`) and its sibling
+  `getArchitecturalDrift` (same divergence risk, same fix, no live caller
+  relied on its default) now default `projectRoot` to
+  `memory.getProjectRoot()` instead of literal `process.cwd()`. Both real
+  call sites (`exec.ts`, `memory.ts`) now call `autoRescanIfDriftDetected(memory)`
+  with no second argument at all — the redundant, divergence-prone
+  `process.cwd()` arg is gone, not just fixed in place.
+- **`neuron scan`'s own direct invocation** (Scope item 4's audit) had the
+  identical bug: `handleScanCommand`'s `projectRoot = process.cwd()` fed
+  both the topology scan and (when no `memory` was passed in) a fresh
+  `NeuronMemory.open(projectRoot)` — same silent-divergence shape. Fixed to
+  resolve upward via the shared `findProjectRoot` (or take `memory`'s own
+  root when one was passed in).
+- **`neuron status`'s drift check** (`status.ts`) had the same bug in a read
+  path, found during the audit rather than left for a future ticket:
+  `getArchitecturalDrift(memory, process.cwd())` would show a fabricated
+  diff if `status` were ever run from a marker-less subdirectory. Now passes
+  `memory.getProjectRoot()`.
+- **Design question (Scope item 2)**: kept the existing fallback semantics
+  rather than adding a new refuse-to-scan mode. `findProjectRoot` already
+  resolves upward to the nearest `package.json`/`.git` and only falls back
+  to the literal start directory when *no* ancestor has one — behavior
+  `NeuronMemory.open()` has always had. Making the scan root reuse that same
+  function (rather than inventing a second policy) was the whole point of
+  Scope item 1's "provably the same resolution," so introducing a divergent
+  refuse-mode for scanning specifically would have re-created a smaller
+  version of the exact bug this ticket fixes. Not chased down as a separate
+  maintainer confirmation since it's a reuse of settled behavior, not a new
+  design.
+- **Regression test** (Scope item 3): added to
+  `src/scanner/implicit-rebaseline.test.ts`, the existing fixture for this
+  exact shape (a real tmp project + a fidelity/drift rescan). Mocks
+  `process.cwd()` to a project-marker-less `issues/` subdirectory nested
+  inside the real tmp project — literally the incident shape — and asserts
+  `autoRescanIfDriftDetected(memory)` (no explicit root, relying on the new
+  default) still re-baselines the *real* project (correct name, correct
+  file count), not a degenerate 0-module scan of the subdirectory.
+- **Live-verified against this repo's own store**, reproducing both
+  historical incidents' exact shape: ran `neuron exec -- git status --short`
+  (global binary confirmed `npm link`-ed to this build first, per the
+  standing stale-binary trap) from inside
+  `.scratch/neuron-2.4.0/issues/` itself — a real, unmarked subdirectory of
+  this repo. Drift was detected and re-scanned correctly: `.neuron/architecture.md`
+  picked up exactly the one real change (`src/shared/projectRoot.ts` newly
+  added), still describing `@kovartravis/neuron`, still 15 modules — no
+  overwrite, no degenerate card. Followed with `neuron scan --check`,
+  exit 0, "In Sync".
+- `npm test` 684/684 (was 683), `tsc --noEmit` clean.
+
+Files: `src/shared/projectRoot.ts` (new), `src/index.ts`, `src/commands/utils.ts`,
+`src/commands/scan.ts`, `src/commands/status.ts`, `src/commands/exec.ts`,
+`src/commands/memory.ts`, `src/scanner/diff.ts`,
+`src/scanner/implicit-rebaseline.test.ts`.
 
 ## Comments
 

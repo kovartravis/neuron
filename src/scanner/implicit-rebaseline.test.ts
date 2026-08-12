@@ -114,4 +114,43 @@ describe('implicit re-baseline on fidelity mismatch', () => {
     expect(rescanned).toBe(true);
     expect(said).toContain('drift detected');
   });
+
+  it('resolves the scan root from the memory instance, not a stale process.cwd() (ticket 30)', async () => {
+    await ingestScanResults(memory, { projectDir: tmpDir, category: 'architecture' });
+
+    // The exact shape that overwrote this repo's own architecture card
+    // twice: the CLI process's cwd is a project-marker-less subdirectory
+    // (any bare `.scratch/*/issues/` dir qualifies) nested inside the real
+    // project. `memory` itself stays correctly rooted at `tmpDir` — only a
+    // caller re-deriving the scan root from literal `process.cwd()` would
+    // diverge from it.
+    const bareSubDir = path.join(tmpDir, 'issues');
+    fs.mkdirSync(bareSubDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpDir, 'src', 'extra.ts'),
+      'export function brandNewExport(): number { return 1; }\n',
+      'utf8'
+    );
+
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(bareSubDir);
+    let rescanned: boolean;
+    try {
+      // No explicit projectRoot: relies on the default resolving from
+      // `memory.getProjectRoot()`, exactly as the real `exec`/`memory query`
+      // call sites now do.
+      rescanned = await autoRescanIfDriftDetected(memory);
+    } finally {
+      cwdSpy.mockRestore();
+    }
+
+    expect(rescanned).toBe(true);
+    const card = await readBaseline();
+    // A degenerate scan of `bareSubDir` (no package.json/.git, no src/) would
+    // silently overwrite the real card with a 0-module topology named after
+    // the subdirectory ("issues") instead of the real project, and would
+    // miss `extra.ts` entirely — the failure mode this ticket fixes.
+    expect(card).toContain('implicit-project is a');
+    expect(card).toContain('(2 files)');
+    expect(card).not.toContain('0 primary architectural modules');
+  });
 });

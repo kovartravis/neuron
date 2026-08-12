@@ -25,7 +25,7 @@ export async function handleExecCommand(args: string[]): Promise<void> {
   const memory = NeuronMemory.open(process.cwd());
 
   if (config.scan?.enabled) {
-    await autoRescanIfDriftDetected(memory, process.cwd());
+    await autoRescanIfDriftDetected(memory);
   }
 
   // The relevance gate (ticket 41 / ADR 0012) lives in `NeuronMemory.queryGated`,

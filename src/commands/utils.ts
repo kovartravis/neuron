@@ -1,4 +1,3 @@
-import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { suggestClosest } from '../shared/textMatch.js';
@@ -11,19 +10,7 @@ export {
   type AgentHarness
 } from '../config/index.js';
 
-export function findProjectRoot(startDir: string): { root: string; name: string } {
-  let dir = path.resolve(startDir);
-  while (true) {
-    if (fs.existsSync(path.join(dir, 'package.json')) || fs.existsSync(path.join(dir, '.git'))) {
-      return { root: dir, name: path.basename(dir) };
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      return { root: startDir, name: path.basename(startDir) };
-    }
-    dir = parent;
-  }
-}
+export { findProjectRoot } from '../shared/projectRoot.js';
 
 export function drawBox(lines: string[]): string {
   const getVisualWidth = (str: string) => {

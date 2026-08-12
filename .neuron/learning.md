@@ -1532,3 +1532,15 @@ tags:
 taskId: null
 ---
 Fix for a blocked neuron.yaml field declaration: wayfinder ticket 25 (neuron-2.4.0) tried to declare a tickets category field named 'type' per ADR 0018's literal wording, but validateDeclaredFields (src/config/neuronYaml.ts) hard-errors with 'would become the flag --type, which collides with a reserved built-in flag' because --type is already in RESERVED_FLAG_NAMES. Root cause: ADR 0018 was written without cross-checking the field name against the existing CLI flag vocabulary. Resolution: renamed the declared field to 'kind' (same enum values: research/prototype/grilling/task), documented the rename inline in neuron.yaml and in docs/agents/issue-tracker.md so it doesn't read as unexplained drift from the ADR text. Edge case: any future declared-field name should be checked against RESERVED_FLAG_NAMES and RESERVED_COLUMN_NAMES in neuronYaml.ts before it's written into an ADR, not after.
+
+---
+id: 4751843e-629b-4eb7-aa85-c55b5e43adc1
+createdAt: 2026-08-12T23:39:13.158Z
+importance: 4
+tags:
+  - drift
+  - failure-fix
+  - release
+taskId: null
+---
+Fix for autoRescanIfDriftDetected silently overwriting the wrong project's architecture card (neuron-2.4.0 ticket 30): running a wrapped command (neuron exec / memory query) from a project-marker-less subdirectory (any bare .scratch/<effort>/issues/ dir qualifies) computed the scan root as literal process.cwd() while the NeuronMemory instance writing the result was opened via NeuronMemory.open()'s own separate upward-walking package.json/.git resolution -- the two silently diverged, so a degenerate 0-module scan of the subdirectory got ingested into the real project's store. Confirmed live twice on this repo's own store before the fix (232 and 406 lines of the real architecture card destroyed). Root cause: two independent, textually-duplicated implementations of project-root discovery (src/index.ts and src/commands/utils.ts) plus several call sites (autoRescanIfDriftDetected, getArchitecturalDrift, neuron scan's own handleScanCommand, neuron status's drift check) that re-derived the root from process.cwd() instead of reusing NeuronMemory's already-resolved one. Fixed by deduplicating findProjectRoot into src/shared/projectRoot.ts, adding NeuronMemory.getProjectRoot(), and defaulting every one of those call sites' projectRoot parameter to memory.getProjectRoot() instead of process.cwd() -- e.g. 'projectRoot: string = memory.getProjectRoot()' in src/scanner/diff.ts. Edge case: when the CLI cwd has no package.json/.git anywhere in its ancestry, findProjectRoot's existing fallback (return the literal start directory) is intentionally kept rather than adding a new refuse-to-scan mode -- introducing a second policy for scanning specifically would have re-created a smaller version of the same divergence bug.

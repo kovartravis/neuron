@@ -152,7 +152,10 @@ export async function handleStatusCommand(memory: NeuronMemory, args: string[] =
 
   if (config.scan?.enabled) {
     try {
-      const diff = await getArchitecturalDrift(memory, process.cwd());
+      // memory's own resolved root, not literal process.cwd() — same
+      // scan-root/storage-root divergence class as ticket 30 fixed for
+      // autoRescanIfDriftDetected and neuron scan.
+      const diff = await getArchitecturalDrift(memory, memory.getProjectRoot());
       status.drift = {
         hasDrift: diff.hasDrift,
         changesCount: diff.totalChangesCount,

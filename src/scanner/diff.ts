@@ -360,7 +360,10 @@ export function formatArchitecturalDiffMarkdown(diff: ArchitecturalDiff): string
 
 export async function getArchitecturalDrift(
   memory: NeuronMemory,
-  projectRoot: string = process.cwd()
+  // Same fix as `autoRescanIfDriftDetected` below (ticket 30): default to
+  // `memory`'s own resolved root, not a literal `process.cwd()` that could
+  // diverge from where `memory`'s storage actually lives.
+  projectRoot: string = memory.getProjectRoot()
 ): Promise<ArchitecturalDiff> {
   const config = loadNeuronConfig(projectRoot);
   const category = config.scan?.category || 'architecture';
@@ -409,7 +412,12 @@ export async function getArchitecturalDrift(
 
 export async function autoRescanIfDriftDetected(
   memory: NeuronMemory,
-  projectRoot: string = process.cwd()
+  // Defaults to `memory`'s own upward-resolved root, never literal
+  // `process.cwd()` — a caller running from a project-marker-less
+  // subdirectory (any bare `.scratch/*/issues/` dir qualifies) would
+  // otherwise scan and ingest a degenerate topology into the real project's
+  // store while `memory` itself stays correctly rooted (ticket 30).
+  projectRoot: string = memory.getProjectRoot()
 ): Promise<boolean> {
   const config = loadNeuronConfig(projectRoot);
   if (!config.scan?.enabled) return false;

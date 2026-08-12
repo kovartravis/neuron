@@ -54,6 +54,7 @@ import {
 } from './config/neuronYaml.js';
 import { resolveAllCategoryRoots } from './config/categoryPath.js';
 import { suggestClosest } from './shared/textMatch.js';
+import { findProjectRoot } from './shared/projectRoot.js';
 import { getHeadSha, listAllCommits, listCommitsSince } from './harnesses/gitLog.js';
 
 /** A `searchGitLog` hit: an indexed commit that cleared the ADR 0012-style relevance gate. */
@@ -66,20 +67,6 @@ export interface GitLogHit {
 }
 
 const GIT_LOG_LAST_INDEXED_SHA_KEY = 'git_log_last_indexed_sha';
-
-function findProjectRoot(startDir: string): { root: string; name: string } {
-  let dir = path.resolve(startDir);
-  while (true) {
-    if (fs.existsSync(path.join(dir, 'package.json')) || fs.existsSync(path.join(dir, '.git'))) {
-      return { root: dir, name: path.basename(dir) };
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      return { root: startDir, name: path.basename(startDir) };
-    }
-    dir = parent;
-  }
-}
 
 /**
  * Resolve a `category` from a mutation/query, supporting the deprecated `kind` field.
@@ -232,6 +219,8 @@ export class NeuronMemory {
 
   public getDb(): any { return this.db; }
   public getProjectId(): string { return this.projectId; }
+  /** The upward-resolved project root this instance's storage lives under (ticket 30) — the one other resolution of `process.cwd()` (a scan root, a rescan trigger) must match, not re-derive. */
+  public getProjectRoot(): string { return this.projectRoot; }
   public getEmbedder(): Embedder { return this.embedder; }
   /** The loaded, validated `neuron.yaml` — the CLI layer reads it for dynamic `--help` text and the declared-field CLI flag surface (ticket 43). */
   public getConfig(): NeuronConfig { return this.config; }

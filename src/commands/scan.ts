@@ -1,4 +1,4 @@
-import { parseFlags, SCAN_HELP } from './utils.js';
+import { parseFlags, SCAN_HELP, findProjectRoot } from './utils.js';
 import { scanProjectTopology } from '../scanner/analyzer.js';
 import { ingestScanResults } from '../scanner/ingest.js';
 import { getArchitecturalDrift, formatArchitecturalDiffMarkdown } from '../scanner/diff.js';
@@ -14,7 +14,11 @@ export async function handleScanCommand(args: string[], memory?: NeuronMemory): 
   }
 
   const { options } = parseFlags(args.slice(1));
-  const projectRoot = process.cwd();
+  // Upward-resolved, not literal `process.cwd()` — the same divergence
+  // `autoRescanIfDriftDetected` had (ticket 30): a passed-in `memory` is
+  // already rooted here via `NeuronMemory.open()`'s own identical walk, and
+  // a freshly opened one below must land on the same root this scan uses.
+  const projectRoot = memory ? memory.getProjectRoot() : findProjectRoot(process.cwd()).root;
   const config = loadNeuronConfig(projectRoot);
   const depth = options.depth || options.limit || config.scan?.depth || 3;
   const category = options.category || config.scan?.category || 'architecture';

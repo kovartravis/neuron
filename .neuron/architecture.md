@@ -65,7 +65,7 @@ Default: `ast/2`
 - **harnesses** — `src/harnesses` (22 files)
 - **models** — `src/models` (4 files)
 - **scanner** — `src/scanner` (18 files)
-- **shared** — `src/shared` (1 file)
+- **shared** — `src/shared` (2 files)
 - **storage** — `src/storage` (13 files)
 - **ui** — `src/ui` (4 files)
 - **e2e** — `test/e2e` (10 files)
@@ -180,7 +180,7 @@ Primary commands module containing core application capabilities.
 - **`src/commands/ui.test.ts`**: Methods: describe(), afterEach(), close(), it().
 - **`src/commands/ui.ts`** (Exports: `UiCommandOptions, handleUiCommand`): Function handleUiCommand (Methods: parseUiArgs(), parseInt(), findFreePort(), Promise()).
 - **`src/commands/utils.test.ts`**: Methods: describe(), it(), spyOn(), mockImplementation().
-- **`src/commands/utils.ts`** (Exports: `findProjectRoot, drawBox, parseFlags, updateMarkdownFile, getMemoryHelp`): Every option `parseFlags` understands with no `neuron.yaml` involved. Used to reject unrecognised flags and to suggest a correction — a typo'd flag used to be pushed into `positionals` and silently discarded, so `--importanc 5` looked like it worked and wrote the default instead. Re-exported from `config/neuronYaml.ts`, which is also where `validateNeuronYaml` checks a declared field's flag against this same list at config-load time (ticket 43) — one vocabulary, not two that can drift.
+- **`src/commands/utils.ts`** (Exports: `drawBox, parseFlags, updateMarkdownFile, getMemoryHelp`): Every option `parseFlags` understands with no `neuron.yaml` involved. Used to reject unrecognised flags and to suggest a correction — a typo'd flag used to be pushed into `positionals` and silently discarded, so `--importanc 5` looked like it worked and wrote the default instead. Re-exported from `config/neuronYaml.ts`, which is also where `validateNeuronYaml` checks a declared field's flag against this same list at config-load time (ticket 43) — one vocabulary, not two that can drift.
 
 ---
 id: 7897e42e-c8c6-5178-0018-f26ebcd3a5f3
@@ -360,6 +360,7 @@ taskId: null
 Primary shared module containing core application capabilities.
 
 **Key Components & Export Contracts:**
+- **`src/shared/projectRoot.ts`** (Exports: `findProjectRoot`): Single shared implementation of upward project-root discovery. Was duplicated byte-for-byte between `NeuronMemory.open()` (src/index.ts) and `commands/utils.ts` until ticket 30 (neuron-2.4.0): `autoRescanIfDriftDetected` and `neuron scan` derived their scan root from literal `process.cwd()` instead of this walk, so a CLI invocation from a project-marker-less subdirectory (any bare `.scratch` effort's `issues` dir qualifies) could scan and ingest a degenerate topology into the real project's store. Both surfaces now import this one function so the scan root and the storage root are provably the same resolution.
 - **`src/shared/textMatch.ts`** (Exports: `editDistance, suggestClosest`): Cheap edit distance, only ever called on an error path (a typo'd CLI flag or enum value). Shared between `commands/utils.ts` (unknown-flag suggestions) and `NeuronMemory`'s field-schema enforcement (enum-value suggestions, ticket 43) so the two surfaces suggest corrections the same way rather than drifting into two slightly different heuristics.
 
 ---
