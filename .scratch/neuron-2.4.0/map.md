@@ -418,6 +418,15 @@ thin.
   of this session (excluding `11`, claimed but blocked on credentials):
   `25`, `28`, `30` (all unclaimed and unblocked); `02`, `04`, `05` claimed
   and in progress; `03`, `13`, `16`, `26`, `29` blocked.
+- **Ticket 31 added, 2026-08-12**, direct maintainer request, filed as a bug
+  from `24`'s own found-and-reverted side effect rather than left as a
+  workaround-only learning entry: [31 — `neuron init` Silently Onboards
+  Every Detected Harness, Not Just the One In
+  Use](issues/31-unscoped-init-silently-onboards-harnesses.md). Unclaimed,
+  unblocked. True frontier as of this session (excluding `11`, claimed but
+  blocked on credentials): `25`, `28`, `30`, `31` (all unclaimed and
+  unblocked); `02`, `04`, `05` claimed and in progress; `03`, `13`, `16`,
+  `26`, `29` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
