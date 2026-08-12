@@ -454,6 +454,25 @@ thin.
   blocked on credentials): `25`, `28`, `30`, `31` (all unclaimed and
   unblocked); `02`, `04`, `05` claimed and in progress; `03`, `26`, `29`
   blocked.
+- **Five tickets graduated, 2026-08-12, direct maintainer request**: all
+  five of [13](13-audit-dogfooding-gaps.md)'s audit findings (F1a-F5),
+  each sized and unblocked already per the audit itself, so graduated
+  straight to implementation tickets rather than a further design pass:
+  [32 — CI Architecture-Drift Gate](issues/32-ci-architecture-drift-gate.md)
+  (F1a), [33 — Detect a Stale Global/Linked `neuron` Binary Against the
+  Working Tree](issues/33-binary-version-mismatch-detection.md) (F2),
+  [34 — Detect `CLAUDE.md` Protocol-Block Drift From
+  `neuron.yaml`](issues/34-protocol-block-drift-check.md) (F3),
+  [35 — Scheduled Store-Health
+  Check](issues/35-scheduled-store-health-check.md) (F4), and
+  [36 — CI-Wire the Free Dry-Run Benchmark
+  Harnesses](issues/36-ci-wire-free-dryrun-benchmarks.md) (F5). F1b (CI
+  write-back) deliberately did not graduate — the audit recommends against
+  it outright. All five are mutually independent, unblocked. True frontier
+  as of this session (excluding `11`, claimed but blocked on credentials):
+  `25`, `28`, `30`, `31`, `32`, `33`, `34`, `35`, `36` (all unclaimed and
+  unblocked); `02`, `04`, `05` claimed and in progress; `03`, `26`, `29`
+  blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
