@@ -2623,3 +2623,15 @@ tags:
 taskId: null
 ---
 Fix for silent concurrent-write data loss in MdStorageAdapter: two racing neuron memory add calls (separate processes or same-process Promise.all) each read a category's .md file before either writes, so whichever atomicWriteFile/rename lands last silently discards the other's change while both callers still see status: created. Root cause was an unlocked read-modify-write cycle in writeEntry/updateEntry/deleteEntry. Fixed by wrapping each method's whole cycle in a per-category fs.mkdirSync-based lock (src/storage/mdStorageAdapter.ts, MdStorageAdapter.withCategoryLock/acquireLock) — mkdir is atomic at the OS level so it serializes both cross-process and same-process racers with no new dependency, and a lock older than 30s is treated as a crashed holder's and stolen rather than deadlocking forever. Layered in a read-back-and-byte-compare verifyWrite() after every write regardless, so any other way the invariant breaks throws loudly instead of reporting false success. Edge case: tests must fire genuine Promise.all concurrency, not sequential awaits, to actually reproduce the race — verified by reverting just the fix file and confirming the new tests fail with real data loss before restoring it.
+
+---
+id: 9dcfb3bc-1dc8-4d60-a5b5-a2be1acd372e
+createdAt: 2026-08-12T03:41:03.202Z
+importance: 4
+tags:
+  - failure-fix
+  - adr
+  - rc2
+taskId: null
+---
+Adding a new always-injecting LifecyclePoint (pre-command, ticket 22 neuron-2.4.0) silently corrupted init.ts's recall-fidelity report (resolveHarnessFidelity/buildHarnessFidelityReport), which computed wired-ness by filtering the full CapabilityMap for injects===true. Root cause: those functions conflate 'every injecting point' with 'recall,' an assumption that held while LifecyclePoint had only session-start/pre-prompt/context-reset but breaks the moment a fourth, differently-purposed injecting point (pre-command, not part of recall) is added — an upgraded-but-not-re-init'd project would report recall as newly un-wired purely because the new point wasn't installed yet, even though recall itself never changed. Fix: scope those two functions to a new RECALL_LIFECYCLE_POINTS constant (session-start/pre-prompt/context-reset) instead of the raw LIFECYCLE_POINTS/full capability map — e.g. const RECALL_LIFECYCLE_POINTS: readonly LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset']; then filter against that instead of LIFECYCLE_POINTS. Any future LifecyclePoint addition that isn't a recall mechanism (as pre-command wasn't) needs the same audit of every LIFECYCLE_POINTS.filter(injects===true)-shaped consumer, not just the adapters' own capability() methods.

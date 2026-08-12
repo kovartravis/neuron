@@ -32,6 +32,17 @@ export const PRE_PROMPT_CHAR_BUDGET = 1500;
  */
 export const GIT_LOG_CHAR_BUDGET = 1000;
 
+/**
+ * Ticket 22 (neuron-2.4.0): the `pre-command` hook's own fixed cap. Not
+ * carved out of the session-ledger epoch budget the other points share —
+ * `pre-command` fires per tool call rather than per turn, has no ledger of
+ * its own to dedupe against, and its content (relevant `onExec` matches for
+ * the command about to run) is a different kind of information than
+ * recall's turn-relevant memories. Sized the same as `PRE_PROMPT_CHAR_BUDGET`
+ * since it packs the same kind of entries via the same `buildPayload`.
+ */
+export const PRE_COMMAND_CHAR_BUDGET = 1500;
+
 export function formatMemoryEntry(m: Memory): string {
   const tags = m.tags && m.tags.length > 0 ? ` (tags: ${m.tags.join(', ')})` : '';
   return `- [${m.category}] ${m.content}${tags}`;

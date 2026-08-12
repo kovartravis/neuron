@@ -34,12 +34,18 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
     expect(capability['session-start'].payloadCapChars).toBe('unknown');
     expect(capability['pre-prompt'].injects).toBe(false);
     expect(capability['context-reset'].injects).toBe(false);
+    expect(capability['pre-command'].injects).toBe(false);
     expect(deriveFidelity(capability)).toBe('best-effort');
   });
 
-  it('installs a hook for session-start only, leaving pre-prompt and context-reset untouched', async () => {
+  it('installs a hook for session-start only, leaving pre-prompt, context-reset, and pre-command untouched', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
-    expect(result.points).toEqual({ 'session-start': 'written', 'pre-prompt': 'unchanged', 'context-reset': 'unchanged' });
+    expect(result.points).toEqual({
+      'session-start': 'written',
+      'pre-prompt': 'unchanged',
+      'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
+    });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.version).toBeUndefined(); // neuron never invents a version field that isn't already present
@@ -58,6 +64,7 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
       'session-start': 'unchanged',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
+      'pre-command': 'unchanged',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));

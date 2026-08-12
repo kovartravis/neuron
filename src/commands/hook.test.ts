@@ -302,6 +302,66 @@ describe('CLI Command: hook', () => {
     expect(result.status).toBe(0);
   });
 
+  // --- Ticket 22 (neuron-2.4.0): the pre-command hook — the same gated
+  // onExec lookup `neuron exec` performs (exec.ts's resolveExecCategories/
+  // queryGated), fired automatically on a Bash tool call instead of only
+  // when the agent remembers to type `neuron exec -- <command>`. ---
+  describe('pre-command', () => {
+    it('injects a real onExec match via PreToolUse hookSpecificOutput', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const result = run(
+        ['hook', 'claude-code', 'pre-command'],
+        JSON.stringify({ session_id: 's1', tool_name: 'Bash', tool_input: { command: 'npm run migrate' } })
+      );
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+      expect(parsed.hookSpecificOutput.additionalContext).toContain('npm run migrate before deploying');
+    });
+
+    it('stays silent when nothing in the store matches the command (no hedge, per ADR 0014\'s fail-safe posture)', () => {
+      // Mirrors exec.test.ts's own "0 relevant learning(s)" case: the mock
+      // embedder zeroes every vector, so a candidate survives only via the
+      // lexical/FTS leg — this content shares no token with the command below.
+      execAdd('Prefer WAL journal mode for concurrent writers', 'learning');
+      const result = run(
+        ['hook', 'claude-code', 'pre-command'],
+        JSON.stringify({ session_id: 's1', tool_name: 'Bash', tool_input: { command: 'echo unrelated-token-xyz' } })
+      );
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('is a no-op for a non-Bash tool call, even one whose arguments would otherwise match', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const result = run(
+        ['hook', 'claude-code', 'pre-command'],
+        JSON.stringify({
+          session_id: 's1',
+          tool_name: 'Edit',
+          tool_input: { file_path: '/tmp/x', old_string: 'npm run migrate before deploying' },
+        })
+      );
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('degrades silently when tool_input.command is missing', () => {
+      const result = run(
+        ['hook', 'claude-code', 'pre-command'],
+        JSON.stringify({ session_id: 's1', tool_name: 'Bash', tool_input: {} })
+      );
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('degrades silently (exit 0, empty stdout) on malformed stdin rather than crashing', () => {
+      const result = run(['hook', 'claude-code', 'pre-command'], 'not json at all {{{');
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+  });
+
   // --- Ticket 13: Codex adapter — same runHook() codepath, confirmed identical
   // stdin fields and stdout envelope, so coverage mirrors claude-code's above. ---
   describe('codex', () => {
@@ -367,6 +427,18 @@ describe('CLI Command: hook', () => {
       const result = run(['hook', 'codex', 'pre-prompt'], JSON.stringify({ session_id: 's1' }));
       expect(result.status).toBe(0);
       expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('injects a real onExec match via PreToolUse for pre-command', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const result = run(
+        ['hook', 'codex', 'pre-command'],
+        JSON.stringify({ session_id: 's1', tool_name: 'Bash', tool_input: { command: 'npm run migrate' } })
+      );
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+      expect(parsed.hookSpecificOutput.additionalContext).toContain('npm run migrate before deploying');
     });
 
     it('keeps its own session ledger independent of a claude-code session with the same id, avoiding double-injection races across harnesses', () => {

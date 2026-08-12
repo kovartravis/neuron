@@ -1,5 +1,5 @@
 import { NeuronMemory, GitLogHit } from '../index.js';
-import { loadConfig } from '../config/neuronYaml.js';
+import { loadConfig, resolveExecCategories } from '../config/neuronYaml.js';
 import { withTimeout } from '../components/timeout.js';
 import { blueprintCardId, moduleCardId, parseModuleListFromIndex } from '../scanner/ingest.js';
 import { compressArchitectureCard } from '../scanner/compressCard.js';
@@ -20,6 +20,7 @@ import {
   SESSION_START_CHAR_BUDGET,
   PRE_PROMPT_CHAR_BUDGET,
   GIT_LOG_CHAR_BUDGET,
+  PRE_COMMAND_CHAR_BUDGET,
   LifecyclePoint,
 } from '../harnesses/index.js';
 
@@ -146,9 +147,10 @@ const HOOK_TIMEOUT_MS: Record<LifecyclePoint, number> = {
   'session-start': 15000,
   'pre-prompt': 8000,
   'context-reset': 3000,
+  'pre-command': 8000,
 };
 
-const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset'];
+const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset', 'pre-command'];
 
 /**
  * Claude Code and Codex share the same stdin fields (`session_id`, `prompt`)
@@ -241,6 +243,21 @@ export async function handleHookCommand(args: string[]): Promise<void> {
 }
 
 /**
+ * Confirmed identical `tool_name`/`tool_input.command` stdin shape on both
+ * Claude Code and Codex CLI (ticket 22, neuron-2.4.0, direct-fetch against
+ * each harness's own hooks docs) — same fields `runPostToolUse` below
+ * already reads for its own `Bash` check. Returns `undefined` for any other
+ * tool (file edits, MCP calls, etc.), which every caller treats as a no-op.
+ */
+function extractBashCommand(input: Record<string, unknown>): string | undefined {
+  const toolName = typeof input.tool_name === 'string' ? input.tool_name : undefined;
+  const toolInput = input.tool_input && typeof input.tool_input === 'object' ? (input.tool_input as Record<string, unknown>) : undefined;
+  const command = toolInput && typeof toolInput.command === 'string' ? toolInput.command : undefined;
+  if (toolName !== 'Bash' || !command || !command.trim()) return undefined;
+  return command;
+}
+
+/**
  * Ticket 07 (neuron-2.4.0): records whether a `Bash` tool call matches a
  * `neuron memory query` command, for `hintFollowLog.ts`'s analysis pass to
  * join against `fired` events by session id. Measurement-only — no
@@ -258,10 +275,8 @@ async function runPostToolUse(projectDir: string): Promise<void> {
     input = {};
   }
   const sessionId = typeof input.session_id === 'string' ? input.session_id : undefined;
-  const toolName = typeof input.tool_name === 'string' ? input.tool_name : undefined;
-  const toolInput = input.tool_input && typeof input.tool_input === 'object' ? (input.tool_input as Record<string, unknown>) : undefined;
-  const command = toolInput && typeof toolInput.command === 'string' ? toolInput.command : undefined;
-  if (!sessionId || toolName !== 'Bash' || !command) return;
+  const command = extractBashCommand(input);
+  if (!sessionId || !command) return;
   recordToolUse(projectDir, sessionId, command);
 }
 
@@ -309,6 +324,27 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
       if (!text) return;
       if (sessionId) recordSessionStartInjection(projectDir, sessionId, includedIds, text.length);
       emit(harness, 'SessionStart', text);
+      return;
+    }
+
+    if (point === 'pre-command') {
+      // Non-Bash tool calls (file edits, MCP calls, etc.) are a no-op, not a
+      // query — the ADR 0014 amendment's own scope is shell/bash commands
+      // only, mirroring `neuron exec`'s CLI surface exactly.
+      const command = extractBashCommand(input);
+      if (!command) return;
+
+      // Reuses `neuron exec`'s own category-matching/gated-query path
+      // (`exec.ts`) verbatim — the hook is a second trigger for the same
+      // lookup, not a second implementation of it. Deliberately no epoch/
+      // ledger accounting (unlike session-start/pre-prompt): this fires per
+      // tool call rather than per turn and has no ledger of its own to
+      // dedupe or budget against yet.
+      const { categories, limit } = resolveExecCategories(config, command);
+      const { results } = await memory.queryGated({ text: command, categories, limit });
+      const { text } = buildPayload(results, PRE_COMMAND_CHAR_BUDGET);
+      if (!text) return;
+      emit(harness, 'PreToolUse', text);
       return;
     }
 

@@ -28,7 +28,7 @@ import {
   UninstallResult,
   deriveFidelity,
   FidelityLabel,
-  LIFECYCLE_POINTS,
+  LifecyclePoint,
 } from '../harnesses/index.js';
 import {
   generateProtocolBlock,
@@ -39,6 +39,19 @@ import {
 import type { NeuronConfig } from '../config/neuronYaml.js';
 
 export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
+
+/**
+ * The three points `recallStep()`/this file's own fidelity reporting have
+ * always meant by "recall" — deliberately excludes `pre-command` (ticket 22,
+ * neuron-2.4.0). Filtering the full `LIFECYCLE_POINTS` instead would mean a
+ * harness upgraded to a neuron version that knows about `pre-command` but
+ * not yet re-`init`'d reports recall as un-wired the moment `pre-command`
+ * isn't registered, even though session-start/pre-prompt recall itself
+ * never changed — exactly the kind of self-inflicted regression the
+ * capability-map design exists to avoid. `pre-command`'s own wiring is a
+ * separate question for `execStep()` (ticket 23) to answer, not this one.
+ */
+const RECALL_LIFECYCLE_POINTS: readonly LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset'];
 
 /** Every harness with a real adapter. */
 function getAdapters(harnessFilter?: string[]): HarnessAdapter[] {
@@ -182,12 +195,8 @@ function resolveHarnessFidelity(
 
   const capability = adapter.capability();
   const verification = adapter.verify(projectDir);
-  const injectingPoints = Object.entries(capability)
-    .filter(([, record]) => record.injects === true)
-    .map(([point]) => point);
-  const allRegistered = injectingPoints.every(
-    point => verification[point as keyof typeof verification]?.registered
-  );
+  const injectingPoints = RECALL_LIFECYCLE_POINTS.filter(point => capability[point].injects === true);
+  const allRegistered = injectingPoints.every(point => verification[point]?.registered);
   return allRegistered ? 'deterministic' : 'fallback';
 }
 
@@ -234,7 +243,7 @@ function buildHarnessFidelityReport(
   const capability = adapter.capability();
   const verdict = deriveFidelity(capability);
   const verification = adapter.verify(projectDir);
-  const injectingPoints = LIFECYCLE_POINTS.filter(point => capability[point].injects === true);
+  const injectingPoints = RECALL_LIFECYCLE_POINTS.filter(point => capability[point].injects === true);
   const wired = injectingPoints.length > 0 && injectingPoints.every(point => verification[point].registered);
   const fidelity: FidelityLabel = wired ? verdict : 'instruction-only';
 

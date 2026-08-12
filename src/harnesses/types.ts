@@ -18,10 +18,21 @@
  * - `context-reset` is execution-only (ADR 0014 §5): it never injects
  *   anything, it only has to *run*, to clear the session ledger before a
  *   compaction event makes it lie about what is still in context.
+ * - `pre-command` fires before a shell/bash tool call executes (ADR 0014's
+ *   2026-08-10 amendment, ticket 12/22, neuron-2.4.0); carries the same
+ *   gated `onExec` lookup `neuron exec` performs today. A structural split,
+ *   not a temporary one: only Claude Code and Codex CLI expose a
+ *   context-carrying hook here at all — Copilot CLI and Cursor's shell hooks
+ *   are permission/gating-only, so both keep `injects: false` permanently.
  */
-export type LifecyclePoint = 'session-start' | 'pre-prompt' | 'context-reset';
+export type LifecyclePoint = 'session-start' | 'pre-prompt' | 'context-reset' | 'pre-command';
 
-export const LIFECYCLE_POINTS: readonly LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset'];
+export const LIFECYCLE_POINTS: readonly LifecyclePoint[] = [
+  'session-start',
+  'pre-prompt',
+  'context-reset',
+  'pre-command',
+];
 
 /**
  * What a harness does at one lifecycle point. `'unknown'` is a first-class
