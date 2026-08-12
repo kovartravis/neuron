@@ -1352,3 +1352,15 @@ tags:
 taskId: "17"
 ---
 Ticket 17 (neuron-2.4.0): measured the shipped lexical-only relevance gate's false-accept rate on no-evidence queries, deliberately did not ship a fix. Two real measurements: a hand-built resident E2E corpus (19 queries, adversarially disjoint vocabulary from the seeded store, verified via an FTS-prefix-collision script rather than eyeballed) measured 0% false-accept; relevance_gate_eval.py's extended negative control on the full real LongMemEval-S split (500 questions) measured 99.80% false-accept. The gap is explained by corpus construction, not a bug in either measurement: cleanFtsQuery's OR-across-any-shared-word design (src/components/fts-query.ts) means the gate only needs one incidental shared token to pass, so a genuinely disjoint-vocabulary query abstains reliably while a same-domain natural-language query (LongMemEval's negative control is drawn from the same conversational corpus family as its positive queries) almost always shares some word with an unrelated partition. Decision: follow ticket 39 -> ticket 41's precedent of measure-then-ship-separately rather than reacting to the bad number in the same session -- a cosine floor or LLM-adjudication fix, if warranted, is a new ticket informed by this measurement, chartered once someone picks it up. The 99.80% number, not a vaguer 'the gate seems loose', is now the load-bearing fact for that future ticket's motivation.
+
+---
+id: 185b3f9e-c69f-47df-b6cc-e90962d5a215
+createdAt: 2026-08-12T02:04:10.173Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - adr
+taskId: "19"
+---
+Ticket 19 (neuron-2.4.0): non-interactive resolution of the memory-add supersession gate is a new '--if-novel' flag on 'memory add' itself, not a separate 'neuron exec --no-history' mode, because the gate lives on the write command and putting its resolution elsewhere would split one concept across two command surfaces. On a gate hit, --if-novel skips the write and exits 0 (job succeeds) but is never silent: candidate id/similarity go to stderr, and stdout's usual written-entry JSON is replaced with {skipped:true, reason:'supersession-candidate', candidateId, similarity} so a scripted caller can branch on shape rather than re-parsing prose. Mutually exclusive with --supersedes/--not-a-reversal, which assert a human already made the call; --if-novel is the no-human-present case. This mirrors the visibility principle already applied to ticket 21 (don't let sessionsObserved:0 go unnoticed) and to ticket 18's belt-and-suspenders verify layer: a non-interactive skip path must announce itself, not fail open quietly.

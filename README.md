@@ -361,6 +361,17 @@ agent reading `--help` learns your project's schema without it needing to be
 restated anywhere else. Run `neuron --help`, `neuron scan --help`, or
 `neuron memory --help` for full flag listings.
 
+### Scheduled and cron writers
+
+`neuron memory add`'s write-time supersession gate normally hard-blocks a
+near-duplicate write and asks an interactive caller to re-run with
+`--supersedes <id>` or `--not-a-reversal` — a human loop a cron job or CI
+writer can't complete. Pass `--if-novel` instead: on a gate hit it skips the
+write (exit 0, job still succeeds) rather than erroring, and it is never
+silent about it — the skip is printed to stderr and noted in the JSON result
+(`{"skipped": true, "reason": "supersession-candidate", ...}`) so a
+duplicate-prevention failure never gets buried in a log a human never reads.
+
 ## 🏛️ Architecture awareness, as a deterministic artifact
 
 The same idea extended to your codebase's structure: `neuron scan` is a

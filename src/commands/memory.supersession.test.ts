@@ -161,6 +161,96 @@ describe('CLI: memory add write-time supersession gate (ticket 17 / ADR 0015)', 
       )
     ).rejects.toThrow('process.exit(1)');
   });
+
+  it('--if-novel (ticket 19) skips a near-duplicate write, exits 0, and says so on stderr', async () => {
+    const memory = makeMemory();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handleMemoryCommand(
+      ['memory', 'add', 'the prune ceiling is a real hazard', '--category', 'decisions'],
+      memory,
+      'test-project'
+    );
+    const firstId = JSON.parse(String(logSpy.mock.calls[0][0])).id;
+
+    logSpy.mockClear();
+    errSpy.mockClear();
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as any);
+
+    await expect(
+      handleMemoryCommand(
+        [
+          'memory', 'add', 'the prune ceiling collision is a hazard needing a fix',
+          '--category', 'decisions', '--if-novel',
+        ],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(0)');
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const stderr = errSpy.mock.calls.map(c => String(c[0])).join('\n');
+    expect(stderr).toContain(firstId);
+    expect(stderr).toContain('skipped');
+    const result = JSON.parse(String(logSpy.mock.calls[0][0]));
+    expect(result).toMatchObject({ skipped: true, reason: 'supersession-candidate', candidateId: firstId });
+
+    // The skipped write must not have landed.
+    const all = await memory.query({ categories: ['decisions'], limit: 10 });
+    expect(all).toHaveLength(1);
+  });
+
+  it('--if-novel does not skip when there is no near-duplicate candidate', async () => {
+    const memory = makeMemory();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handleMemoryCommand(
+      ['memory', 'add', 'an unrelated first entry', '--category', 'decisions', '--if-novel'],
+      memory,
+      'test-project'
+    );
+
+    const result = JSON.parse(String(logSpy.mock.calls[0][0]));
+    expect(result.skipped).toBeUndefined();
+    expect(result.id).toBeTruthy();
+
+    const all = await memory.query({ categories: ['decisions'], limit: 10 });
+    expect(all).toHaveLength(1);
+  });
+
+  it('--if-novel with --supersedes is rejected by parseFlags', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    captureExit();
+    const memory = makeMemory();
+
+    await expect(
+      handleMemoryCommand(
+        ['memory', 'add', 'x', '--category', 'decisions', '--supersedes', 'abc', '--if-novel'],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+  });
+
+  it('--if-novel with --not-a-reversal is rejected by parseFlags', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    captureExit();
+    const memory = makeMemory();
+
+    await expect(
+      handleMemoryCommand(
+        ['memory', 'add', 'x', '--category', 'decisions', '--not-a-reversal', '--if-novel'],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+  });
 });
 
 describe('CLI: memory query/list --include-superseded (ticket 17 / ADR 0015)', () => {
