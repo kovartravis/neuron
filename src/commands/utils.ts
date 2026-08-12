@@ -122,6 +122,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     notAReversal?: boolean;
     /** `memory query`/`list` ticket 17 / ADR 0015: include hard-excluded superseded rows. */
     includeSuperseded?: boolean;
+    /** `memory add` ticket 19: non-interactive resolution of the supersession gate for scheduled/cron writers — skip the write (not an error) when a candidate is found, rather than hard-blocking for a human. */
+    ifNovel?: boolean;
   };
 } {
   const positionals: string[] = [];
@@ -155,6 +157,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let supersedes: string | undefined;
   let notAReversal: boolean | undefined;
   let includeSuperseded: boolean | undefined;
+  let ifNovel: boolean | undefined;
   const fields: Record<string, string> = {};
   const fieldFlagIndex = new Map(declaredFields.map(f => [f.flag, f.key]));
 
@@ -267,6 +270,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       notAReversal = true;
     } else if (arg === '--include-superseded') {
       includeSuperseded = true;
+    } else if (arg === '--if-novel') {
+      ifNovel = true;
     } else if (arg.startsWith('-') && arg.length > 1) {
       // Previously fell through to `positionals`, where it was silently
       // discarded by every caller. A mistyped flag must not look like success.
@@ -305,6 +310,12 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     process.exit(1);
   }
 
+  if (ifNovel && (supersedes || notAReversal)) {
+    console.error('Error: --if-novel is mutually exclusive with --supersedes and --not-a-reversal');
+    console.error('  --if-novel defers to the gate itself; the other two flags assert a human-made call.');
+    process.exit(1);
+  }
+
   return {
     positionals,
     options: {
@@ -339,6 +350,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       supersedes,
       notAReversal,
       includeSuperseded,
+      ifNovel,
     }
   };
 }
@@ -525,7 +537,16 @@ Options:
                                  marking anything superseded.
   --include-superseded            (query, list) Include entries hard-excluded
                                  by default because a later entry supersedes
-                                 them. Superseded rows are never deleted.`;
+                                 them. Superseded rows are never deleted.
+  --if-novel                      (add) Non-interactive resolution of the
+                                 supersession gate for scheduled/cron writers
+                                 that cannot answer --supersedes/
+                                 --not-a-reversal by hand: on a gate hit, skip
+                                 the write instead of hard-erroring (exit 0,
+                                 no entry added, printed to stderr and noted
+                                 in the JSON result so the skip is never
+                                 silent). Mutually exclusive with
+                                 --supersedes and --not-a-reversal.`;
 
 /**
  * `MEMORY_HELP` plus a per-category listing of this project's declared

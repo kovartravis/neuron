@@ -354,6 +354,12 @@ thin.
   credentials): `19`, `20`, `21`, `22`, `25`, `28`, `30` (all unclaimed and
   unblocked); `02`, `04`, `05` claimed and in progress; `03`, `13`, `16`,
   `23`, `24`, `26`, `29` blocked.
+- **Ticket 19 resolved, 2026-08-11.** Built `--if-novel` on `memory add`; see
+  its own Answer and the Decisions-so-far entry below. Didn't unblock
+  anything directly (no ticket here lists it as a blocker). True frontier as
+  of this session (excluding `11`, claimed but blocked on credentials): `20`,
+  `21`, `22`, `25`, `28`, `30` (all unclaimed and unblocked); `02`, `04`, `05`
+  claimed and in progress; `03`, `13`, `16`, `23`, `24`, `26`, `29` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -381,6 +387,7 @@ thin.
 - [17 — Antagonistic Recall: Does Neuron Abstain When Nothing Is Relevant?](issues/17-antagonistic-recall-abstention-benchmark.md) — built both measurements; they sharply disagree, which is the finding. New resident `Pillar 13: Antagonistic Recall & Abstention` (19 queries verified disjoint from Pillar 7's store) measures **0% false-accept**. `relevance_gate_eval.py`'s extended negative control on the real LongMemEval-S split (500 questions) measures **99.80% false-accept**. Gap is corpus construction, not a bug: the resident pillar's vocabulary is adversarially disjoint by design, while LongMemEval's cross-partition negative control still shares ordinary conversational words with its query — the shipped OR-across-any-word lexical gate clears almost all of them. Measurement only, no fix attempted (mirrors `39`→`41`'s split); the 99.80% number is the input a future cosine-floor or adjudication ticket would need. One unrelated off-band finding: `Pillar 8`'s real e2e-runner.js run failed on a `no such column: "scope"` concurrent-migration race, confirmed pre-existing and squarely `18`'s territory, not fixed here.
 
 - [18 — Fix Concurrent-Write Data Loss in Markdown Storage](issues/18-fix-concurrent-write-data-loss.md) — fixed with a per-category-file `mkdir`-based lock (no new dependency) serializing `writeEntry`/`updateEntry`/`deleteEntry`'s read-modify-write cycle across both processes and same-process `Promise.all` races, plus a read-back-and-byte-compare verify layered in regardless as a belt-and-suspenders floor. A stale lock (>30s, a crashed holder) is stolen rather than deadlocking forever. Four new `Promise.all`-driven regression tests confirmed to fail with real data loss when the fix is reverted, and pass with it in place. `npm test` 649/649, `tsc` clean.
+- [19 — Non-Interactive Write Mode for Scheduled/Cron Writers](issues/19-non-interactive-write-mode-for-cron.md) — built `--if-novel` on `memory add`: on a supersession-gate hit it skips the write (exit 0, job still succeeds) instead of hard-erroring, but never silently — the candidate id/similarity go to stderr and the JSON on stdout becomes `{"skipped": true, "reason": "supersession-candidate", ...}` instead of the written entry, so a scripted caller can tell a skip from a real write by shape. Chose a flag on `memory add` itself over a separate `neuron exec --no-history` mode, since the gate lives on the write command, not `exec`. Mutually exclusive with `--supersedes`/`--not-a-reversal` (those assert a human already decided; `--if-novel` defers to the gate because none is present). Documented in `neuron memory --help` and a new README "Scheduled and cron writers" section — no prior cron/scheduled documentation existed in this repo to extend. `npm test` 653/653, `tsc` clean.
 
 ## Not yet specified
 

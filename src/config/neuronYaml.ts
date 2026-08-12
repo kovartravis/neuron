@@ -224,7 +224,7 @@ export const RESERVED_FLAG_NAMES = [
   '--force', '--type', '--title', '--help', '-h',
   '--yes', '--no-hooks', '--overwrite-hooks', '--keep-hooks', '--hook-target',
   '--uninstall-hooks', '--harness',
-  '--supersedes', '--not-a-reversal', '--include-superseded',
+  '--supersedes', '--not-a-reversal', '--include-superseded', '--if-novel',
 ];
 
 export interface DeclaredFieldFlag {

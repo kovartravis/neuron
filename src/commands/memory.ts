@@ -94,6 +94,29 @@ export async function handleMemoryCommand(
     } else if (!options.notAReversal) {
       const candidate = await memory.findSupersessionCandidate(content);
       if (candidate) {
+        // Ticket 19: `--if-novel` is the non-interactive resolution for
+        // scheduled/cron callers that cannot answer this gate by hand. It
+        // skips the write (job succeeds) rather than hard-erroring, but
+        // never silently — a silent skip would mask real duplicate-
+        // prevention failures the same way an unmonitored sessionsObserved
+        // counter would (ticket 21's own concern). Exit 0, not a plain
+        // console.log, so the skip is visible in stderr even when the
+        // caller only captures stdout.
+        if (options.ifNovel) {
+          console.error(
+            `[neuron] skipped: this write looks like it may supersede an existing entry ` +
+              `(similarity ${candidate.similarity.toFixed(3)}), and --if-novel was set:`
+          );
+          console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
+          console.log(JSON.stringify({
+            skipped: true,
+            reason: 'supersession-candidate',
+            candidateId: candidate.id,
+            similarity: candidate.similarity,
+          }));
+          process.exit(0);
+          return;
+        }
         console.error(
           `Error: this write looks like it may supersede an existing entry ` +
             `(similarity ${candidate.similarity.toFixed(3)}):`
@@ -101,6 +124,7 @@ export async function handleMemoryCommand(
         console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
         console.error(`  If this is a reversal, re-run with --supersedes ${candidate.id}`);
         console.error(`  If it is not, re-run with --not-a-reversal`);
+        console.error(`  If this is a non-interactive/scheduled writer, re-run with --if-novel`);
         process.exit(1);
       }
     }
