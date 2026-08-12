@@ -400,7 +400,7 @@ describe('CLI Command: init', () => {
   // --- Ticket 14: capability-aware protocol block ---
 
   describe('protocol block wiring', () => {
-    it('writes the short, no-recall-step block into CLAUDE.md once the Claude Code hook is actually wired', () => {
+    it('writes the short, no-manual-steps block into CLAUDE.md once both the recall and pre-command hooks are actually wired', () => {
       const cliPath = path.join(process.cwd(), 'dist/cli.js');
       const initTempDir = path.join(tempDbDir, 'protocol-claude-test');
       fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
@@ -412,11 +412,17 @@ describe('CLI Command: init', () => {
 
       const claudeMdPath = path.join(initTempDir, 'CLAUDE.md');
       expect(result.protocol.written).toContainEqual(
-        expect.objectContaining({ targetPath: claudeMdPath, fidelity: 'deterministic', action: 'created' })
+        expect.objectContaining({
+          targetPath: claudeMdPath,
+          fidelity: 'deterministic',
+          execFidelity: 'deterministic',
+          action: 'created',
+        })
       );
       const content = fs.readFileSync(claudeMdPath, 'utf8');
       expect(content).not.toContain('## 1. Recall');
-      expect(content).toContain('## 1. Command Execution');
+      expect(content).not.toContain('Command Execution');
+      expect(content).toContain('## 1. Failure-Fix Recording');
       expect(content).toContain('<!-- neuron:protocol:start -->');
 
       fs.rmSync(initTempDir, { recursive: true });
@@ -434,11 +440,17 @@ describe('CLI Command: init', () => {
 
       const cursorMdPath = path.join(initTempDir, 'CURSOR.md');
       expect(result.protocol.written).toContainEqual(
-        expect.objectContaining({ targetPath: cursorMdPath, fidelity: 'fallback', action: 'created' })
+        expect.objectContaining({
+          targetPath: cursorMdPath,
+          fidelity: 'fallback',
+          execFidelity: 'fallback',
+          action: 'created',
+        })
       );
       const content = fs.readFileSync(cursorMdPath, 'utf8');
       expect(content).toContain('## 1. Recall');
       expect(content).toContain('neuron memory query');
+      expect(content).toContain('## 2. Command Execution');
 
       fs.rmSync(initTempDir, { recursive: true });
     });
@@ -455,10 +467,16 @@ describe('CLI Command: init', () => {
 
       const claudeMdPath = path.join(initTempDir, 'CLAUDE.md');
       expect(result.protocol.written).toContainEqual(
-        expect.objectContaining({ targetPath: claudeMdPath, fidelity: 'fallback', action: 'created' })
+        expect.objectContaining({
+          targetPath: claudeMdPath,
+          fidelity: 'fallback',
+          execFidelity: 'fallback',
+          action: 'created',
+        })
       );
       const content = fs.readFileSync(claudeMdPath, 'utf8');
       expect(content).toContain('## 1. Recall');
+      expect(content).toContain('## 2. Command Execution');
 
       fs.rmSync(initTempDir, { recursive: true });
     });
@@ -491,7 +509,12 @@ describe('CLI Command: init', () => {
 
       const claudeMdPath = path.join(initTempDir, 'CLAUDE.md');
       expect(result.protocol.written).toContainEqual(
-        expect.objectContaining({ targetPath: claudeMdPath, fidelity: 'deterministic', action: 'unchanged' })
+        expect.objectContaining({
+          targetPath: claudeMdPath,
+          fidelity: 'deterministic',
+          execFidelity: 'deterministic',
+          action: 'unchanged',
+        })
       );
 
       fs.rmSync(initTempDir, { recursive: true });
@@ -510,7 +533,12 @@ describe('CLI Command: init', () => {
 
       const agentsMdPath = path.join(initTempDir, 'AGENTS.md');
       expect(result.protocol.written).toContainEqual(
-        expect.objectContaining({ targetPath: agentsMdPath, fidelity: 'deterministic', action: 'created' })
+        expect.objectContaining({
+          targetPath: agentsMdPath,
+          fidelity: 'deterministic',
+          execFidelity: 'deterministic',
+          action: 'created',
+        })
       );
 
       fs.rmSync(initTempDir, { recursive: true });

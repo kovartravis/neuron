@@ -123,6 +123,7 @@ function sessionEndStep(n: number): string {
 
 export interface ProtocolBlockOptions {
   fidelity: ProtocolFidelity;
+  execFidelity: ProtocolFidelity;
   config: NeuronConfig;
 }
 
@@ -131,13 +132,21 @@ export interface ProtocolBlockOptions {
  * `neuron init` can find and replace just this region without disturbing
  * hand-written content elsewhere in the file (deliverable: capability-aware
  * generator, one generator, output varying by fidelity).
+ *
+ * Recall and command-execution are hooked independently (ticket 23) — a
+ * project can have one wired without the other — so each step is dropped on
+ * its own `deterministic` verdict. `recallStep()`'s own heading is hardcoded
+ * `## 1. Recall` since, whenever present, it's always first; every step
+ * after it is numbered by position.
  */
 export function generateProtocolBlock(options: ProtocolBlockOptions): string {
-  const { fidelity, config } = options;
-  const steps =
-    fidelity === 'deterministic'
-      ? [execStep(1), failureFixStep(2), sessionEndStep(3)]
-      : [recallStep(config), execStep(2), failureFixStep(3), sessionEndStep(4)];
+  const { fidelity, execFidelity, config } = options;
+  const steps: string[] = [];
+  if (fidelity !== 'deterministic') steps.push(recallStep(config));
+  let n = steps.length + 1;
+  if (execFidelity !== 'deterministic') steps.push(execStep(n++));
+  steps.push(failureFixStep(n++));
+  steps.push(sessionEndStep(n++));
 
   const body = [headerSection(config), ...steps, metadataFlagsSection()].join('\n\n');
 

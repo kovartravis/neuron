@@ -14,7 +14,7 @@ The interface (`HarnessAdapter`: `detect`/`capability`/`install`/`uninstall`/`ve
 
 ### protocol block (`src/config/protocolBlock.ts`)
 
-The generator behind the `## Memory Store Protocol` region `neuron init` writes into a harness's instructions file. Produces one of two variants depending on whether the target harness currently has a working deterministic hook (per the adjacent **harness adapter**'s `verify()`): the `deterministic` variant deletes the old "query the store first" step, the `fallback` variant keeps it. Marker-wrapped (`<!-- neuron:protocol:start/end -->`) so re-running `init` can find and update only its own region.
+The generator behind the `## Memory Store Protocol` region `neuron init` writes into a harness's instructions file. Recall and command execution are each independently fidelity-conditional (ticket 23, 2.4.0), per the adjacent **harness adapter**'s `verify()`: the Recall step drops once `session-start`/`pre-prompt`/`context-reset` are wired deterministic, the Command Execution step drops once `pre-command` is wired deterministic — a harness can have one without the other, though today's four adapters happen to move both together. Marker-wrapped (`<!-- neuron:protocol:start/end -->`) so re-running `init` can find and update only its own region.
 
 ### neuron-memory
 
@@ -24,9 +24,9 @@ The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) th
 
 The identifier used to link logged history entries back to specification artifacts or requirements (e.g. ticket numbers like `01-db-schema-postgres` or issue references like `#42`). It should not refer to transient execution task/process IDs.
 
-### pre-command lookup (`neuron exec`)
+### pre-command lookup (`neuron exec` / `pre-command` hook)
 
-The mechanism that queries the memory store for relevant learnings before running a shell command. Results pass through the conjunctive relevance gate (ADR 0012) before printing to `stderr`; a rejected-everything result still prints a count rather than staying silent. It executes the target command with inherited `stdio`.
+The mechanism that queries the memory store for relevant learnings before running a shell command. Results pass through the conjunctive relevance gate (ADR 0012); a rejected-everything result still reports a count rather than staying silent. Reachable two ways, both sharing the same `resolveExecCategories`/`queryGated` call path (`src/commands/exec.ts`): the `neuron exec -- <command>` CLI wrapper (prints to `stderr`, then executes the target command with inherited `stdio`), always available on every harness; and, on Claude Code/Codex CLI only, the `pre-command` hook point (`src/commands/hook.ts`, tickets 22/23, 2.4.0) firing automatically as `additionalContext` on every `Bash` tool call via `PreToolUse` — informational only, never blocks the call, so it never sets `permissionDecision`. Copilot CLI and Cursor have no context-carrying hook field for shell commands at all (ADR 0014's 2026-08-10 amendment) — a structural ceiling, not a gap expected to close — so they keep the CLI wrapper as the only path, permanently.
 
 ### git-log index (`src/harnesses/gitLog.ts`, `src/index.ts`)
 

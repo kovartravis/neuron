@@ -53,6 +53,9 @@ export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
  */
 const RECALL_LIFECYCLE_POINTS: readonly LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset'];
 
+/** What `execStep()` (ticket 23) means by "command execution" — the mirror of `RECALL_LIFECYCLE_POINTS` above. */
+const EXEC_LIFECYCLE_POINTS: readonly LifecyclePoint[] = ['pre-command'];
+
 /** Every harness with a real adapter. */
 function getAdapters(harnessFilter?: string[]): HarnessAdapter[] {
   const all: HarnessAdapter[] = [
@@ -185,7 +188,8 @@ const ADAPTER_ID_BY_HARNESS_NAME: Record<string, string> = {
 function resolveHarnessFidelity(
   adapters: HarnessAdapter[],
   harnessName: string,
-  projectDir: string
+  projectDir: string,
+  points: readonly LifecyclePoint[]
 ): ProtocolFidelity {
   const adapterId = ADAPTER_ID_BY_HARNESS_NAME[harnessName];
   if (!adapterId) return 'fallback';
@@ -195,7 +199,7 @@ function resolveHarnessFidelity(
 
   const capability = adapter.capability();
   const verification = adapter.verify(projectDir);
-  const injectingPoints = RECALL_LIFECYCLE_POINTS.filter(point => capability[point].injects === true);
+  const injectingPoints = points.filter(point => capability[point].injects === true);
   const allRegistered = injectingPoints.every(point => verification[point]?.registered);
   return allRegistered ? 'deterministic' : 'fallback';
 }
@@ -305,6 +309,7 @@ async function onProtocolConflict(targetPath: string): Promise<boolean> {
 export interface ProtocolWriteReport {
   targetPath: string;
   fidelity: ProtocolFidelity;
+  execFidelity: ProtocolFidelity;
   action: ProtocolWriteAction;
 }
 
@@ -343,14 +348,19 @@ async function writeProtocolBlocks(
 
   for (const [mdFile, harnessNames] of byMdFile) {
     const fidelity: ProtocolFidelity = harnessNames.some(
-      name => resolveHarnessFidelity(allAdapters, name, projectDir) === 'deterministic'
+      name => resolveHarnessFidelity(allAdapters, name, projectDir, RECALL_LIFECYCLE_POINTS) === 'deterministic'
+    )
+      ? 'deterministic'
+      : 'fallback';
+    const execFidelity: ProtocolFidelity = harnessNames.some(
+      name => resolveHarnessFidelity(allAdapters, name, projectDir, EXEC_LIFECYCLE_POINTS) === 'deterministic'
     )
       ? 'deterministic'
       : 'fallback';
 
     const targetPath = path.join(projectDir, mdFile);
     const existing = fs.existsSync(targetPath) ? fs.readFileSync(targetPath, 'utf8') : null;
-    const block = generateProtocolBlock({ fidelity, config });
+    const block = generateProtocolBlock({ fidelity, execFidelity, config });
     const result = await upsertProtocolBlock(existing, block, {
       overwrite,
       onConflict: overwrite === 'ask' ? () => onProtocolConflict(targetPath) : undefined,
@@ -359,7 +369,7 @@ async function writeProtocolBlocks(
     if (result.action !== 'unchanged') {
       fs.writeFileSync(targetPath, result.content, 'utf8');
     }
-    reports.push({ targetPath, fidelity, action: result.action });
+    reports.push({ targetPath, fidelity, execFidelity, action: result.action });
   }
 
   return reports;

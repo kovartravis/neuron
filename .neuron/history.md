@@ -3758,3 +3758,15 @@ tags:
 taskId: "22"
 ---
 Wayfinder pickup session on the neuron-2.4.0 map: claimed the frontier's first unblocked ticket, ticket 22 (Implement the Pre-Command Hook), and built it end to end per ticket 12's ADR 0014 amendment ruling. Added 'pre-command' as LifecyclePoint's fourth value; wired real capability records verified via direct fetch of each harness's own docs (Claude Code and Codex CLI get injects:true with PreToolUse's own 600s timeout default, not UserPromptSubmit's 30s; Copilot CLI and Cursor get injects:false permanently, confirmed structural — neither's shell hook has any context-carrying output field). Built the hook.ts handler reusing exec.ts's resolveExecCategories/queryGated verbatim, no-oping for non-Bash tool calls, packing results under a new fixed PRE_COMMAND_CHAR_BUDGET deliberately outside the session-ledger epoch (fires per tool call, not per turn). Found and fixed a real latent bug along the way in init.ts's recall-fidelity report, which would have misreported an unaffected recall setup as un-wired the moment pre-command wasn't yet installed on an upgraded project — scoped to a new RECALL_LIFECYCLE_POINTS constant instead. Updated adapter tests across all four harnesses plus init.test.ts for the new point, and added new hook.test.ts coverage for pre-command (real match injects, no match stays silent, non-Bash no-ops, malformed/missing input degrades silently). npm test 676/676 (was 670), tsc clean. Resolved ticket 22, appended its Answer and the map's Decisions-so-far entry; unblocked ticket 23 (Fidelity-Conditional Command Execution Step) directly. Next wayfinder session's frontier: 23, 25, 28, 30.
+
+---
+id: a2ea36c4-140a-4a2a-8d04-336ca32c6a21
+createdAt: 2026-08-12T03:54:02.503Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "23"
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 23 (Fidelity-Conditional Command Execution Step), the first unblocked frontier ticket, following 22's ruling. Made protocolBlock.ts's execStep() independently fidelity-conditional the same way recallStep() already is (generateProtocolBlock now takes a separate execFidelity and numbers surviving steps by position), generalized init.ts's resolveHarnessFidelity to take a points parameter and added EXEC_LIFECYCLE_POINTS=['pre-command'] beside RECALL_LIFECYCLE_POINTS so exec fidelity is derived from real verify() state rather than assumed to track recall. Swept the packaged skill, README, docs/COMMANDS.md, and CONTEXT.md (two glossary entries were stale post-22); hand-verified this repo's own CLAUDE.md is already byte-identical to the new generator output and left it un-run since pre-command isn't wired here yet (ticket 24's job). npm test 678/678, tsc clean. Resolved on .scratch/neuron-2.4.0/issues/23-fidelity-conditional-exec-step.md; unblocks ticket 24 (Dogfood the Pre-Command Hook in This Repo), now the frontier's next pickup alongside 25, 28, 30.
