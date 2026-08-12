@@ -2409,3 +2409,15 @@ tags:
 taskId: null
 ---
 Finding while building ticket 11's (neuron-2.4.0) git-log relevance-gate silence test: cleanFtsQuery's gate (src/components/fts-query.ts) is an OR across every non-stopword prefix term, so passing the FTS leg only requires ONE shared word between a query and this repo's own ~200-commit, self-referential corpus. A first attempt asking about 'CSV export' from 'the memory store' fired the gate anyway (matched on 'memory'/'store'/'ticket'); three more natural-sounding true-negative candidates using words like 'ship'/'storage'/'documented' also all fired. Building a genuine silence case required computing the full corpus vocabulary (git log --all --format=%s%n%b, ~2865 unique tokens) programmatically and picking content words verified to be neither a member of, nor a prefix match against, any token in it — a hand-picked 'obviously irrelevant' guess is not reliable for this corpus. Verified fix/approach: benchmarks/token-ab/gitlog-gate-task.mjs. Relevant to ticket 17's antagonistic-recall benchmark and the map's 'confidently-wrong retrieval' fog item — the shipped lexical gate is much looser in practice than 'topically relevant' for a repo whose commits are about itself.
+
+---
+id: 3afb627d-85e1-4997-9b1e-ce328d732dab
+createdAt: 2026-08-12T01:48:01.088Z
+importance: 4
+tags:
+  - failure-fix
+  - drift
+  - adr
+taskId: null
+---
+Fix for real .neuron/architecture.md pollution, recurrence of the 2026-08-08 class of bug: while wrapping a plain 'neuron memory add --category history' call with neuron exec during a wayfinder session, the wrapper's own drift-detection auto-rescan ('Architectural drift detected (264 change(s))') silently overwrote the real architecture card with a scan of a project named 'issues' and 0 modules, deleting 406 of 411 lines. Root cause not yet isolated -- neuron.yaml's scan config has no explicit roots/include narrowing (just enabled: true, depth: 3), and no package.json named 'issues' exists anywhere in the repo, so the resolved project root for that particular rescan is still unknown; the repo has multiple .scratch/*/issues/ directories (bare markdown ticket dirs, no package.json) that are a plausible but unconfirmed culprit if some code path derives a project name from a directory basename rather than package.json. Caught before commit by treating a large unexplained .neuron/ diff as a tripwire (git diff --stat .neuron/architecture.md showed 406 deletions for 5 insertions) per the existing 2026-08-08 learning's own rule, not by any tooling catching it automatically. Recovery: git show HEAD:.neuron/architecture.md was clean (the prior commit's own scan was correct), so 'git checkout HEAD -- .neuron/architecture.md' fully restored it with zero manual reconstruction needed, unlike the 2026-08-08 incident which required hand-reappending legitimate new entries. This is the second confirmed live instance of neuron exec's own auto-rescan silently corrupting its own real project's memory store -- worth a dedicated investigation ticket to find the actual project-root resolution bug rather than continuing to catch it by tripwire.
