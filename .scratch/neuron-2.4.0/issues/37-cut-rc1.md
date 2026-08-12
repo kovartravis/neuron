@@ -1,5 +1,5 @@
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: none
 Band: 2.4.0-rc1
 
@@ -98,18 +98,62 @@ work below and the maintainer go-ahead to push.
 
 ## Deliverables
 
-- [ ] `2.4.0-rc1` version-bumped and committed
-- [ ] CHANGELOG entry covering the real `v2.3.0..HEAD` diff
-- [ ] Unit + E2E suites run, results disclosed
-- [ ] `rc` dist-tag derivation confirmed live or explicitly flagged as
+- [x] `2.4.0-rc1` version-bumped and committed
+- [x] CHANGELOG entry covering the real `v2.3.0..HEAD` diff
+- [x] Unit + E2E suites run, results disclosed
+- [x] `rc` dist-tag derivation confirmed live or explicitly flagged as
       inspection-only
-- [ ] Maintainer go-ahead obtained before the push to `main`
-- [ ] `feat/2.4.0-rc1` merged (fast-forward) to `main` and pushed
-- [ ] `2.4.0-rc1` verified live on npm's `rc` dist-tag and `v2.4.0-rc1`
+- [x] Maintainer go-ahead obtained before the push to `main`
+- [x] `feat/2.4.0-rc1` merged (fast-forward) to `main` and pushed
+- [x] `2.4.0-rc1` verified live on npm's `rc` dist-tag and `v2.4.0-rc1`
       verified on `origin`'s tags
 
 ## Answer
 
-_Not yet resolved._
+Cut and published for real. `package.json` bumped to `2.4.0-rc1`; CHANGELOG
+entry written from a direct `git log v2.3.0..HEAD` audit (25 commits) rather
+than the map's nominal ticket numbering, since — per this map's own repeated
+precedent — tickets hadn't landed in strict order. `npm test` 678/678,
+`npm run test:e2e` clean exit with 0 dropped/lost writes on the
+historically-flaky Pillar 8 concurrent-migration stress test.
+
+Found and reverted a real bug while running the e2e suite for this cut:
+`test/e2e/concurrency-stress.test.ts`'s isolated `projectRoot` has no
+`neuron.yaml` of its own, so ticket 01's category auto-declare write path
+walked upward with no floor and mutated this repo's *real* `neuron.yaml`
+(`stress: {}`). Store content itself stayed clean (no `stress.md` file was
+created) — only the config-write side effect escaped. This has apparently
+happened and been silently hand-reverted before (surfaced in dogfooding
+history from a prior session) without ever being ticketed; reverted again
+here and formally chartered as
+[39](39-config-autodeclare-escapes-projectroot.md) instead.
+
+Given the branch-ruleset discovery below, the maintainer chose **open a PR**
+over the available direct-bypass-push option (`current_user_can_bypass:
+"always"` as repo owner, matching `neuron-2.3.0` ticket 34's own bypass
+precedent) — [PR #6](https://github.com/kovartravis/neuron/pull/6),
+reviewed and merged by the maintainer directly on GitHub
+(`b919c00a4c7a913a83480c0599bf20d0fdeb1e06`), fast-forward, no conflicts.
+
+**This was the first real push of a `-rcN` version through `publish.yml`.**
+It worked exactly as the regex-inspection predicted: `build-and-test` (1m25s)
+then `publish` (1m42s) both green, `npm publish --tag rc` succeeded, and the
+workflow auto-created and pushed `v2.4.0-rc1` pointing at the merge commit —
+confirmed live: `npm view @kovartravis/neuron dist-tags` returns `{ rc:
+'2.4.0-rc1', latest: '2.3.0' }`, and `git ls-remote --tags origin` lists
+`v2.4.0-rc1`. The `main` branch ruleset ("Protect", id `20346327`) was also
+confirmed for real mid-cut: `pull_request` (1 approval, code-owner review,
+`require_last_push_approval`), `code_scanning` (CodeQL), and `code_quality`
+rules are all active — the PR path exercised these gates for real for the
+first time on this branch, rather than only the bypass path prior cuts used.
+
+Not done here, deliberately: no work on any other frontier ticket (25, 28,
+30, 31, 32-36 still open/unclaimed), and ticket 38 (rc2) is untouched —
+queued next once more of the frontier lands.
 
 ## Comments
+
+`feat/2.4.0-rc1` (the branch, not the ticket) was deleted after merge, both
+locally and on `origin`, at the maintainer's direct request — standard
+post-merge cleanup, not a scope change. Local work continues directly on
+`main` until a new branch is needed.
