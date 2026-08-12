@@ -25,7 +25,9 @@ import {
   MaintenanceReport,
   NeuronMemoryOptions,
   FieldComplianceViolation,
-  FieldRepairOutcome
+  FieldRepairOutcome,
+  StoreHealth,
+  DuplicateGroup
 } from './models/index.js';
 
 export { openDatabase };
@@ -907,6 +909,97 @@ export class NeuronMemory {
       }
     }
     return best;
+  }
+
+  /**
+   * Store-health signals a maintainer previously computed by hand (ticket 20
+   * / neuron-2.4.0): near-duplicate clusters, importance's distribution, and
+   * how much of the store is superseded dead weight.
+   *
+   * Near-duplicate detection reuses `findSupersessionCandidate`'s embedding
+   * machinery per the ticket's own steer — same threshold, run pairwise
+   * across the whole live store instead of one candidate at a time — via a
+   * plain union-find so a chain of near-duplicates (A~B, B~C) groups
+   * together even where A and C alone don't clear the threshold. Superseded
+   * rows are excluded from clustering (already resolved, not a live gap) but
+   * still counted toward `supersededCount`.
+   */
+  public async getStoreHealth(): Promise<StoreHealth> {
+    if (!this.db) {
+      return { duplicateGroups: [], importanceHistogram: {}, supersededCount: 0 };
+    }
+    await this.router.query({ limit: 0 });
+
+    const rows = this.db.prepare(`
+      SELECT id, category, content, embedding, importance, superseded_by FROM memories
+      WHERE project_id = ?
+    `).all(this.projectId) as any[];
+
+    const supersededCount = rows.filter((r) => r.superseded_by !== null && r.superseded_by !== undefined).length;
+
+    const importanceHistogram: Record<number, number> = {};
+    for (const row of rows) {
+      const importance = row.importance ?? 3;
+      importanceHistogram[importance] = (importanceHistogram[importance] ?? 0) + 1;
+    }
+
+    const live = rows
+      .filter((r) => r.superseded_by === null || r.superseded_by === undefined)
+      .map((r) => ({ id: r.id as string, category: r.category as string, content: r.content as string, vec: toFloat32(r.embedding) }));
+
+    const parent = new Map<string, string>();
+    for (const e of live) parent.set(e.id, e.id);
+    const find = (id: string): string => {
+      let root = id;
+      while (parent.get(root) !== root) root = parent.get(root)!;
+      return root;
+    };
+    const union = (a: string, b: string) => {
+      const ra = find(a);
+      const rb = find(b);
+      if (ra !== rb) parent.set(ra, rb);
+    };
+
+    const qualifyingEdges: { a: string; b: string; similarity: number }[] = [];
+    for (let i = 0; i < live.length; i++) {
+      for (let j = i + 1; j < live.length; j++) {
+        const similarity = dotProduct(live[i].vec, live[j].vec);
+        if (similarity >= SUPERSESSION_SIMILARITY_THRESHOLD) {
+          union(live[i].id, live[j].id);
+          qualifyingEdges.push({ a: live[i].id, b: live[j].id, similarity });
+        }
+      }
+    }
+
+    // Group by final (post-union) root, then take each group's weakest
+    // linking edge — both computed after every union has landed, so an id
+    // whose root changed partway through a later merge is still attributed
+    // to its final cluster, not an intermediate one.
+    const idsByRoot = new Map<string, typeof live>();
+    for (const e of live) {
+      const root = find(e.id);
+      const bucket = idsByRoot.get(root);
+      if (bucket) bucket.push(e);
+      else idsByRoot.set(root, [e]);
+    }
+    const minSimilarityByRoot = new Map<string, number>();
+    for (const edge of qualifyingEdges) {
+      const root = find(edge.a);
+      const prev = minSimilarityByRoot.get(root);
+      minSimilarityByRoot.set(root, prev === undefined ? edge.similarity : Math.min(prev, edge.similarity));
+    }
+
+    const duplicateGroups: DuplicateGroup[] = [];
+    for (const [root, members] of idsByRoot) {
+      if (members.length < 2) continue;
+      duplicateGroups.push({
+        entries: members.map((m) => ({ id: m.id, category: m.category, content: m.content })),
+        minSimilarity: minSimilarityByRoot.get(root)!,
+      });
+    }
+    duplicateGroups.sort((a, b) => b.minSimilarity - a.minSimilarity);
+
+    return { duplicateGroups, importanceHistogram, supersededCount };
   }
 
   /**

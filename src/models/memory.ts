@@ -99,3 +99,37 @@ export interface FieldRepairOutcome {
   applied: Record<string, string>;
   unresolved: string[];
 }
+
+/** One member of a {@link DuplicateGroup}. */
+export interface DuplicateGroupEntry {
+  id: string;
+  category: string;
+  content: string;
+}
+
+/**
+ * A cluster of live (non-superseded) entries whose pairwise embedding cosine
+ * clears the same threshold the write-time supersession gate uses
+ * (`SUPERSESSION_SIMILARITY_THRESHOLD`), transitively linked — every member
+ * is within threshold of at least one other member, not necessarily all
+ * (ticket 20 / neuron-2.4.0). `minSimilarity` is the weakest linking edge,
+ * i.e. how confidently every member of the group can be called a
+ * near-duplicate of at least one other member.
+ */
+export interface DuplicateGroup {
+  entries: DuplicateGroupEntry[];
+  minSimilarity: number;
+}
+
+/**
+ * Store-health signals a maintainer previously had to compute by hand
+ * (ticket 20 / neuron-2.4.0): near-duplicate clusters that slipped past the
+ * write-time gate, importance's write-time-only distribution, and how much
+ * of the store is dead weight (superseded, never surfaced again).
+ */
+export interface StoreHealth {
+  duplicateGroups: DuplicateGroup[];
+  /** Keyed by importance 1-5 (string keys, JSON-object convention); an absent key means zero entries at that level. */
+  importanceHistogram: Record<number, number>;
+  supersededCount: number;
+}

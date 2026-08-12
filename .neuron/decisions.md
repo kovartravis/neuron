@@ -1364,3 +1364,16 @@ tags:
 taskId: "19"
 ---
 Ticket 19 (neuron-2.4.0): non-interactive resolution of the memory-add supersession gate is a new '--if-novel' flag on 'memory add' itself, not a separate 'neuron exec --no-history' mode, because the gate lives on the write command and putting its resolution elsewhere would split one concept across two command surfaces. On a gate hit, --if-novel skips the write and exits 0 (job succeeds) but is never silent: candidate id/similarity go to stderr, and stdout's usual written-entry JSON is replaced with {skipped:true, reason:'supersession-candidate', candidateId, similarity} so a scripted caller can branch on shape rather than re-parsing prose. Mutually exclusive with --supersedes/--not-a-reversal, which assert a human already made the call; --if-novel is the no-human-present case. This mirrors the visibility principle already applied to ticket 21 (don't let sessionsObserved:0 go unnoticed) and to ticket 18's belt-and-suspenders verify layer: a non-interactive skip path must announce itself, not fail open quietly.
+
+---
+id: 48fee768-6fab-4be8-94fb-84760451e586
+createdAt: 2026-08-12T02:14:23.606Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.4.0
+  - rc2
+  - adr
+taskId: "20"
+---
+Ticket 20 (neuron-2.4.0): store-health signals (near-duplicate clusters, importance histogram, superseded count, sessionsObserved) shipped as a third neuron status --health report mode, not a new neuron doctor command. This re-applies ADR 0013's own precedent for the config-validation surface (ticket 36, neuron-2.2.0: doctor ruled out twice, once on cost, once via the repo's no-new-commands non-goal, folded into status --check/--repair instead) to a different kind of finding -- data-quality rather than config-schema compliance -- rather than treating it as a fresh question. Near-duplicate detection deliberately reuses findSupersessionCandidate's existing embedding-cosine machinery and SUPERSESSION_SIMILARITY_THRESHOLD (0.97) rather than introducing a second similarity concept, run pairwise across the whole live store and grouped via union-find rather than reported as raw overlapping pairs. Output is human-readable text by default with --json for scripting, matching scan.ts's --format md|json convention rather than status's own historically all-JSON default -- a deliberate divergence because this is a maintainer-read report, not machine-polled state. sessionsObserved is surfaced inline within --health rather than waiting on ticket 21, which still owns the proactive (every-status-run or session-start-hook) warning surface the dogfood feedback actually asked for; ticket 20 only reads the existing metric on-demand, so 21 remains open.

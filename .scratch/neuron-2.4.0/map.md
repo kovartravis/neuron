@@ -360,6 +360,16 @@ thin.
   of this session (excluding `11`, claimed but blocked on credentials): `20`,
   `21`, `22`, `25`, `28`, `30` (all unclaimed and unblocked); `02`, `04`, `05`
   claimed and in progress; `03`, `13`, `16`, `23`, `24`, `26`, `29` blocked.
+- **Ticket 20 resolved, 2026-08-11.** Shipped `neuron status --health`
+  rather than a new `neuron doctor` command; see its own Answer and the
+  Decisions-so-far entry above. Didn't unblock anything directly (no ticket
+  here lists it as a blocker) — `21` (the proactive-warning half of the same
+  dogfooding batch) remains open and unclaimed, since `--health`'s inline
+  `sessionsObserved` warning is opt-in, not the proactive surface `21` asks
+  for. True frontier as of this session (excluding `11`, claimed but blocked
+  on credentials): `21`, `22`, `25`, `28`, `30` (all unclaimed and
+  unblocked); `02`, `04`, `05` claimed and in progress; `03`, `13`, `16`,
+  `23`, `24`, `26`, `29` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -388,6 +398,7 @@ thin.
 
 - [18 — Fix Concurrent-Write Data Loss in Markdown Storage](issues/18-fix-concurrent-write-data-loss.md) — fixed with a per-category-file `mkdir`-based lock (no new dependency) serializing `writeEntry`/`updateEntry`/`deleteEntry`'s read-modify-write cycle across both processes and same-process `Promise.all` races, plus a read-back-and-byte-compare verify layered in regardless as a belt-and-suspenders floor. A stale lock (>30s, a crashed holder) is stolen rather than deadlocking forever. Four new `Promise.all`-driven regression tests confirmed to fail with real data loss when the fix is reverted, and pass with it in place. `npm test` 649/649, `tsc` clean.
 - [19 — Non-Interactive Write Mode for Scheduled/Cron Writers](issues/19-non-interactive-write-mode-for-cron.md) — built `--if-novel` on `memory add`: on a supersession-gate hit it skips the write (exit 0, job still succeeds) instead of hard-erroring, but never silently — the candidate id/similarity go to stderr and the JSON on stdout becomes `{"skipped": true, "reason": "supersession-candidate", ...}` instead of the written entry, so a scripted caller can tell a skip from a real write by shape. Chose a flag on `memory add` itself over a separate `neuron exec --no-history` mode, since the gate lives on the write command, not `exec`. Mutually exclusive with `--supersedes`/`--not-a-reversal` (those assert a human already decided; `--if-novel` defers to the gate because none is present). Documented in `neuron memory --help` and a new README "Scheduled and cron writers" section — no prior cron/scheduled documentation existed in this repo to extend. `npm test` 653/653, `tsc` clean.
+- [20 — Ship `neuron doctor`](issues/20-ship-neuron-doctor.md) — extension, not a new command: same "no new commands" precedent ADR 0013's ticket 36 already set for config-validation (`--check`/`--repair`) applies here too, so store-health signals landed as a third mutually-exclusive `neuron status --health` report mode instead of a `doctor` binary. Built `NeuronMemory.getStoreHealth()` reusing `findSupersessionCandidate`'s embedding-cosine machinery pairwise across the whole live store, grouped via union-find so a near-duplicate chain reads as one group; importance histogram (1-5) and superseded count round it out. Human-readable by default, `--json` for scripting. `sessionsObserved` surfaced inline (not delegated — `21` hasn't landed). Live-verified against this repo's own real store: found genuine leftover test-fixture pollution in the dev DB and a real near-dup class (architecture cards duplicated across `decisions`/`architecture` from the pre-`01`-revert alias period) — both left as findings, not fixed here. `npm test` 659/659, `tsc` clean.
 
 ## Not yet specified
 
