@@ -3536,3 +3536,27 @@ tags:
 taskId: "17"
 ---
 Resolved wayfinder ticket 17 (neuron-2.4.0 map): Antagonistic Recall benchmark. Built a resident vitest pillar (Pillar 13, test/e2e/adversarial-corpus.ts sibling test/e2e/antagonistic-corpus.ts) with 19 off-topic queries programmatically verified to share zero FTS-prefix-matching vocabulary with Pillar 7's populated store, calling queryGated directly -- real run measured 0/19 (0%) false-accept. Extended relevance_gate_eval.py's existing negative control to record neg_r1_fts (the gate's real accept/reject decision, not just cosine) and re-ran it for real against the full LongMemEval-S split (500 questions, 23867 documents) -- measured 499/500 (99.80%) false-accept, uniform across categories. The two numbers disagree because of corpus construction, not a bug: the resident pillar's vocabulary is adversarially disjoint by design, while LongMemEval's cross-partition negative control still shares ordinary conversational words with its query, and the shipped OR-across-any-word lexical gate clears almost all of them. Measurement only, no fix attempted (mirrors ticket 39 -> ticket 41's split); results committed under benchmarks/reports/ and benchmarks/longmemeval/outputs/relevance_gate_longmemeval.json. Found one unrelated off-band bug during the real e2e-runner.js verification run: Pillar 8 (Multi-Process Contention) failed on a pre-existing 'no such column: scope' concurrent-migration race, reproduced in isolation, confirmed unrelated to this ticket's diff and left for ticket 18. Didn't unblock anything directly; true frontier now 18, 19, 20, 21, 22, 25.
+
+---
+id: 4c7ce7c5-9abd-490f-8d1c-c1a3ceca10cd
+createdAt: 2026-08-11T18:15:29.726Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "17"
+---
+Committed and pushed wayfinder tickets 14, 15, 17 (neuron-2.4.0) to GitHub -- commit 419ef5d on feat/2.4.0-rc1. Also reverted an unintended neuron.yaml pollution found in the process: running the real e2e-runner.js suite caused ticket 01's category auto-declare hook to write 'stress: {}' into this repo's real neuron.yaml, because concurrency-stress.test.ts isolates its SQLite DB path but not its neuron.yaml config resolution -- reverted before committing rather than shipped as a real change. tmp/ left uncommitted per ticket 15's own still-open punch-list item.
+
+---
+id: 60d63f25-b4a8-442a-895b-81cb1fad1902
+createdAt: 2026-08-12T01:46:48.237Z
+importance: 4
+tags:
+  - retrieval
+  - wayfinder
+  - rc2
+taskId: "27"
+---
+Wayfinder session on the neuron-2.4.0 map: grilled ticket 27 (Should Anything Be Done About the Gate's 99.80% False-Accept Rate?) live with the maintainer through six dependency-ordered decisions. Verdict: fix it (the gate now runs on every agent turn post-ticket-12, so 99.80% is near-constant noise, not a rare edge case). The cosine floor stays rejected, not revisited -- ticket 39's null result is structural (on-topic/negative-control cosine distributions overlap too much), not a bar-too-strict problem. Direction: local-only (hard maintainer constraint, no remote API ever) second-stage gate layer using a small cross-encoder reranker instead of another chat model -- purpose-built for query-passage relevance, no ChatML/few-shot scaffolding needed, materially smaller (22M-100M params vs the current 500M chat model). Integration: a pure gate layer ANDed onto the existing lexical leg on the small already-filtered candidate set, ranking/RRF left untouched since this is a precision problem not a ranking problem. Acceptance bar pre-committed before any pilot: false-accept rate must drop more than 5x (99.80% to under 20%) with ~zero new false-silence on Pillar 7's on-topic corpus and LongMemEval's gold queries. Graduated two tickets rather than building here, mirroring ticket 12's and ticket 14's own design-then-implementation splits: ticket 28 (research, find a real local ONNX cross-encoder reranker with confirmed availability/license/size) and ticket 29 (build the gate layer and pilot it against the bar, blocked by 28). True frontier now 18, 19, 20, 21, 22, 25, 28.
