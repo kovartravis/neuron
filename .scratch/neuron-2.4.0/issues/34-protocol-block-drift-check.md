@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: none
 
 # 34 — Detect `CLAUDE.md` Protocol-Block Drift From `neuron.yaml`
