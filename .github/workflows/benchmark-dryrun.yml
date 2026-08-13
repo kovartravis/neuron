@@ -1,0 +1,50 @@
+name: Benchmark Harness Dry-Run Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Free, dry-run-capable benchmark harnesses (no live API spend). These
+      # write into their own results.json paths as a side effect; that's
+      # harmless here since this checkout is discarded at the end of the job
+      # (no commit/push step touches benchmarks/token-ab/results/).
+      #
+      # Deliberately its own workflow, not a step in publish.yml's
+      # build-and-test job: at ~75s combined these run over 3x longer than
+      # `npm test` itself, and a regression in a benchmark harness is a minor
+      # inconvenience (ticket 13's audit finding F5), not a release-blocking
+      # compliance violation like the architecture-drift/protocol checks
+      # there. This workflow can fail and go red without ever gating
+      # publish.yml or npm publish.
+      - name: Token A/B dry run
+        run: npm run bench:token-ab:dry-run
+
+      - name: Git-log A/B dry run
+        run: npm run bench:gitlog-ab:dry-run
+
+      - name: SWE-bench A/B pilot dry run
+        run: npm run bench:swebench-ab:pilot:dry-run
+
+      - name: SWE-bench A/B full dry run
+        run: npm run bench:swebench-ab:dry-run

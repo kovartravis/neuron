@@ -58,11 +58,14 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
   const missing = TASK_FILTER.filter(id => !found.has(id));
   throw new Error(`--tasks referenced unknown task id(s): ${missing.join(', ')}`);
 }
-const OUT_DIR = path.join(
-  REPO_ROOT,
-  args.find(a => a.startsWith('--out='))?.split('=')[1] ??
-    'benchmarks/token-ab/results/14-git-log-hook-vs-agent-log-ab'
-);
+// `--out=` names the results subdirectory. The `-dry-run` suffix is NOT
+// cosmetic (see run-swebench-ab.mjs's own comment on this exact bug class):
+// without it, a dry run silently overwrites the results.json a real, paid
+// run wrote to the same default path. A dry run must never be able to land
+// on a live run's path.
+const OUT_NAME = args.find(a => a.startsWith('--out='))?.split('=')[1] ??
+  'benchmarks/token-ab/results/14-git-log-hook-vs-agent-log-ab';
+const OUT_DIR = path.join(REPO_ROOT, DRY_RUN ? `${OUT_NAME}-dry-run` : OUT_NAME);
 
 const ARMS = ['gitlog', 'agent'];
 const TREATMENT_ARM = 'gitlog';
