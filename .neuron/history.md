@@ -2794,3 +2794,15 @@ tags:
 taskId: "33"
 ---
 Wayfinder pickup session on the neuron-2.4.0 map: claimed the frontier's first unblocked ticket, 33 (Detect a Stale Global/Linked neuron Binary Against the Working Tree, F2 from ticket 13's audit), and resolved it by implementation since this map carries execution. Built checkBinaryVersionMismatch() in src/components/binaryVersion.ts as a new status --check finding kind (binaryVersionMismatch), following ticket 01's undeclaredCategories precedent: resolves the running binary past any symlink via realpathSync, compares its own package.json version against cwd's, and only fires when cwd's package.json names @kovartravis/neuron so ordinary consumers never trip it. Wired into status.ts's --check block with the same compliant/exitCode contract undeclaredCategories already uses; no --repair counterpart since there's nothing to write. Live-verified by copying this repo's real dist/ with only its package.json version overwritten and running it against a project directory naming the real version, reproducing both historical incidents' trap without a second real install. npm test 715/716 (Pillar 7 adversarial recall quality failure confirmed pre-existing/unrelated by reproducing it with this ticket's changes stashed out), tsc clean. Updated the map's Decisions-so-far and frontier line; new frontier is 34, 35, 36, 39, 40, 41, 43.
+
+---
+id: 3300ea9b-d53c-4f07-8373-8867e6f047ed
+createdAt: 2026-08-13T12:22:28.834Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "34"
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 34 (Detect CLAUDE.md Protocol-Block Drift From neuron.yaml), the frontier's lowest unclaimed/unblocked id. Built a fourth status --check finding kind (protocolBlockDrift, following ticket 01/33's precedent, no --repair counterpart) plus a new 'Config/protocol compliance check' CI step in publish.yml's build-and-test job right after ticket 32's architecture-drift step, resolving the ticket's own open 'CI vs status --check' question with both rather than picking one -- confirmed safe first by checking this repo's own tree was already 100% compliant before wiring status --check wholesale into CI. Extracted a shared resolveProtocolTargets() out of writeProtocolBlocks so the check generalizes across every detected harness's own instruction file (not just CLAUDE.md) with no duplicated generation logic. Live-verified clean against this repo's real committed CLAUDE.md; npm test 704/704, tsc clean. Refreshed the architecture blueprint afterward (5 real export additions: ticket 34's own checkProtocolBlockDrift/ProtocolBlockDrift/findMarkerRange plus two from ticket 33 that had never been captured). True frontier is now 35, 36, 39, 40, 41, 43 (unclaimed/unblocked); 02, 04, 05, 38 claimed in progress; 03, 42 blocked.
