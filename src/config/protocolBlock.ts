@@ -160,7 +160,12 @@ export interface UpsertProtocolBlockResult {
   action: ProtocolWriteAction;
 }
 
-function findMarkerRange(content: string): { start: number; end: number } | null {
+/**
+ * Exported so a drift check (ticket 34) can extract the same managed region
+ * `upsertProtocolBlock` writes into, without duplicating the marker-scan
+ * logic or re-running the write path just to read it.
+ */
+export function findMarkerRange(content: string): { start: number; end: number } | null {
   const start = content.indexOf(PROTOCOL_MARKER_START);
   if (start === -1) return null;
   const endMarkerIndex = content.indexOf(PROTOCOL_MARKER_END, start);

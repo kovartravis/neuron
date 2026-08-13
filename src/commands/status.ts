@@ -3,6 +3,7 @@ import { loadNeuronConfig } from '../config/neuronYaml.js';
 import { getArchitecturalDrift } from '../scanner/diff.js';
 import { summarizeRecallCost } from '../harnesses/index.js';
 import { checkBinaryVersionMismatch } from '../components/binaryVersion.js';
+import { checkProtocolBlockDrift } from './init.js';
 import { parseFlags, STATUS_HELP } from './utils.js';
 
 /** Truncates a content preview for the human-readable `--health` report only — the JSON payload always carries the full string. */
@@ -139,13 +140,31 @@ export async function handleStatusCommand(memory: NeuronMemory, args: string[] =
     // not store content. No --repair counterpart: there's nothing to write,
     // the fix is re-linking/re-installing the binary outside this process.
     const binaryVersionMismatch = checkBinaryVersionMismatch(process.cwd());
+    // Ticket 34 / F3: a fourth finding kind — a committed instruction file's
+    // managed protocol block disagreeing with what neuron.yaml/harness
+    // wiring would generate today. No --repair counterpart either: the fix
+    // is `neuron init --overwrite-hooks`, which already asks/warns about
+    // clobbering a differing block on its own.
+    const protocolBlockDrift = checkProtocolBlockDrift(process.cwd(), loadNeuronConfig(process.cwd()));
     console.log(JSON.stringify({
-      compliant: violations.length === 0 && undeclaredCategories.length === 0 && !binaryVersionMismatch,
+      compliant:
+        violations.length === 0 &&
+        undeclaredCategories.length === 0 &&
+        !binaryVersionMismatch &&
+        protocolBlockDrift.length === 0,
       violations,
       undeclaredCategories,
       binaryVersionMismatch,
+      protocolBlockDrift,
     }));
-    if (violations.length > 0 || undeclaredCategories.length > 0 || binaryVersionMismatch) process.exitCode = 1;
+    if (
+      violations.length > 0 ||
+      undeclaredCategories.length > 0 ||
+      binaryVersionMismatch ||
+      protocolBlockDrift.length > 0
+    ) {
+      process.exitCode = 1;
+    }
     return;
   }
 

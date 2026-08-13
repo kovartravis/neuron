@@ -52,6 +52,18 @@ jobs:
             exit "$code"
           fi
 
+      - name: Config/protocol compliance check
+        run: |
+          set +e
+          OUTPUT=$(node dist/cli.js status --check)
+          code=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::'neuron status --check' found a compliance violation (see JSON above) -- a required field missing its default, an undeclared category, or CLAUDE.md's protocol block drifted from neuron.yaml. Run 'node dist/cli.js status --check' locally; field/category issues take 'status --repair', protocol-block drift takes 'neuron init --overwrite-hooks'."
+            exit 1
+          fi
+
       - name: Resolve version and dist-tag
         id: version
         run: |
