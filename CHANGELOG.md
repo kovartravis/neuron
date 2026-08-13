@@ -4,8 +4,8 @@ All notable changes to `@kovartravis/neuron` will be documented in this file.
 
 ## [2.4.0-rc2] - 2026-08-12
 
-Second interim checkpoint on the [neuron-2.4.0
-map](.scratch/neuron-2.4.0/map.md), audited from `git log
+Second interim checkpoint on the neuron-2.4.0
+map, audited from `git log
 v2.4.0-rc1..HEAD` directly rather than assumed from the map's nominal
 ticket numbering.
 
@@ -46,8 +46,8 @@ ticket numbering.
 
 ## [2.4.0-rc1] - 2026-08-12
 
-Interim release candidate — most of the [neuron-2.4.0
-map](.scratch/neuron-2.4.0/map.md) remains open (13+ tickets unclaimed or
+Interim release candidate — most of the neuron-2.4.0
+map remains open (13+ tickets unclaimed or
 blocked, including the reranker-gate work chartered off the finding below).
 This tag is an installable checkpoint of everything that landed on trunk
 since `v2.3.0`, audited directly from `git log v2.3.0..HEAD` rather than
@@ -185,8 +185,8 @@ a blocker of any ticket.
 
 ## [2.3.0-rc2] - 2026-08-09
 
-Interim release candidate — most of the [neuron-2.3.0
-map](.scratch/neuron-2.3.0/map.md) remains open (real-install verification
+Interim release candidate — most of the neuron-2.3.0
+map remains open (real-install verification
 for both new harness adapters, the compatibility-disclosure surface, the
 benchmark-suite publication band). This tag is an installable checkpoint of
 everything that landed on trunk since `v2.3.0-rc1`, audited directly from
@@ -266,15 +266,15 @@ results before the model ever sees the prompt — the agent's cooperation is no
 longer required. Both harnesses were researched and verified to support this
 deterministically (ADR 0014); everything else evaluated (Copilot CLI, Cursor,
 Antigravity CLI, OpenCode) is out of scope for 2.2.0 and continues in
-[neuron-2.3.0](.scratch/neuron-2.3.0/map.md) — see
-[the map](.scratch/neuron-2.2.0/map.md#out-of-scope) for why. `neuron scan`
+neuron-2.3.0 — see
+the neuron-2.2.0 map's Out of Scope section for why. `neuron scan`
 also moved to real Tree-Sitter AST parsing this release, and its output is now
 byte-stable — a re-scan of an unchanged tree reproduces the identical card.
 
 This section supersedes and consolidates every `2.2.0-rc*` tag published
 during development (`rc1`–`rc3`); there is no separate `rc4` or `rc5` tag —
 both bands were folded directly into this release (see
-[the map](.scratch/neuron-2.2.0/map.md) for why).
+the neuron-2.2.0 map for why).
 
 ### Upgrading from 2.1.0 — three things change on disk
 
@@ -317,7 +317,7 @@ contention rather than anything a specific ticket touched. Four unit test
 files (`cli.test.ts`, `history.test.ts`, `learn.test.ts`, `memory.test.ts`)
 failed when run against this repo's own populated `.neuron/` store rather
 than an isolated fixture, inherited from the `md`-default flip — fixed by
-[ticket 42](.scratch/neuron-2.2.0/issues/42-isolate-cli-tests-from-real-store.md).
+ticket 42.
 
 ### Added — deterministic recall hooks for Claude Code and Codex CLI
 
@@ -353,9 +353,9 @@ than an isolated fixture, inherited from the `md`-default flip — fixed by
 - A project with both `.claude/` and `.codex/` gets both adapters wired
   independently, each writing only its own config file.
 
-Tickets [11](.scratch/neuron-2.2.0/issues/11-recall-adapter-architecture.md),
-[12](.scratch/neuron-2.2.0/issues/12-claude-code-adapter.md),
-[13](.scratch/neuron-2.2.0/issues/13-codex-adapter.md);
+Tickets 11,
+12,
+13;
 [ADR 0014](docs/adr/0014-recall-adapter-architecture.md).
 
 ### Changed — the protocol block is capability-aware
@@ -377,7 +377,7 @@ block can no longer silently drift from the config it describes. This
 repo's own `CLAUDE.md` and the packaged `neuron-memory` skill both carry the
 short variant as of this release.
 
-Ticket [14](.scratch/neuron-2.2.0/issues/14-protocol-block-rewrite.md).
+Ticket 14.
 
 ### Added — `neuron init` reports per-harness fidelity
 
@@ -401,7 +401,7 @@ regresses recall on real conversational text — even the gentlest costs
 3.3–4.2% recall for a 4.4% volume reduction — so `minScore` is not
 reinterpreted as that floor; there is no floor to reinterpret it as.
 
-Ticket [39](.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md);
+Ticket 39;
 [ADR 0012 amendment](docs/adr/0012-relevance-gate-and-score-decontamination.md#amendment-ticket-39-2026-08-03--the-cosine-floor-and-the-config-surface).
 
 ### Fixed — the architecture card is now a deterministic artifact
@@ -419,7 +419,7 @@ is deleted rather than patched. A related bug surfaced while chasing this to
 zero: the markdown storage adapter was re-minting `createdAt` on every
 upsert instead of preserving it, unlike every other write path — fixed.
 
-Ticket [37](.scratch/neuron-2.2.0/issues/37-architecture-card-deterministic-artifact.md).
+Ticket 37.
 
 ### Changed — markdown is the default, and `neuron init` says so on disk
 
@@ -499,13 +499,13 @@ unset, instead of requiring every field up front.
 0.0** on `recallAt1`/`recallAt5`/`mrr` between the enrichment-on and
 enrichment-off arms.
 
-Ticket [06](.scratch/neuron-2.2.0/issues/06-write-side-enrichment.md); guardrail
+Ticket 06; guardrail
 design in [ADR 0010](docs/adr/0010-llm-job-guardrails.md).
 
 ### Not shipped — salvage expansion, dedupe, automatic pruning
 
 Three jobs evaluated for the model's list did not clear the bar ticket
-[05](.scratch/neuron-2.2.0/issues/05-llm-quality-latency-guardrails.md) set,
+05 set,
 and none of the three shipped:
 
 - **Query expansion for weak retrieval** — the weakness floor the design
@@ -513,27 +513,27 @@ and none of the three shipped:
   top-1 cosine on queries retrieval got wrong (0.7779) is *higher* than on
   queries it got right (0.7518). Every measured failure is confidently wrong,
   not weak, so no rewritten query could have fixed it. Ruled out before
-  implementation. [Ticket 07](.scratch/neuron-2.2.0/issues/07-query-expansion.md).
+  implementation. Ticket 07.
 - **LLM-assisted consolidation & dedupe** — pairwise cosine over 239 store
   entries found exactly one genuine same-category duplicate, findable by
   content hash with no model. The band that would catch more is full of
   semantic *opposites* sitting at cosine 0.92, which needs reliable negation
   detection neither the 0.5B model nor the embedder has. Ruled out before
-  design. [Ticket 08](.scratch/neuron-2.2.0/issues/08-consolidation-dedupe.md).
+  design. Ticket 08.
 - **Automatic pruning** — both candidate judgement methods (a recoverability
   binary and a recalibrated 1–5 importance scale) false-deleted
   ground-truth-unrecoverable entries in pre-committed testing (2 of 11 and 4
   of 11 respectively), including a `decisions`-category ADR that reads like
   ordinary prose. **Removed from 2.2.0.**
-  [Ticket 23](.scratch/neuron-2.2.0/issues/23-configurable-automatic-pruning.md),
-  [ticket 24](.scratch/neuron-2.2.0/issues/24-pruning-ab-test.md).
+  Ticket 23,
+  ticket 24.
 
 **The prune hazard this would have addressed is still live and unfixed**:
 `neuron memory prune`'s default importance ceiling (`3`) is also the default
 value every entry gets when written without `--importance`, so a bare
 `neuron memory prune` deletes nearly everything older than its `--days`
 window. Deferred rather than fixed —
-[ticket 25](.scratch/neuron-2.2.0/issues/25-prune-config-and-collision-fix.md) —
+ticket 25 —
 by deliberate maintainer decision. Pass `--importance 4` or `5` on anything
 that must survive a prune.
 
@@ -569,7 +569,7 @@ claim, not a tidy-up (`docs/adr/0011`).
 - **A `scope:` key found in hand-edited frontmatter is silently ignored**, not
   an error, and disappears the next time that entry is written.
 
-Ticket [38](.scratch/neuron-2.2.0/issues/38-remove-scope.md).
+Ticket 38.
 
 ### Fixed — frontmatter round-trip integrity
 
@@ -591,7 +591,7 @@ reproducible by deleting a single frontmatter line:
   field, matching the existing `neuron history`/`neuron learn` deprecation
   warnings — nothing is silent, nothing is printed to stdout.
 
-Ticket [35](.scratch/neuron-2.2.0/issues/35-frontmatter-roundtrip-integrity.md).
+Ticket 35.
 
 ### Removed — model-based importance inference
 
@@ -701,8 +701,8 @@ deprecated aliases for `md`, warning on `stderr`.
   aliased and warning.
 
 [ADR 0011](docs/adr/0011-markdown-as-store-of-record.md);
-tickets [28](.scratch/neuron-2.2.0/issues/28-md-only-parity-design.md),
-[29](.scratch/neuron-2.2.0/issues/29-md-only-semantic-search.md).
+tickets 28,
+29.
 
 ### Added — configurable per-category frontmatter schema
 
@@ -747,9 +747,9 @@ categories:
   values every time, not just the same shape and bytes.
 
 [ADR 0013](docs/adr/0013-configurable-frontmatter-schema.md);
-tickets [43](.scratch/neuron-2.2.0/issues/43-declarable-field-schema-cli-flags.md),
-[44](.scratch/neuron-2.2.0/issues/44-sqlite-additive-field-migration.md),
-[45](.scratch/neuron-2.2.0/issues/45-strict-mode-and-skill-docs.md).
+tickets 43,
+44,
+45.
 
 ### Changed — the relevance gate ships; `score` no longer blends in `importance`
 
@@ -765,7 +765,7 @@ result is now an **announced** zero, not silence: both surfaces print a
 rejected count, and `neuron status` reports it cumulatively as
 `relevance.rejectedTotal`.
 
-Ticket [41](.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate.md);
+Ticket 41;
 [ADR 0012](docs/adr/0012-relevance-gate-and-score-decontamination.md).
 
 ### Known Limitations
@@ -778,10 +778,10 @@ Ticket [41](.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate
   CLI and Cursor were researched and land `best-effort` — a real capability,
   just not one neuron can wire a verified deterministic hook for yet — and
   continue as roadmap items in
-  [neuron-2.3.0](.scratch/neuron-2.3.0/map.md), not this release.
+  neuron-2.3.0, not this release.
 - **`neuron status --check`/`--repair`** — the validation surface for
   declared-field schema violations — is designed (ADR 0013) but not shipped;
-  it continues as [neuron-2.3.0's ticket 13](.scratch/neuron-2.3.0/issues/13-status-check-repair.md).
+  it continues as neuron-2.3.0's ticket 13.
 - **Automatic pruning was evaluated and removed**, not shipped: both
   candidate judgement methods false-deleted ground-truth-unrecoverable
   entries in pre-committed testing. The hazard it would have addressed is
@@ -1090,8 +1090,9 @@ into memory and tell an agent when that shape has changed underneath it.
   `web-tree-sitter` is not a dependency and no `.wasm` grammar is loaded.
   Multi-line declarations may be truncated, and some call sites are recorded as
   `method` symbols. Documentation in this release describes the shipped
-  behavior; ADR 0003 is marked **Deferred**. Tracked in
-  `.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md`.
+  behavior; ADR 0003 is marked **Deferred**. Tracked as ticket 06 — Replace the
+  Pattern-Matching Scanner with a Real Tree-Sitter AST Engine (ticket
+  `e93dae93-844b-43b3-a5aa-316fa45d23b1`).
 - **`neuron completion`** (shell autocompletion) was planned for this release
   and is **not** included. It moves to the next minor.
 - **`npm run test:e2e` requires a local ONNX model cache** and is not runnable

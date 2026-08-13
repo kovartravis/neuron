@@ -5,11 +5,11 @@
   whose storage posture this extends into a governance claim; [ADR 0010 — LLM
   Job Guardrails](0010-llm-job-guardrails.md), whose measured limits on the
   0.5B model this ADR relies on
-- **Ticket:** [36 — Configurable Frontmatter Schema](../../.scratch/neuron-2.2.0/issues/36-configurable-frontmatter-schema.md)
-- **Implemented by:** [43](../../.scratch/neuron-2.2.0/issues/43-declarable-field-schema-cli-flags.md),
-  [44](../../.scratch/neuron-2.2.0/issues/44-sqlite-additive-field-migration.md),
-  [45](../../.scratch/neuron-2.2.0/issues/45-strict-mode-and-skill-docs.md),
-  [46](../../.scratch/neuron-2.2.0/issues/46-status-check-repair.md)
+- **Ticket:** 36 — Configurable Frontmatter Schema (ticket `bd7412c4-c927-4330-952c-41b6fb8fa6e3`)
+- **Implemented by:** 43 (ticket `b9885df7-1b5a-45af-99e0-27cb69a3150e`),
+  44 (ticket `d25bc28b-c1ef-42f7-88b8-b194bd33971c`),
+  45 (ticket `92b988c4-2e1f-4db7-9aa3-ca885a52945b`),
+  46 (ticket `d6679061-387b-473c-af93-2cb2cb55c354`)
 
 ## Context
 
@@ -186,4 +186,5 @@ pillars the destination narrowed to on 2026-08-04. Everything else this ADR
 decided is unaffected — the schema/tiers/type-floor design (`43`), SQLite
 column parity (`44`) and `strict` mode (`45`) all shipped in 2.2.0 exactly as
 decided here. `--check`/`--repair` continues, design unchanged, as
-[neuron-2.3.0's ticket 13](../../.scratch/neuron-2.3.0/issues/13-status-check-repair.md).
+neuron-2.3.0's ticket 13 — `neuron status --check`/`--repair`: Report and
+Repair Non-Compliant Entries (ticket `99f85f06-9e6c-4224-8a58-dd4621a168c7`).

@@ -29,8 +29,8 @@ The remaining extensions in `SUPPORTED_SOURCE_EXTENSIONS` (Ruby, PHP, Swift, C#)
 stay on the regex scanner, and the blueprint card records which parser produced
 each file so the two are never silently mixed.
 
-The 2.1.0 tracking ticket
-(`.scratch/architecture-scans-2.1.0/issues/06-real-tree-sitter-ast-engine.md`)
+The 2.1.0 tracking ticket, 06 — Replace the Pattern-Matching Scanner with a
+Real Tree-Sitter AST Engine (ticket `e93dae93-844b-43b3-a5aa-316fa45d23b1`),
 is superseded by the neuron 2.2.0 map.
 
 ## Context

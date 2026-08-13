@@ -1,6 +1,6 @@
 # Harness Compatibility Research — Injection Surfaces Across Six Agents
 
-Ticket: [`10-harness-compatibility-research.md`](../issues/10-harness-compatibility-research.md)
+Ticket: 10 — Harness Compatibility Research: Injection Surfaces Across Six Agents (ticket `c6e16bc4-d896-48df-9510-cafb687075a3` in the `tickets` category)
 
 **Scope note:** This research covers Claude Code, OpenAI Codex CLI, GitHub Copilot
 CLI, Google Antigravity CLI, and OpenCode — the five harnesses ticket `10` originally

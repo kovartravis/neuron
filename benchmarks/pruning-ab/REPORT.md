@@ -1,7 +1,7 @@
 # Ticket 24 — Pruning A/B: report
 
 Executed 2026-08-01, AFK, against
-[`.scratch/configurable-pruning/ab-test-plan.md`](ab-test-plan.md). This
+[`ab-test-plan.md`](ab-test-plan.md). This
 report explains what ran, what didn't, and why, alongside the numbers in
 `results-exp1.json` and `results-exp2.json`. See `verdict.md` for the
 resolved outcome table.

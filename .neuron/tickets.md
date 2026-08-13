@@ -25447,7 +25447,7 @@ tags:
 taskId: null
 blockedBy: 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4,46b889d3-d290-40ef-a110-f9f4c3021c19
 kind: task
-status: unclaimed
+status: claimed
 ---
 # 42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/`
 
