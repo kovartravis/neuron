@@ -7,40 +7,88 @@ import { collectDeclaredFieldFlags } from '../config/neuronYaml.js';
 // `list` returns at most 20 entries by default and the SQL/markdown read path
 // already loads every matching row before slicing to the caller's limit (see
 // queryVector's list-mode branch), so this just asks for "effectively all" —
-// frontier correctness needs to see every ticket to build the resolved-id
-// lookup, not a windowed sample.
-const FRONTIER_FETCH_LIMIT = 1_000_000;
+// filtering by field value or by a reference graph needs to see every
+// candidate, not a windowed sample, before a limit is applied to the result.
+const FILTERED_LIST_FETCH_LIMIT = 1_000_000;
+
+export interface WhereClause {
+  field: string;
+  value: string;
+}
+
+export interface RefsSatisfyClause {
+  /** Declared field holding a comma-separated list of ids referencing other entries in the same category. */
+  field: string;
+  /** Field + value every referenced entry must satisfy for the reference to count as "satisfied". */
+  subfield: string;
+  subvalue: string;
+}
 
 /**
- * The wayfinder frontier per docs/agents/issue-tracker.md: `tickets`-category
- * entries with `status: unclaimed` whose every `blockedBy` id names an entry
- * with `status: resolved`. A `blockedBy` id with no matching entry at all
- * (dangling) fails that check — the ticket stays blocked, never silently
- * unblocked by a typo or an entry outside this fetch.
+ * Two composable, schema-agnostic filters for `memory list` — no assumption
+ * about field names or enum values, so any project's own declared-field
+ * schema (any category, not just a wayfinder-style tracker) can express its
+ * own "what's actionable" query:
+ *
+ *   --where <field>=<value>            keep entries where fields[field] === value
+ *   --refs-satisfy <field>:<sub>=<val> keep entries where every comma-separated id
+ *                                      in fields[field] names another entry (same
+ *                                      category) with fields[sub] === val
+ *
+ * A dangling id in a `--refs-satisfy` field (no matching entry at all in the
+ * fetched set) fails the check rather than being silently skipped — an
+ * unresolvable reference must not look satisfied.
  */
-async function computeFrontier(
+async function filterList(
   memory: NeuronMemory,
   categories: string[] | undefined,
+  where: WhereClause | undefined,
+  refsSatisfy: RefsSatisfyClause | undefined,
   limit: number | undefined,
   includeSuperseded: boolean | undefined
 ): Promise<Memory[]> {
-  if (!categories || categories.length !== 1 || categories[0] !== 'tickets') {
+  if (refsSatisfy && (!categories || categories.length !== 1)) {
     console.error(
-      "Error: --frontier only applies to the 'tickets' category (status/blockedBy are declared there). Pass --category tickets."
+      '--refs-satisfy resolves ids against entries in the same category, so it requires exactly one --category.'
     );
     process.exit(1);
   }
-  const all = await memory.query({ categories, limit: FRONTIER_FETCH_LIMIT, includeSuperseded });
-  const resolvedIds = new Set(all.filter(e => e.fields?.status === 'resolved').map(e => e.id));
-  const frontier = all.filter(e => {
-    if (e.fields?.status !== 'unclaimed') return false;
-    const blockedBy = (e.fields?.blockedBy ?? '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    return blockedBy.every(id => resolvedIds.has(id));
-  });
-  return limit !== undefined ? frontier.slice(0, limit) : frontier;
+  const all = await memory.query({ categories, limit: FILTERED_LIST_FETCH_LIMIT, includeSuperseded });
+
+  let results = all;
+  if (where) {
+    results = results.filter(e => e.fields?.[where.field] === where.value);
+  }
+  if (refsSatisfy) {
+    const satisfiedIds = new Set(all.filter(e => e.fields?.[refsSatisfy.subfield] === refsSatisfy.subvalue).map(e => e.id));
+    results = results.filter(e => {
+      const refs = (e.fields?.[refsSatisfy.field] ?? '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      return refs.every(id => satisfiedIds.has(id));
+    });
+  }
+  return limit !== undefined ? results.slice(0, limit) : results;
+}
+
+function parseWhere(raw: string): WhereClause {
+  const eq = raw.indexOf('=');
+  if (eq < 1) {
+    console.error(`Error: --where expects "<field>=<value>", got "${raw}"`);
+    process.exit(1);
+  }
+  return { field: raw.slice(0, eq), value: raw.slice(eq + 1) };
+}
+
+function parseRefsSatisfy(raw: string): RefsSatisfyClause {
+  const colon = raw.indexOf(':');
+  const eq = raw.indexOf('=', colon + 1);
+  if (colon < 1 || eq < colon + 2) {
+    console.error(`Error: --refs-satisfy expects "<field>:<subfield>=<value>", got "${raw}"`);
+    process.exit(1);
+  }
+  return { field: raw.slice(0, colon), subfield: raw.slice(colon + 1, eq), subvalue: raw.slice(eq + 1) };
 }
 
 export async function handleMemoryCommand(
@@ -214,8 +262,10 @@ export async function handleMemoryCommand(
     // Was `options.category` only, so `--categories a,b` parsed successfully
     // and silently had no filtering effect — `query` already reads both.
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
-    if (options.frontier) {
-      console.log(JSON.stringify(await computeFrontier(memory, categories, options.limit, options.includeSuperseded)));
+    if (options.where || options.refsSatisfy) {
+      const where = options.where ? parseWhere(options.where) : undefined;
+      const refsSatisfy = options.refsSatisfy ? parseRefsSatisfy(options.refsSatisfy) : undefined;
+      console.log(JSON.stringify(await filterList(memory, categories, where, refsSatisfy, options.limit, options.includeSuperseded)));
       return;
     }
     const results = await memory.query({ categories, limit: options.limit, includeSuperseded: options.includeSuperseded });
