@@ -657,6 +657,14 @@ thin.
   full bisection trail. True frontier as of this session: `32`, `33`, `34`,
   `35`, `36`, `39`, `40`, `41`, `43` (all unclaimed and unblocked); `02`,
   `04`, `05`, `38` claimed and in progress; `03`, `42` blocked.
+- **Direct maintainer instruction, 2026-08-13: work off `feat/2.4.0-rc2` for
+  future tickets, not `main`.** A deliberate departure from `37`'s own
+  precedent ("further work continues on main" once its branch merged) —
+  `38` stays open with its branch unmerged while this map's frontier
+  (`32`-`36`, `39`-`41`, `43`) keeps moving. Every session on this map
+  should `git checkout feat/2.4.0-rc2` (or confirm it's already checked
+  out) before claiming a ticket, until a future session is told otherwise
+  or `38` itself resolves by merging to `main`.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
