@@ -2746,3 +2746,27 @@ tags:
 taskId: "31"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 31 (neuron init silently onboards every detected harness, not just the one in use). Root cause traced to two independent detection paths both keyed off bare .github/ existence (CopilotAdapter.detect(), gating hooks only; the HARNESSES-table check, gating the skill-dir copy and AGENTS.md write this repo's own bug actually hit) -- GitHub creates .github/ for CI/issue templates unrelated to Copilot far more often than for real Copilot use, unlike .claude/.codex/.cursor which have no comparable unrelated creator. Fixed by narrowing the detection signal itself rather than weakening the onboarding policy uniformly: added a real, GitHub-documented .github/copilot-instructions.md marker to harnesses.json's github entry, a new isHarnessPresent() helper that checks it (falling back to bare base for the other three, unchanged, or to an already-onboarded-by-neuron signal so refreshing a real install still works), and had CopilotAdapter.detect() delegate to the same check instead of duplicating it. Also added a visibility net (stderr note plus harnesses.detected/newlyOnboarded JSON field) for the ticket's broader silent-side-effect complaint. Found and deliberately left unfixed as a separate, differently-shaped ticket: --harness was already documented as unable to force-wire an undetected harness, but never actually gated the AGENTS.md/skill-dir writes at all, only hook install. npm test 693/693, tsc clean; live-verified against fixture trees and this repo's own real install. Resolving 31 didn't unblock anything else on this map; true frontier is now 32, 33, 34, 35, 36, 38, 39, 40, 41.
+
+---
+id: b8e218b7-0efa-4a20-9698-2c1b588996d1
+createdAt: 2026-08-13T11:58:11.135Z
+importance: 4
+tags:
+  - release
+  - wayfinder
+  - 2.2.0
+taskId: "38"
+---
+Cut branch feat/2.4.0-rc2 on the neuron-2.4.0 wayfinder map (ticket 38, claimed not yet resolved). Version bumped to 2.4.0-rc2, CHANGELOG audited from git log v2.4.0-rc1..HEAD (reranker gate, harness-detection fix, autoRescan project-root fix, git-log A/B re-run), fresh benchmarks/reports/ run, npm test 693/693 clean. npm run test:e2e surfaced one real finding while cutting: Pillar 7 (Adversarial Retrieval Quality) failing recall@5 0.375 against its 0.4 floor. Investigated it as a possible regression from ticket 29's reranker gate (shipped same session, immediately prior) since the timing lined up, but ruled that out with certainty via controlled bisection across git worktrees and isolated single-file reverts: Pillar 7 calls memory.query(), never queryGated(), so the reranker is structurally unreachable from that path. Traced instead to real build-to-build floating-point sensitivity in the real (non-mocked) ONNX embedder against this pillar's deliberately-adversarial near-tie corpus -- reverting even an unused, inert class instantiation (never .score()-called) restored the prior build's exact per-case ranks, and the value is fully deterministic within an unchanged build (repeat runs match byte-for-byte). Maintainer chose to leave the 0.4 floor as-is for this cut rather than recalibrate inline, and to charter a ticket rather than keep re-running an unchanged build (which cannot pass, since there's no within-build randomness). Filed ticket 43 with the full bisection trail for a future recalibration session. Also reverted the same ticket-39 neuron.yaml pollution bug rc1's own cut hit. Branch pushed to origin; NOT merged to main -- that's the real irreversible npm-publish trigger and needs explicit maintainer go-ahead first.
+
+---
+id: 14b3ff06-3850-44e3-9cbf-1dae7e58801f
+createdAt: 2026-08-13T12:03:57.670Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: null
+---
+Wayfinder pickup on the neuron-2.4.0 map: picked up ticket 32 (CI Architecture-Drift Gate), the frontier's lowest-numbered unclaimed-unblocked ticket per a direct scan of issues/ (32, 33, 34, 35, 36, 39, 40, 41, 43 all unclaimed/unblocked). Added an Architecture drift check step to publish.yml's build-and-test job right after npm test, requiring no CLI code change since neuron scan --check already implements the documented 0/1/2 exit-code contract (clean/drift/incomparable-baseline), exhaustively covered by scan.fidelity.test.ts. The step branches on exit code to post a differentiated ::error:: annotation for real drift vs. an incomparable baseline, both pointing the contributor at a local neuron scan + commit, staying read-only per ticket 13's F1b rejection of CI write-back. Live-verified by building dist/cli.js and running the check directly against this repo's own real state (exit 0, in sync), not just unit fixtures. Resolved ticket 32, updated map.md's Decisions-so-far and frontier notes; didn't unblock anything else directly. True frontier is now 33, 34, 35, 36, 39, 40, 41, 43.
