@@ -19154,6 +19154,17 @@ thin.
   the shape prior tickets like `17`/`05`/`06` used `/tdd` for).
 - **Protocol:** every session follows the `CLAUDE.md` memory-store loop.
   Record ADRs under `decisions`, session logs under `history`.
+- **Ticket 44 resolved, 2026-08-13** — picked up as the frontier's earlier-
+  chartered, numbered ticket (alongside the unnumbered header-fragment-fix
+  ticket, both unclaimed and unblocked per a direct `neuron memory list
+  --where/--refs-satisfy` scan). Worked on `feat/2.4.0-rc2` per the standing
+  branch instruction above. See its own Answer and the Decisions-so-far
+  entry above. Didn't unblock anything directly (no ticket here lists it as
+  a blocker, confirmed by scanning `tickets`). True frontier as of this
+  session: the unnumbered header-fragment-fix ticket (ticket
+  703220a7-fb0f-4ef0-9465-c21bb96d5749) — unclaimed and unblocked; `02`,
+  `04`, `05`, `38` claimed and in progress; `03` still blocked (on `02`,
+  unaffected).
 
 ## Decisions so far
 
@@ -19205,6 +19216,7 @@ this file):** `44` and the unnumbered header-fragment-fix ticket
 `02`, `04`, `05`, `38` claimed and in progress; `03` still blocked (on `02`,
 unaffected). Ticket 43 resolved 2026-08-13 (see its own Decisions-so-far
 entry above); didn't unblock anything directly.
+- 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38) — fixed with a synchronous `mkdir`-based cross-process lock (`src/db.ts`'s `withSyncFileLock`, using `Atomics.wait` for a real blocking sleep since the constructor has no `await` point to yield at), mirroring `18`'s markdown lock but blocking rather than `async`. Wraps both `initialize()`'s `user_version`-gated migration chain (split out into `runMigrationChain()`) and `migrateDeclaredFields()`'s additive `ALTER TABLE ADD COLUMN` pass, which shares the identical race shape though the ticket's own Context only named the former. `:memory:` skips the lock (no cross-process audience). New fast repro (`test/e2e/init-lock.test.ts` + `workers/init-lock-worker.mjs`) needed a `START_AT` barrier to reproduce reliably — bare construction is fast enough (embedder loads lazily) that unsynchronized process-spawn jitter usually hid the race. Verified both ways via `git stash`: 12/32 failures on unfixed code with the ticket's exact predicted errors, 0/32 on fixed code across 4 repeat runs. `npm test` 721/721, `tsc` clean, Pillar 8 clean.
 
 ## Not yet specified
 
@@ -25799,7 +25811,7 @@ blocker).
 ---
 id: 2fbfa9ff-1469-4b21-b781-cef371ea7d38
 createdAt: 2026-08-13T13:55:55.469Z
-importance: 3
+importance: 4
 tags:
   - adr
   - failure-fix
@@ -25807,7 +25819,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
-status: unclaimed
+status: resolved
 ---
 # 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently
 
@@ -25877,14 +25889,78 @@ from any change made this session.
 
 ## Deliverables
 
-- [ ] Decision recorded on the serialization mechanism
-- [ ] A fast, focused repro test (not the full stress harness)
-- [ ] Fix implemented, regression test passing
-- [ ] Pillar 8 (`test/e2e/concurrency-stress.test.ts`) passes clean
+- [x] Decision recorded on the serialization mechanism
+- [x] A fast, focused repro test (not the full stress harness)
+- [x] Fix implemented, regression test passing
+- [x] Pillar 8 (`test/e2e/concurrency-stress.test.ts`) passes clean
 
 ## Answer
 
-_Not yet resolved._
+**Mechanism: a synchronous `mkdir`-based cross-process file lock**, the same
+atomic-directory-creation primitive `18` already uses for markdown
+(`MdStorageAdapter.acquireLock`), reused rather than reinvented — but
+blocking, not `async`, since `NeuronMemory`'s constructor runs the
+migration chain synchronously with no `await` point to yield at. The wait
+between poll attempts uses `Atomics.wait` on a throwaway
+`SharedArrayBuffer`-backed `Int32Array` for a real OS-level sleep (Node's
+main thread, unlike a browser's, permits this) instead of a `setTimeout`
+loop, which would need an event loop the constructor doesn't get to run.
+`better-sqlite3`'s own `busy_timeout` was rejected as the sole fix: it
+serializes individual SQL statements against `SQLITE_BUSY`, but does
+nothing about a process that already cached `currentVersion = 0` in a local
+variable *before* another process's migration committed — that process
+still replays every `ALTER TABLE`/`CREATE TABLE` block regardless of what
+the file now contains, which is the actual failure mode (`duplicate column
+name`, `no such table`), not lock contention. Rejected the claim-row
+alternative from the ticket's own Question as unnecessary extra schema for
+no behavioral gain over `mkdir`.
+
+Implementation (`src/db.ts`'s new `withSyncFileLock()`, exported and used
+from `src/index.ts`): a `<dbPath>.lock` directory, staleness steal after
+30s (a crashed holder can't wedge every future opener forever — mirrors
+`18`'s exact constant), 10s max wait, 25ms poll interval. `initialize()`
+was split into itself (sets WAL/busy_timeout pragmas, then acquires the
+lock) and a new `runMigrationChain()` (the actual `currentVersion < N`
+ladder, unchanged) so the lock wraps only the migration body. `:memory:`
+paths skip the lock entirely — no cross-process audience exists for a
+handle only this process can see. `migrateDeclaredFields()` (the
+additive-`ALTER TABLE ADD COLUMN` pass for `neuron.yaml`-declared fields)
+was brought under the *same* lock even though the ticket's own Context only
+named the `user_version` chain: it has the identical
+read-missing-columns-then-`ALTER TABLE` race shape against the same
+`memories` table, so leaving it unguarded would have shipped a
+narrower fix than the bug class actually requires.
+
+**Fast, focused repro** (Scope item 2): `test/e2e/init-lock.test.ts` +
+`test/e2e/workers/init-lock-worker.mjs`, modeled on Pillar 8's own
+worker/harness split but stripped to only what this race needs — each
+worker does nothing but `new NeuronMemory(...)` then exits, isolating
+construction from Pillar 8's read/write storm. Discovered mid-session that
+a naive version of this (8 unsynchronized process spawns) passed cleanly
+even on *unfixed* code, because `TransformersEmbedder` loads its ONNX
+model lazily (only on first `.embed()` call, confirmed by reading
+`embedder.ts`), so bare construction is fast enough (~500ms for 32
+spawns) that independent Node/ESM startup jitter usually kept processes
+from actually overlapping inside `initialize()`. Fixed by adding a
+`START_AT` epoch-ms barrier the worker busy-waits on, giving every process
+~800ms to clear startup before all of them hit `new NeuronMemory()` in the
+same instant — this is what made the race reproduce reliably.
+
+**Verification, in order**: `git stash`ed the fix (`src/db.ts` +
+`src/index.ts` only, keeping the new test files), rebuilt, ran the new test
+— **red**, 12 of 32 concurrent opens failed with exactly the three error
+strings this ticket's Context predicted (`no such column: "scope"`,
+`duplicate column name: enriched_at`, `no such table: learnings` /
+`main.learnings`). `git stash pop`ped the fix back, rebuilt, re-ran — green,
+0 failures, repeated 4 times back to back with no flake. Full unit suite:
+`npm test` (which rebuilds first) — 721/721, `tsc` clean. Pillar 8
+(`concurrency-stress.test.ts`, sanity tier: 3 process workers, 25 writes
+each, 1 crash-recovery round) — both its tests pass clean, no
+`initErrors`/`nonZeroExits`, confirming this fix (not just the isolated
+repro) clears the exact symptom that surfaced it during `39`'s own
+verification. No `src/` changes needed beyond `db.ts`/`index.ts`; no schema
+version bump, since the fix is a process-level lock, not a data-shape
+change.
 
 ## Comments
 
