@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import envPaths from 'env-paths';
-import { openDatabase } from './db.js';
+import { openDatabase, withSyncFileLock } from './db.js';
 import {
   Embedder,
   TransformersEmbedder,
@@ -130,6 +130,8 @@ export class NeuronMemory {
    * config for the rest of this process.
    */
   private configPath: string | null;
+  /** Absolute path to the SQLite file, or `:memory:` — the migration init-lock guard keys off this. */
+  private dbPath: string;
 
   constructor(options: NeuronMemoryOptions) {
     this.projectRoot = options.projectRoot;
@@ -159,6 +161,7 @@ export class NeuronMemory {
     // `this.db = null`) was deleted by ticket 28 — every one of its defects
     // traced to that one line. `md` mode demotes SQLite to a rebuildable
     // index rather than removing it.
+    this.dbPath = options.dbPath;
     this.db = openDatabase(options.dbPath);
     this.initialize();
     this.migrateDeclaredFields();
@@ -260,6 +263,23 @@ export class NeuronMemory {
       this.db.pragma('journal_mode = WAL');
       this.db.pragma('busy_timeout = 5000');
     } catch (err) {}
+
+    // Serializes the whole `user_version`-gated migration chain below across
+    // processes opening the same fresh database file at once — without this,
+    // two processes can both read `user_version` as `0` before either
+    // commits its first migration, producing `duplicate column name` / `no
+    // such table` races (the SQLite schema-migration race ticket, id
+    // 2fbfa9ff-1469-4b21-b781-cef371ea7d38). `:memory:` has no cross-process
+    // audience, so it skips the lock entirely rather than taking one nothing
+    // can contend.
+    if (this.dbPath === ':memory:') {
+      this.runMigrationChain();
+    } else {
+      withSyncFileLock(this.dbPath, () => this.runMigrationChain());
+    }
+  }
+
+  private runMigrationChain(): void {
     let currentVersion = this.db.pragma('user_version', { simple: true }) as number;
 
     if (currentVersion < 1) {
@@ -596,27 +616,38 @@ export class NeuronMemory {
   private migrateDeclaredFields(): void {
     if (this.fieldColumns.length === 0) return;
 
-    const existing = new Set(
-      (this.db.pragma('table_info(memories)') as Array<{ name: string }>).map((c) => c.name)
-    );
-    const missing = this.fieldColumns.filter((c) => !existing.has(c.column));
-    if (missing.length === 0) return;
+    const run = (): void => {
+      const existing = new Set(
+        (this.db.pragma('table_info(memories)') as Array<{ name: string }>).map((c) => c.name)
+      );
+      const missing = this.fieldColumns.filter((c) => !existing.has(c.column));
+      if (missing.length === 0) return;
 
-    this.db.transaction(() => {
-      for (const { key, column } of missing) {
-        // Re-validated here, immediately before interpolation into DDL, even
-        // though `validateNeuronYaml` already refused an unsafe column name
-        // at config-load time — this call site is the one that actually
-        // builds the SQL string, and it should not have to trust a caller
-        // three layers away to have done that check.
-        if (!isValidColumnIdentifier(column)) {
-          throw new Error(
-            `neuron: refusing to add SQLite column "${column}" for declared field "${key}" — fails identifier validation.`
-          );
+      this.db.transaction(() => {
+        for (const { key, column } of missing) {
+          // Re-validated here, immediately before interpolation into DDL, even
+          // though `validateNeuronYaml` already refused an unsafe column name
+          // at config-load time — this call site is the one that actually
+          // builds the SQL string, and it should not have to trust a caller
+          // three layers away to have done that check.
+          if (!isValidColumnIdentifier(column)) {
+            throw new Error(
+              `neuron: refusing to add SQLite column "${column}" for declared field "${key}" — fails identifier validation.`
+            );
+          }
+          this.db.exec(`ALTER TABLE memories ADD COLUMN ${column} TEXT`);
         }
-        this.db.exec(`ALTER TABLE memories ADD COLUMN ${column} TEXT`);
-      }
-    })();
+      })();
+    };
+
+    // Same additive-DDL race shape as `runMigrationChain` (two processes
+    // both seeing a column as missing before either commits its own `ALTER
+    // TABLE`), so it shares the same cross-process lock.
+    if (this.dbPath === ':memory:') {
+      run();
+    } else {
+      withSyncFileLock(this.dbPath, run);
+    }
   }
 
   /**

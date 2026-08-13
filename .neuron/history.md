@@ -2894,3 +2894,15 @@ tags:
 taskId: "43"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 43 (Pillar 7's recall@5>=0.4 floor is too tight against real build-to-build noise), the frontier's lowest-id unclaimed-and-unblocked ticket per the map's own last-stated true frontier (43, 44, and an unnumbered header-fragment-fix ticket). Ran a real controlled A/B on feat/2.4.0-rc2 rather than accepting the ticket's own bisection on faith: confirmed constructing ticket 29's TransformersReranker (otherwise inert on this pillar's code path) deterministically explains the swing between the shipped 0.375 and the pre-ticket-29 0.5 baseline, and that three other unrelated code edits do not move the number, narrowing the claim from 'any build changes it' to a specific, narrow, real sensitivity. Recalibrated recall@5 (0.4->0.25) and MRR (0.25->0.13) in test/e2e/adversarial-recall.test.ts with headroom sized to the measured swing rather than guessed, and documented the finding inline so a future session doesn't re-diagnose it. npm test 721/721, tsc clean, no src/ changes. Updated the map's Decisions-so-far and the trailing True frontier note (now 44 and the unnumbered header-fragment-fix ticket, both unclaimed/unblocked; 02/04/05/38 claimed; 03 blocked). Found and worked around one unrelated dev nuisance, not chartered: a bare npm run build doesn't chmod +x dist/cli.js, so an rm -rf dist rebuild during this ticket's own measurement broke the globally-linked neuron binary.
+
+---
+id: 76600817-58cc-4ef9-a0bc-81355d6f466c
+createdAt: 2026-08-13T23:02:51.467Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+wayfinder(neuron-2.4.0): resolved ticket 44 (SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently). Picked up as the frontier's earlier-chartered, numbered ticket (verified against a direct neuron memory list --where/--refs-satisfy scan, not just the map's own narrative). Fixed with a synchronous mkdir-based cross-process lock (src/db.ts's new withSyncFileLock, using Atomics.wait for a real blocking sleep) wrapping both initialize()'s migration chain (split into runMigrationChain()) and migrateDeclaredFields()'s additive ALTER TABLE pass, which shares the same race shape though the ticket only named the former. Built a fast, focused repro (test/e2e/init-lock.test.ts + workers/init-lock-worker.mjs) separate from the full Pillar 8 stress harness, needing a START_AT barrier to reproduce reliably since bare construction is too fast (lazy embedder loading) for unsynchronized process jitter to overlap. Verified red (12/32 failures, exact predicted errors) then green (0/32, 4 repeat runs) via git stash. npm test 721/721, tsc clean, Pillar 8 clean. Didn't unblock anything directly; true frontier is now just the unnumbered header-fragment-fix ticket (703220a7-fb0f-4ef0-9465-c21bb96d5749).
