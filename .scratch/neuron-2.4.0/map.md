@@ -688,6 +688,20 @@ thin.
   blocker, confirmed by scanning `issues/`). True frontier as of this
   session: `36`, `39`, `40`, `41`, `43` (all unclaimed and unblocked);
   `02`, `04`, `05`, `38` claimed and in progress; `03`, `42` blocked.
+- **Ticket 36 resolved, 2026-08-13** — picked up as the frontier's lowest
+  id, unblocked. Worked on `feat/2.4.0-rc2` per the standing branch
+  instruction above. See its own Answer and the Decisions-so-far entry
+  below. Found and fixed a real bug along the way while verifying the new
+  workflow locally: `run.mjs` and `run-gitlog-ab.mjs` shared the exact
+  `OUT_DIR`-collision bug a prior session had already found and fixed in
+  their sibling `run-swebench-ab.mjs` — a dry run silently overwriting a
+  tracked, committed live-run `results.json`. Fixed both with the
+  already-proven pattern rather than filing a new ticket, since it's the
+  same root cause and directly implicated by this ticket's own CI runs.
+  Didn't unblock anything directly (no ticket here lists it as a blocker,
+  confirmed by scanning `issues/`). True frontier as of this session: `39`,
+  `40`, `41`, `43` (all unclaimed and unblocked); `02`, `04`, `05`, `38`
+  claimed and in progress; `03`, `42` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -735,8 +749,9 @@ thin.
 - [33 — Detect a Stale Global/Linked `neuron` Binary Against the Working Tree](issues/33-binary-version-mismatch-detection.md) — a fourth `status --check` finding kind, `binaryVersionMismatch`, following `01`'s `undeclaredCategories` precedent exactly as the ticket suggested (not `--health`, not a standalone `doctor` command). Scoped to only fire when `cwd`'s own `package.json` names `@kovartravis/neuron`, so an ordinary consumer's install can never trip it. `checkBinaryVersionMismatch()` (`src/components/binaryVersion.ts`) resolves the running binary past any symlink (`realpathSync`, precomputing both prior incidents' manual `readlink -f` step) and compares its own `package.json` version against `cwd`'s. Warns via the same exit-code contract `undeclaredCategories` already uses (`compliant: false`, exit 1) — no hard-fail tier, no `--repair` counterpart (nothing to write; the fix is re-linking/re-installing outside this process). Live-verified against a real copy of this repo's own `dist/` with only its version overwritten, reproducing the un-rebuilt-link trap without a second real install. `npm test` 715/716 (the one failure, Pillar 7 adversarial recall quality, confirmed pre-existing and unrelated), `tsc` clean.
 - [34 — Detect `CLAUDE.md` Protocol-Block Drift From `neuron.yaml`](issues/34-protocol-block-drift-check.md) — landed as both a fourth `status --check` finding kind (`protocolBlockDrift`, following `01`/`33`'s precedent, no `--repair` counterpart — the fix is `neuron init --overwrite-hooks`) and a new CI step in `publish.yml`'s `build-and-test` job, resolving the ticket's "CI vs. status --check" question with "both, for different reasons" rather than picking one: this check is pure config-vs-generated-content with no local-machine state (unlike `33`'s binary-version check), so it costs nothing to run in both places off one implementation. As a byproduct, wiring `status --check` wholesale into CI also gates its other three pre-existing finding kinds there for the first time, confirmed safe first (this repo's own tree was already 100% compliant). Scoped to every detected harness's own `mdFile` (extracted a shared `resolveProtocolTargets()` out of `writeProtocolBlocks`, no new generation logic), not just `CLAUDE.md`; skill-directory files stay out of scope (different mechanism, static template copy). Live-verified clean against this repo's own real committed `CLAUDE.md`.
 - [35 — Scheduled Store-Health Check](issues/35-scheduled-store-health-check.md) — built `.github/workflows/store-health.yml` (weekly `schedule` + `workflow_dispatch`, `publish.yml`'s own `build-and-test` shape), closing audit finding F4. Resolved both open questions: summary posts to `GITHUB_STEP_SUMMARY` (no PR to comment on for a scheduled run), and the workflow fails past >2 duplicate/near-duplicate groups (taking the ticket's own suggested cutoff) while the importance histogram and superseded count stay purely informational. Stays strictly read-only — only `--health`, never `--health --repair`, matching `20`/`16`'s precedent that auto-merge needs an explicit same-session maintainer go-ahead a cron job can't give. Live-validated the `jq` extraction and step-summary formatting against this repo's own real store output (`0` duplicate groups today) before committing, so the new threshold doesn't fire on day one. No `src/` changes.
+- [36 — CI-Wire the Free Dry-Run Benchmark Harnesses](issues/36-ci-wire-free-dryrun-benchmarks.md) — built `.github/workflows/benchmark-dryrun.yml` as its own workflow (measured ~75s combined vs. `npm test`'s ~22s, over 3x heavier — follows `35`'s separate-workflow precedent, not `32`/`34`'s inline-step one), triggered on `pull_request`/push-to-`main`/`workflow_dispatch`, running all four free dry-run scripts with no build step needed. Never blocks `publish.yml` or `npm publish` by construction (no dependency edge, not added to required status checks), but fails loud on a real regression since all three harnesses already `process.exit(1)` on an uncaught error. Found and fixed a real bug while verifying locally: `run.mjs` and `run-gitlog-ab.mjs` shared the exact `OUT_DIR`-collision bug already found and fixed in sibling `run-swebench-ab.mjs` (a dry run silently overwriting a tracked, committed live-run `results.json`) — applied the same proven fix to both rather than filing a new ticket, since it's the same root cause and directly implicated by this ticket's own CI runs.
 
-**True frontier as of this session:** `36`, `39`, `40`, `41`,
+**True frontier as of this session:** `39`, `40`, `41`,
 `43` (all unclaimed and unblocked); `02`, `04`, `05`, `38` claimed and in
 progress; `03`, `42` blocked.
 
