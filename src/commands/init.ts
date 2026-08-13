@@ -33,6 +33,7 @@ import {
 import {
   generateProtocolBlock,
   upsertProtocolBlock,
+  findMarkerRange,
   ProtocolFidelity,
   ProtocolWriteAction,
 } from '../config/protocolBlock.js';
@@ -313,25 +314,30 @@ export interface ProtocolWriteReport {
   action: ProtocolWriteAction;
 }
 
+interface ResolvedProtocolTarget {
+  targetPath: string;
+  fidelity: ProtocolFidelity;
+  execFidelity: ProtocolFidelity;
+  block: string;
+}
+
 /**
- * Writes the capability-aware protocol block into every detected harness's
- * instruction file (ticket 14). Several harness names can share one `mdFile`
- * (`codex`/`agents`/`github` all point at `AGENTS.md`); such a file gets the
- * short, deterministic-only block the moment *any* harness targeting it has
- * a working hook, per ADR 0014 §8.1 — the fallback step only layers in when
+ * The fidelity-resolution and block-generation half of writing a protocol
+ * block, shared between the real write (`writeProtocolBlocks`) and the
+ * drift check (`checkProtocolBlockDrift`, ticket 34) below — both need
+ * exactly "what should be in each detected harness's instruction file right
+ * now," one to write it, the other only to compare against what's already
+ * committed. Several harness names can share one `mdFile` (`codex`/`agents`/
+ * `github` all point at `AGENTS.md`); such a file gets the short,
+ * deterministic-only block the moment *any* harness targeting it has a
+ * working hook, per ADR 0014 §8.1 — the fallback step only layers in when
  * nothing else targeting that file performs recall.
- *
- * Reuses `--overwrite-hooks`/`--keep-hooks` rather than adding a parallel
- * flag pair: both questions are "may neuron replace something it wrote
- * before but doesn't control the history of," just for a hook entry versus a
- * markdown region.
  */
-async function writeProtocolBlocks(
+function resolveProtocolTargets(
   projectDir: string,
   config: NeuronConfig,
-  detectedHarnessNames: string[],
-  options: { overwriteHooks?: boolean; keepHooks?: boolean; harness?: string[] }
-): Promise<ProtocolWriteReport[]> {
+  detectedHarnessNames: string[]
+): ResolvedProtocolTarget[] {
   const detected = HARNESSES.filter(h => detectedHarnessNames.includes(h.name));
   if (detected.length === 0) return [];
 
@@ -343,8 +349,7 @@ async function writeProtocolBlocks(
   }
 
   const allAdapters = getAdapters();
-  const overwrite = resolveOverwritePolicy(options);
-  const reports: ProtocolWriteReport[] = [];
+  const targets: ResolvedProtocolTarget[] = [];
 
   for (const [mdFile, harnessNames] of byMdFile) {
     const fidelity: ProtocolFidelity = harnessNames.some(
@@ -359,8 +364,34 @@ async function writeProtocolBlocks(
       : 'fallback';
 
     const targetPath = path.join(projectDir, mdFile);
-    const existing = fs.existsSync(targetPath) ? fs.readFileSync(targetPath, 'utf8') : null;
     const block = generateProtocolBlock({ fidelity, execFidelity, config });
+    targets.push({ targetPath, fidelity, execFidelity, block });
+  }
+
+  return targets;
+}
+
+/**
+ * Writes the capability-aware protocol block into every detected harness's
+ * instruction file (ticket 14).
+ *
+ * Reuses `--overwrite-hooks`/`--keep-hooks` rather than adding a parallel
+ * flag pair: both questions are "may neuron replace something it wrote
+ * before but doesn't control the history of," just for a hook entry versus a
+ * markdown region.
+ */
+async function writeProtocolBlocks(
+  projectDir: string,
+  config: NeuronConfig,
+  detectedHarnessNames: string[],
+  options: { overwriteHooks?: boolean; keepHooks?: boolean; harness?: string[] }
+): Promise<ProtocolWriteReport[]> {
+  const overwrite = resolveOverwritePolicy(options);
+  const reports: ProtocolWriteReport[] = [];
+
+  for (const target of resolveProtocolTargets(projectDir, config, detectedHarnessNames)) {
+    const { targetPath, fidelity, execFidelity, block } = target;
+    const existing = fs.existsSync(targetPath) ? fs.readFileSync(targetPath, 'utf8') : null;
     const result = await upsertProtocolBlock(existing, block, {
       overwrite,
       onConflict: overwrite === 'ask' ? () => onProtocolConflict(targetPath) : undefined,
@@ -373,6 +404,51 @@ async function writeProtocolBlocks(
   }
 
   return reports;
+}
+
+/** One committed instruction file whose managed region no longer matches what `neuron init` would generate for it right now. */
+export interface ProtocolBlockDrift {
+  targetPath: string;
+}
+
+/**
+ * Ticket 34 / F3: `CLAUDE.md`'s (or another harness's instruction file's)
+ * managed protocol block can drift from `neuron.yaml`/harness-wiring reality
+ * whenever `neuron.yaml` changes but no one re-runs `neuron init
+ * --overwrite-hooks` — this already happened for real once (ticket 10 found
+ * this repo's own `CLAUDE.md` still describing a pre-ticket-01 category
+ * list). `neuron init` itself won't catch this on a non-interactive re-run:
+ * `upsertProtocolBlock` reports `kept-existing` and leaves the drift in
+ * place rather than failing.
+ *
+ * Scope call: only the marker-bounded protocol block region is checked, on
+ * every harness's real `mdFile` (reusing `resolveProtocolTargets` verbatim —
+ * no new generation or grouping logic, matching this ticket's own comment).
+ * Skill-directory files (`.claude/skills/neuron-memory/SKILL.md` etc.) are a
+ * different mechanism (`copySkill`'s static template copy, not a config-
+ * driven generator) and out of scope here.
+ *
+ * A target file that doesn't exist yet, or exists but has no managed region
+ * at all, isn't drift — that's "not yet initialized here," `neuron init`'s
+ * own job, not a compliance violation to flag.
+ */
+export function checkProtocolBlockDrift(projectDir: string, config: NeuronConfig): ProtocolBlockDrift[] {
+  const detectedHarnessNames = HARNESSES.filter(h => isHarnessPresent(projectDir, h)).map(h => h.name);
+  const drifted: ProtocolBlockDrift[] = [];
+
+  for (const target of resolveProtocolTargets(projectDir, config, detectedHarnessNames)) {
+    if (!fs.existsSync(target.targetPath)) continue;
+    const existing = fs.readFileSync(target.targetPath, 'utf8');
+    const range = findMarkerRange(existing);
+    if (!range) continue;
+
+    const existingBlock = existing.slice(range.start, range.end);
+    if (existingBlock !== target.block) {
+      drifted.push({ targetPath: target.targetPath });
+    }
+  }
+
+  return drifted;
 }
 
 async function handleUninstallHooksCommand(projectDir: string, options: { harness?: string[] }): Promise<void> {

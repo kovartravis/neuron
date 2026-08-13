@@ -310,4 +310,65 @@ pullRules:
       expect(report.binaryVersionMismatch).toBeNull();
     });
   });
+
+  describe('protocol block drift (ticket 34 / F3)', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+
+    function makeProjectDir(): string {
+      const dir = path.join(tempDbDir, `proj-protocol-drift-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(path.join(dir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'package.json'), '{}');
+      return dir;
+    }
+
+    it('reports no drift right after init, and drift once neuron.yaml changes underneath a committed CLAUDE.md', () => {
+      const projectDir = makeProjectDir();
+      const dbPath = path.join(projectDir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      execSync(`node ${cliPath} init`, { env, cwd: projectDir });
+
+      const cleanStdout = execSync(`node ${cliPath} status --check`, { env, cwd: projectDir }).toString();
+      const cleanReport = JSON.parse(cleanStdout);
+      expect(cleanReport.compliant).toBe(true);
+      expect(cleanReport.protocolBlockDrift).toEqual([]);
+
+      // Simulate ticket 01's real incident: neuron.yaml's declared categories
+      // change (here, by hand) without CLAUDE.md's committed block being
+      // regenerated to match.
+      const yamlPath = path.join(projectDir, 'neuron.yaml');
+      const yaml = fs.readFileSync(yamlPath, 'utf8');
+      fs.writeFileSync(yamlPath, yaml.replace(/^categories:\n/m, 'categories:\n  drifted-category: {}\n'));
+
+      let stdout: string;
+      let status = 0;
+      try {
+        stdout = execSync(`node ${cliPath} status --check`, { env, cwd: projectDir }).toString();
+      } catch (err: any) {
+        stdout = err.stdout.toString();
+        status = err.status;
+      }
+
+      const claudeMdPath = path.join(projectDir, 'CLAUDE.md');
+      const report = JSON.parse(stdout);
+      expect(report.compliant).toBe(false);
+      expect(report.protocolBlockDrift).toEqual([{ targetPath: claudeMdPath }]);
+      expect(status).toBe(1);
+
+      execSync(`node ${cliPath} init --overwrite-hooks`, { env, cwd: projectDir });
+      const fixedStdout = execSync(`node ${cliPath} status --check`, { env, cwd: projectDir }).toString();
+      expect(JSON.parse(fixedStdout).protocolBlockDrift).toEqual([]);
+    });
+
+    it('reports no drift when no harness is detected at all', () => {
+      const dir = path.join(tempDbDir, `proj-no-harness-drift-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'package.json'), '{}');
+      const dbPath = path.join(dir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      const stdout = execSync(`node ${cliPath} status --check`, { env, cwd: dir }).toString();
+      expect(JSON.parse(stdout).protocolBlockDrift).toEqual([]);
+    });
+  });
 });
