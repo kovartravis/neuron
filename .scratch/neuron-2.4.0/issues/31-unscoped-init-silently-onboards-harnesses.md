@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: none
 
 # 31 — `neuron init` Silently Onboards Every Detected Harness, Not Just the One In Use
