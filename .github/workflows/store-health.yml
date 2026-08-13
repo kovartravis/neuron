@@ -1,0 +1,72 @@
+name: Store Health Check
+
+on:
+  schedule:
+    # Every Monday at 13:00 UTC.
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Store health
+        run: |
+          set -euo pipefail
+          HEALTH=$(node dist/cli.js status --health --json)
+          echo "$HEALTH" > health.json
+
+          DUP_GROUPS=$(jq '.duplicateGroups | length' health.json)
+          SUPERSEDED=$(jq '.supersededCount' health.json)
+          SESSIONS=$(jq '.sessionsObserved' health.json)
+
+          {
+            echo "## Store health"
+            echo ""
+            echo "| Signal | Value |"
+            echo "| --- | --- |"
+            echo "| Duplicate/near-duplicate groups | $DUP_GROUPS |"
+            echo "| Superseded entries | $SUPERSEDED |"
+            echo "| Sessions observed (recall invoked) | $SESSIONS |"
+            echo ""
+            echo "#### Importance histogram"
+            echo ""
+            echo "| Level | Count |"
+            echo "| --- | --- |"
+            for level in 1 2 3 4 5; do
+              COUNT=$(jq --arg level "$level" '.importanceHistogram[$level] // 0' health.json)
+              echo "| $level | $COUNT |"
+            done
+
+            if [ "$DUP_GROUPS" -gt 0 ]; then
+              echo ""
+              echo "#### Duplicate groups"
+              echo ""
+              jq -r '.duplicateGroups[] | "- \(.entries | length) entries, min similarity \(.minSimilarity): " + (.entries | map("[\(.category)] \(.id)") | join(", "))' health.json
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Read-only: never runs --repair (see ticket 35). This threshold only
+          # forces visibility on the scheduled run's own status -- it merges
+          # nothing and deletes nothing.
+          if [ "$DUP_GROUPS" -gt 2 ]; then
+            echo "::warning::Store health found $DUP_GROUPS duplicate/near-duplicate groups (threshold: >2). Run 'neuron status --health' locally, then 'neuron status --health --repair' after reviewing what it would merge."
+            exit 1
+          fi

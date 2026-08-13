@@ -1,5 +1,5 @@
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: none
 
 # 35 — Scheduled Store-Health Check
@@ -34,6 +34,49 @@ Resolve:
 - Whether a "meaningfully dirty" threshold (e.g. >2 duplicate groups)
   should fail the workflow to force attention, or it should always be
   green/informational only.
+
+## Answer
+
+Built `.github/workflows/store-health.yml`: a `schedule` (weekly, Monday
+13:00 UTC) + `workflow_dispatch` job that runs `node dist/cli.js status
+--health --json` against this repo's own committed `.neuron/` store and
+resolves both open questions:
+
+- **Where the summary posts → step summary**, matching the ticket's own
+  hint and `publish.yml`'s existing `GITHUB_STEP_SUMMARY` precedent (the
+  "already published" and final "Summary" steps). No issue/PR comment: a
+  scheduled run has no PR to comment on, and `workflow_dispatch` runs are
+  already visible from the Actions tab where the summary renders directly.
+  Posts unconditionally — duplicate-group table, importance histogram,
+  superseded count — regardless of the pass/fail outcome below, so a clean
+  run is still legible, not just a silent green check.
+- **Threshold → yes, fail past >2 duplicate groups**, taking the ticket's
+  own suggested example as the real cutoff. Only `duplicateGroups.length`
+  drives the fail; the importance histogram and superseded count are
+  informational only (no natural pass/fail line for either — nothing in
+  `13`'s audit or `16`'s live repair session read them as urgent on their
+  own). This is a scheduled job, not a PR gate, so failing it only turns
+  the run red in the Actions tab — matching the read-only, no-`--repair`
+  posture below, it forces attention without touching the store. Verified
+  the threshold against this repo's own real, currently-clean store (`0`
+  duplicate groups today) before picking `2`, so the workflow doesn't fire
+  on day one.
+
+**Read-only, per the ticket's own constraint**: only `--health`, never
+`--health --repair` — auto-merge stays gated on an explicit,
+same-session maintainer go-ahead (`20`'s addendum, `16`), which an
+unattended cron run can't provide.
+
+Reused `publish.yml`'s own `build-and-test` shape (`actions/checkout@v4`,
+Node 22, `npm ci`, `npm run build`) rather than inventing a new pattern.
+Live-validated end to end against this repo's real store, not just read:
+`node dist/cli.js status --health --json` returns
+`{"duplicateGroups":[],"importanceHistogram":{"3":205,"4":167,"5":97},
+"supersededCount":41,"sessionsObserved":93}`, and the workflow's own `jq`
+extraction plus step-summary formatting was run locally against that real
+output before committing (`DUP_GROUPS=0` → summary posted, exit 0, no
+`::warning::`). No `src/` changes; no new tests (CI-only, YAML-shape
+change) — `npm run build` clean.
 
 ## Comments
 
