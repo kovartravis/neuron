@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: none
 
 # 40 — Migrate the 9 Wayfinder Efforts into the `tickets` Category
