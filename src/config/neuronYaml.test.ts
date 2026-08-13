@@ -6,6 +6,7 @@ import {
   parseNeuronYaml,
   validateNeuronYaml,
   findNeuronYaml,
+  findWritableConfigPath,
   resolveExecCategories,
   fieldKeyToFlagName,
   fieldKeyToColumnName,
@@ -702,6 +703,43 @@ categories:
       declareCategoryInNeuronYaml(configPath, 'freshcat');
       const config = loadNeuronYaml(path.dirname(configPath));
       expect(config.categories.freshcat).toEqual({});
+    });
+  });
+
+  describe('findWritableConfigPath (ticket 39): the auto-declare write target never climbs above projectRoot', () => {
+    it('returns the config path when neuron.yaml lives directly at projectRoot', () => {
+      const configPath = writeYamlProject('version: "1.0"\ncategories:\n  learning: {}\n');
+      expect(findWritableConfigPath(path.dirname(configPath))).toBe(configPath);
+    });
+
+    it('returns null for a marker-less subdirectory even when an ancestor has a neuron.yaml', () => {
+      const projDir = path.join(tempDir, 'writable-parent-proj');
+      const nestedDir = path.join(projDir, 'sub/isolated');
+      fs.mkdirSync(nestedDir, { recursive: true });
+      fs.writeFileSync(path.join(projDir, 'neuron.yaml'), 'version: "1.0"\ncategories:\n  learning: {}\n');
+
+      // The read-side walk still finds the ancestor's config...
+      expect(findNeuronYaml(nestedDir)).toBe(path.join(projDir, 'neuron.yaml'));
+      // ...but the write-side resolver refuses to, since nestedDir has none of its own.
+      expect(findWritableConfigPath(nestedDir)).toBeNull();
+    });
+
+    it('does not let auto-declare mutate an ancestor neuron.yaml when projectRoot is an isolated subdirectory', () => {
+      const projDir = path.join(tempDir, 'writable-isolation-proj');
+      const nestedDir = path.join(projDir, 'src/__tests__/temp-contention');
+      fs.mkdirSync(nestedDir, { recursive: true });
+      const ancestorConfigPath = path.join(projDir, 'neuron.yaml');
+      const ancestorBody = 'version: "1.0"\ncategories:\n  learning: {}\n';
+      fs.writeFileSync(ancestorConfigPath, ancestorBody);
+
+      // This mirrors NeuronMemory's constructor: configPath is resolved once
+      // from the caller's own projectRoot, then handed to the auto-declare hook.
+      const configPath = findWritableConfigPath(nestedDir);
+      expect(configPath).toBeNull();
+      // declareCategoryInNeuronYaml is simply never called when configPath is
+      // null (see NeuronMemory.declareCategory) — assert the file most
+      // callers would have accidentally reached is untouched either way.
+      expect(fs.readFileSync(ancestorConfigPath, 'utf8')).toBe(ancestorBody);
     });
   });
 

@@ -482,6 +482,31 @@ export function findConfigFile(startDir: string): string | null {
   return findNeuronYaml(startDir);
 }
 
+/**
+ * The write-side counterpart to `findNeuronYaml` (ticket 39, neuron-2.4.0):
+ * never climbs above `projectRoot`. `findNeuronYaml`'s upward walk is correct
+ * for reads — a real subdirectory invocation within one project should still
+ * pick up that project's root config — but a caller-supplied `projectRoot`
+ * with no `neuron.yaml`/marker of its own (an isolated test fixture, an
+ * un-resolved nested path) sits inside an unrelated ancestor's directory
+ * tree purely by filesystem accident. Blindly reusing the read-side walk for
+ * a WRITE target let auto-declare (ADR 0017) mutate that ancestor's real
+ * `neuron.yaml` on the isolated caller's behalf. `projectRoot` is the
+ * caller's declared boundary, so only a config file that lives there is a
+ * legitimate write target; anything else means "no on-disk config to write
+ * to," matching the existing in-memory-only fallback for `configPath: null`.
+ */
+export function findWritableConfigPath(projectRoot: string): string | null {
+  const dir = path.resolve(projectRoot);
+  for (const filename of CONFIG_FILENAMES) {
+    const candidate = path.join(dir, filename);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 // --- Validation ---
 
 export function validateNeuronYaml(raw: unknown): NeuronConfig {

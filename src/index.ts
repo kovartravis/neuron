@@ -44,7 +44,7 @@ import { DualStorageRouter } from './storage/dualStorageRouter.js';
 import { MultiRootMdStorage } from './storage/multiRootMdStorage.js';
 import {
   loadNeuronYaml,
-  findNeuronYaml,
+  findWritableConfigPath,
   declareCategoryInNeuronYaml,
   NeuronConfig,
   fieldKeyToFlagName,
@@ -119,11 +119,15 @@ export class NeuronMemory {
    */
   private fieldColumns: Array<{ key: string; column: string }>;
   /**
-   * Absolute path to this project's `neuron.yaml`, or `null` if none was
-   * found (a project running on `DEFAULT_CONFIG`). ADR 0017's auto-declare
-   * hook writes back through this path; `null` means there is no file on
-   * disk to append to, so the hook only updates the in-memory config for
-   * the rest of this process.
+   * Absolute path to a `neuron.yaml` living directly at `projectRoot`, or
+   * `null` if none is there (a project running on `DEFAULT_CONFIG`, or one
+   * whose config only exists in an ancestor directory — ticket 39 found that
+   * reusing the read-side upward walk here let auto-declare mutate an
+   * unrelated ancestor project's config when `projectRoot` was an isolated
+   * subdirectory with no config of its own). ADR 0017's auto-declare hook
+   * writes back through this path; `null` means there is no file at
+   * `projectRoot` to append to, so the hook only updates the in-memory
+   * config for the rest of this process.
    */
   private configPath: string | null;
 
@@ -138,7 +142,7 @@ export class NeuronMemory {
 
     this.embedder = options.embedder ?? new TransformersEmbedder();
 
-    this.configPath = findNeuronYaml(options.projectRoot);
+    this.configPath = findWritableConfigPath(options.projectRoot);
     const discovered = loadNeuronYaml(options.projectRoot);
     const config: NeuronConfig = options.storageMode
       ? { ...discovered, storage: { ...discovered.storage, mode: options.storageMode } }
