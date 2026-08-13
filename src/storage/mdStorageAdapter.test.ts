@@ -372,6 +372,46 @@ Entry c's body.
     expect(entryA?.content).toContain('duplicated by a write bug');
   });
 
+  it('40-01: a fenced code block between two stray `---` rules is not misread as frontmatter (neuron-2.4.0 ticket 40)', () => {
+    const adapter = new MdStorageAdapter({ storagePath: testDir });
+
+    const content = `# Category: tickets
+
+---
+id: entry-a
+createdAt: 2026-08-13T00:00:00.000Z
+importance: 3
+tags: []
+---
+Body with two stray horizontal rules bracketing a fenced code block whose
+lines look exactly like YAML \`key:\` pairs to a bare colon regex.
+
+---
+
+\`\`\`typescript
+export interface Thing {
+  id: string;
+  scope: string;
+}
+\`\`\`
+
+---
+id: entry-b
+createdAt: 2026-08-14T00:00:00.000Z
+importance: 3
+tags: []
+---
+Entry b's body must not be dropped, and reading the file must not throw.
+`;
+
+    const memories = adapter.parseMarkdown(content, 'tickets');
+
+    expect(memories).toHaveLength(2);
+    expect(memories.map(m => m.id)).toEqual(['entry-a', 'entry-b']);
+    expect(memories.find(m => m.id === 'entry-a')?.content).toContain('export interface Thing');
+    expect(memories.find(m => m.id === 'entry-b')?.content).toContain("Entry b's body");
+  });
+
   // --- Ticket 35: Frontmatter Round-Trip Integrity ---
 
   describe('Frontmatter Round-Trip Integrity (ticket 35)', () => {

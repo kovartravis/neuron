@@ -713,6 +713,31 @@ thin.
   `issues/`). True frontier as of this session: `40`, `41`, `43`, `44` (all
   unclaimed and unblocked); `02`, `04`, `05`, `38` claimed and in progress;
   `03`, `42` blocked.
+- **Ticket 40 resolved, 2026-08-13** — picked up as the frontier's lowest
+  id, unblocked. Worked on `feat/2.4.0-rc2` per the standing branch
+  instruction above. See its own Answer for the full migration mechanics
+  (identity keyed on the full filename slug rather than the bare number,
+  after finding two real tickets both numbered `04` in
+  `architecture-scans-2.1.0`; status normalized from ~14 historical values
+  down to the tracker's 3; a real storage-layer bug found and fixed along
+  the way — a fenced code block between two stray `---` body dividers could
+  be misread as frontmatter, corrupting the whole category file — fixed in
+  `src/storage/mdStorageAdapter.ts` with a new regression test). Migrated
+  all 9 efforts (193 entries) into the `tickets` category via a one-off
+  script calling `NeuronMemory.transact()` directly. **This bullet is the
+  last one this `.scratch/neuron-2.4.0/map.md` file will ever carry** — per
+  `26`'s snapshot-then-cutover ruling, this file (including this very
+  resolution) is migrated as part of this same ticket, immediately after
+  this edit, and becomes a frozen historical snapshot; `.scratch/` itself is
+  untouched, left for [42](issues/42-sweep-scratch-references-and-delete.md)
+  to eventually delete. **Every future wayfinder session on this map reads
+  and writes the `tickets` category** (`neuron memory list --categories
+  tickets --json`, per `docs/agents/issue-tracker.md`'s frontier convention)
+  instead of this file. Didn't unblock anything directly (no ticket here
+  lists it as a blocker). True frontier as of this session (now tracked in
+  the `tickets` category, not here): `41`, `43`, `44` (all unclaimed and
+  unblocked); `02`, `04`, `05`, `38` claimed and in progress; `03`, `42`
+  blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -762,10 +787,11 @@ thin.
 - [35 — Scheduled Store-Health Check](issues/35-scheduled-store-health-check.md) — built `.github/workflows/store-health.yml` (weekly `schedule` + `workflow_dispatch`, `publish.yml`'s own `build-and-test` shape), closing audit finding F4. Resolved both open questions: summary posts to `GITHUB_STEP_SUMMARY` (no PR to comment on for a scheduled run), and the workflow fails past >2 duplicate/near-duplicate groups (taking the ticket's own suggested cutoff) while the importance histogram and superseded count stay purely informational. Stays strictly read-only — only `--health`, never `--health --repair`, matching `20`/`16`'s precedent that auto-merge needs an explicit same-session maintainer go-ahead a cron job can't give. Live-validated the `jq` extraction and step-summary formatting against this repo's own real store output (`0` duplicate groups today) before committing, so the new threshold doesn't fire on day one. No `src/` changes.
 - [36 — CI-Wire the Free Dry-Run Benchmark Harnesses](issues/36-ci-wire-free-dryrun-benchmarks.md) — built `.github/workflows/benchmark-dryrun.yml` as its own workflow (measured ~75s combined vs. `npm test`'s ~22s, over 3x heavier — follows `35`'s separate-workflow precedent, not `32`/`34`'s inline-step one), triggered on `pull_request`/push-to-`main`/`workflow_dispatch`, running all four free dry-run scripts with no build step needed. Never blocks `publish.yml` or `npm publish` by construction (no dependency edge, not added to required status checks), but fails loud on a real regression since all three harnesses already `process.exit(1)` on an uncaught error. Found and fixed a real bug while verifying locally: `run.mjs` and `run-gitlog-ab.mjs` shared the exact `OUT_DIR`-collision bug already found and fixed in sibling `run-swebench-ab.mjs` (a dry run silently overwriting a tracked, committed live-run `results.json`) — applied the same proven fix to both rather than filing a new ticket, since it's the same root cause and directly implicated by this ticket's own CI runs.
 - [39 — Category Auto-Declare Can Write to an Ancestor `neuron.yaml` Outside an Isolated `projectRoot`](issues/39-config-autodeclare-escapes-projectroot.md) — the write-side resolver never climbs above `projectRoot`, full stop (no "create a fresh local file" fallback): added `findWritableConfigPath()`, checking only `projectRoot` itself, and pointed `NeuronMemory`'s `configPath` at it instead of the read-side upward-walking `findNeuronYaml` (which stays unchanged — it's real, tested behavior for genuine subdirectory invocation within one project). No local config means in-memory-only, reusing the hook's existing `configPath: null` fallback rather than inventing file creation. Root cause traced precisely: the old boundary check (stop at a `package.json`/`.git` directory) never actually protected against this, because the loop checks for the config file *before* the boundary marker at each directory, so a real ancestor project's root — which has both — always wins the file check first. Live-verified the exact reported bug both ways: the first repro attempt still reproduced it even with the fix in place, traced to `contention-worker.mjs` importing from a stale `dist/index.js` rather than `src/`; after `npm run build`, the identical live spawn-real-processes run left this repo's real `neuron.yaml` untouched. Audited all 18 test files using `projectRoot:` (Scope item 3) and decided against defense-in-depth fixture scaffolding — unlike `08`'s `GIT_CEILING_DIRECTORIES` precedent, this bug was a pure in-process resolution choice, not an unconstrainable external-process escape, so the source fix plus its regression coverage is sufficient. Found and chartered (not fixed) a second, unrelated real bug along the way: [44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently](issues/44-sqlite-migration-race-multiprocess.md), the concrete shape of the `no such column: "scope"` race ticket 17 had already flagged as pre-existing and off-band. `npm test` 709/709, `tsc` clean.
+- [40 — Migrate the 9 Wayfinder Efforts into the `tickets` Category](issues/40-migrate-wayfinder-efforts-to-tickets.md) — migrated all 9 efforts (193 entries) into the `tickets` category via a one-off script driving `NeuronMemory.transact()` directly, two-pass as scoped. Identity keyed on the full filename slug rather than the bare `NN` after finding `architecture-scans-2.1.0` has two real tickets both numbered `04`; status normalized from ~14 historical values down to the schema's 3 (everything terminal-but-not-plainly-"resolved" — `deferred`/`parked`/`wontfix`/`superseded`/`out of scope` — maps to `resolved`, off the claimable frontier); every map entry forced to `status: resolved` regardless of real completion, since the schema has no "not a ticket" state and the frontier convention doesn't check `kind`. Found and fixed a real, previously-latent storage bug blocking the migration outright: a fenced code block between two stray `---` body dividers could be misread as frontmatter by `MdStorageAdapter`'s two-pointer delimiter pairing, corrupting the whole category file — fixed with a code-fence exclusion and a new regression test, `npm test` 710/710 before and after. Frontier verified against the old per-effort `.scratch` bookkeeping for `neuron-2.2.0` (0, matches) and spot-checked for content/`blockedBy`/cross-link fidelity. `neuron-2.4.0` itself — this map — is migrated last, snapshotting this very resolution; see the Notes bullet immediately above for the cutover. Full mechanics and normalization rules in the ticket's own Answer.
 
-**True frontier as of this session:** `40`, `41`,
-`43`, `44` (all unclaimed and unblocked); `02`, `04`, `05`, `38` claimed and in
-progress; `03`, `42` blocked.
+**True frontier as of this session (now tracked in the `tickets` category, not
+this file):** `41`, `43`, `44` (all unclaimed and unblocked); `02`, `04`,
+`05`, `38` claimed and in progress; `03`, `42` blocked.
 
 ## Not yet specified
 
