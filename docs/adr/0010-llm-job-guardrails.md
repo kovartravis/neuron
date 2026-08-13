@@ -265,7 +265,7 @@ input wins per-field) and §7's method still govern ticket `06`'s shipped
 enrichment. §4 was already restated by the `06` amendment, and §6 went out of
 scope with ticket `08`.
 
-Evidence and the re-runnable probe: `.scratch/salvage-expansion/`.
+Evidence and the re-runnable probe: `benchmarks/salvage-expansion/`.
 
 ### 2026-08-02 — model-based importance inference is removed
 

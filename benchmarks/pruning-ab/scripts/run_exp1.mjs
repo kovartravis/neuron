@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// .scratch/configurable-pruning/, two levels up from scripts/run_exp1.mjs
+// benchmarks/pruning-ab/, two levels up from scripts/run_exp1.mjs
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const { getTextGenerator } = await import(path.join(REPO, 'src/components/generator.ts'));
 const { parseImportance } = await import(path.join(REPO, 'src/components/enricher.ts'));

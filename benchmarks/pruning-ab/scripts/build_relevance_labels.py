@@ -21,7 +21,7 @@ import json, re, sys
 from collections import defaultdict
 
 import os
-SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .scratch/configurable-pruning/
+SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # benchmarks/pruning-ab/
 
 STOPWORDS = {
     'the','a','an','and','or','of','to','in','on','for','with','is','are',

@@ -2,7 +2,7 @@
  * Write-side enrichment: inferring the metadata a caller did not supply.
  *
  * Two fields are inferred, by different machinery chosen from what each field
- * actually is (see `.scratch/write-side-enrichment/spec.md`):
+ * actually is (see `docs/design/write-side-enrichment/spec.md`):
  *
  *   tags       — *selected* from a closed vocabulary by centroid cosine. No
  *                model: the embedder is already loaded on the write path, and
