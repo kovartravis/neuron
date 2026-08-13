@@ -1556,3 +1556,15 @@ tags:
 taskId: null
 ---
 Fix for benchmarks/token-ab/run.mjs and run-gitlog-ab.mjs silently overwriting committed live-run results: verifying neuron-2.4.0 ticket 36's new CI workflow by actually running the four dry-run scripts locally clobbered two tracked results.json files (10-counterfactual-token-ab, 14-git-log-hook-vs-agent-log-ab) with dry-run placeholder data and no backup. Root cause: both scripts' OUT_DIR was keyed only on an optional --out= override, never on --dry-run vs live, the exact bug class a prior session had already found and fixed in their sibling run-swebench-ab.mjs (see its own code comment) but never back-ported to these two. Fix: mirror run-swebench-ab.mjs's pattern in both files -- derive OUT_NAME from --out= or the existing default, then set OUT_DIR to `${OUT_NAME}-dry-run` whenever DRY_RUN is true, so a dry run can never land on a live run's path. Edge case: this only matters for a real dev working tree with committed results -- a CI runner's checkout is ephemeral and discarded, so the same collision there is harmless, but any local smoke-test of these scripts should still 'git status' the benchmarks/ dir immediately after running them.
+
+---
+id: 220d58c8-1d7d-40e6-a84f-5e83216a6ad3
+createdAt: 2026-08-13T13:09:24.434Z
+importance: 4
+tags:
+  - failure-fix
+  - architecture
+  - deep
+taskId: null
+---
+Fix for e2e tests that appear to still reproduce a src/ bug fix: test/e2e/concurrency-stress.test.ts's worker (test/e2e/workers/contention-worker.mjs) imports NeuronMemory from '../../../dist/index.js', not src/ — so editing src/index.ts or src/config/neuronYaml.ts has zero effect on that test until 'npm run build' regenerates dist/. Verified live on ticket 39 (neuron-2.4.0): a fix to findWritableConfigPath in src/config/neuronYaml.ts still let the Pillar 8 stress test mutate this repo's real root neuron.yaml on the first post-fix run, because dist/ was stale; identical run after 'npm run build' left neuron.yaml untouched. Same stale-binary trap already documented for the globally-linked 'neuron' CLI, now confirmed for any e2e test that imports compiled dist/ output directly instead of src/ — always rebuild before trusting an e2e-level repro of a src/ fix, and check with 'grep -n "from .*dist/" test/e2e/**/*.mjs' if a fix appears not to take effect.
