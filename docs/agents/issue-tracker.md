@@ -56,12 +56,20 @@ Used by `/wayfinder`. The **map** is a `tickets` entry; its **children** are
 - **Blocking**: the `blockedBy` field holds comma-separated ticket ids. A
   ticket is unblocked when every id it lists names an entry with
   `status: resolved`.
-- **Frontier**: `neuron memory list --categories tickets --json`, then keep
-  entries with `fields.status === 'unclaimed'` whose every `fields.blockedBy`
-  id resolves to a `fields.status === 'resolved'` entry; first by id (not by
-  list order) wins. `list` returns entries newest-first with no relevance
-  filtering, so it's a real enumeration, not a best-effort search — unlike
-  `query`, which ranks and can silently drop a low-scoring ticket.
+- **Frontier**: `neuron memory list --category tickets --where "status=unclaimed"
+  --refs-satisfy "blockedBy:status=resolved" --json`. `--where` and
+  `--refs-satisfy` are generic, schema-agnostic `memory list` filters (any
+  category, any declared field — not specific to this tracker's `status`/
+  `blockedBy` naming), composed here to express this convention: keep
+  entries whose declared field equals a value, and whose every
+  comma-separated id in another field names a same-category entry
+  satisfying its own field/value pair. A dangling `blockedBy` id (no
+  matching entry at all) leaves the ticket blocked rather than silently
+  unblocking it. `--limit` caps the returned result, not the internal fetch
+  used to compute it — correctness needs to see every ticket. Note this
+  pools every effort's tickets together (the schema has no per-map scoping
+  field, only content backlinks), so cross-reference against the map you're
+  working before picking one up.
 - **Claim**: `neuron memory update <id> "<unchanged content>" --category
   tickets --status claimed` before any work.
 - **Resolve**: `neuron memory update <id> "<content, with the answer

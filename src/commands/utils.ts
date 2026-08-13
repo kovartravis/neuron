@@ -112,8 +112,10 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     includeSuperseded?: boolean;
     /** `memory add` ticket 19: non-interactive resolution of the supersession gate for scheduled/cron writers — skip the write (not an error) when a candidate is found, rather than hard-blocking for a human. */
     ifNovel?: boolean;
-    /** `memory list` — the wayfinder frontier per docs/agents/issue-tracker.md: unclaimed tickets whose every blockedBy id names a resolved entry. Tickets-category only. */
-    frontier?: boolean;
+    /** `memory list "<field>=<value>"` — keep entries whose declared field equals value. Schema-agnostic: any category, any field. */
+    where?: string;
+    /** `memory list "<field>:<subfield>=<value>"` — keep entries where every comma-separated id in `field` names another same-category entry with `subfield === value`. */
+    refsSatisfy?: string;
   };
 } {
   const positionals: string[] = [];
@@ -149,7 +151,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let notAReversal: boolean | undefined;
   let includeSuperseded: boolean | undefined;
   let ifNovel: boolean | undefined;
-  let frontier: boolean | undefined;
+  let where: string | undefined;
+  let refsSatisfy: string | undefined;
   const fields: Record<string, string> = {};
   const fieldFlagIndex = new Map(declaredFields.map(f => [f.flag, f.key]));
 
@@ -266,8 +269,10 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       includeSuperseded = true;
     } else if (arg === '--if-novel') {
       ifNovel = true;
-    } else if (arg === '--frontier') {
-      frontier = true;
+    } else if (arg === '--where') {
+      where = args[++i];
+    } else if (arg === '--refs-satisfy') {
+      refsSatisfy = args[++i];
     } else if (arg.startsWith('-') && arg.length > 1) {
       // Previously fell through to `positionals`, where it was silently
       // discarded by every caller. A mistyped flag must not look like success.
@@ -348,7 +353,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       notAReversal,
       includeSuperseded,
       ifNovel,
-      frontier,
+      where,
+      refsSatisfy,
     }
   };
 }
@@ -578,12 +584,21 @@ Options:
                                  in the JSON result so the skip is never
                                  silent). Mutually exclusive with
                                  --supersedes and --not-a-reversal.
-  --frontier                      (list) The wayfinder frontier: unclaimed
-                                 'tickets'-category entries whose every
-                                 blockedBy id names a resolved entry. Requires
-                                 --category tickets (or --categories tickets,
-                                 alone). --limit caps the frontier result, not
-                                 the internal fetch used to compute it.`;
+  --where <field>=<value>         (list) Keep entries whose declared field
+                                 equals value exactly. Schema-agnostic: any
+                                 category, any declared field.
+  --refs-satisfy                  (list) Keep entries where every comma-
+    <field>:<sub>=<value>         separated id in <field> names another entry
+                                 in the same category with <sub> === <value>.
+                                 A dangling id (no matching entry) fails the
+                                 check. Requires exactly one --category. Combine
+                                 with --where to express "what's actionable"
+                                 for any dependency-graph-shaped category, e.g.
+                                 a ticket tracker's frontier: --where
+                                 status=open --refs-satisfy
+                                 blockedBy:status=done. --limit caps the
+                                 filtered result, not the internal fetch used
+                                 to compute it.`;
 
 /**
  * `MEMORY_HELP` plus a per-category listing of this project's declared

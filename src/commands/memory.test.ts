@@ -390,12 +390,12 @@ describe('CLI Command: memory', () => {
    * frontier per docs/agents/issue-tracker.md, computed in the CLI instead of
    * by hand every wayfinder session with a throwaway script.
    */
-  describe('list --frontier', () => {
+  describe('list --where / --refs-satisfy', () => {
     const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
     let projectDir: string;
 
     beforeEach(() => {
-      projectDir = path.join(tempDbDir, `proj-frontier-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      projectDir = path.join(tempDbDir, `proj-filter-${Date.now()}-${Math.random().toString(36).slice(2)}`);
       fs.mkdirSync(projectDir, { recursive: true });
       fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
       fs.writeFileSync(
@@ -410,6 +410,14 @@ describe('CLI Command: memory', () => {
           '        values: [unclaimed, claimed, resolved]',
           '        default: unclaimed',
           '      blockedBy:',
+          '        type: string',
+          '  deploys:',
+          '    fields:',
+          '      state:',
+          '        type: enum',
+          '        values: [queued, done]',
+          '        default: queued',
+          '      dependsOn:',
           '        type: string',
           '  other:',
           '    description: unrelated category, no declared fields',
@@ -434,12 +442,14 @@ describe('CLI Command: memory', () => {
           { env: envFor(), cwd: projectDir }
         ).toString()
       );
+    // Exercises the exact composed invocation a wayfinder-style frontier would use, but the
+    // command itself has no idea "frontier" exists — it's two generic filters composed.
     const frontier = (extra = ''): any[] =>
       JSON.parse(
-        execSync(`node ${cliPath()} memory list --category tickets --frontier ${extra}`, {
-          env: envFor(),
-          cwd: projectDir,
-        }).toString()
+        execSync(
+          `node ${cliPath()} memory list --category tickets --where "status=unclaimed" --refs-satisfy "blockedBy:status=resolved" ${extra}`,
+          { env: envFor(), cwd: projectDir }
+        ).toString()
       );
 
     it('includes an unclaimed, unblocked ticket', () => {
@@ -498,7 +508,7 @@ describe('CLI Command: memory', () => {
       expect(frontier().map((e: any) => e.id)).toContain(blocked.id);
     });
 
-    it('--limit caps the frontier result without breaking correctness', () => {
+    it('--limit caps the result without breaking correctness', () => {
       addTicket('Ticket 1', 'unclaimed');
       addTicket('Ticket 2', 'unclaimed');
       addTicket('Ticket 3', 'unclaimed');
@@ -506,24 +516,81 @@ describe('CLI Command: memory', () => {
       expect(frontier()).toHaveLength(3);
     });
 
-    it('rejects --frontier without --category tickets', () => {
-      expect(() => {
-        execSync(`node ${cliPath()} memory list --category other --frontier`, {
+    it('--where alone (no --refs-satisfy) needs no single-category restriction', () => {
+      addTicket('Ticket A', 'unclaimed');
+      addTicket('Ticket B', 'claimed');
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory list --category tickets --where "status=claimed"`, {
           env: envFor(),
           cwd: projectDir,
-          stdio: 'pipe',
-        });
-      }).toThrow(/--frontier only applies to the 'tickets' category/);
+        }).toString()
+      );
+      expect(out).toHaveLength(1);
+      expect(out[0].fields.status).toBe('claimed');
     });
 
-    it('rejects --frontier with no --category at all', () => {
+    it('rejects --refs-satisfy with no --category (ambiguous which category to resolve ids against)', () => {
       expect(() => {
-        execSync(`node ${cliPath()} memory list --frontier`, {
+        execSync(`node ${cliPath()} memory list --refs-satisfy "blockedBy:status=resolved"`, {
           env: envFor(),
           cwd: projectDir,
           stdio: 'pipe',
         });
-      }).toThrow(/--frontier only applies to the 'tickets' category/);
+      }).toThrow(/requires exactly one --category/);
+    });
+
+    it('rejects a malformed --where clause', () => {
+      expect(() => {
+        execSync(`node ${cliPath()} memory list --category tickets --where "not-a-clause"`, {
+          env: envFor(),
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/--where expects/);
+    });
+
+    it('rejects a malformed --refs-satisfy clause', () => {
+      expect(() => {
+        execSync(`node ${cliPath()} memory list --category tickets --refs-satisfy "blockedBy-no-colon-or-equals"`, {
+          env: envFor(),
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/--refs-satisfy expects/);
+    });
+
+    // Proves this is a general filter, not a wayfinder-specific "frontier"
+    // feature — a completely different category, with different field names
+    // and different enum values, composes the exact same way.
+    it('is schema-agnostic: the same two flags work for an unrelated deploys/dependsOn/state schema', () => {
+      const addDeploy = (content: string, state: string, dependsOn?: string): { id: string } =>
+        JSON.parse(
+          execSync(
+            `node ${cliPath()} memory add "${content}" --category deploys --state ${state}` +
+              (dependsOn ? ` --depends-on "${dependsOn}"` : ''),
+            { env: envFor(), cwd: projectDir }
+          ).toString()
+        );
+      const readyDeploys = (): any[] =>
+        JSON.parse(
+          execSync(
+            `node ${cliPath()} memory list --category deploys --where "state=queued" --refs-satisfy "dependsOn:state=done"`,
+            { env: envFor(), cwd: projectDir }
+          ).toString()
+        );
+
+      const migration = addDeploy('Run DB migration', 'done');
+      const stillMigrating = addDeploy('Run schema backfill', 'queued');
+      const stillWaiting = addDeploy('Deploy app server', 'queued', stillMigrating.id);
+      const readyBecauseDone = addDeploy('Deploy cache warmer', 'queued', migration.id);
+      const readyNow = addDeploy('Deploy static assets', 'queued');
+
+      const ids = readyDeploys().map((e: any) => e.id);
+      expect(ids).toContain(readyNow.id);
+      expect(ids).toContain(readyBecauseDone.id); // depends on an already-'done' entry
+      expect(ids).toContain(stillMigrating.id); // 'queued' with no dependency at all — ready
+      expect(ids).not.toContain(stillWaiting.id); // depends on stillMigrating, which is still 'queued'
+      expect(ids).not.toContain(migration.id); // state is 'done', not 'queued'
     });
   });
 });
