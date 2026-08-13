@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: none
 
 # 36 — CI-Wire the Free Dry-Run Benchmark Harnesses
