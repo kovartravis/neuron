@@ -2770,3 +2770,15 @@ tags:
 taskId: null
 ---
 Wayfinder pickup on the neuron-2.4.0 map: picked up ticket 32 (CI Architecture-Drift Gate), the frontier's lowest-numbered unclaimed-unblocked ticket per a direct scan of issues/ (32, 33, 34, 35, 36, 39, 40, 41, 43 all unclaimed/unblocked). Added an Architecture drift check step to publish.yml's build-and-test job right after npm test, requiring no CLI code change since neuron scan --check already implements the documented 0/1/2 exit-code contract (clean/drift/incomparable-baseline), exhaustively covered by scan.fidelity.test.ts. The step branches on exit code to post a differentiated ::error:: annotation for real drift vs. an incomparable baseline, both pointing the contributor at a local neuron scan + commit, staying read-only per ticket 13's F1b rejection of CI write-back. Live-verified by building dist/cli.js and running the check directly against this repo's own real state (exit 0, in sync), not just unit fixtures. Resolved ticket 32, updated map.md's Decisions-so-far and frontier notes; didn't unblock anything else directly. True frontier is now 33, 34, 35, 36, 39, 40, 41, 43.
+
+---
+id: 12b8b312-e1e2-480c-9123-da293167fc7e
+createdAt: 2026-08-13T12:05:42.234Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Pushed ticket-32 CI architecture-drift gate (neuron-2.4.0) to GitHub -- commits b07cc25 (claim), 64b3a6d (resolve), d471d3e (memory record) on feat/2.4.0-rc2.
