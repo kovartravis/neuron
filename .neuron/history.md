@@ -2870,3 +2870,15 @@ Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 41 (Reloca
 Second, directly-requested piece of work in the same session: per maintainer instruction to add CLI support for whatever wayfinder needed and not do it wayfinder-specific, added `neuron memory list --where <field>=<value>` and `--refs-satisfy <field>:<subfield>=<value>` — two composable, schema-agnostic filters replacing an initial `--frontier` flag that had baked this repo's own status/blockedBy/unclaimed/resolved vocabulary directly into the CLI. Iterated once on direct maintainer feedback ("I don't want this specific to wayfinder, I want a generic tool") to land on the generic two-flag design. Verified genericity with a real second schema (deploys/dependsOn/state) in the test suite, not just asserted. 26 new/rewritten tests, npm test 721/721, tsc clean. Documented the composed wayfinder-frontier invocation in docs/agents/issue-tracker.md.
 
 True frontier as of this session (tracked in the tickets category): 43, 44, and the newly-chartered header-fragment-fix ticket — all unclaimed and unblocked; 02, 04, 05, 38 claimed and in progress; 03, 42 blocked.
+
+---
+id: 4973dee6-b39c-42d7-bed5-079545601042
+createdAt: 2026-08-13T18:04:45.530Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "42"
+---
+Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 42 (Sweep Repo-Wide .scratch/ References & Delete .scratch/), the frontier's lowest unclaimed-and-unblocked ticket per a live tracker scan (this map's own Notes narrative had drifted stale, missing ticket 41's resolution entirely). Re-grepped the whole repo rather than trusting the ticket's own recon list, found one real asset ticket 41's scope had missed (neuron-2.2.0/research/, live-referenced from ADR 0012/0014) and relocated it to docs/design/harness-compatibility-research/, fixed ~60 dead .scratch/ links across CHANGELOG.md and ADRs 0003/0011-0018 by resolving them against the live tickets category (not stale bookkeeping), and confirmed every other loose effort-internal asset had zero external referrers before letting it go with the tree. npm test 721/721 and tsc clean before and after git rm -r .scratch/. .scratch/ no longer exists in this repository; every wayfinder effort now lives exclusively in the tickets category. Updated the neuron-2.4.0 map's Decisions-so-far and frontier footer to match (43, 44, and an unnumbered leaked-header-fragments ticket remain the frontier; no tickets remain blocked on this map).

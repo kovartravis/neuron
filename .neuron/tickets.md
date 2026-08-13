@@ -19120,6 +19120,31 @@ thin.
   the `tickets` category, not here): `41`, `43`, `44` (all unclaimed and
   unblocked); `02`, `04`, `05`, `38` claimed and in progress; `03`, `42`
   blocked.
+- **Ticket 41 resolved, 2026-08-13.** See its own Answer and the
+  Decisions-so-far entry above. Chartered [Fix Leaked Header-Field
+  Fragments in 20 Tickets Migrated by Ticket
+  40](ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) as a byproduct bug
+  find, not a graduation. Resolving `41` unblocked
+  42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/` (ticket
+  `f16849c9-27f6-4022-b739-d896cf331507`) directly (its other blocker,
+  `40`, was already resolved). See the "True frontier" line at the end of
+  Decisions-so-far for the frontier as of this resolution.
+- **Ticket 42 resolved, 2026-08-13** — picked up as the frontier's lowest
+  id, unblocked (confirmed via `neuron memory list --category tickets
+  --where "status=unclaimed" --refs-satisfy "blockedBy:status=resolved"`,
+  the generic filters `docs/agents/issue-tracker.md`'s own Frontier
+  section documents composing this exact query). See its own Answer for
+  the full sweep: found and relocated one real asset (`neuron-2.2.0`'s
+  loose `research/` folder) `41`'s own scope had missed, fixed ~60 dead
+  `.scratch/` references across `CHANGELOG.md` and the ADRs, and confirmed
+  every other loose effort-internal file had zero external referrers
+  before letting it go with the tree. **`.scratch/` no longer exists in
+  this repository** — every prior Notes bullet on this map that links into
+  it (and every closed ticket's own body, migrated verbatim by `40`) is
+  now frozen historical text describing a path that is real only in git
+  history. `npm test` 721/721, `tsc` clean, before and after deletion.
+  Didn't unblock anything directly (no ticket here lists it as a blocker).
+  See the updated "True frontier" line at the end of Decisions-so-far.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket
@@ -19171,11 +19196,13 @@ thin.
 - 39 — Category Auto-Declare Can Write to an Ancestor `neuron.yaml` Outside an Isolated `projectRoot` (ticket bef838ce-2695-472a-a34f-c5e08ccfda68) — the write-side resolver never climbs above `projectRoot`, full stop (no "create a fresh local file" fallback): added `findWritableConfigPath()`, checking only `projectRoot` itself, and pointed `NeuronMemory`'s `configPath` at it instead of the read-side upward-walking `findNeuronYaml` (which stays unchanged — it's real, tested behavior for genuine subdirectory invocation within one project). No local config means in-memory-only, reusing the hook's existing `configPath: null` fallback rather than inventing file creation. Root cause traced precisely: the old boundary check (stop at a `package.json`/`.git` directory) never actually protected against this, because the loop checks for the config file *before* the boundary marker at each directory, so a real ancestor project's root — which has both — always wins the file check first. Live-verified the exact reported bug both ways: the first repro attempt still reproduced it even with the fix in place, traced to `contention-worker.mjs` importing from a stale `dist/index.js` rather than `src/`; after `npm run build`, the identical live spawn-real-processes run left this repo's real `neuron.yaml` untouched. Audited all 18 test files using `projectRoot:` (Scope item 3) and decided against defense-in-depth fixture scaffolding — unlike `08`'s `GIT_CEILING_DIRECTORIES` precedent, this bug was a pure in-process resolution choice, not an unconstrainable external-process escape, so the source fix plus its regression coverage is sufficient. Found and chartered (not fixed) a second, unrelated real bug along the way: 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38), the concrete shape of the `no such column: "scope"` race ticket 17 had already flagged as pre-existing and off-band. `npm test` 709/709, `tsc` clean.
 - 40 — Migrate the 9 Wayfinder Efforts into the `tickets` Category (ticket 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4) — migrated all 9 efforts (193 entries) into the `tickets` category via a one-off script driving `NeuronMemory.transact()` directly, two-pass as scoped. Identity keyed on the full filename slug rather than the bare `NN` after finding `architecture-scans-2.1.0` has two real tickets both numbered `04`; status normalized from ~14 historical values down to the schema's 3 (everything terminal-but-not-plainly-"resolved" — `deferred`/`parked`/`wontfix`/`superseded`/`out of scope` — maps to `resolved`, off the claimable frontier); every map entry forced to `status: resolved` regardless of real completion, since the schema has no "not a ticket" state and the frontier convention doesn't check `kind`. Found and fixed a real, previously-latent storage bug blocking the migration outright: a fenced code block between two stray `---` body dividers could be misread as frontmatter by `MdStorageAdapter`'s two-pointer delimiter pairing, corrupting the whole category file — fixed with a code-fence exclusion and a new regression test, `npm test` 710/710 before and after. Frontier verified against the old per-effort `.scratch` bookkeeping for `neuron-2.2.0` (0, matches) and spot-checked for content/`blockedBy`/cross-link fidelity. `neuron-2.4.0` itself — this map — is migrated last, snapshotting this very resolution; see the Notes bullet immediately above for the cutover. Full mechanics and normalization rules in the ticket's own Answer.
 - 41 — Relocate `.scratch` Asset Directories & Fix Their ADR Links (ticket 46b889d3-d290-40ef-a110-f9f4c3021c19) — relocated all 4 directories via `git mv` (`configurable-pruning` → `benchmarks/pruning-ab`, `salvage-expansion` → `benchmarks/salvage-expansion`, `md-first`/`write-side-enrichment` → `docs/design/`), deleted 6 dead `.scratch/*.py` scripts (the ticket's own list of 5 missed `record_learning.py`, equally dead). Fixed every stale-path reference found by a repo-wide grep, not just the two ADR lines named in the Question: `src/components/enricher.ts`'s doc-comment, all 8 internal cross-links inside the relocated files (rewritten to `tickets`-category ids, looked up live since `40`'s own id map was a job-local artifact), and — found only by auditing every link, not grepping the old path — every *other* relative link in the two `docs/design/` files, whose directory depth changed by one level in the move. Found and fixed two real functional bugs (not just stale comments): `salvage-expansion/vitest.probe.config.ts`'s `include` glob and `salvage-calibration.probe.ts`'s output-path constants both still pointed at the old `.scratch/` path, which would have silently broken the probe. Deliberately left `.neuron/*.md` and two `benchmarks/*/results.json` transcripts alone — frozen historical text, not live pointers, same principle `40` applied to `.scratch/` itself. `npm test` 710/710, `tsc` clean, `neuron scan --check` clean after re-baselining (16 modules now). Chartered (not fixed) a real, unrelated content-fidelity bug found along the way in `40`'s own already-migrated data: [Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40](ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — at least 7 confirmed entries (`neuron-2.2.0#06/22/23/24/25/27`, `architecture-scans-2.1.0#06`) have an orphaned header-field line before their real title, because the migration script's header-stripping only recognized 4 field names and stopped at the first unrecognized one (`Priority:`/`Plan:`/`Result:`/`Spec:`/`Superseded by:`, or a `Band:` value wrapped across two lines). Cosmetic, not data loss — the real title/Question/Answer are all still present later in the content.
+- 42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/` (ticket f16849c9-27f6-4022-b739-d896cf331507) — re-grepped the whole repo rather than trusting the ticket's own recon list. Found real scope `41` had missed — `neuron-2.2.0/research/` (`harness-compatibility.md`, `relevance-floor-baseline.{md,js}`), live-referenced from ADR 0012/0014 — and relocated it to `docs/design/harness-compatibility-research/`. Every other loose non-ticket asset across the 9 effort dirs had zero external referrers (confirmed by grepping the full relative path, not the bare filename) and went with the tree. Fixed every live `.scratch/` pointer found: `CLAUDE.md`'s now-stale tracker caveat, README's Cursor-adapter link, a dangling `benchmarks/salvage-expansion` README command (broken since `41`'s own move), a stale `REPORT.md` display path, and ~60 dead links across `CHANGELOG.md` and ADRs 0003/0011–0018 — resolved to real ids by cross-referencing the live `tickets` category (not the stale `.scratch` bookkeeping, which has since drifted — e.g. ticket 25's own migrated entry still carries the leaked-header-fragment bug `41` chartered a fix for). ADRs got the map's own `NN — Title (ticket <uuid>)` prose convention (precise, since numbers collide across efforts); `CHANGELOG.md`'s links were de-linked to plain text instead (no browsable URL exists for a store entry). Left frozen historical record alone throughout — `.neuron/*.md` including `tickets.md` (same falsify-the-record principle as the other three, just not named in the ticket's own exclusion list since `tickets.md` didn't exist when it was filed), `docs/design/md-first/handoff-response.md`, and all `results.json`/fixture-data transcripts. `npm test` 721/721, `tsc` clean, both before and after `git rm -r .scratch/`. **`.scratch/` no longer exists in this repository** — committed as `e7a8d8a`.
 
 **True frontier as of this session (tracked in the `tickets` category, not
-this file):** `43`, `44`, and the newly-chartered header-fragment-fix ticket
+this file):** `43`, `44`, and the unnumbered header-fragment-fix ticket
 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — all unclaimed and unblocked;
-`02`, `04`, `05`, `38` claimed and in progress; `03`, `42` blocked.
+`02`, `04`, `05`, `38` claimed and in progress; `03` still blocked (on `02`,
+unaffected by `42`'s resolution).
 
 ## Not yet specified
 
@@ -25447,7 +25474,7 @@ tags:
 taskId: null
 blockedBy: 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4,46b889d3-d290-40ef-a110-f9f4c3021c19
 kind: task
-status: claimed
+status: resolved
 ---
 # 42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/`
 
@@ -25492,6 +25519,95 @@ Then `git rm -r .scratch/` and commit.
   resolution, alongside 40 (ticket 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4) and
   41 (ticket 46b889d3-d290-40ef-a110-f9f4c3021c19). Blocked on both landing first so
   nothing points at a `.scratch/` path that's about to stop existing.
+
+## Answer
+
+Re-grepped the whole repo (not just the recon list above) since `40`/`41`
+had already changed some of it. `src/components/enricher.ts`'s `.scratch`
+mention had already been fixed by `41`. `.claude/settings.local.json` is
+untracked by git (`git ls-files` confirms) — local permission-cache state,
+not repo content, out of scope. The four generic
+`.claude/skills/{ask-matt,code-review,setup-matt-pocock-skills,to-tickets}`
+files are packaged templates offering `.scratch/` as the fallback
+local-markdown tracker convention for *other* repos that adopt it — not
+live pointers into this repo's own tracker — left alone, same reasoning
+`code-review/SKILL.md`'s own generic "docs/, specs/, or .scratch/" line
+confirms.
+
+Found real scope `41` didn't cover: `.scratch/neuron-2.2.0/research/`
+(`harness-compatibility.md`, `relevance-floor-baseline.{md,js}`) was
+live-referenced from ADR 0012 and ADR 0014 but wasn't one of `41`'s four
+named asset dirs. Relocated the whole folder to
+`docs/design/harness-compatibility-research/`, fixed its own internal
+`../issues/` self-link (now a plain ticket-id prose reference), and
+repointed both ADRs. Every other loose non-ticket file across the 9
+effort dirs (`agent-memory-cli/research/*`, `architecture-scans-2.1.0/spec.md`,
+`md-file-management/spec.md`, `neuron-2.3.0/handoff-marketing.md`,
+`neuron-2.4.0/handoff-marketing.md`) has zero external referrers —
+confirmed by grepping the full relative path, not the bare filename (a
+bare-filename grep gives false positives, e.g. `spec.md` also matches the
+unrelated, already-relocated `md-first/spec.md`) — so it goes with the
+tree; git history preserves it.
+
+Fixed every live pointer found: `CLAUDE.md`'s now-obsolete "`.scratch/` is
+still the tracker for efforts not yet migrated" caveat, `README.md`'s
+Cursor-adapter ticket-22 link, `benchmarks/salvage-expansion/README.md`'s
+`--config .scratch/salvage-expansion/...` example (dangling since `41`'s
+own move — missed because it wasn't caught by that ticket's own grep),
+`benchmarks/pruning-ab/REPORT.md`'s stale link-display text, and ~60 dead
+links/mentions across `CHANGELOG.md` and ADRs 0003/0011–0018. Resolved
+every old `.scratch/<effort>/issues/NN-slug.md` reference to its real
+migrated id by cross-matching against the live `tickets` category content
+(title-line extraction plus token-overlap scoring, spot-verified against
+the original `.scratch` file headers for every low-confidence match) —
+not the stale bookkeeping, several of which have since drifted (e.g.
+ticket 25's own migrated entry has a leaked-header-fragment bug per the
+still-open [Fix Leaked Header-Field Fragments](ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749)
+ticket, so its title doesn't appear on content line 1 — found via full-text
+search instead).
+
+Two different replacement conventions, deliberately: ADRs (ticket
+"Ticket:"/"Implemented by:"/"Blocks:" fields, and inline ticket citations)
+now read `NN — Title (ticket <uuid>)`, matching this map's own established
+prose style — precise, since ticket numbers collide across efforts and a
+future reader needs a real way to find the record.
+`CHANGELOG.md`'s ~30 links were de-linked to plain text instead (dropped
+the markdown-link wrapper, kept the label) — a UUID has no browsable URL
+for a store entry, and a changelog citing bare ticket numbers within their
+own dated release section is unambiguous without one. Two now-orphaned "the
+map" references (link text lost its only referent when de-linked) were
+reworded to name the neuron-2.2.0 map explicitly rather than left vague.
+
+Left frozen historical record alone throughout, same principle `41`
+established: `.neuron/*.md` including `tickets.md` (not named in this
+ticket's own exclusion list, since `tickets.md` didn't exist when this
+ticket was filed — same reasoning applies to it as the other four:
+rewriting migrated ticket content to post-migration paths would falsify
+what was true when each ticket was written, and it has the exact same
+leaked-header-fragment caveat as any other migrated entry),
+`docs/design/md-first/handoff-response.md` (a dated handoff memo),
+`benchmarks/*/results.json` transcripts, and `benchmarks/pruning-ab/*.json`
+fixture/label data (confirmed via `grep -a`-style content search, not
+assumed).
+
+Verified before deletion: `neuron memory list --category tickets --where
+"status=unclaimed" --refs-satisfy "blockedBy:status=resolved"` (the
+generalized `--where`/`--refs-satisfy` primitives this repo's own tracker
+doc now documents) returns 13 unclaimed+unblocked tickets pooled across
+all efforts, matching expectations — `42` itself correctly drops out
+once claimed, nothing else was accidentally unblocked or blocked by this
+sweep. `npm test` 721/721 and `tsc --noEmit` clean, run both before and
+after `git rm -r .scratch/` to confirm the deletion itself broke nothing
+runtime-relevant (only doc/comment references touch `.scratch` in source,
+e.g. `src/shared/projectRoot.ts`'s explanatory comment using it as an
+example subdirectory name — still accurate post-deletion, left as-is).
+
+`git rm -r .scratch/` removed 205 files (19 real tracked entries plus
+already-migrated map/issue files across the 9 efforts); the 3-file
+`docs/design/harness-compatibility-research/` relocation is a `git mv`
+rename, not a delete. Committed as `e7a8d8a`. Didn't unblock anything
+directly (no ticket lists `42` as a blocker, confirmed by the frontier
+scan above).
 
 ---
 id: b3c6c2a7-b4a5-4f53-ac0a-2b250b3afe07
