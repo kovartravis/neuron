@@ -1568,3 +1568,15 @@ tags:
 taskId: null
 ---
 Fix for e2e tests that appear to still reproduce a src/ bug fix: test/e2e/concurrency-stress.test.ts's worker (test/e2e/workers/contention-worker.mjs) imports NeuronMemory from '../../../dist/index.js', not src/ — so editing src/index.ts or src/config/neuronYaml.ts has zero effect on that test until 'npm run build' regenerates dist/. Verified live on ticket 39 (neuron-2.4.0): a fix to findWritableConfigPath in src/config/neuronYaml.ts still let the Pillar 8 stress test mutate this repo's real root neuron.yaml on the first post-fix run, because dist/ was stale; identical run after 'npm run build' left neuron.yaml untouched. Same stale-binary trap already documented for the globally-linked 'neuron' CLI, now confirmed for any e2e test that imports compiled dist/ output directly instead of src/ — always rebuild before trusting an e2e-level repro of a src/ fix, and check with 'grep -n "from .*dist/" test/e2e/**/*.mjs' if a fix appears not to take effect.
+
+---
+id: eadf3fb7-bb2a-4a1c-b717-baea3b788407
+createdAt: 2026-08-13T13:58:41.969Z
+importance: 4
+tags:
+  - md-storage
+  - failure-fix
+  - adr
+taskId: null
+---
+Fix for 'Malformed YAML frontmatter' hard-erroring MdStorageAdapter reads on entries whose content contains a fenced code block sandwiched between two stray '---' horizontal rules: parseMarkdownDetailed's two-pointer delimiter-pairing classifier (added for neuron-2.3.0 ticket 38, to survive a single stray '---') used a bare regex test for 'any line with a colon' to decide a candidate block was real frontmatter, and a fenced TypeScript/YAML code example's lines (id: string;, scope: string;) satisfy that test just as well as real frontmatter does, so the block got queued for a real YAML parse and threw on the fence syntax, corrupting the whole category file read. Root-caused via 'entry N of M' in the thrown error plus manual trace of the two-pointer pairing logic in src/storage/mdStorageAdapter.ts. Fix: reject any candidate block containing a markdown code fence line (/^```/m) in addition to the existing colon check — real frontmatter is never fenced code, so this preserves the two pre-existing malformed-YAML hard-fail tests (35-06, R1-T2-02) while rejecting the false positive; added regression test 40-01 with a fenced TS interface between two stray dividers. Edge case: this only surfaces once BOTH a stray '---' pair AND fenced code with colon-shaped lines land in the same category file next to another entry — invisible at small scale, guaranteed at scale once real multi-section ticket bodies (common in a wayfinder-style tracker) get migrated into md storage.
