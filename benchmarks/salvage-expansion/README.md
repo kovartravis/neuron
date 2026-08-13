@@ -1,6 +1,6 @@
 # Salvage expansion — calibration evidence
 
-Assets from [ticket 07 — Salvage Expansion for Weak Retrieval](../neuron-2.2.0/issues/07-query-expansion.md),
+Assets from ticket 07 — Salvage Expansion for Weak Retrieval (ticket `6c781195-57ed-4b97-a53e-5a53caf4626f` in the `tickets` category),
 which was **ruled out of scope on 2026-08-02** on the strength of the numbers
 below. Kept because the next person to ask *"is our retrieval weak, or is it
 confidently wrong?"* should re-run this rather than rebuild it.
@@ -65,7 +65,7 @@ three that are not — which is ticket 07's own scope step 3 kill condition, met
 The margin is thin (0.038) and n is small, but the separation is clean and it is
 exactly the population `CLAUDE.md`'s *"try a broader keyword"* line describes.
 This half of the finding is inherited by
-[ticket 27](../neuron-2.2.0/issues/27-minscore-is-inert.md).
+ticket 27 (`459036b9-0ce0-4735-b2e6-88d82ab90231` in the `tickets` category).
 
 **3. ADR 0010 §2's stated premise is false.** It justified using raw
 `similarity` over `score` on the grounds that *"the top hit of a nonsense query
@@ -79,6 +79,6 @@ only one term of `rrfScore` is non-zero and `normRrf` caps at 0.5. The observed
 0.4375 is exactly `0.75·0.5 + 0.25·((2−1)/4)` for the importance-2 filler.
 
 That same arithmetic is what
-[ticket 27](../neuron-2.2.0/issues/27-minscore-is-inert.md) is about: since the
+ticket 27 (`459036b9-0ce0-4735-b2e6-88d82ab90231` in the `tickets` category) is about: since the
 top semantic hit always gets `normRrf ≥ 0.5`, its score can never fall below
 0.375, so the default `minScore: 0.35` can never exclude it.

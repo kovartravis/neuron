@@ -23,7 +23,7 @@ import re
 import sys
 
 import os
-SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .scratch/configurable-pruning/
+SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # benchmarks/pruning-ab/
 
 # Entries individually spot-checked against git log (commit exists describing
 # the same work) as part of this session's review.

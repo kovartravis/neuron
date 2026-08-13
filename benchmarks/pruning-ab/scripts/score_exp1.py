@@ -9,7 +9,7 @@ maxImportance: 2 example in ticket 23's config.
 import json
 
 import os
-SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .scratch/configurable-pruning/
+SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # benchmarks/pruning-ab/
 MAX_PRUNE_IMPORTANCE = 2
 
 def score_arm(raw_results, labels_by_id, arm_key):

@@ -1,9 +1,9 @@
 # Markdown as the Store of Record
 
 **Status:** settled 2026-08-02, resolving
-[28 — What `md-only` Parity Actually Means](../neuron-2.2.0/issues/28-md-only-parity-design.md)
+28 — What `md-only` Parity Actually Means (ticket `801f2484-aabf-432b-b089-8ef4d9604b6d` in the `tickets` category)
 **Release:** 2.2.0-rc5 (map and release number unchanged)
-**ADR:** [0011](../../docs/adr/0011-markdown-as-store-of-record.md)
+**ADR:** [0011](../../adr/0011-markdown-as-store-of-record.md)
 
 ---
 
@@ -234,7 +234,7 @@ permanent churn loop:
 
 One entry missing one line churns the store indefinitely. **This is created by
 the design in §4, not inherited** — which is why
-[35 — Frontmatter Round-Trip Integrity](../neuron-2.2.0/issues/35-frontmatter-roundtrip-integrity.md)
+35 — Frontmatter Round-Trip Integrity (ticket `a5384183-dc23-43d5-b838-88e634319a1e` in the `tickets` category)
 becomes a hard prerequisite rather than a sibling ticket.
 
 Two adjacent defects of the same shape, fixed here:

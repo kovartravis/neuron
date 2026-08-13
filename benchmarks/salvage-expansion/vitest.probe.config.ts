@@ -6,12 +6,12 @@ import { defineConfig } from 'vitest/config';
  * bare `vitest` run never collects it; this config names it explicitly.
  *
  *   node ./node_modules/vitest/vitest.mjs run \
- *     --config .scratch/salvage-expansion/vitest.probe.config.ts
+ *     --config benchmarks/salvage-expansion/vitest.probe.config.ts
  */
 export default defineConfig({
   root: process.cwd(),
   test: {
-    include: ['.scratch/salvage-expansion/salvage-calibration.probe.ts'],
+    include: ['benchmarks/salvage-expansion/salvage-calibration.probe.ts'],
     testTimeout: 600000,
     hookTimeout: 600000,
   },

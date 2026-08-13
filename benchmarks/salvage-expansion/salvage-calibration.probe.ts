@@ -111,9 +111,9 @@ describe('Salvage calibration probe', () => {
       });
     }
 
-    fs.mkdirSync(path.join(process.cwd(), '.scratch/salvage-expansion'), { recursive: true });
+    fs.mkdirSync(path.join(process.cwd(), 'benchmarks/salvage-expansion'), { recursive: true });
     fs.writeFileSync(
-      path.join(process.cwd(), '.scratch/salvage-expansion/calibration-results.json'),
+      path.join(process.cwd(), 'benchmarks/salvage-expansion/calibration-results.json'),
       JSON.stringify(rows, null, 2)
     );
     console.log(JSON.stringify(rows, null, 2));

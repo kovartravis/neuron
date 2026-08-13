@@ -1,13 +1,13 @@
 Status: shipped — importance sections superseded by ticket 26
-Ticket: [06 — Write-Side Enrichment](../neuron-2.2.0/issues/06-write-side-enrichment.md)
+Ticket: 06 — Write-Side Enrichment (ticket `03413681-f42e-4d20-899b-d8a65a8991f4` in the `tickets` category)
 Band: 2.2.0-rc2
-ADRs: [0010 — Guardrails for the 0.5B Model's New Jobs](../../docs/adr/0010-llm-job-guardrails.md)
+ADRs: [0010 — Guardrails for the 0.5B Model's New Jobs](../../adr/0010-llm-job-guardrails.md)
 
 # Write-Side Enrichment: Auto Tags, Importance, Category
 
 > [!IMPORTANT]
 > **Every requirement below concerning `importance` is superseded.**
-> [26 — Remove Model-Based Importance Inference](../neuron-2.2.0/issues/26-remove-model-importance-inference.md)
+> 26 — Remove Model-Based Importance Inference (ticket `bb06afd7-bc54-4dab-8d4c-5e9e24199313` in the `tickets` category)
 > removed the job outright after Pillar 10 measured the model's judgement as
 > noise. `importance` is not enriched, the `llm.enrichment.importance` config key
 > is gone, and an omitted `--importance` takes the column default of `3`.

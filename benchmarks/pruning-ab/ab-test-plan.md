@@ -1,8 +1,8 @@
 # Handoff — Ticket 23 A/B: does automatic pruning earn its place in 2.2.0?
 
 Status: `ready-for-agent`
-Owner ticket: [23 — Configurable Automatic Pruning](../neuron-2.2.0/issues/23-configurable-automatic-pruning.md)
-Map: [neuron 2.2.0](../neuron-2.2.0/map.md)
+Owner ticket: 23 — Configurable Automatic Pruning (ticket `d31abade-a409-45e6-b9a7-996feb3219ed` in the `tickets` category)
+Map: neuron 2.2.0 (ticket `d2835c05-ad41-4f55-bf5f-8f5e9d518ff5` in the `tickets` category)
 Written: 2026-08-01, from the ticket `23` grilling session.
 
 > **Read this whole document before running anything.** It is self-contained by

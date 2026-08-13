@@ -4,8 +4,8 @@
 - **Supersedes:** the `md-only` storage mode introduced in 2.0.0-rc2
 - **Relates to:** [ADR 0001 — Hybrid Search RRF](0001-hybrid-search-rrf.md),
   [ADR 0010 — LLM Job Guardrails](0010-llm-job-guardrails.md)
-- **Spec:** [`.scratch/md-first/spec.md`](../../.scratch/md-first/spec.md)
-- **Ticket:** [28 — What `md-only` Parity Actually Means](../../.scratch/neuron-2.2.0/issues/28-md-only-parity-design.md)
+- **Spec:** [`docs/design/md-first/spec.md`](../design/md-first/spec.md)
+- **Ticket:** 28 — What `md-only` Parity Actually Means (ticket `801f2484-aabf-432b-b089-8ef4d9604b6d` in the `tickets` category — `neuron memory query "md-only Parity Actually Means" --categories tickets`)
 
 ## Context
 

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// .scratch/configurable-pruning/, two levels up from scripts/run_exp2.mjs
+// benchmarks/pruning-ab/, two levels up from scripts/run_exp2.mjs
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const SCRATCH = path.resolve(__dirname, '..'); // labels/relevance/query JSON — committed data
 // DB copies are large binary artifacts of a single run; never commit them.

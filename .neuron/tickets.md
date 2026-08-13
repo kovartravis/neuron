@@ -19170,10 +19170,12 @@ thin.
 - 36 — CI-Wire the Free Dry-Run Benchmark Harnesses (ticket 8c566399-3778-44a8-81bf-d078eaba5595) — built `.github/workflows/benchmark-dryrun.yml` as its own workflow (measured ~75s combined vs. `npm test`'s ~22s, over 3x heavier — follows `35`'s separate-workflow precedent, not `32`/`34`'s inline-step one), triggered on `pull_request`/push-to-`main`/`workflow_dispatch`, running all four free dry-run scripts with no build step needed. Never blocks `publish.yml` or `npm publish` by construction (no dependency edge, not added to required status checks), but fails loud on a real regression since all three harnesses already `process.exit(1)` on an uncaught error. Found and fixed a real bug while verifying locally: `run.mjs` and `run-gitlog-ab.mjs` shared the exact `OUT_DIR`-collision bug already found and fixed in sibling `run-swebench-ab.mjs` (a dry run silently overwriting a tracked, committed live-run `results.json`) — applied the same proven fix to both rather than filing a new ticket, since it's the same root cause and directly implicated by this ticket's own CI runs.
 - 39 — Category Auto-Declare Can Write to an Ancestor `neuron.yaml` Outside an Isolated `projectRoot` (ticket bef838ce-2695-472a-a34f-c5e08ccfda68) — the write-side resolver never climbs above `projectRoot`, full stop (no "create a fresh local file" fallback): added `findWritableConfigPath()`, checking only `projectRoot` itself, and pointed `NeuronMemory`'s `configPath` at it instead of the read-side upward-walking `findNeuronYaml` (which stays unchanged — it's real, tested behavior for genuine subdirectory invocation within one project). No local config means in-memory-only, reusing the hook's existing `configPath: null` fallback rather than inventing file creation. Root cause traced precisely: the old boundary check (stop at a `package.json`/`.git` directory) never actually protected against this, because the loop checks for the config file *before* the boundary marker at each directory, so a real ancestor project's root — which has both — always wins the file check first. Live-verified the exact reported bug both ways: the first repro attempt still reproduced it even with the fix in place, traced to `contention-worker.mjs` importing from a stale `dist/index.js` rather than `src/`; after `npm run build`, the identical live spawn-real-processes run left this repo's real `neuron.yaml` untouched. Audited all 18 test files using `projectRoot:` (Scope item 3) and decided against defense-in-depth fixture scaffolding — unlike `08`'s `GIT_CEILING_DIRECTORIES` precedent, this bug was a pure in-process resolution choice, not an unconstrainable external-process escape, so the source fix plus its regression coverage is sufficient. Found and chartered (not fixed) a second, unrelated real bug along the way: 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38), the concrete shape of the `no such column: "scope"` race ticket 17 had already flagged as pre-existing and off-band. `npm test` 709/709, `tsc` clean.
 - 40 — Migrate the 9 Wayfinder Efforts into the `tickets` Category (ticket 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4) — migrated all 9 efforts (193 entries) into the `tickets` category via a one-off script driving `NeuronMemory.transact()` directly, two-pass as scoped. Identity keyed on the full filename slug rather than the bare `NN` after finding `architecture-scans-2.1.0` has two real tickets both numbered `04`; status normalized from ~14 historical values down to the schema's 3 (everything terminal-but-not-plainly-"resolved" — `deferred`/`parked`/`wontfix`/`superseded`/`out of scope` — maps to `resolved`, off the claimable frontier); every map entry forced to `status: resolved` regardless of real completion, since the schema has no "not a ticket" state and the frontier convention doesn't check `kind`. Found and fixed a real, previously-latent storage bug blocking the migration outright: a fenced code block between two stray `---` body dividers could be misread as frontmatter by `MdStorageAdapter`'s two-pointer delimiter pairing, corrupting the whole category file — fixed with a code-fence exclusion and a new regression test, `npm test` 710/710 before and after. Frontier verified against the old per-effort `.scratch` bookkeeping for `neuron-2.2.0` (0, matches) and spot-checked for content/`blockedBy`/cross-link fidelity. `neuron-2.4.0` itself — this map — is migrated last, snapshotting this very resolution; see the Notes bullet immediately above for the cutover. Full mechanics and normalization rules in the ticket's own Answer.
+- 41 — Relocate `.scratch` Asset Directories & Fix Their ADR Links (ticket 46b889d3-d290-40ef-a110-f9f4c3021c19) — relocated all 4 directories via `git mv` (`configurable-pruning` → `benchmarks/pruning-ab`, `salvage-expansion` → `benchmarks/salvage-expansion`, `md-first`/`write-side-enrichment` → `docs/design/`), deleted 6 dead `.scratch/*.py` scripts (the ticket's own list of 5 missed `record_learning.py`, equally dead). Fixed every stale-path reference found by a repo-wide grep, not just the two ADR lines named in the Question: `src/components/enricher.ts`'s doc-comment, all 8 internal cross-links inside the relocated files (rewritten to `tickets`-category ids, looked up live since `40`'s own id map was a job-local artifact), and — found only by auditing every link, not grepping the old path — every *other* relative link in the two `docs/design/` files, whose directory depth changed by one level in the move. Found and fixed two real functional bugs (not just stale comments): `salvage-expansion/vitest.probe.config.ts`'s `include` glob and `salvage-calibration.probe.ts`'s output-path constants both still pointed at the old `.scratch/` path, which would have silently broken the probe. Deliberately left `.neuron/*.md` and two `benchmarks/*/results.json` transcripts alone — frozen historical text, not live pointers, same principle `40` applied to `.scratch/` itself. `npm test` 710/710, `tsc` clean, `neuron scan --check` clean after re-baselining (16 modules now). Chartered (not fixed) a real, unrelated content-fidelity bug found along the way in `40`'s own already-migrated data: [Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40](ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — at least 7 confirmed entries (`neuron-2.2.0#06/22/23/24/25/27`, `architecture-scans-2.1.0#06`) have an orphaned header-field line before their real title, because the migration script's header-stripping only recognized 4 field names and stopped at the first unrecognized one (`Priority:`/`Plan:`/`Result:`/`Spec:`/`Superseded by:`, or a `Band:` value wrapped across two lines). Cosmetic, not data loss — the real title/Question/Answer are all still present later in the content.
 
-**True frontier as of this session (now tracked in the `tickets` category, not
-this file):** `41`, `43`, `44` (all unclaimed and unblocked); `02`, `04`,
-`05`, `38` claimed and in progress; `03`, `42` blocked.
+**True frontier as of this session (tracked in the `tickets` category, not
+this file):** `43`, `44`, and the newly-chartered header-fragment-fix ticket
+(ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — all unclaimed and unblocked;
+`02`, `04`, `05`, `38` claimed and in progress; `03`, `42` blocked.
 
 ## Not yet specified
 
@@ -25326,7 +25328,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
-status: unclaimed
+status: resolved
 ---
 # 41 — Relocate `.scratch` Asset Directories & Fix Their ADR Links
 
@@ -25364,11 +25366,75 @@ Check each relocated dir's own internal relative links (e.g.
 `../neuron-2.2.0/issues/07-query-expansion.md`) and repoint them at
 wherever `40` lands that ticket in the `tickets` category.
 
+## Answer
+
+Relocated all 4 directories via `git mv` (history preserved): `configurable-pruning`
+→ `benchmarks/pruning-ab`, `salvage-expansion` → `benchmarks/salvage-expansion`,
+`md-first` → `docs/design/md-first`, `write-side-enrichment` →
+`docs/design/write-side-enrichment`. Deleted **6**, not 5, dead loose
+`.scratch/*.py` scripts — the ticket's own list missed `record_learning.py`,
+confirmed equally dead (only appears inside `configurable-pruning/query_logs.json`'s
+historical query log, recording that it was once *run*, not a real reference).
+
+Fixed every reference found by a repo-wide grep for the 4 old paths, not just
+the two ADR lines named in the Question:
+
+- ADR 0010 line 268, ADR 0011 lines 7–8 (both the `spec.md` path and the
+  ticket-28 citation — fixed both rather than leaving the citation dead,
+  since the live id was already in hand; a stricter reading of "covered by
+  40 instead" would have skipped it, but leaving a known-dead link when the
+  fix is one line felt like the wrong economy).
+- `src/components/enricher.ts:5`'s doc-comment citing
+  `.scratch/write-side-enrichment/spec.md` — not named in the Question,
+  found by the same grep.
+- All 8 internal cross-links inside the 4 relocated files themselves
+  (`ab-test-plan.md`, `salvage-expansion/README.md` ×3, `md-first/spec.md`
+  ×2, `write-side-enrichment/spec.md` ×2) pointing at `../neuron-2.2.0/issues/NN-*.md`
+  or `../neuron-2.2.0/map.md` — rewritten to `ticket <uuid>` references
+  against the real ids in the `tickets` category (looked up via `neuron
+  memory query`/`neuron memory list --categories tickets --json`, since
+  `40`'s own migration-run id map was a job-local artifact, not committed
+  anywhere durable).
+- **Directory depth changed for the two `docs/design/` moves** (2 segments
+  → 3: `.scratch/md-first/` was as deep as `benchmarks/pruning-ab/` will be,
+  but `docs/design/md-first/` is one level deeper) — every *other* relative
+  link in those two files needed an extra `../`, not just the ones the
+  Question named. Found by auditing every link in all 4 relocated files,
+  not just grepping for the literal old paths.
+- Two **functional** (not just stale-comment) hardcoded-path bugs in
+  `benchmarks/salvage-expansion/`: `vitest.probe.config.ts`'s own `include`
+  glob and `salvage-calibration.probe.ts`'s output-path constants both
+  still pointed at `.scratch/salvage-expansion/` — would have silently
+  broken the probe (vitest would collect nothing; a rerun would write
+  results to a resurrected `.scratch/` directory instead of the new one).
+  Fixed both. The 4 Python/`.mjs` scripts in `benchmarks/pruning-ab/scripts/`
+  only had *stale comments* citing the old path (their actual `SCRATCH`
+  path is computed dynamically via `__file__`/`import.meta.url`, unaffected
+  by the move) — updated the comments for accuracy, no functional change
+  needed there.
+
+**Deliberately left alone**: `.neuron/{architecture,decisions,tickets,history}.md`
+and two `benchmarks/*/results.json` transcripts still mention the old paths —
+all of these are frozen historical text (past decisions, session logs, and a
+real captured-and-billed LLM answer transcript), not live pointers; rewriting
+them would be revising a historical record, the same principle `40` applied
+to `.scratch/`'s own frozen snapshot. `.scratch/neuron-2.2.0/issues/*.md` and
+`.scratch/neuron-2.4.0/issues/41-*.md` (this ticket's own frozen `.scratch`
+copy) are untouched for the same reason.
+
+Re-baselined the architecture card (`neuron scan`) after the moves — picked
+up `salvage-expansion` as a genuinely new module, 16 modules now, `neuron
+scan --check` clean. `npm test` 710/710, `tsc` clean, both unchanged by this
+ticket (no `src/` behavior changed, only paths and comments).
+
+Didn't unblock anything directly — [42](42-sweep-scratch-references-and-delete.md)
+also needs `40`, already resolved.
+
 ## Comments
 
-- Graduated 2026-08-12 from 26 (ticket 4d0868a0-919e-46dc-8a58-122a10ef0990)'s
-  resolution, alongside 40 (ticket 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4) and
-  42 (ticket f16849c9-27f6-4022-b739-d896cf331507).
+- Graduated 2026-08-12 from [26](26-migrate-scratch-to-tickets-category.md)'s
+  resolution, alongside [40](40-migrate-wayfinder-efforts-to-tickets.md) and
+  [42](42-sweep-scratch-references-and-delete.md).
 
 ---
 id: f16849c9-27f6-4022-b739-d896cf331507
@@ -25638,3 +25704,54 @@ from any change made this session.
 _Not yet resolved._
 
 ## Comments
+
+---
+id: 703220a7-fb0f-4ef0-9465-c21bb96d5749
+createdAt: 2026-08-13T14:29:37.277Z
+importance: 3
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+kind: task
+status: unclaimed
+---
+# Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40
+
+## Question
+
+While resolving [41](41-relocate-scratch-asset-dirs.md), doing exact
+old-number-to-new-id lookups for tickets migrated by
+[40](40-migrate-wayfinder-efforts-to-tickets.md) turned up a real content-fidelity
+bug in that migration: at least 20 of the 193 migrated entries have an orphaned
+line (or two) sitting before their real `# NN — Title` heading, because the
+migration script's header-stripping only recognized `Type:`/`Status:`/
+`Blocked by:`/`Band:` lines and stopped at the first unrecognized one — leaving
+any *other* header-style field (`Priority:`, `Plan:`, `Result:`, `Spec:`,
+`Superseded by:`) as leaked content, and (separately) any `Band:` value that
+wrapped across two physical source lines left its continuation line stranded
+too (confirmed: `neuron-2.2.0#27-minscore-is-inert`).
+
+Confirmed affected (content doesn't start with `# `, checked against source —
+NOT a bug for the ~15 pre-wayfinder `saas-features`/`agent-memory-cli` entries
+that legitimately never had an H1 in the first place): `neuron-2.2.0#06`,
+`#22`, `#23`, `#24`, `#25`, `#27`, `architecture-scans-2.1.0#06`. Nothing is
+*lost* — the real title/Question/Answer are all still present later in the
+content — this is cosmetic, not data loss, which is why it's chartered rather
+than blocking `41`'s own resolution.
+
+Is the fix widening the header-field recognizer (add `Priority:`/`Plan:`/
+`Result:`/`Spec:`/`Superseded by:`, handle multi-line values), or a one-off
+per-entry content patch via `neuron memory update` against the 7 (or more —
+re-audit before fixing, this session's list came from a first pass, not an
+exhaustive one) confirmed cases? Given `.scratch/` itself is untouched and
+still holds the correct source text, either approach can diff against ground
+truth.
+
+## Comments
+
+- Chartered 2026-08-13 while resolving [41](41-relocate-scratch-asset-dirs.md),
+  per the one-ticket-per-session rule — found, not fixed, since it's
+  unrelated to `41`'s own question (asset relocation) even though it
+  surfaced during the same session's due-diligence lookups.

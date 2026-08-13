@@ -11,7 +11,7 @@ regex" and to report the surviving count.
 import json, re
 
 import os
-SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .scratch/configurable-pruning/
+SCRATCH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # benchmarks/pruning-ab/
 
 CLI_TOKEN_RE = re.compile(
     r'(^|\s)(--[a-zA-Z][\w-]*|neuron\s+(memory|exec|scan|sync|init|status|ui)|'
