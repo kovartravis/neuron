@@ -19197,12 +19197,14 @@ thin.
 - 40 — Migrate the 9 Wayfinder Efforts into the `tickets` Category (ticket 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4) — migrated all 9 efforts (193 entries) into the `tickets` category via a one-off script driving `NeuronMemory.transact()` directly, two-pass as scoped. Identity keyed on the full filename slug rather than the bare `NN` after finding `architecture-scans-2.1.0` has two real tickets both numbered `04`; status normalized from ~14 historical values down to the schema's 3 (everything terminal-but-not-plainly-"resolved" — `deferred`/`parked`/`wontfix`/`superseded`/`out of scope` — maps to `resolved`, off the claimable frontier); every map entry forced to `status: resolved` regardless of real completion, since the schema has no "not a ticket" state and the frontier convention doesn't check `kind`. Found and fixed a real, previously-latent storage bug blocking the migration outright: a fenced code block between two stray `---` body dividers could be misread as frontmatter by `MdStorageAdapter`'s two-pointer delimiter pairing, corrupting the whole category file — fixed with a code-fence exclusion and a new regression test, `npm test` 710/710 before and after. Frontier verified against the old per-effort `.scratch` bookkeeping for `neuron-2.2.0` (0, matches) and spot-checked for content/`blockedBy`/cross-link fidelity. `neuron-2.4.0` itself — this map — is migrated last, snapshotting this very resolution; see the Notes bullet immediately above for the cutover. Full mechanics and normalization rules in the ticket's own Answer.
 - 41 — Relocate `.scratch` Asset Directories & Fix Their ADR Links (ticket 46b889d3-d290-40ef-a110-f9f4c3021c19) — relocated all 4 directories via `git mv` (`configurable-pruning` → `benchmarks/pruning-ab`, `salvage-expansion` → `benchmarks/salvage-expansion`, `md-first`/`write-side-enrichment` → `docs/design/`), deleted 6 dead `.scratch/*.py` scripts (the ticket's own list of 5 missed `record_learning.py`, equally dead). Fixed every stale-path reference found by a repo-wide grep, not just the two ADR lines named in the Question: `src/components/enricher.ts`'s doc-comment, all 8 internal cross-links inside the relocated files (rewritten to `tickets`-category ids, looked up live since `40`'s own id map was a job-local artifact), and — found only by auditing every link, not grepping the old path — every *other* relative link in the two `docs/design/` files, whose directory depth changed by one level in the move. Found and fixed two real functional bugs (not just stale comments): `salvage-expansion/vitest.probe.config.ts`'s `include` glob and `salvage-calibration.probe.ts`'s output-path constants both still pointed at the old `.scratch/` path, which would have silently broken the probe. Deliberately left `.neuron/*.md` and two `benchmarks/*/results.json` transcripts alone — frozen historical text, not live pointers, same principle `40` applied to `.scratch/` itself. `npm test` 710/710, `tsc` clean, `neuron scan --check` clean after re-baselining (16 modules now). Chartered (not fixed) a real, unrelated content-fidelity bug found along the way in `40`'s own already-migrated data: [Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40](ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — at least 7 confirmed entries (`neuron-2.2.0#06/22/23/24/25/27`, `architecture-scans-2.1.0#06`) have an orphaned header-field line before their real title, because the migration script's header-stripping only recognized 4 field names and stopped at the first unrecognized one (`Priority:`/`Plan:`/`Result:`/`Spec:`/`Superseded by:`, or a `Band:` value wrapped across two lines). Cosmetic, not data loss — the real title/Question/Answer are all still present later in the content.
 - 42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/` (ticket f16849c9-27f6-4022-b739-d896cf331507) — re-grepped the whole repo rather than trusting the ticket's own recon list. Found real scope `41` had missed — `neuron-2.2.0/research/` (`harness-compatibility.md`, `relevance-floor-baseline.{md,js}`), live-referenced from ADR 0012/0014 — and relocated it to `docs/design/harness-compatibility-research/`. Every other loose non-ticket asset across the 9 effort dirs had zero external referrers (confirmed by grepping the full relative path, not the bare filename) and went with the tree. Fixed every live `.scratch/` pointer found: `CLAUDE.md`'s now-stale tracker caveat, README's Cursor-adapter link, a dangling `benchmarks/salvage-expansion` README command (broken since `41`'s own move), a stale `REPORT.md` display path, and ~60 dead links across `CHANGELOG.md` and ADRs 0003/0011–0018 — resolved to real ids by cross-referencing the live `tickets` category (not the stale `.scratch` bookkeeping, which has since drifted — e.g. ticket 25's own migrated entry still carries the leaked-header-fragment bug `41` chartered a fix for). ADRs got the map's own `NN — Title (ticket <uuid>)` prose convention (precise, since numbers collide across efforts); `CHANGELOG.md`'s links were de-linked to plain text instead (no browsable URL exists for a store entry). Left frozen historical record alone throughout — `.neuron/*.md` including `tickets.md` (same falsify-the-record principle as the other three, just not named in the ticket's own exclusion list since `tickets.md` didn't exist when it was filed), `docs/design/md-first/handoff-response.md`, and all `results.json`/fixture-data transcripts. `npm test` 721/721, `tsc` clean, both before and after `git rm -r .scratch/`. **`.scratch/` no longer exists in this repository** — committed as `e7a8d8a`.
+- 43 — Pillar 7's `recall@5 >= 0.4` Floor Is Too Tight Against Real Build-to-Build Noise (ticket b3c6c2a7-b4a5-4f53-ac0a-2b250b3afe07) — real ONNX floating-point sensitivity, not a ranking regression: constructing ticket 29's `TransformersReranker` (unused on this pillar's `query()` path, no side effects) deterministically shifts recall@5 0.5→0.375 and MRR 0.294→0.213 versus a stub, reproduced across clean rebuilds; three unrelated edits didn't move it, so the sensitivity is real but narrow, not general build noise. Recalibrated both floors with headroom sized to the measured swing (recall@5 0.4→0.25, one case-width; MRR 0.25→0.13, the measured 0.081 delta) rather than a guess; rejected per-family floors as too noisy at n=2 per family. `npm test` 721/721, `tsc` clean, no `src/` changes.
 
 **True frontier as of this session (tracked in the `tickets` category, not
-this file):** `43`, `44`, and the unnumbered header-fragment-fix ticket
-(ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — all unclaimed and unblocked;
+this file):** `44` and the unnumbered header-fragment-fix ticket
+(ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — both unclaimed and unblocked;
 `02`, `04`, `05`, `38` claimed and in progress; `03` still blocked (on `02`,
-unaffected by `42`'s resolution).
+unaffected). Ticket 43 resolved 2026-08-13 (see its own Decisions-so-far
+entry above); didn't unblock anything directly.
 
 ## Not yet specified
 
@@ -25620,7 +25622,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
-status: unclaimed
+status: resolved
 ---
 # 43 — Pillar 7's `recall@5 >= 0.4` Floor Is Too Tight Against Real Build-to-Build Noise
 
@@ -25725,7 +25727,72 @@ there is no within-build randomness to retry past.
 
 ## Answer
 
-_Not yet resolved._
+Recalibrated both floors from a real measured distribution on this exact
+commit, not a guess — and confirmed the underlying mechanism precisely,
+though fixing it is out of this ticket's scope per its own Scope item 5.
+
+**Measured distribution** (clean `npm run build` + `vitest run
+test/e2e/adversarial-recall.test.ts`, repeated):
+
+| Build variant | recall@5 | MRR |
+|---|---|---|
+| Shipped code, HEAD (`new TransformersReranker()` constructed) — 3 clean rebuilds incl. one `rm -rf dist` | 0.375 | 0.213 |
+| HEAD + inert comment in an unrelated command file | 0.375 | 0.213 |
+| HEAD + inert comment at the top of `src/index.ts` | 0.375 | 0.213 |
+| HEAD + reranker/enricher construction order swapped (both still real) | 0.375 | 0.213 |
+| HEAD with the one reranker-construction line replaced by an inert `{ score: async () => 0 }` stub | 0.5 | 0.294 |
+
+The last row exactly reproduces `v2.4.0-rc1`'s original numbers (recall@5
+0.5) and this file's own existing MRR-floor comment's cited baseline
+(0.29375 → 0.294 rounded) — strong independent confirmation this isn't a
+new measurement error.
+
+**Mechanism, narrowed further than the ticket's own bisection**:
+`TransformersReranker` (`src/components/reranker.ts`) has no top-level
+side effects and no eager model load (`modelPromise` stays `null` until
+`.score()` is first called), and `this.reranker` is referenced nowhere on
+Pillar 7's `query()` code path — only `queryGated()` calls `.score()`, at
+`src/index.ts:704`. So there is no code-semantic reason constructing this
+object should change `query()`'s output at all. It does anyway,
+deterministically and reproducibly, purely from *constructing an unused
+object of that shape* — confirmed real (not a stale-build artifact) by the
+`rm -rf dist` clean rebuild and by three other unrelated edits that did
+*not* move the number. This is consistent with the ticket's own
+floating-point-reduction-order-in-multi-threaded-ONNX hypothesis: a trivial
+allocation shifts V8 heap/timing state, which shifts the exact thread
+interleaving of the real (non-mocked) ONNX WASM backend's parallel
+reduction for this pillar's deliberately-adversarial near-tie corpus, where
+a tiny numeric perturbation is exactly what flips a close top-10 rank.
+Root-causing or fixing that ORT-level nondeterminism is explicitly out of
+this ticket's scope (Scope item 5) — headroom is the correct response, not
+a chase for determinism this pillar was never designed to have.
+
+**New floors**, sized to the measured swing rather than a round number:
+- `recall@5`: `0.4` → `0.25`. The swing measured above (0.5 − 0.375 =
+  0.125) is exactly one case-width at this corpus's granularity (8 cases,
+  1/8 = 0.125 per case) — the floor drops one full case-width below the
+  shipped 0.375.
+- `MRR`: `0.25` → `0.13`. The same swing in MRR terms (0.294 − 0.213 =
+  0.081) subtracted from the shipped 0.213, rounded down.
+
+**Per-family floors (Scope item 3): considered, rejected.** Each family
+(`lexical-decoy`, `paraphrase`, `contradiction`, `multi-hop`) is only 2
+cases — a per-family gate would flap at 50% granularity on exactly the
+noise class this ticket just measured, worse than the aggregate's already-
+loose 1/8. The aggregate floor alone stays the right granularity; recorded
+inline in the test file's comment so a future session doesn't re-propose
+it without re-deriving this.
+
+**Verification**: `test/e2e/adversarial-recall.test.ts` passes clean (3/3)
+against the real, unmodified, currently-shipped code — no `src/` changes,
+only the test file's thresholds and comment moved, per the ticket's own
+Verification section. `npm test` 721/721, `tsc` clean. Did not run the full
+`npm run test:e2e` (which also runs `concurrency-stress.test.ts`, already
+known-flaky and tracked separately by ticket 44 — unrelated to this
+ticket's scope, would only add noise to this verification).
+
+Didn't unblock anything directly (no ticket on this map lists `43` as a
+blocker).
 
 ## Comments
 

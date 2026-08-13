@@ -169,7 +169,7 @@ Primary commands module containing core application capabilities.
 - **`src/commands/learn.ts`** (Exports: `handleLearnCommand`): Function handleLearnCommand (Methods: handleLearnCommand(), error(), exit(), log()).
 - **`src/commands/memory.supersession.test.ts`**: Methods: process(), vecAt(), Float32Array(), makeMemory().
 - **`src/commands/memory.test.ts`**: A project whose config names a literal fallback category. The model is disabled under NODE_ENV=test, so the fallback is what makes the success path deterministic without loading 500M parameters.
-- **`src/commands/memory.ts`** (Exports: `handleMemoryCommand`): Function handleMemoryCommand (Methods: handleMemoryCommand(), getConfig(), collectDeclaredFieldFlags(), getMemoryHelp()).
+- **`src/commands/memory.ts`** (Exports: `WhereClause, RefsSatisfyClause, handleMemoryCommand`): Declared field holding a comma-separated list of ids referencing other entries in the same category.
 - **`src/commands/scan.determinism.test.ts`**: Ticket 37 verification: the blueprint card is a deterministic artifact. Repeated real ingests never duplicate the card (making SCAN_HELP's "updates that card in place" promise true), and repeated dry-runs are byte-identical across both output formats.
 - **`src/commands/scan.fidelity.test.ts`**: The `--check` exit-code contract, which is what CI gates on: 0  clean and comparable 1  real architectural drift 2  incomparable — the baseline was produced by a different parser Code 2 is deliberately distinct from 1: failing a build for drift the user introduced is correct, and failing it because they upgraded neuron is a different problem with a different fix.
 - **`src/commands/scan.test.ts`**: Methods: describe(), join(), it(), execSync().
