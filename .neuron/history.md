@@ -2882,3 +2882,15 @@ tags:
 taskId: "42"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 42 (Sweep Repo-Wide .scratch/ References & Delete .scratch/), the frontier's lowest unclaimed-and-unblocked ticket per a live tracker scan (this map's own Notes narrative had drifted stale, missing ticket 41's resolution entirely). Re-grepped the whole repo rather than trusting the ticket's own recon list, found one real asset ticket 41's scope had missed (neuron-2.2.0/research/, live-referenced from ADR 0012/0014) and relocated it to docs/design/harness-compatibility-research/, fixed ~60 dead .scratch/ links across CHANGELOG.md and ADRs 0003/0011-0018 by resolving them against the live tickets category (not stale bookkeeping), and confirmed every other loose effort-internal asset had zero external referrers before letting it go with the tree. npm test 721/721 and tsc clean before and after git rm -r .scratch/. .scratch/ no longer exists in this repository; every wayfinder effort now lives exclusively in the tickets category. Updated the neuron-2.4.0 map's Decisions-so-far and frontier footer to match (43, 44, and an unnumbered leaked-header-fragments ticket remain the frontier; no tickets remain blocked on this map).
+
+---
+id: fed9fe5c-8154-42d1-9957-1b4d4f0b6978
+createdAt: 2026-08-13T22:44:00.073Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: "43"
+---
+Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 43 (Pillar 7's recall@5>=0.4 floor is too tight against real build-to-build noise), the frontier's lowest-id unclaimed-and-unblocked ticket per the map's own last-stated true frontier (43, 44, and an unnumbered header-fragment-fix ticket). Ran a real controlled A/B on feat/2.4.0-rc2 rather than accepting the ticket's own bisection on faith: confirmed constructing ticket 29's TransformersReranker (otherwise inert on this pillar's code path) deterministically explains the swing between the shipped 0.375 and the pre-ticket-29 0.5 baseline, and that three other unrelated code edits do not move the number, narrowing the claim from 'any build changes it' to a specific, narrow, real sensitivity. Recalibrated recall@5 (0.4->0.25) and MRR (0.25->0.13) in test/e2e/adversarial-recall.test.ts with headroom sized to the measured swing rather than guessed, and documented the finding inline so a future session doesn't re-diagnose it. npm test 721/721, tsc clean, no src/ changes. Updated the map's Decisions-so-far and the trailing True frontier note (now 44 and the unnumbered header-fragment-fix ticket, both unclaimed/unblocked; 02/04/05/38 claimed; 03 blocked). Found and worked around one unrelated dev nuisance, not chartered: a bare npm run build doesn't chmod +x dist/cli.js, so an rm -rf dist rebuild during this ticket's own measurement broke the globally-linked neuron binary.
