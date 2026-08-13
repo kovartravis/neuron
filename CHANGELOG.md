@@ -2,6 +2,48 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.0-rc2] - 2026-08-12
+
+Second interim checkpoint on the [neuron-2.4.0
+map](.scratch/neuron-2.4.0/map.md), audited from `git log
+v2.4.0-rc1..HEAD` directly rather than assumed from the map's nominal
+ticket numbering.
+
+- **Closes rc1's flagged known issue: a local reranker cuts the relevance
+  gate's false-accept rate by 5x.** A second-stage gate
+  (`Xenova/ms-marco-MiniLM-L-6-v2`, a local ONNX cross-encoder — no remote
+  API call) ANDs onto the existing lexical leg. Calibrated live against the
+  real LongMemEval-S split: false-accept drops from 99.80% to 19.4% at the
+  shipped threshold. A full threshold sweep proved the original "~zero new
+  false-silence" target unreachable on two candidate models, so the bar was
+  amended live with the swept frontier in hand — the shipped point trades a
+  roughly symmetric 19.8% false-silence for that false-accept reduction.
+  Ships unconditionally alongside the lexical leg; no config switch.
+- **Fixed `neuron init` silently onboarding harnesses you don't use.** A
+  bare `.github/` directory — created for CI workflows and issue templates
+  far more often than for real Copilot CLI use — used to be enough on its
+  own to trigger writing `AGENTS.md` and a skills directory, with nothing in
+  the run's own output distinguishing that from refreshing a harness
+  already in use. Copilot detection now requires
+  `.github/copilot-instructions.md` specifically (or evidence neuron already
+  onboarded it before); the other three harnesses' detection is unchanged.
+  Onboarding any harness for the first time is now also visible in the
+  run's own output (`harnesses.newlyOnboarded`).
+- **Fixed a real drift-detection bug**: `neuron exec`'s auto-rescan — and,
+  found via the same fix, `neuron scan` and `neuron status`'s own drift
+  checks — resolved the scan root from the working directory separately
+  from the storage root a project's config actually lives under. Running
+  from a subdirectory with no config of its own could silently overwrite
+  the real architecture card with a scan of the wrong tree. Both roots now
+  resolve through the same lookup.
+- Re-ran rc1's git-log-index A/B against the real shipped semantic search
+  mechanism (rc1's own number used an oracle stand-in). Directionally
+  confirms the same win — real semantic search matched an oracle's 0%
+  failure rate and beat the agent's own `git log` calls — but the measured
+  token-usage gap didn't clear this harness's noise-floor guard given
+  session-to-session variance, so it's reported as directional, not a
+  confirmed percentage.
+
 ## [2.4.0-rc1] - 2026-08-12
 
 Interim release candidate — most of the [neuron-2.4.0

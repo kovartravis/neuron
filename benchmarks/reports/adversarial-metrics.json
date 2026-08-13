@@ -1,39 +1,39 @@
 {
-  "timestamp": "2026-08-12T14:32:08.866Z",
+  "timestamp": "2026-08-13T11:57:15.450Z",
   "tier": "sanity",
-  "suiteDurationMs": 16829,
+  "suiteDurationMs": 21260,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 20.04,
-      "p95Ms": 30.91,
-      "p99Ms": 34.05,
-      "minMs": 17.16,
-      "maxMs": 34.83,
-      "meanMs": 21.75,
-      "totalMs": 174.01,
-      "throughputPerSec": 45.97,
+      "p50Ms": 48.55,
+      "p95Ms": 188.43,
+      "p99Ms": 234.26,
+      "minMs": 33.32,
+      "maxMs": 245.71,
+      "meanMs": 76.49,
+      "totalMs": 611.93,
+      "throughputPerSec": 13.07,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
         "evaluations": 8,
         "recallAt1": 0.125,
-        "recallAt5": 0.5,
-        "mrr": 0.294,
+        "recallAt5": 0.375,
+        "mrr": 0.213,
         "supersededViolations": 1,
         "byFamily": {
           "lexical-decoy": {
             "cases": 2,
             "recallAt1": 0,
-            "recallAt5": 0.5,
-            "mrr": 0.175
+            "recallAt5": 0,
+            "mrr": 0
           },
           "paraphrase": {
             "cases": 2,
             "recallAt1": 0,
-            "recallAt5": 0,
-            "mrr": 0.083
+            "recallAt5": 0.5,
+            "mrr": 0.1
           },
           "contradiction": {
             "cases": 2,
@@ -44,21 +44,21 @@
           "multi-hop": {
             "cases": 2,
             "recallAt1": 0,
-            "recallAt5": 0.5,
-            "mrr": 0.167
+            "recallAt5": 0,
+            "mrr": 0
           }
         },
         "missedAtRank1": [
           {
             "id": "decoy-retry-budget",
             "family": "lexical-decoy",
-            "rank": 10,
+            "rank": null,
             "topResult": "When a retry budget is exhausted the retry handler logs a retry limit warning for the paym"
           },
           {
             "id": "decoy-index-rebuild",
             "family": "lexical-decoy",
-            "rank": 4,
+            "rank": null,
             "topResult": "Index rebuild takes hours when the index rebuild job competes with other index rebuild tas"
           },
           {
@@ -70,7 +70,7 @@
           {
             "id": "para-memory-growth",
             "family": "paraphrase",
-            "rank": 6,
+            "rank": 5,
             "topResult": "Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during "
           },
           {
@@ -82,14 +82,14 @@
           {
             "id": "hop-cold-start",
             "family": "multi-hop",
-            "rank": 3,
+            "rank": null,
             "topResult": "Sluggish commands are often caused by an oversized memory store that needs pruning"
           },
           {
             "id": "hop-ci-only-failure",
             "family": "multi-hop",
             "rank": null,
-            "topResult": "Note 23: the asset pipeline validates its input eagerly and rejects malformed payloads bef"
+            "topResult": "Pipeline failures are usually caused by missing environment secrets that are present local"
           }
         ]
       }
@@ -97,14 +97,14 @@
     {
       "pillar": "Pillar 13: Antagonistic Recall & Abstention",
       "samples": 19,
-      "p50Ms": 22.23,
-      "p95Ms": 32,
-      "p99Ms": 32.07,
-      "minMs": 18.29,
-      "maxMs": 32.09,
-      "meanMs": 23.08,
-      "totalMs": 438.53,
-      "throughputPerSec": 43.33,
+      "p50Ms": 17.63,
+      "p95Ms": 22.79,
+      "p99Ms": 30.27,
+      "minMs": 14.29,
+      "maxMs": 32.14,
+      "meanMs": 18.58,
+      "totalMs": 352.93,
+      "throughputPerSec": 53.84,
       "extra": {
         "cases": 19,
         "falseAccepts": 0,
@@ -133,20 +133,20 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 24.98,
-      "p95Ms": 24.98,
-      "p99Ms": 24.98,
-      "minMs": 24.98,
-      "maxMs": 24.98,
-      "meanMs": 24.98,
-      "totalMs": 24.98,
-      "throughputPerSec": 40.03,
+      "p50Ms": 36.27,
+      "p95Ms": 36.27,
+      "p99Ms": 36.27,
+      "minMs": 36.27,
+      "maxMs": 36.27,
+      "meanMs": 36.27,
+      "totalMs": 36.27,
+      "throughputPerSec": 27.57,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 24.98,
-            "p95Ms": 52,
+            "p50Ms": 36.267,
+            "p95Ms": 49.326,
             "recallAt1": 0.125
           }
         ]
