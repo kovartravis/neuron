@@ -384,4 +384,146 @@ describe('CLI Command: memory', () => {
       expect(row.content).toBe('updated content');
     });
   });
+
+  /**
+   * `list --frontier` (neuron-2.4.0 ticket 41's session): the wayfinder
+   * frontier per docs/agents/issue-tracker.md, computed in the CLI instead of
+   * by hand every wayfinder session with a throwaway script.
+   */
+  describe('list --frontier', () => {
+    const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    let projectDir: string;
+
+    beforeEach(() => {
+      projectDir = path.join(tempDbDir, `proj-frontier-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(projectDir, { recursive: true });
+      fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
+      fs.writeFileSync(
+        path.join(projectDir, 'neuron.yaml'),
+        [
+          'version: "1.0"',
+          'categories:',
+          '  tickets:',
+          '    fields:',
+          '      status:',
+          '        type: enum',
+          '        values: [unclaimed, claimed, resolved]',
+          '        default: unclaimed',
+          '      blockedBy:',
+          '        type: string',
+          '  other:',
+          '    description: unrelated category, no declared fields',
+          'pullRules:',
+          '  default:',
+          '    categories: [tickets]',
+          '',
+        ].join('\n')
+      );
+    });
+
+    const envFor = () => ({
+      ...process.env,
+      NEURON_DB_PATH: tempDbPath,
+      NEURON_MOCK_EMBEDDER: 'true',
+    });
+    const addTicket = (content: string, status: string, blockedBy?: string): { id: string } =>
+      JSON.parse(
+        execSync(
+          `node ${cliPath()} memory add "${content}" --category tickets --status ${status}` +
+            (blockedBy ? ` --blocked-by "${blockedBy}"` : ''),
+          { env: envFor(), cwd: projectDir }
+        ).toString()
+      );
+    const frontier = (extra = ''): any[] =>
+      JSON.parse(
+        execSync(`node ${cliPath()} memory list --category tickets --frontier ${extra}`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+
+    it('includes an unclaimed, unblocked ticket', () => {
+      const a = addTicket('Ticket A', 'unclaimed');
+      const ids = frontier().map((e: any) => e.id);
+      expect(ids).toContain(a.id);
+    });
+
+    it('excludes a claimed ticket and a resolved ticket', () => {
+      const claimed = addTicket('Ticket claimed', 'claimed');
+      const resolved = addTicket('Ticket resolved', 'resolved');
+      const ids = frontier().map((e: any) => e.id);
+      expect(ids).not.toContain(claimed.id);
+      expect(ids).not.toContain(resolved.id);
+    });
+
+    it('excludes an unclaimed ticket blocked by an unresolved ticket, includes it once that blocker resolves', () => {
+      const blocker = addTicket('Blocker', 'unclaimed');
+      const blocked = addTicket('Blocked', 'unclaimed', blocker.id);
+
+      let ids = frontier().map((e: any) => e.id);
+      expect(ids).toContain(blocker.id);
+      expect(ids).not.toContain(blocked.id);
+
+      execSync(`node ${cliPath()} memory update ${blocker.id} "Blocker" --category tickets --status resolved`, {
+        env: envFor(),
+        cwd: projectDir,
+      });
+
+      ids = frontier().map((e: any) => e.id);
+      expect(ids).not.toContain(blocker.id); // now resolved, not unclaimed
+      expect(ids).toContain(blocked.id);
+    });
+
+    it('keeps a ticket blocked when blockedBy names an id with no matching entry (dangling reference)', () => {
+      const dangling = addTicket('Dangling blockedBy', 'unclaimed', 'no-such-id-ever-written');
+      const ids = frontier().map((e: any) => e.id);
+      expect(ids).not.toContain(dangling.id);
+    });
+
+    it('an unclaimed ticket blocked by two ids is only unblocked once both resolve', () => {
+      const b1 = addTicket('Blocker one', 'unclaimed');
+      const b2 = addTicket('Blocker two', 'unclaimed');
+      const blocked = addTicket('Blocked by two', 'unclaimed', `${b1.id},${b2.id}`);
+
+      execSync(`node ${cliPath()} memory update ${b1.id} "Blocker one" --category tickets --status resolved`, {
+        env: envFor(),
+        cwd: projectDir,
+      });
+      expect(frontier().map((e: any) => e.id)).not.toContain(blocked.id);
+
+      execSync(`node ${cliPath()} memory update ${b2.id} "Blocker two" --category tickets --status resolved`, {
+        env: envFor(),
+        cwd: projectDir,
+      });
+      expect(frontier().map((e: any) => e.id)).toContain(blocked.id);
+    });
+
+    it('--limit caps the frontier result without breaking correctness', () => {
+      addTicket('Ticket 1', 'unclaimed');
+      addTicket('Ticket 2', 'unclaimed');
+      addTicket('Ticket 3', 'unclaimed');
+      expect(frontier('--limit 2')).toHaveLength(2);
+      expect(frontier()).toHaveLength(3);
+    });
+
+    it('rejects --frontier without --category tickets', () => {
+      expect(() => {
+        execSync(`node ${cliPath()} memory list --category other --frontier`, {
+          env: envFor(),
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/--frontier only applies to the 'tickets' category/);
+    });
+
+    it('rejects --frontier with no --category at all', () => {
+      expect(() => {
+        execSync(`node ${cliPath()} memory list --frontier`, {
+          env: envFor(),
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/--frontier only applies to the 'tickets' category/);
+    });
+  });
 });

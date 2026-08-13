@@ -112,6 +112,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     includeSuperseded?: boolean;
     /** `memory add` ticket 19: non-interactive resolution of the supersession gate for scheduled/cron writers — skip the write (not an error) when a candidate is found, rather than hard-blocking for a human. */
     ifNovel?: boolean;
+    /** `memory list` — the wayfinder frontier per docs/agents/issue-tracker.md: unclaimed tickets whose every blockedBy id names a resolved entry. Tickets-category only. */
+    frontier?: boolean;
   };
 } {
   const positionals: string[] = [];
@@ -147,6 +149,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let notAReversal: boolean | undefined;
   let includeSuperseded: boolean | undefined;
   let ifNovel: boolean | undefined;
+  let frontier: boolean | undefined;
   const fields: Record<string, string> = {};
   const fieldFlagIndex = new Map(declaredFields.map(f => [f.flag, f.key]));
 
@@ -263,6 +266,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       includeSuperseded = true;
     } else if (arg === '--if-novel') {
       ifNovel = true;
+    } else if (arg === '--frontier') {
+      frontier = true;
     } else if (arg.startsWith('-') && arg.length > 1) {
       // Previously fell through to `positionals`, where it was silently
       // discarded by every caller. A mistyped flag must not look like success.
@@ -343,6 +348,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       notAReversal,
       includeSuperseded,
       ifNovel,
+      frontier,
     }
   };
 }
@@ -571,7 +577,13 @@ Options:
                                  no entry added, printed to stderr and noted
                                  in the JSON result so the skip is never
                                  silent). Mutually exclusive with
-                                 --supersedes and --not-a-reversal.`;
+                                 --supersedes and --not-a-reversal.
+  --frontier                      (list) The wayfinder frontier: unclaimed
+                                 'tickets'-category entries whose every
+                                 blockedBy id names a resolved entry. Requires
+                                 --category tickets (or --categories tickets,
+                                 alone). --limit caps the frontier result, not
+                                 the internal fetch used to compute it.`;
 
 /**
  * `MEMORY_HELP` plus a per-category listing of this project's declared

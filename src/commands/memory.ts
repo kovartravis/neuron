@@ -1,7 +1,47 @@
 import { NeuronMemory } from '../index.js';
+import { Memory } from '../models/memory.js';
 import { parseFlags, getMemoryHelp } from './utils.js';
 import { autoRescanIfDriftDetected } from '../scanner/diff.js';
 import { collectDeclaredFieldFlags } from '../config/neuronYaml.js';
+
+// `list` returns at most 20 entries by default and the SQL/markdown read path
+// already loads every matching row before slicing to the caller's limit (see
+// queryVector's list-mode branch), so this just asks for "effectively all" —
+// frontier correctness needs to see every ticket to build the resolved-id
+// lookup, not a windowed sample.
+const FRONTIER_FETCH_LIMIT = 1_000_000;
+
+/**
+ * The wayfinder frontier per docs/agents/issue-tracker.md: `tickets`-category
+ * entries with `status: unclaimed` whose every `blockedBy` id names an entry
+ * with `status: resolved`. A `blockedBy` id with no matching entry at all
+ * (dangling) fails that check — the ticket stays blocked, never silently
+ * unblocked by a typo or an entry outside this fetch.
+ */
+async function computeFrontier(
+  memory: NeuronMemory,
+  categories: string[] | undefined,
+  limit: number | undefined,
+  includeSuperseded: boolean | undefined
+): Promise<Memory[]> {
+  if (!categories || categories.length !== 1 || categories[0] !== 'tickets') {
+    console.error(
+      "Error: --frontier only applies to the 'tickets' category (status/blockedBy are declared there). Pass --category tickets."
+    );
+    process.exit(1);
+  }
+  const all = await memory.query({ categories, limit: FRONTIER_FETCH_LIMIT, includeSuperseded });
+  const resolvedIds = new Set(all.filter(e => e.fields?.status === 'resolved').map(e => e.id));
+  const frontier = all.filter(e => {
+    if (e.fields?.status !== 'unclaimed') return false;
+    const blockedBy = (e.fields?.blockedBy ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    return blockedBy.every(id => resolvedIds.has(id));
+  });
+  return limit !== undefined ? frontier.slice(0, limit) : frontier;
+}
 
 export async function handleMemoryCommand(
   args: string[],
@@ -174,6 +214,10 @@ export async function handleMemoryCommand(
     // Was `options.category` only, so `--categories a,b` parsed successfully
     // and silently had no filtering effect — `query` already reads both.
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
+    if (options.frontier) {
+      console.log(JSON.stringify(await computeFrontier(memory, categories, options.limit, options.includeSuperseded)));
+      return;
+    }
     const results = await memory.query({ categories, limit: options.limit, includeSuperseded: options.includeSuperseded });
     console.log(JSON.stringify(results));
   } else if (subCommand === 'delete') {
