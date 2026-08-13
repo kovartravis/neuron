@@ -3,7 +3,7 @@
 ## Status
 
 Accepted (design). Implementation graduated to a new map,
-[neuron-2.4.0](../../.scratch/neuron-2.4.0/map.md).
+neuron-2.4.0 (map `0a1d6d69-54ea-42bf-bc30-6ae4522172fd` in the `tickets` category).
 
 ## Context
 
@@ -12,9 +12,9 @@ Any command could write under a category string absent from the config —
 `neuron scan`'s default (`'architecture'`) being the standing example — and
 nothing kept the two in sync.
 
-[Ticket 31](../../.scratch/neuron-2.3.0/issues/31-fix-query-list-defaults.md)
+Ticket 31 — Fix `neuron memory` Query/List Default Ordering and Limits (ticket `af0beb3d-ba2d-437b-a8de-9184ba5f8cb8`)
 (and, before it, the equivalent gap on
-[neuron-2.2.0](../../.scratch/neuron-2.2.0/map.md#not-yet-specified)) fixed
+neuron-2.2.0's own Not yet specified fog, map `d2835c05-ad41-4f55-bf5f-8f5e9d518ff5`) fixed
 the acute half of this — the one-time bootstrap seed now unions the declared
 set with whatever the store actually contains, so first-sync no longer drops
 data for an undeclared category. But **steady-state reconcile still ran on
@@ -25,7 +25,8 @@ the declared set only**
 category's `.md` file was silently never repaired — the exact guarantee the
 `md` storage default is sold on.
 
-[Tickets 05/06](../../.scratch/neuron-2.3.0/issues/05-per-category-storage-path.md)
+Tickets 05/06 — Storage Path/Mode: Top-Level Default with Per-Category
+Override (tickets `92f165f7-7720-46f2-9abb-9fea846bd6c3`/`dbed3219-6cfd-45e5-9b4d-c8e2d03e1a14`)
 raised the stakes without resolving the authority question: a category's
 storage path and storage mode are now both resolved *only* from
 `neuron.yaml` (`src/config/categoryPath.ts`), so an undeclared category
@@ -47,7 +48,7 @@ resolving it: `scan.category` defaults to the undeclared `'architecture'`
 introduced ticket 31's bootstrap-seed fix — sidestepping the problem instead
 of fixing it.
 
-[Grilling ticket 35](../../.scratch/neuron-2.3.0/issues/35-categories-authoritative-or-advisory.md)
+Grilling ticket 35 — Is `categories` Authoritative or Advisory? (ticket `76199306-81f6-442f-90e9-9aae4075acc8`)
 resolved the design. Mid-grilling, the maintainer redirected the resulting
 *implementation* off `neuron-2.3.0` (already accumulating an rc2 cut) onto a
 freshly chartered `neuron-2.4.0` map, so this ADR records a design decision
@@ -160,5 +161,5 @@ whose build has not landed yet.
   declaration drift.
 - [ADR 0016](0016-per-category-storage-vocabulary.md) — the per-category
   path/mode vocabulary this decision's category strings resolve against.
-- [neuron-2.3.0 ticket 35](../../.scratch/neuron-2.3.0/issues/35-categories-authoritative-or-advisory.md) —
+- neuron-2.3.0 ticket 35 (ticket `76199306-81f6-442f-90e9-9aae4075acc8`) —
   the grilling session this ADR records.

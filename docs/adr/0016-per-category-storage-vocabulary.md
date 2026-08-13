@@ -3,7 +3,7 @@
 - **Status:** Accepted (2026-08-08)
 - **Supersedes:** part of [ADR 0011 — Markdown as the Store of Record](0011-markdown-as-store-of-record.md) (the `storage.mode` vocabulary and the single-root storage-path assumption)
 - **Relates to:** [ADR 0011](0011-markdown-as-store-of-record.md)
-- **Tickets:** [05 — Per-Category Storage Path](../../.scratch/neuron-2.3.0/issues/05-per-category-storage-path.md), [06 — Storage Mode: Top-Level Default with Per-Category Override, `split` Removed](../../.scratch/neuron-2.3.0/issues/06-storage-mode-override-remove-split.md)
+- **Tickets:** 05 — Storage Path: Top-Level Default with Per-Category Override (ticket `92f165f7-7720-46f2-9abb-9fea846bd6c3`), 06 — Storage Mode: Top-Level Default with Per-Category Override, `split` Removed (ticket `dbed3219-6cfd-45e5-9b4d-c8e2d03e1a14`)
 
 ## Context
 

@@ -5,12 +5,12 @@
   dedupe design this ticket's "supersession half" was carved out of; §6's
   "detect and select, never write" / "superseded, not deleted" posture is
   inherited, not re-litigated
-- **Ticket:** [16 — Memory Supersession](../../.scratch/neuron-2.3.0/issues/16-memory-supersession.md)
-- **Blocks:** [04 — Cut and Publish](../../.scratch/neuron-2.3.0/issues/04-cut-and-publish.md)
+- **Ticket:** 16 — Memory Supersession (ticket `e329f037-389f-46d6-8254-6884eb0bfc96`)
+- **Blocks:** 04 — Cut and Publish (ticket `72773373-0f02-4a0e-8ba1-e0bf3099c4df`)
 
 ## Context
 
-[Ticket 10](../../.scratch/neuron-2.3.0/issues/10-counterfactual-token-ab.md)'s
+Ticket 10 — Counterfactual Token A/B: Does Neuron Pay for Itself? (ticket `b6634c8f-b66d-44c8-a495-e06b4483f4e4`)'s
 counterfactual A/B measured the memory arm failing *more* often than a
 no-memory control (33% vs 17%), both misses the same shape: a
 `.neuron/decisions.md` entry recording an earlier decision outcompeted a
@@ -19,7 +19,7 @@ wrong. Nothing in the store marks the first as superseded.
 
 This is not new — it was fog on the `neuron-2.3.0` map ("capturing a
 maintainer decision, not just an agent action") that 2.2.0's shelved dedupe
-ticket (`.scratch/neuron-2.2.0/issues/08-consolidation-dedupe.md`) named by
+ticket (08 — LLM-Assisted Consolidation & Dedupe, ticket `42f34041-4c77-418c-9ee3-2746eecbb490`) named by
 its outcome before either fog item was sharp: *"the supersession half may
 return as a NEW ticket on its own merits."* Ticket 10 is that return —
 measured, not theoretical.

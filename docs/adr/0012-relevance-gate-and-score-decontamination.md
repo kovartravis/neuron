@@ -6,9 +6,9 @@
   fused score's composition changes
 - **Relates to:** [ADR 0010 — LLM Job Guardrails](0010-llm-job-guardrails.md) §2,
   whose account of `minScore` this ADR corrects for the second time
-- **Ticket:** [27 — `minScore` Is Structurally Inert](../../.scratch/neuron-2.2.0/issues/27-minscore-is-inert.md)
-- **Implemented by:** [41](../../.scratch/neuron-2.2.0/issues/41-decontaminate-score-and-lexical-gate.md)
-  (structural — resolved) and [39](../../.scratch/neuron-2.2.0/issues/39-relevance-floor-validation.md)
+- **Ticket:** 27 — `minScore` Is Structurally Inert (ticket `459036b9-0ce0-4735-b2e6-88d82ab90231`)
+- **Implemented by:** 41 (ticket `567ff69e-9e16-4f97-9236-888da1d08a9b`)
+  (structural — resolved) and 39 (ticket `e2d3530e-76db-4533-a6d7-1cb2ee29d9bf`)
   (the one fitted constant — resolved: no floor ships, config surface landed)
 
 ## Context
@@ -218,7 +218,8 @@ Consequence 6's open risk on the lexical leg's false-silence rate. Both were
 measured on LongMemEval — 500 questions, 23,867 documents, paraphrased
 conversational content with gold evidence guaranteed present per question,
 **zero LLM calls** — chosen specifically because it is not this project's own
-prose, which is what made the pilot's 0.061 margin (`research/relevance-floor-baseline.md`)
+prose, which is what made the pilot's 0.061 margin
+(`docs/design/harness-compatibility-research/relevance-floor-baseline.md`)
 unusable as a shipping number.
 
 Isolation needed a fix first: ticket 38 (already on trunk) dropped the `scope`

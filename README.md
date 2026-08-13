@@ -110,7 +110,7 @@ plus what to do about it, read from each harness's real hook registration
 | Claude Code | `SessionStart` / `UserPromptSubmit` / `PreCompact` hooks, every turn | Deterministic |
 | OpenAI Codex CLI | `SessionStart` / `UserPromptSubmit` / `PreCompact` hooks, every turn | Deterministic |
 | GitHub Copilot CLI | `sessionStart` hook only — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; verified against a real Copilot CLI installation |
-| Cursor | `sessionStart` / `preCompact` hooks — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; **not verified against a real Cursor installation** (no maintainer access — see [ticket 22](.scratch/neuron-2.3.0/issues/22-verify-cursor-adapter-real-install.md)), shipped on fixture/documentation evidence only |
+| Cursor | `sessionStart` / `preCompact` hooks — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; **not verified against a real Cursor installation** (no maintainer access — see ticket 22, Verify Cursor Adapter Against a Real Installation), shipped on fixture/documentation evidence only |
 | Anything else (`AGENTS.md` fallback) | No hook adapter | Instruction-only — the model must choose to read `AGENTS.md` and run `neuron memory query` itself |
 
 *Verified against each harness's documented hook behavior as of 2026-08-10.

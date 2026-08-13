@@ -4,16 +4,16 @@
 - **Relates to:** [ADR 0012 — Relevance Gate and Score Decontamination](0012-relevance-gate-and-score-decontamination.md),
   which this ADR's payload budget (Decision 4) depends on for its "no cosine
   floor" result
-- **Ticket:** [11 — Recall Adapter Architecture](../../.scratch/neuron-2.2.0/issues/11-recall-adapter-architecture.md)
-- **Implemented by:** [12 — Claude Code Adapter](../../.scratch/neuron-2.2.0/issues/12-claude-code-adapter.md),
-  [13 — Codex Adapter](../../.scratch/neuron-2.2.0/issues/13-codex-adapter.md)
+- **Ticket:** 11 — Recall Adapter Architecture (ticket `917944e7-36e8-403e-bebc-794602a03b52`)
+- **Implemented by:** 12 — Claude Code Adapter (ticket `45d010f5-6f69-4984-9612-622e408f8679`),
+  13 — Codex Adapter (ticket `84f987c7-058c-40e7-b8ec-06fd93d65cdb`)
 
 ## Context
 
 2.2.0 moves recall from a `CLAUDE.md` instruction the agent may or may not act
 on to per-harness native hooks — deterministic where a harness supports it.
 Ticket 10 researched six harnesses and found genuinely unequal capabilities:
-two ([Claude Code, Codex CLI](../../.scratch/neuron-2.2.0/research/harness-compatibility.md))
+two ([Claude Code, Codex CLI](../design/harness-compatibility-research/harness-compatibility.md))
 document per-turn injection with failure/timeout/payload semantics; two
 (Copilot CLI, Cursor) inject only at session start; two (Antigravity, OpenCode)
 have rich mechanisms but undocumented reliability.
@@ -229,7 +229,7 @@ Four consequences follow:
 
 ### 2026-08-10 — Fourth lifecycle point: `pre-command`, Claude Code and Codex only
 
-[Ticket 12 (neuron-2.4.0)](../../.scratch/neuron-2.4.0/issues/12-precommand-hook-vs-exec.md)
+Ticket 12 (neuron-2.4.0) — Should `neuron exec`'s Pre-Command Lookup Become a Hook Instead? (ticket `5c0d8cd9-7f1c-4899-ae15-bd2b7398e4e1`)
 extends this ADR with a fourth `LifecyclePoint`, `pre-command` — the same
 reliability gap this ADR closed for recall (an agent-followed instruction
 vs. a harness-executed hook) applied to `neuron exec -- <command>`, the
@@ -297,7 +297,7 @@ where it is documented: Copilot CLI (ticket 16) and Cursor (ticket 40)" — is
 superseded, not withdrawn: the reasoning that produced it still holds (both
 land `best-effort`, a real capability), it just isn't load-bearing for what
 2.2.0 shipped. Both adapters continue unchanged as tickets `01`/`02` on
-[neuron-2.3.0](../../.scratch/neuron-2.3.0/map.md). Everything else this ADR
+neuron-2.3.0 (map `cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f` in the `tickets` category). Everything else this ADR
 decided — the capability map, session-ledger dedup, payload budget, hook-target
 prompting, multi-harness resolution — shipped in 2.2.0-rc3 exactly as
 designed, for the two deterministic adapters.

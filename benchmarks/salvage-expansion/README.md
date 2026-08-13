@@ -9,7 +9,7 @@ confidently wrong?"* should re-run this rather than rebuild it.
 
 ```bash
 node ./node_modules/vitest/vitest.mjs run \
-  --config .scratch/salvage-expansion/vitest.probe.config.ts
+  --config benchmarks/salvage-expansion/vitest.probe.config.ts
 ```
 
 Takes about a second against the real embedder on a 308-entry corpus. It writes

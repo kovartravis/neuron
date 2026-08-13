@@ -158,6 +158,6 @@ it.
   Accepted, and to be documented plainly.
 - The reconcile is now on the hot path of every command. Detection is cheap, but
   it is new work in a place that previously did none.
-- [35 — Frontmatter Round-Trip Integrity](../../.scratch/neuron-2.2.0/issues/35-frontmatter-roundtrip-integrity.md)
+- 35 — Frontmatter Round-Trip Integrity (ticket `a5384183-dc23-43d5-b838-88e634319a1e`)
   becomes a hard prerequisite; the design cannot ship without deterministic
   entry identity.

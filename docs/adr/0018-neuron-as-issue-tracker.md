@@ -6,8 +6,8 @@
   Configurable Frontmatter Schema](0013-configurable-frontmatter-schema.md),
   whose declared-field-schema machinery this decision reuses rather than
   extends
-- **Ticket:** [14 — Design: Should Neuron Replace `.scratch/` as This Repo's
-  Issue Tracker?](../../.scratch/neuron-2.4.0/issues/14-neuron-as-tracker-design.md)
+- **Ticket:** 14 — Design: Should Neuron Replace `.scratch/` as This Repo's
+  Issue Tracker? (ticket `9ef4cc7d-dee3-4565-a387-a0c5d718e088`)
 
 ## Context
 
