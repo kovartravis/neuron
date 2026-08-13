@@ -2782,3 +2782,15 @@ tags:
 taskId: null
 ---
 Pushed ticket-32 CI architecture-drift gate (neuron-2.4.0) to GitHub -- commits b07cc25 (claim), 64b3a6d (resolve), d471d3e (memory record) on feat/2.4.0-rc2.
+
+---
+id: cca65444-8691-481a-959c-175b4f602f8b
+createdAt: 2026-08-13T12:13:47.939Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "33"
+---
+Wayfinder pickup session on the neuron-2.4.0 map: claimed the frontier's first unblocked ticket, 33 (Detect a Stale Global/Linked neuron Binary Against the Working Tree, F2 from ticket 13's audit), and resolved it by implementation since this map carries execution. Built checkBinaryVersionMismatch() in src/components/binaryVersion.ts as a new status --check finding kind (binaryVersionMismatch), following ticket 01's undeclaredCategories precedent: resolves the running binary past any symlink via realpathSync, compares its own package.json version against cwd's, and only fires when cwd's package.json names @kovartravis/neuron so ordinary consumers never trip it. Wired into status.ts's --check block with the same compliant/exitCode contract undeclaredCategories already uses; no --repair counterpart since there's nothing to write. Live-verified by copying this repo's real dist/ with only its package.json version overwritten and running it against a project directory naming the real version, reproducing both historical incidents' trap without a second real install. npm test 715/716 (Pillar 7 adversarial recall quality failure confirmed pre-existing/unrelated by reproducing it with this ticket's changes stashed out), tsc clean. Updated the map's Decisions-so-far and frontier line; new frontier is 34, 35, 36, 39, 40, 41, 43.

@@ -234,4 +234,80 @@ pullRules:
       expect(onDisk).toContain('legacy: {}');
     });
   });
+
+  describe('binary version mismatch (ticket 33 / F2)', () => {
+    const cliPath = path.join(process.cwd(), 'dist/cli.js');
+    const realVersion = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')).version;
+
+    function makeProjectDir(pkg: Record<string, unknown>): string {
+      const dir = path.join(tempDbDir, `proj-binver-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
+      return dir;
+    }
+
+    // A "stale global install" fixture: a full copy of this repo's real
+    // dist/ under a fake package root nested inside the repo (so Node's
+    // module resolution still finds the real node_modules by walking up),
+    // with only package.json's version overwritten — reproducing an
+    // un-rebuilt `npm link`/stale `npm install -g`.
+    function makeStaleBinary(version: string): string {
+      const pkgRoot = path.join(tempDbDir, `stale-install-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(pkgRoot, { recursive: true });
+      fs.cpSync(path.join(process.cwd(), 'dist'), path.join(pkgRoot, 'dist'), { recursive: true });
+      fs.writeFileSync(
+        path.join(pkgRoot, 'package.json'),
+        JSON.stringify({ name: '@kovartravis/neuron', version, type: 'module' })
+      );
+      return path.join(pkgRoot, 'dist', 'cli.js');
+    }
+
+    it('reports a mismatch and exits 1 when the resolved-from-PATH binary is stale', () => {
+      const projectDir = makeProjectDir({ name: '@kovartravis/neuron', version: realVersion });
+      const dbPath = path.join(projectDir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const staleBinaryPath = makeStaleBinary('0.0.1-stale');
+
+      let stdout: string;
+      let status = 0;
+      try {
+        stdout = execSync(`node ${staleBinaryPath} status --check`, { env, cwd: projectDir }).toString();
+      } catch (err: any) {
+        stdout = err.stdout.toString();
+        status = err.status;
+      }
+
+      const report = JSON.parse(stdout);
+      expect(report.compliant).toBe(false);
+      expect(report.binaryVersionMismatch).toEqual({
+        cwdVersion: realVersion,
+        runningVersion: '0.0.1-stale',
+        runningPath: fs.realpathSync(staleBinaryPath),
+      });
+      expect(status).toBe(1);
+    });
+
+    it('is compliant when the running binary matches this project\'s own version', () => {
+      const projectDir = makeProjectDir({ name: '@kovartravis/neuron', version: realVersion });
+      const dbPath = path.join(projectDir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+
+      const stdout = execSync(`node ${cliPath} status --check`, { env, cwd: projectDir }).toString();
+      const report = JSON.parse(stdout);
+      expect(report.compliant).toBe(true);
+      expect(report.binaryVersionMismatch).toBeNull();
+    });
+
+    it('never fires for a project that is not neuron\'s own source tree, even against a stale binary', () => {
+      const projectDir = makeProjectDir({ name: 'some-consumer-app', version: '1.0.0' });
+      const dbPath = path.join(projectDir, 'store.sqlite');
+      const env = { ...process.env, NEURON_DB_PATH: dbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const staleBinaryPath = makeStaleBinary('0.0.1-stale');
+
+      const stdout = execSync(`node ${staleBinaryPath} status --check`, { env, cwd: projectDir }).toString();
+      const report = JSON.parse(stdout);
+      expect(report.compliant).toBe(true);
+      expect(report.binaryVersionMismatch).toBeNull();
+    });
+  });
 });
