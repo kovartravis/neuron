@@ -1258,3 +1258,15 @@ tags:
 taskId: null
 ---
 Ticket 30 (neuron-2.4.0): when autoRescanIfDriftDetected/neuron scan/neuron status derive their scan root, they now resolve it exactly once via the shared src/shared/projectRoot.ts findProjectRoot walk (surfaced through NeuronMemory.getProjectRoot()), rather than each call site deriving its own copy from process.cwd(). This closes a real, twice-confirmed incident class: a CLI invocation from a project-marker-less subdirectory (e.g. any .scratch effort's issues/ dir) could scan a degenerate 0-module topology while the write landed, upward-resolved, in the real project's store. Considered and rejected a second policy for the marker-less-cwd edge case (refuse to auto-rescan at all) in favor of reusing NeuronMemory.open()'s existing upward-walk-then-literal-fallback behavior -- introducing a distinct refuse-mode for scanning specifically would itself be a second, divergent resolution of the same question this ticket exists to unify. Precedent for 'two surfaces must resolve the same way, not drift into two heuristics' already existed in src/shared/textMatch.ts (ticket 43); this is the same pattern applied to project-root discovery, and future scan/storage-root call sites should default their root parameter to memory.getProjectRoot() rather than process.cwd().
+
+---
+id: 9bdbdbb0-fad9-4a8a-9e1a-a0c0f5c9daa3
+createdAt: 2026-08-13T14:41:31.784Z
+importance: 4
+tags:
+  - rc2
+  - 2.2.0
+  - adr
+taskId: null
+---
+CLI dependency-graph filtering for `neuron memory list` is generic, not wayfinder-specific: `--where <field>=<value>` and `--refs-satisfy <field>:<subfield>=<value>` are two composable, schema-agnostic filters (any category, any declared field name, any enum value), not a bespoke `--frontier` flag hardcoded to this repo's own `status`/`blockedBy`/`unclaimed`/`resolved` vocabulary. The wayfinder frontier (docs/agents/issue-tracker.md) is just one example composition of the two generic flags. Reasoning: a memory-store CLI used across many projects with different declared-field schemas (ADR 0013) should not bake one project's own tracker vocabulary into a built-in flag — that couples the general-purpose tool to a single use case and would need a new hardcoded flag for every future dependency-graph-shaped category (deploys/dependsOn, reviews/waitingOn, etc). Verified genericity with a real second schema (deploys/state/dependsOn) in the test suite, not just asserted.
