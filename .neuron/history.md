@@ -2806,3 +2806,15 @@ tags:
 taskId: "34"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 34 (Detect CLAUDE.md Protocol-Block Drift From neuron.yaml), the frontier's lowest unclaimed/unblocked id. Built a fourth status --check finding kind (protocolBlockDrift, following ticket 01/33's precedent, no --repair counterpart) plus a new 'Config/protocol compliance check' CI step in publish.yml's build-and-test job right after ticket 32's architecture-drift step, resolving the ticket's own open 'CI vs status --check' question with both rather than picking one -- confirmed safe first by checking this repo's own tree was already 100% compliant before wiring status --check wholesale into CI. Extracted a shared resolveProtocolTargets() out of writeProtocolBlocks so the check generalizes across every detected harness's own instruction file (not just CLAUDE.md) with no duplicated generation logic. Live-verified clean against this repo's real committed CLAUDE.md; npm test 704/704, tsc clean. Refreshed the architecture blueprint afterward (5 real export additions: ticket 34's own checkProtocolBlockDrift/ProtocolBlockDrift/findMarkerRange plus two from ticket 33 that had never been captured). True frontier is now 35, 36, 39, 40, 41, 43 (unclaimed/unblocked); 02, 04, 05, 38 claimed in progress; 03, 42 blocked.
+
+---
+id: 28caa824-842b-405a-a99f-a2d0db791b1d
+createdAt: 2026-08-13T12:29:36.189Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: "35"
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 35 (Scheduled Store-Health Check), the frontier's lowest unblocked id. Built .github/workflows/store-health.yml (weekly schedule + workflow_dispatch) running 'neuron status --health' read-only against this repo's own committed .neuron/ store, posting duplicate-group/importance/superseded-count results to GITHUB_STEP_SUMMARY and failing the run past >2 duplicate groups -- closing audit finding F4 from ticket 13. Resolved both of the ticket's open questions (summary destination, fail threshold) as design calls rather than escalating, matching this map's precedent on prior task tickets (32, 34). Live-validated the jq extraction and step-summary formatting against this repo's real store output before committing (0 duplicate groups today, so the new threshold won't fire on day one). No src/ changes; npm test 704/704 clean. Worked on feat/2.4.0-rc2 per the map's standing branch instruction. Frontier is now 36, 39, 40, 41, 43.
