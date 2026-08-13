@@ -36,6 +36,22 @@ jobs:
       - name: Build and test
         run: npm test
 
+      - name: Architecture drift check
+        run: |
+          set +e
+          node dist/cli.js scan --check --no-progress
+          code=$?
+          set -e
+          if [ "$code" -eq 1 ]; then
+            echo "::error::.neuron/architecture.md is stale -- src/ changed exports/structure since the last scan. Run 'neuron scan' locally and commit the refreshed card."
+            exit 1
+          elif [ "$code" -eq 2 ]; then
+            echo "::error::.neuron/architecture.md's baseline isn't comparable (likely a neuron version upgrade changed parser fidelity, not a code change). Run 'neuron scan' locally to re-baseline and commit the result."
+            exit 1
+          elif [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+
       - name: Resolve version and dist-tag
         id: version
         run: |
