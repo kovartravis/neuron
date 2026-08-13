@@ -1,5 +1,5 @@
 Type: task
-Status: unclaimed
+Status: claimed
 Blocked by: none
 
 # 35 — Scheduled Store-Health Check
