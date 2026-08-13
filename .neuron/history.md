@@ -2818,3 +2818,15 @@ tags:
 taskId: "35"
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 35 (Scheduled Store-Health Check), the frontier's lowest unblocked id. Built .github/workflows/store-health.yml (weekly schedule + workflow_dispatch) running 'neuron status --health' read-only against this repo's own committed .neuron/ store, posting duplicate-group/importance/superseded-count results to GITHUB_STEP_SUMMARY and failing the run past >2 duplicate groups -- closing audit finding F4 from ticket 13. Resolved both of the ticket's open questions (summary destination, fail threshold) as design calls rather than escalating, matching this map's precedent on prior task tickets (32, 34). Live-validated the jq extraction and step-summary formatting against this repo's real store output before committing (0 duplicate groups today, so the new threshold won't fire on day one). No src/ changes; npm test 704/704 clean. Worked on feat/2.4.0-rc2 per the map's standing branch instruction. Frontier is now 36, 39, 40, 41, 43.
+
+---
+id: 95ecb88b-3bf9-4b0a-84ff-76a87c1514f7
+createdAt: 2026-08-13T12:55:43.865Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: "36"
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved ticket 36 (CI-Wire the Free Dry-Run Benchmark Harnesses), the frontier's lowest unclaimed/unblocked ticket. Measured the four dry-run scripts locally (~75s combined vs npm test's ~22s) before deciding, then built .github/workflows/benchmark-dryrun.yml as its own workflow -- not a build-and-test step, following ticket 35's store-health.yml precedent for anything heavier than the fast-unit-test class -- triggered on pull_request/push-to-main/workflow_dispatch, with no dependency edge on publish.yml so a harness regression can never block a real release. While verifying it locally, found and fixed a real bug: run.mjs and run-gitlog-ab.mjs shared the exact OUT_DIR dry-run/live collision bug a prior session had already fixed in sibling run-swebench-ab.mjs, silently overwriting two tracked live-run results.json files; applied the same proven fix to both rather than filing a new ticket, since it was the same root cause directly implicated by this ticket's own CI runs. Worked on feat/2.4.0-rc2 per the standing branch instruction. Resolved ticket 36's file with a full Answer section and updated map.md's Decisions-so-far and frontier. Next wayfinder session should pick up ticket 39 (config auto-declare escaping project root), the new frontier's lowest id -- frontier is now 39, 40, 41, 43 unclaimed/unblocked; 02, 04, 05, 38 claimed in progress; 03, 42 blocked.

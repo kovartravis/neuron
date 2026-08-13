@@ -1544,3 +1544,15 @@ tags:
 taskId: null
 ---
 Fix for autoRescanIfDriftDetected silently overwriting the wrong project's architecture card (neuron-2.4.0 ticket 30): running a wrapped command (neuron exec / memory query) from a project-marker-less subdirectory (any bare .scratch/<effort>/issues/ dir qualifies) computed the scan root as literal process.cwd() while the NeuronMemory instance writing the result was opened via NeuronMemory.open()'s own separate upward-walking package.json/.git resolution -- the two silently diverged, so a degenerate 0-module scan of the subdirectory got ingested into the real project's store. Confirmed live twice on this repo's own store before the fix (232 and 406 lines of the real architecture card destroyed). Root cause: two independent, textually-duplicated implementations of project-root discovery (src/index.ts and src/commands/utils.ts) plus several call sites (autoRescanIfDriftDetected, getArchitecturalDrift, neuron scan's own handleScanCommand, neuron status's drift check) that re-derived the root from process.cwd() instead of reusing NeuronMemory's already-resolved one. Fixed by deduplicating findProjectRoot into src/shared/projectRoot.ts, adding NeuronMemory.getProjectRoot(), and defaulting every one of those call sites' projectRoot parameter to memory.getProjectRoot() instead of process.cwd() -- e.g. 'projectRoot: string = memory.getProjectRoot()' in src/scanner/diff.ts. Edge case: when the CLI cwd has no package.json/.git anywhere in its ancestry, findProjectRoot's existing fallback (return the literal start directory) is intentionally kept rather than adding a new refuse-to-scan mode -- introducing a second policy for scanning specifically would have re-created a smaller version of the same divergence bug.
+
+---
+id: cc5f1a20-e938-4594-8456-10341c63812d
+createdAt: 2026-08-13T12:55:43.484Z
+importance: 4
+tags:
+  - failure-fix
+  - exec
+  - release
+taskId: null
+---
+Fix for benchmarks/token-ab/run.mjs and run-gitlog-ab.mjs silently overwriting committed live-run results: verifying neuron-2.4.0 ticket 36's new CI workflow by actually running the four dry-run scripts locally clobbered two tracked results.json files (10-counterfactual-token-ab, 14-git-log-hook-vs-agent-log-ab) with dry-run placeholder data and no backup. Root cause: both scripts' OUT_DIR was keyed only on an optional --out= override, never on --dry-run vs live, the exact bug class a prior session had already found and fixed in their sibling run-swebench-ab.mjs (see its own code comment) but never back-ported to these two. Fix: mirror run-swebench-ab.mjs's pattern in both files -- derive OUT_NAME from --out= or the existing default, then set OUT_DIR to `${OUT_NAME}-dry-run` whenever DRY_RUN is true, so a dry run can never land on a live run's path. Edge case: this only matters for a real dev working tree with committed results -- a CI runner's checkout is ephemeral and discarded, so the same collision there is harmless, but any local smoke-test of these scripts should still 'git status' the benchmarks/ dir immediately after running them.
