@@ -1000,3 +1000,63 @@ describe('NeuronMemory BGE query instruction prefix', () => {
     });
   });
 });
+
+describe('Ticket 39: category auto-declare never escapes an isolated projectRoot', () => {
+  const mockEmbedder = { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) };
+
+  it('leaves an ancestor neuron.yaml untouched and stays in-memory-only when projectRoot has no config of its own', async () => {
+    // Mirrors the ticket's own live repro: a real project root with a real
+    // neuron.yaml, and an isolated subdirectory (no neuron.yaml, no package.json
+    // or .git of its own) passed directly as projectRoot — the same shape
+    // test/e2e/concurrency-stress.test.ts uses for `src/__tests__/temp-contention`.
+    const projDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t39-ancestor-'));
+    const ancestorConfigPath = path.join(projDir, 'neuron.yaml');
+    const ancestorBody = 'version: "1.0"\ncategories:\n  learning: {}\n';
+    fs.writeFileSync(ancestorConfigPath, ancestorBody);
+
+    const isolatedRoot = path.join(projDir, 'src/__tests__/temp-contention');
+    fs.mkdirSync(isolatedRoot, { recursive: true });
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: isolatedRoot,
+      projectName: 'isolated',
+      storageMode: 'vector',
+      embedder: mockEmbedder,
+    });
+
+    // A write into an undeclared category is exactly what fires ADR 0017's
+    // auto-declare hook (autoDeclareCategory, called from transact()).
+    await memory.transact([{ op: 'upsert', category: 'stress', content: 'fixture entry' }]);
+
+    // The ancestor's real neuron.yaml — byte-for-byte, no stray `stress: {}`.
+    expect(fs.readFileSync(ancestorConfigPath, 'utf8')).toBe(ancestorBody);
+    // The write still isn't lost — it applies to this process's in-memory config.
+    expect(memory.getConfig().categories.stress).toEqual({});
+
+    memory.close();
+    fs.rmSync(projDir, { recursive: true, force: true });
+  });
+
+  it('still declares to disk when projectRoot itself has a neuron.yaml', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuron-t39-local-'));
+    const configPath = path.join(tempDir, 'neuron.yaml');
+    const body = 'version: "1.0"\ncategories:\n  learning: {}\n';
+    fs.writeFileSync(configPath, body);
+
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: tempDir,
+      projectName: 'local',
+      storageMode: 'vector',
+      embedder: mockEmbedder,
+    });
+
+    await memory.transact([{ op: 'upsert', category: 'freshcat', content: 'fixture entry' }]);
+
+    expect(fs.readFileSync(configPath, 'utf8')).toContain('freshcat: {}');
+
+    memory.close();
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+});
