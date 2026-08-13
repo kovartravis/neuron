@@ -469,8 +469,13 @@ export class MdStorageAdapter implements MdStorage {
       const open = delimiters[p];
       const close = delimiters[p + 1];
       const yamlStr = content.slice(open.lineEnd, close.lineStart).replace(/\r?\n$/, '');
-      // Verify candidate block contains key-value pairs to distinguish frontmatter from body horizontal rules `---`
-      if (/^\s*[a-zA-Z0-9_-]+\s*:/m.test(yamlStr)) {
+      // Verify candidate block contains key-value pairs to distinguish frontmatter from body horizontal rules `---`,
+      // AND contains no markdown code fence — real frontmatter is never fenced code, but body content between two
+      // stray `---` horizontal rules routinely is (a TypeScript interface or YAML example inside a ```-fenced block
+      // reads exactly like frontmatter to a bare colon regex: `id: string;`, `scope: string;`, ...), which without
+      // this exclusion gets misclassified as a real block and then hard-errors the whole file when the fenced code
+      // fails to parse as YAML.
+      if (/^\s*[a-zA-Z0-9_-]+\s*:/m.test(yamlStr) && !/^```/m.test(yamlStr)) {
         matches.push({
           matchStart: open.lineStart,
           bodyStart: close.lineEnd,
