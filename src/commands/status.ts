@@ -2,6 +2,7 @@ import { NeuronMemory, StoreHealth, StoreHealthRepairReport } from '../index.js'
 import { loadNeuronConfig } from '../config/neuronYaml.js';
 import { getArchitecturalDrift } from '../scanner/diff.js';
 import { summarizeRecallCost } from '../harnesses/index.js';
+import { checkBinaryVersionMismatch } from '../components/binaryVersion.js';
 import { parseFlags, STATUS_HELP } from './utils.js';
 
 /** Truncates a content preview for the human-readable `--health` report only — the JSON payload always carries the full string. */
@@ -133,12 +134,18 @@ export async function handleStatusCommand(memory: NeuronMemory, args: string[] =
   if (options.check) {
     const violations = await memory.checkFieldCompliance();
     const undeclaredCategories = await memory.checkUndeclaredCategories();
+    // Ticket 33 / F2: a third, unrelated finding kind — env/tooling drift
+    // (the resolved-from-PATH binary disagreeing with this source tree),
+    // not store content. No --repair counterpart: there's nothing to write,
+    // the fix is re-linking/re-installing the binary outside this process.
+    const binaryVersionMismatch = checkBinaryVersionMismatch(process.cwd());
     console.log(JSON.stringify({
-      compliant: violations.length === 0 && undeclaredCategories.length === 0,
+      compliant: violations.length === 0 && undeclaredCategories.length === 0 && !binaryVersionMismatch,
       violations,
       undeclaredCategories,
+      binaryVersionMismatch,
     }));
-    if (violations.length > 0 || undeclaredCategories.length > 0) process.exitCode = 1;
+    if (violations.length > 0 || undeclaredCategories.length > 0 || binaryVersionMismatch) process.exitCode = 1;
     return;
   }
 

@@ -1,3 +1,4 @@
+export * from './binaryVersion.js';
 export * from './embedder.js';
 export * from './fts-query.js';
 export * from './timeout.js';

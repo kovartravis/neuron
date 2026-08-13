@@ -413,7 +413,7 @@ export const STATUS_HELP = `Usage: neuron status [flags]
 
 With no flags, prints database/model/storage/enrichment/drift status as JSON.
 
-With --check or --repair, reports two independent kinds of drift:
+With --check or --repair, reports up to three independent kinds of drift:
 
 1. Entries whose category's *currently* declared field schema (neuron.yaml
    categories.<name>.fields) they violate — most commonly a field that was
@@ -425,6 +425,14 @@ With --check or --repair, reports two independent kinds of drift:
    category missing from neuron.yaml auto-declares itself on its first
    write (neuron.yaml is edited on disk, comments and formatting preserved).
    This only catches categories that predate that auto-declare hook.
+3. --check only: the resolved-from-PATH "neuron" binary's version disagreeing
+   with the current directory's own package.json — only checked when that
+   package.json is this project's own (@kovartravis/neuron), since that's
+   the only case where "the binary" and "the source tree" can meaningfully
+   disagree. Every hook and "neuron exec" invoke the bare PATH-resolved
+   binary, so a stale global/linked install silently runs old behavior
+   while source changes underneath it. There is no --repair for this: the
+   fix is re-linking/re-installing the binary, not a store write.
 
 With --health, reports store-health signals instead: near-duplicate entry
 clusters that slipped past the write-time supersession gate, an importance
@@ -441,7 +449,7 @@ a human call via --supersedes/--not-a-reversal, the same never-fabricate
 posture --repair already applies to free-text fields.
 
 Options:
-  --check                   List field violations and undeclared categories
+  --check                   List field violations, undeclared categories, and binary version mismatch
   --repair                  Fix what's safely fixable and report the result
   --health                  Report duplicate clusters, importance histogram, superseded count, sessionsObserved
   --health --repair         Merge exact-duplicate clusters found by --health; leaves differently-worded near-dupes unresolved
