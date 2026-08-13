@@ -1,23 +1,23 @@
 {
-  "timestamp": "2026-08-12T14:32:10.381Z",
+  "timestamp": "2026-08-13T11:57:22.577Z",
   "tier": "sanity",
-  "suiteDurationMs": 18348,
+  "suiteDurationMs": 28393,
   "pillars": [
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "samples": 18,
-      "p50Ms": 409.29,
-      "p95Ms": 2038.27,
-      "p99Ms": 6132.3,
-      "minMs": 5.27,
-      "maxMs": 7155.81,
-      "meanMs": 822.83,
-      "totalMs": 14810.95,
-      "throughputPerSec": 1.22,
+      "p50Ms": 228.24,
+      "p95Ms": 3874,
+      "p99Ms": 17335.09,
+      "minMs": 4.31,
+      "maxMs": 20700.36,
+      "meanMs": 1391.5,
+      "totalMs": 25047.02,
+      "throughputPerSec": 0.72,
       "extra": {
         "cases": 9,
         "accuracy": {
-          "model": 0,
+          "model": 0.111,
           "centroid": 1
         },
         "winner": "centroid",
@@ -25,7 +25,6 @@
           "model": [
             "cat-learning-1: expected learning, got (hard error)",
             "cat-learning-2: expected learning, got (hard error)",
-            "cat-learning-3: expected learning, got (hard error)",
             "cat-history-1: expected history, got (hard error)",
             "cat-history-2: expected history, got (hard error)",
             "cat-history-3: expected history, got (hard error)",
@@ -40,26 +39,26 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "samples": 16,
-      "p50Ms": 3.03,
-      "p95Ms": 7.3,
-      "p99Ms": 8.37,
-      "minMs": 2.48,
-      "maxMs": 8.63,
-      "meanMs": 3.89,
-      "totalMs": 62.23,
-      "throughputPerSec": 257.11,
+      "p50Ms": 17.45,
+      "p95Ms": 66.08,
+      "p99Ms": 72.66,
+      "minMs": 11.18,
+      "maxMs": 74.3,
+      "meanMs": 22.9,
+      "totalMs": 366.37,
+      "throughputPerSec": 43.67,
       "extra": {
         "corpusSize": 158,
         "cases": 8,
         "disabled": {
           "recallAt1": 0.25,
-          "recallAt5": 0.5,
-          "mrr": 0.362
+          "recallAt5": 0.375,
+          "mrr": 0.275
         },
         "enabled": {
           "recallAt1": 0.25,
-          "recallAt5": 0.5,
-          "mrr": 0.362,
+          "recallAt5": 0.375,
+          "mrr": 0.275,
           "inferredGoldTags": [
             [
               "decoy-retry-budget",

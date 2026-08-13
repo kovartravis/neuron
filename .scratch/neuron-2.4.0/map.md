@@ -633,6 +633,30 @@ thin.
   direct grep of `issues/`). True frontier as of this session: `32`, `33`,
   `34`, `35`, `36`, `38`, `39`, `40`, `41` (all unclaimed and unblocked);
   `02`, `04`, `05` claimed and in progress; `03`, `42` blocked.
+- **Ticket 38 claimed, 2026-08-13**, direct maintainer request ("cut a new
+  rc2 branch") — `feat/2.4.0-rc2` branched from `main`. While prepping the
+  cut (version bump, CHANGELOG audit, test runs), found `npm run test:e2e`
+  failing on Pillar 7 (Adversarial Retrieval Quality) at `recall@5 = 0.375`
+  against its `>= 0.4` floor. Investigated as a possible real regression
+  from `29`'s reranker gate (same session, immediately prior on this map)
+  since the timing lined up — ruled that out with certainty via controlled
+  bisection: Pillar 7 calls `memory.query()`, never `queryGated()`, so the
+  reranker is structurally unreachable from this path. Traced instead to
+  real build-to-build floating-point sensitivity in the real (non-mocked)
+  ONNX embedder against this pillar's deliberately-adversarial near-tie
+  corpus — reverting even an *unused, inert* class instantiation
+  (`TransformersReranker`, never `.score()`-called on this path) restored
+  the prior build's exact ranks, and the value is fully deterministic
+  within an unchanged build (confirmed by repeat runs). Maintainer's call:
+  leave the floor as-is for this cut rather than recalibrate inline, and
+  charter a ticket rather than keep re-running (re-running an unchanged
+  build cannot pass, since there is no within-build randomness — confirmed
+  the same `0.375` a further time at the maintainer's own request). Filed
+  [43 — Pillar 7's recall@5 >= 0.4 Floor Is Too Tight Against Real
+  Build-to-Build Noise](issues/43-pillar7-recall-floor-noise.md) with the
+  full bisection trail. True frontier as of this session: `32`, `33`, `34`,
+  `35`, `36`, `39`, `40`, `41`, `43` (all unclaimed and unblocked); `02`,
+  `04`, `05`, `38` claimed and in progress; `03`, `42` blocked.
 - **This map carries execution**, matching `neuron-2.3.0`'s own posture
   (and, before it, `neuron-2.2.0`'s and `architecture-scans-2.1.0`'s) —
   tickets are worked one at a time, ending with a cut-and-publish ticket

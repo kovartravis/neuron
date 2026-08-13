@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-08-12T14:32:17.077Z",
+  "timestamp": "2026-08-13T11:57:22.729Z",
   "tier": "sanity",
-  "durationMs": 25624,
-  "durationMin": 0.43,
+  "durationMs": 29109,
+  "durationMin": 0.49,
   "meetsRuntimeFloor": true,
   "runtimeFloorMs": 0,
-  "overallStatus": "PASSED",
-  "grade": "A+",
-  "scorePercent": 100,
+  "overallStatus": "FAILED",
+  "grade": "B",
+  "scorePercent": 93,
   "pillarsRan": 14,
-  "pillarsPassed": 14,
-  "pillarsFailed": 0,
+  "pillarsPassed": 13,
+  "pillarsFailed": 1,
   "suiteConfig": {
     "SCAN_ITERATIONS": 3,
     "DRIFT_ITERATIONS": 3,
@@ -22,37 +22,39 @@
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
-      "status": "PASSED",
-      "durationMs": 176.30566700000054,
-      "failureMessages": [],
+      "status": "FAILED",
+      "durationMs": 637.1659579999996,
+      "failureMessages": [
+        "AssertionError: adversarial recall@5 collapsed: expected 0.375 to be greater than or equal to 0.4\n    at /Users/Travis/Repos/neuron/test/e2e/adversarial-recall.test.ts:199:63\n    at file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:533:5\n    at runTest (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1056:11)\n    at runSuite (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1205:15)\n    at runSuite (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1205:15)\n    at runFiles (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1262:5)\n    at startTests (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1271:3)\n    at file:///Users/Travis/Repos/neuron/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:126:11\n    at withEnv (file:///Users/Travis/Repos/neuron/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:90:5)\n    at run (file:///Users/Travis/Repos/neuron/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:112:3)"
+      ],
       "metrics": {
         "samples": 8,
-        "p50Ms": 20.04,
-        "p95Ms": 30.91,
-        "p99Ms": 34.05,
-        "meanMs": 21.75,
-        "maxMs": 34.83,
-        "throughputPerSec": 45.97,
+        "p50Ms": 48.55,
+        "p95Ms": 188.43,
+        "p99Ms": 234.26,
+        "meanMs": 76.49,
+        "maxMs": 245.71,
+        "throughputPerSec": 13.07,
         "detail": {
           "corpusSize": 308,
           "cases": 8,
           "evaluations": 8,
           "recallAt1": 0.125,
-          "recallAt5": 0.5,
-          "mrr": 0.294,
+          "recallAt5": 0.375,
+          "mrr": 0.213,
           "supersededViolations": 1,
           "byFamily": {
             "lexical-decoy": {
               "cases": 2,
               "recallAt1": 0,
-              "recallAt5": 0.5,
-              "mrr": 0.175
+              "recallAt5": 0,
+              "mrr": 0
             },
             "paraphrase": {
               "cases": 2,
               "recallAt1": 0,
-              "recallAt5": 0,
-              "mrr": 0.083
+              "recallAt5": 0.5,
+              "mrr": 0.1
             },
             "contradiction": {
               "cases": 2,
@@ -63,21 +65,21 @@
             "multi-hop": {
               "cases": 2,
               "recallAt1": 0,
-              "recallAt5": 0.5,
-              "mrr": 0.167
+              "recallAt5": 0,
+              "mrr": 0
             }
           },
           "missedAtRank1": [
             {
               "id": "decoy-retry-budget",
               "family": "lexical-decoy",
-              "rank": 10,
+              "rank": null,
               "topResult": "When a retry budget is exhausted the retry handler logs a retry limit warning for the paym"
             },
             {
               "id": "decoy-index-rebuild",
               "family": "lexical-decoy",
-              "rank": 4,
+              "rank": null,
               "topResult": "Index rebuild takes hours when the index rebuild job competes with other index rebuild tas"
             },
             {
@@ -89,7 +91,7 @@
             {
               "id": "para-memory-growth",
               "family": "paraphrase",
-              "rank": 6,
+              "rank": 5,
               "topResult": "Flat heap snapshots indicate the garbage collector is reclaiming objects correctly during "
             },
             {
@@ -101,14 +103,14 @@
             {
               "id": "hop-cold-start",
               "family": "multi-hop",
-              "rank": 3,
+              "rank": null,
               "topResult": "Sluggish commands are often caused by an oversized memory store that needs pruning"
             },
             {
               "id": "hop-ci-only-failure",
               "family": "multi-hop",
               "rank": null,
-              "topResult": "Note 23: the asset pipeline validates its input eagerly and rejects malformed payloads bef"
+              "topResult": "Pipeline failures are usually caused by missing environment secrets that are present local"
             }
           ]
         }
@@ -117,16 +119,16 @@
     {
       "pillar": "Pillar 13: Antagonistic Recall & Abstention",
       "status": "PASSED",
-      "durationMs": 439.07524999999987,
+      "durationMs": 353.57345799999894,
       "failureMessages": [],
       "metrics": {
         "samples": 19,
-        "p50Ms": 22.23,
-        "p95Ms": 32,
-        "p99Ms": 32.07,
-        "meanMs": 23.08,
-        "maxMs": 32.09,
-        "throughputPerSec": 43.33,
+        "p50Ms": 17.63,
+        "p95Ms": 22.79,
+        "p99Ms": 30.27,
+        "meanMs": 18.58,
+        "maxMs": 32.14,
+        "throughputPerSec": 53.84,
         "detail": {
           "cases": 19,
           "falseAccepts": 0,
@@ -156,22 +158,22 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "status": "PASSED",
-      "durationMs": 6970.480208000001,
+      "durationMs": 6448.297874999998,
       "failureMessages": [],
       "metrics": {
         "samples": 1,
-        "p50Ms": 24.98,
-        "p95Ms": 24.98,
-        "p99Ms": 24.98,
-        "meanMs": 24.98,
-        "maxMs": 24.98,
-        "throughputPerSec": 40.03,
+        "p50Ms": 36.27,
+        "p95Ms": 36.27,
+        "p99Ms": 36.27,
+        "meanMs": 36.27,
+        "maxMs": 36.27,
+        "throughputPerSec": 27.57,
         "detail": {
           "curve": [
             {
               "corpusSize": 500,
-              "p50Ms": 24.98,
-              "p95Ms": 52,
+              "p50Ms": 36.267,
+              "p95Ms": 49.326,
               "recallAt1": 0.125
             }
           ]
@@ -181,16 +183,16 @@
     {
       "pillar": "Pillar 6: Real Pipeline Integrity",
       "status": "PASSED",
-      "durationMs": 19301.972625000002,
+      "durationMs": 11190.945083,
       "failureMessages": [],
       "metrics": {
         "samples": 3,
-        "p50Ms": 0.07,
-        "p95Ms": 0.22,
-        "p99Ms": 0.24,
+        "p50Ms": 0.06,
+        "p95Ms": 0.24,
+        "p99Ms": 0.25,
         "meanMs": 0.11,
-        "maxMs": 0.24,
-        "throughputPerSec": 9392.11,
+        "maxMs": 0.26,
+        "throughputPerSec": 9445.1,
         "detail": {
           "coldSummaries": 3,
           "fallbackCount": 0,
@@ -201,16 +203,16 @@
     {
       "pillar": "Pillar 1: Polyglot AST Traversal at Scale",
       "status": "PASSED",
-      "durationMs": 466.05262500000026,
+      "durationMs": 1085.5440000000017,
       "failureMessages": [],
       "metrics": {
         "samples": 3,
-        "p50Ms": 107.82,
-        "p95Ms": 235.22,
-        "p99Ms": 246.55,
-        "meanMs": 154.94,
-        "maxMs": 249.38,
-        "throughputPerSec": 6.45,
+        "p50Ms": 176.56,
+        "p95Ms": 737.12,
+        "p99Ms": 786.95,
+        "meanMs": 361.05,
+        "maxMs": 799.4,
+        "throughputPerSec": 2.77,
         "detail": {
           "modules": 7,
           "componentsScanned": 55,
@@ -235,16 +237,16 @@
     {
       "pillar": "Pillar 2: Adversarial Semantic Recall & Distractor Resistance",
       "status": "PASSED",
-      "durationMs": 1859.1987090000002,
+      "durationMs": 3638.359542,
       "failureMessages": [],
       "metrics": {
         "samples": 30,
-        "p50Ms": 10.36,
-        "p95Ms": 11.82,
-        "p99Ms": 12.25,
-        "meanMs": 10.56,
-        "maxMs": 12.43,
-        "throughputPerSec": 94.72,
+        "p50Ms": 18.48,
+        "p95Ms": 29.35,
+        "p99Ms": 81.52,
+        "meanMs": 23.17,
+        "maxMs": 102.74,
+        "throughputPerSec": 43.16,
         "detail": {
           "corpusSize": 203,
           "queries": 30,
@@ -256,36 +258,36 @@
     {
       "pillar": "Pillar 3: High-Concurrency Multi-Agent Stress",
       "status": "PASSED",
-      "durationMs": 899.2372920000016,
+      "durationMs": 1226.8248329999988,
       "failureMessages": [],
       "metrics": {
         "samples": 1,
-        "p50Ms": 898.77,
-        "p95Ms": 898.77,
-        "p99Ms": 898.77,
-        "meanMs": 898.77,
-        "maxMs": 898.77,
-        "throughputPerSec": 1.11,
+        "p50Ms": 1225.46,
+        "p95Ms": 1225.46,
+        "p99Ms": 1225.46,
+        "meanMs": 1225.46,
+        "maxMs": 1225.46,
+        "throughputPerSec": 0.82,
         "detail": {
           "operations": 100,
           "failures": 0,
-          "opsPerSec": 111
+          "opsPerSec": 82
         }
       }
     },
     {
       "pillar": "Pillar 4: Architectural Drift Detection & Latency SLA",
       "status": "PASSED",
-      "durationMs": 1954.539832999999,
+      "durationMs": 2895.551292,
       "failureMessages": [],
       "metrics": {
         "samples": 3,
-        "p50Ms": 180.44,
-        "p95Ms": 205.95,
-        "p99Ms": 208.22,
-        "meanMs": 188.56,
-        "maxMs": 208.79,
-        "throughputPerSec": 5.3,
+        "p50Ms": 221.71,
+        "p95Ms": 244.13,
+        "p99Ms": 246.13,
+        "meanMs": 219.4,
+        "maxMs": 246.62,
+        "throughputPerSec": 4.56,
         "detail": {
           "baselinePhantomChanges": 0,
           "mutatedChangesDetected": 3,
@@ -298,16 +300,16 @@
     {
       "pillar": "Pillar 5: Storage Corruption & Self-Healing",
       "status": "PASSED",
-      "durationMs": 229.34187499999825,
+      "durationMs": 386.31825000000026,
       "failureMessages": [],
       "metrics": {
         "samples": 20,
-        "p50Ms": 11.03,
-        "p95Ms": 12.34,
-        "p99Ms": 12.57,
-        "meanMs": 11.17,
-        "maxMs": 12.63,
-        "throughputPerSec": 89.5,
+        "p50Ms": 12.58,
+        "p95Ms": 15.51,
+        "p99Ms": 16.97,
+        "meanMs": 13.14,
+        "maxMs": 17.33,
+        "throughputPerSec": 76.09,
         "detail": {
           "corruptionVariants": 5,
           "probesSurvived": 20
@@ -317,16 +319,16 @@
     {
       "pillar": "Pillar 8: Multi-Process Contention & Crash Recovery",
       "status": "PASSED",
-      "durationMs": 1530.8755,
+      "durationMs": 2543.668,
       "failureMessages": [],
       "metrics": {
         "samples": 1,
-        "p50Ms": 1497.51,
-        "p95Ms": 1497.51,
-        "p99Ms": 1497.51,
-        "meanMs": 1497.51,
-        "maxMs": 1497.51,
-        "throughputPerSec": 0.67,
+        "p50Ms": 2392.34,
+        "p95Ms": 2392.34,
+        "p99Ms": 2392.34,
+        "meanMs": 2392.34,
+        "maxMs": 2392.34,
+        "throughputPerSec": 0.42,
         "detail": {
           "processes": 3,
           "writesPerWorker": 25,
@@ -341,8 +343,8 @@
           "initErrorSample": [],
           "nonZeroExits": 0,
           "otherErrors": [],
-          "wallMs": 1498,
-          "writesPerSec": 33,
+          "wallMs": 2392,
+          "writesPerSec": 21,
           "crashRecovery": [
             {
               "round": 0,
@@ -359,14 +361,14 @@
     {
       "pillar": "Pillar 8: Multi-Process Contention & Crash Recovery — SIGKILL mid-write recovery",
       "status": "PASSED",
-      "durationMs": 3367.8748749999995,
+      "durationMs": 9146.582833,
       "failureMessages": [],
       "metrics": null
     },
     {
       "pillar": "Pillar 10: Prune Safety",
       "status": "PASSED",
-      "durationMs": 758.972583,
+      "durationMs": 785.756917,
       "failureMessages": [],
       "metrics": {
         "samples": 0,
@@ -429,20 +431,20 @@
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "status": "PASSED",
-      "durationMs": 16154.889459000002,
+      "durationMs": 26187.274458,
       "failureMessages": [],
       "metrics": {
         "samples": 18,
-        "p50Ms": 409.29,
-        "p95Ms": 2038.27,
-        "p99Ms": 6132.3,
-        "meanMs": 822.83,
-        "maxMs": 7155.81,
-        "throughputPerSec": 1.22,
+        "p50Ms": 228.24,
+        "p95Ms": 3874,
+        "p99Ms": 17335.09,
+        "meanMs": 1391.5,
+        "maxMs": 20700.36,
+        "throughputPerSec": 0.72,
         "detail": {
           "cases": 9,
           "accuracy": {
-            "model": 0,
+            "model": 0.111,
             "centroid": 1
           },
           "winner": "centroid",
@@ -450,7 +452,6 @@
             "model": [
               "cat-learning-1: expected learning, got (hard error)",
               "cat-learning-2: expected learning, got (hard error)",
-              "cat-learning-3: expected learning, got (hard error)",
               "cat-history-1: expected history, got (hard error)",
               "cat-history-2: expected history, got (hard error)",
               "cat-history-3: expected history, got (hard error)",
@@ -466,28 +467,28 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "status": "PASSED",
-      "durationMs": 1430.565208,
+      "durationMs": 1414.3651250000003,
       "failureMessages": [],
       "metrics": {
         "samples": 16,
-        "p50Ms": 3.03,
-        "p95Ms": 7.3,
-        "p99Ms": 8.37,
-        "meanMs": 3.89,
-        "maxMs": 8.63,
-        "throughputPerSec": 257.11,
+        "p50Ms": 17.45,
+        "p95Ms": 66.08,
+        "p99Ms": 72.66,
+        "meanMs": 22.9,
+        "maxMs": 74.3,
+        "throughputPerSec": 43.67,
         "detail": {
           "corpusSize": 158,
           "cases": 8,
           "disabled": {
             "recallAt1": 0.25,
-            "recallAt5": 0.5,
-            "mrr": 0.362
+            "recallAt5": 0.375,
+            "mrr": 0.275
           },
           "enabled": {
             "recallAt1": 0.25,
-            "recallAt5": 0.5,
-            "mrr": 0.362,
+            "recallAt5": 0.375,
+            "mrr": 0.275,
             "inferredGoldTags": [
               [
                 "decoy-retry-budget",
