@@ -13,6 +13,7 @@ import {
   VerifyResult,
 } from './types.js';
 import { readFiringState } from './hookState.js';
+import { HARNESSES, isHarnessPresent } from '../config/harness.js';
 
 export const COPILOT_HARNESS_ID = 'copilot';
 
@@ -185,8 +186,18 @@ function writeHooksFile(filePath: string, contents: Record<string, unknown>): vo
 export class CopilotAdapter implements HarnessAdapter {
   readonly id = COPILOT_HARNESS_ID;
 
+  /**
+   * Bare `.github/` existence used to be enough (ticket 31, neuron-2.4.0
+   * found this false-positives on any repo with GitHub Actions/issue
+   * templates and no Copilot use at all). Shares `harnesses.json`'s
+   * `github` entry — the config-driven `.github/copilot-instructions.md`
+   * marker, plus the already-onboarded-by-neuron fallback — as the single
+   * source of truth, rather than duplicating the rule here.
+   */
   detect(projectDir: string): boolean {
-    return fs.existsSync(path.join(projectDir, '.github'));
+    const meta = HARNESSES.find(h => h.name === 'github');
+    if (!meta) return fs.existsSync(path.join(projectDir, '.github'));
+    return isHarnessPresent(projectDir, meta);
   }
 
   capability(): CapabilityMap {

@@ -574,6 +574,7 @@ describe('CLI Command: init', () => {
       const cliPath = path.join(process.cwd(), 'dist/cli.js');
       const initTempDir = path.join(tempDbDir, 'fidelity-github-test');
       fs.mkdirSync(path.join(initTempDir, '.github'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, '.github', 'copilot-instructions.md'), '# instructions\n');
       fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
       const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
@@ -588,6 +589,44 @@ describe('CLI Command: init', () => {
         fidelity: 'best-effort',
       });
       expect(githubReport.remediation).toContain('Best-effort recall —');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('does not onboard Copilot from a bare .github/ dir with no prior wiring (ticket 31)', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'no-false-positive-github-test');
+      fs.mkdirSync(path.join(initTempDir, '.github', 'workflows'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, '.github', 'workflows', 'ci.yml'), 'name: ci\n');
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.harnesses.detected).not.toContain('github');
+      expect(result.harnesses.newlyOnboarded).not.toContain('github');
+      expect(result.harnessFidelity.find((r: any) => r.name === 'github')).toBeUndefined();
+      expect(fs.existsSync(path.join(initTempDir, '.github', 'skills'))).toBe(false);
+      expect(fs.existsSync(path.join(initTempDir, 'AGENTS.md'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('still refreshes an already-onboarded Copilot project on a bare re-init, unchanged from today (ticket 31)', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'refresh-wired-github-test');
+      fs.mkdirSync(path.join(initTempDir, '.github', 'skills', 'neuron-memory'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, '.github', 'skills', 'neuron-memory', 'SKILL.md'), '# stale skill\n');
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.harnesses.detected).toContain('github');
+      expect(result.harnesses.newlyOnboarded).not.toContain('github');
+      expect(fs.existsSync(path.join(initTempDir, 'AGENTS.md'))).toBe(true);
 
       fs.rmSync(initTempDir, { recursive: true });
     });

@@ -11,7 +11,10 @@ Every command also responds to `--help`.
 
 Bootstraps a project: writes a `neuron.yaml` if the project has none, detects
 every harness present (`CLAUDE.md`/`.claude/`, `AGENTS.md`, `.codex/`,
-`.github/`, `.cursor/` — writing `AGENTS.md` if none exist), installs
+`.cursor/`, and — for Copilot — `.github/copilot-instructions.md`
+specifically, not a bare `.github/` dir, since that's created for CI/issue
+templates unrelated to Copilot use just as often as for it (ticket 31,
+neuron-2.4.0); writing `AGENTS.md` if none exist), installs
 deterministic recall hooks (`session-start`/`pre-prompt`/`context-reset`) and
 a `pre-command` hook for every harness with an adapter (Claude Code, Codex
 CLI — `pre-command` is a fourth, independent lifecycle point, ticket 22/23),
@@ -28,7 +31,7 @@ fetches Tree-Sitter grammars, and runs the initial scan if configured.
 | `--hook-target <target>` | Where to install hooks: `user-global`, `project-committed`, or `project-local`. Asked once per run, applied to every harness being wired |
 | `--overwrite-hooks` | Replace a neuron-authored hook entry that differs from what this run would write, without asking |
 | `--keep-hooks` | Keep a differing neuron-authored hook entry as-is, without asking (the non-interactive default) |
-| `--harness <list>` | Comma-separated harness ids (e.g. `claude,codex`) to narrow wiring to a subset of *detected* harnesses; cannot force-wire an undetected one |
+| `--harness <list>` | Comma-separated harness ids (e.g. `claude,codex`) to narrow **hook install** to a subset of *detected* harnesses; cannot force-wire an undetected one, and doesn't affect which harnesses get their instructions file/skill directory written (that's detection alone — see below) |
 | `--uninstall-hooks` | Remove every hook entry neuron installed, for the harnesses selected by `--harness` (or all adapters if omitted); does nothing else |
 
 `--overwrite-hooks` and `--keep-hooks` are mutually exclusive. A conflicting
@@ -47,7 +50,11 @@ and grammars, and anything it edits it would edit again over your changes. The
 JSON output reports which config governs the project under `config`, per-harness
 hook install results under `hooks.installed`, and the fidelity each harness's
 instructions file ended up with (derived from `verify()`, not inferred) under
-`protocol.written`.
+`protocol.written`. `harnesses.detected` lists every harness this run found;
+`harnesses.newlyOnboarded` is the subset with no earlier evidence of being
+wired here before (its skill file didn't already exist) — a run that
+onboards a harness for the first time also prints a note naming it to
+stderr, so it's never a silent side effect (ticket 31, neuron-2.4.0).
 
 Model and grammar downloads are best-effort — a failure leaves that capability
 degraded rather than failing the whole bootstrap.

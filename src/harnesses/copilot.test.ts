@@ -12,6 +12,7 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
   beforeEach(() => {
     projectDir = path.join(tempRoot, `proj-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     fs.mkdirSync(path.join(projectDir, '.github'), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, '.github', 'copilot-instructions.md'), '# instructions\n');
     process.env.NEURON_HOOK_CACHE_DIR = path.join(tempRoot, 'hook-cache');
   });
 
@@ -22,9 +23,23 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
 
   const hooksPath = () => path.join(projectDir, '.github', 'hooks', 'neuron.json');
 
-  it('detects a Copilot-eligible project by the .github marker', () => {
+  it('detects a Copilot-eligible project by its copilot-instructions.md marker', () => {
     expect(adapter.detect(projectDir)).toBe(true);
     expect(adapter.detect(path.join(tempRoot, 'no-such-dir'))).toBe(false);
+  });
+
+  it('does not detect a bare .github/ dir with no Copilot marker (ticket 31: avoids false-positiving on CI/issue-template-only repos)', () => {
+    const bareDir = path.join(tempRoot, `bare-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(path.join(bareDir, '.github', 'workflows'), { recursive: true });
+    fs.writeFileSync(path.join(bareDir, '.github', 'workflows', 'ci.yml'), 'name: ci\n');
+    expect(adapter.detect(bareDir)).toBe(false);
+  });
+
+  it('still detects a bare .github/ dir once neuron has already onboarded it (refresh case)', () => {
+    const wiredDir = path.join(tempRoot, `wired-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(path.join(wiredDir, '.github', 'skills', 'neuron-memory'), { recursive: true });
+    fs.writeFileSync(path.join(wiredDir, '.github', 'skills', 'neuron-memory', 'SKILL.md'), '# skill\n');
+    expect(adapter.detect(wiredDir)).toBe(true);
   });
 
   it('reports best-effort fidelity: only session-start injects, and even it has undocumented failure/payload behaviour', () => {

@@ -20,6 +20,7 @@
   {
     "name": "github",
     "base": ".github",
+    "marker": ".github/copilot-instructions.md",
     "mdFile": "AGENTS.md",
     "skills": ".github/skills"
   },

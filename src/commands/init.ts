@@ -2,7 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import readline from 'node:readline/promises';
 import { parseFlags, drawBox } from './utils.js';
-import { HARNESSES, detectHarnesses, copySkill } from '../config/index.js';
+import { HARNESSES, detectHarnesses, copySkill, isHarnessPresent } from '../config/index.js';
 import { loadNeuronConfig } from '../config/neuronYaml.js';
 import { scaffoldNeuronYaml } from '../config/scaffold.js';
 import { SmolLM2Summarizer } from '../components/summarizer.js';
@@ -398,11 +398,25 @@ export async function handleInitCommand(args: string[]): Promise<void> {
   // alone — see scaffoldNeuronYaml.
   const configResult = scaffoldNeuronYaml(projectDir);
 
-  // Snapshot which harness markers are actually present before anything else
-  // touches the filesystem — copySkill's own fallback below creates `.agents/`
-  // when nothing was detected, and a later fs re-scan would then mistake that
-  // side effect for a detected 'agents' harness.
-  const detectedHarnessNames = HARNESSES.filter(h => fs.existsSync(path.join(projectDir, h.base))).map(h => h.name);
+  // Snapshot which harnesses are actually present (ticket 31: a harness-specific
+  // marker, not just its bare base dir — `.github/` alone used to false-positive
+  // on any repo with GitHub Actions/issue templates and no real Copilot use) before
+  // anything else touches the filesystem — copySkill's own fallback below creates
+  // `.agents/` when nothing was detected, and a later fs re-scan would then mistake
+  // that side effect for a detected 'agents' harness.
+  const detectedHarnesses = HARNESSES.filter(h => isHarnessPresent(projectDir, h));
+  const detectedHarnessNames = detectedHarnesses.map(h => h.name);
+
+  // Which of those were already onboarded by an earlier run (their skill file
+  // already exists), snapshotted before copySkill below writes it — the
+  // complement is what this run is onboarding for the first time, surfaced
+  // below so that's never silent (ticket 31).
+  const priorSkillFiles = new Set(
+    detectedHarnesses
+      .filter(h => fs.existsSync(path.join(projectDir, h.skills, 'neuron-memory', 'SKILL.md')))
+      .map(h => h.name)
+  );
+  const newlyOnboardedHarnessNames = detectedHarnessNames.filter(name => !priorSkillFiles.has(name));
 
   // Detect harnesses and copy the bundled neuron-memory skill
   let detectedSkillsDirs = detectHarnesses(projectDir);
@@ -410,6 +424,13 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     detectedSkillsDirs = ['.agents/skills'];
   }
   const skillsWritten = detectedSkillsDirs.map(dir => copySkill(projectDir, dir));
+
+  if (newlyOnboardedHarnessNames.length > 0) {
+    process.stderr.write(
+      `[neuron] Onboarding harness(es) not previously wired in this project: ${newlyOnboardedHarnessNames.join(', ')}. ` +
+      `This writes their instructions file and skill directory. Pass --harness <id> to control this explicitly next time.\n`
+    );
+  }
 
   const hookResults = options.noHooks ? [] : await installHooks(projectDir, options);
 
@@ -518,6 +539,10 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     status: 'initialized',
     projectRoot: projectDir,
     skillsWritten,
+    harnesses: {
+      detected: detectedHarnessNames,
+      newlyOnboarded: newlyOnboardedHarnessNames,
+    },
     config: {
       path: configResult.path,
       created: configResult.created,
