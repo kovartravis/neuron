@@ -2906,3 +2906,15 @@ tags:
 taskId: null
 ---
 wayfinder(neuron-2.4.0): resolved ticket 44 (SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently). Picked up as the frontier's earlier-chartered, numbered ticket (verified against a direct neuron memory list --where/--refs-satisfy scan, not just the map's own narrative). Fixed with a synchronous mkdir-based cross-process lock (src/db.ts's new withSyncFileLock, using Atomics.wait for a real blocking sleep) wrapping both initialize()'s migration chain (split into runMigrationChain()) and migrateDeclaredFields()'s additive ALTER TABLE pass, which shares the same race shape though the ticket only named the former. Built a fast, focused repro (test/e2e/init-lock.test.ts + workers/init-lock-worker.mjs) separate from the full Pillar 8 stress harness, needing a START_AT barrier to reproduce reliably since bare construction is too fast (lazy embedder loading) for unsynchronized process jitter to overlap. Verified red (12/32 failures, exact predicted errors) then green (0/32, 4 repeat runs) via git stash. npm test 721/721, tsc clean, Pillar 8 clean. Didn't unblock anything directly; true frontier is now just the unnumbered header-fragment-fix ticket (703220a7-fb0f-4ef0-9465-c21bb96d5749).
+
+---
+id: 5d1dd9f2-d0af-409c-ab2f-049f43900291
+createdAt: 2026-08-14T02:45:38.311Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: wayfinder-header-fragment-fix
+---
+Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved the only frontier ticket, Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749). Re-audited the full live tickets store (194 entries) rather than trusting the ticket's own '20' title figure, confirmed exactly the 7 previously-identified cases (neuron-2.2.0#06/22/23/24/25/27, architecture-scans-2.1.0#06), and patched each via neuron memory update against ground truth pulled from git history (git show 010590f:.scratch/<effort>/issues/<file>.md, the commit immediately before ticket 42 deleted .scratch/). Chose a one-off content patch over widening the migration script's header-field recognizer since that script has no live second caller. One entry (#25) needed care: only its Priority: line was leaked -- the [!IMPORTANT] callout and postmortem section after it are genuine content that legitimately precedes its real heading in the original source, so a naive strip-to-first-heading approach would have deleted real content. Verified update is a partial patch (existing status/kind/blockedBy survive an update call that omits those flags) before relying on it. npm test 721/721, tsc clean, no src/ changes. Updated the map's Notes, Decisions-so-far, and frontier summary: this map now has zero unclaimed-and-unblocked tickets -- 02/04/05 remain claimed and in progress, 38 is claimed with its rc2 cut unmerged, 03 stays blocked on 02. Next session should either continue 02/04/05's in-progress work or breadth-first grill the map's long-standing 'Everything else 2.4.0 admits' fog item.

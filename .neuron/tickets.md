@@ -1818,8 +1818,6 @@ blockedBy: ""
 kind: task
 status: resolved
 ---
-Superseded by: ../../neuron-2.2.0/map.md (tickets 01, 02, 03)
-
 # 06 — Replace the Pattern-Matching Scanner with a Real Tree-Sitter AST Engine
 
 > **Superseded 2026-07-31.** This work moved to the
@@ -4308,8 +4306,6 @@ blockedBy: f7028363-b189-4ea2-a880-d87aa75cb0ad
 kind: task
 status: resolved
 ---
-Spec: [write-side-enrichment/spec.md](../../write-side-enrichment/spec.md) — `ready-for-agent`
-
 # 06 — Write-Side Enrichment: Auto Tags, Importance, Category
 
 ## Question
@@ -6733,8 +6729,6 @@ blockedBy: ""
 kind: task
 status: resolved
 ---
-Priority: normal (was TOP; the free half is done)
-
 # 22 — LongMemEval Harness: a Comparable Public Number
 
 ## Question
@@ -6894,8 +6888,6 @@ blockedBy: ""
 kind: grilling
 status: resolved
 ---
-Priority: high — carries a live data-loss hazard (see Context)
-
 # 23 — Configurable Automatic Pruning
 
 ## Question
@@ -7058,9 +7050,6 @@ blockedBy: ""
 kind: task
 status: resolved
 ---
-Plan: [configurable-pruning/ab-test-plan.md](../../configurable-pruning/ab-test-plan.md) — executed
-Result: [configurable-pruning/verdict.md](../../configurable-pruning/verdict.md) — **remove automatic pruning from 2.2.0**
-
 # 24 — Pruning A/B: Does Automatic Pruning Earn Its Place in 2.2.0?
 
 ## Question
@@ -7162,8 +7151,6 @@ blockedBy: ""
 kind: task
 status: resolved
 ---
-Priority: ~~high~~ — deferred by the maintainer on 2026-08-01
-
 > [!IMPORTANT]
 > **Do not implement.** The maintainer pushed this ticket off on 2026-08-01,
 > after ticket `24` removed automatic pruning from 2.2.0. The header below still
@@ -7465,8 +7452,6 @@ blockedBy: ""
 kind: grilling
 status: resolved
 ---
-unblocked) and `39` (the one fitted constant)
-
 # 27 — `minScore` Is Structurally Inert
 
 ## Question
@@ -19165,6 +19150,30 @@ thin.
   703220a7-fb0f-4ef0-9465-c21bb96d5749) — unclaimed and unblocked; `02`,
   `04`, `05`, `38` claimed and in progress; `03` still blocked (on `02`,
   unaffected).
+- **Header-fragment-fix ticket resolved, 2026-08-13** (Fix Leaked
+  Header-Field Fragments in 20 Tickets Migrated by Ticket
+  40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749)) — picked up as the
+  frontier's only remaining entry, confirmed via a full-store scan (all 194
+  live `tickets` entries) rather than trusting the ticket's own "20" title
+  figure. Found exactly the 7 confirmed cases stand, re-patched each via
+  `neuron memory update` against ground truth pulled from git history
+  (`.scratch/` itself is gone since `42`, so `git show
+  010590f:.scratch/<effort>/issues/<file>.md` — the commit immediately
+  before deletion — is the only remaining source of truth). One real
+  surprise caught before patching: `#25`'s leaked prefix is only its
+  `Priority:` line — the `[!IMPORTANT]` callout and postmortem section after
+  it are genuine content that legitimately precedes its `# 25 —` heading in
+  the original source, so a naive "strip to the first heading" approach
+  would have deleted real content. See its own Answer for the full
+  per-entry mechanics. Didn't unblock anything directly (no ticket here
+  lists it as a blocker). `npm test` 721/721, `tsc` clean — content-only
+  fix, no `src/` changes. **True frontier as of this session: none** — every
+  ticket this map has ever chartered is now resolved except `02`/`04`/`05`
+  (claimed, in progress) and `38` (claimed, cut in progress, unmerged) and
+  `03` (blocked on `02`). The next session should breadth-first grill this
+  map per its own long-standing Notes item ("Everything else `2.4.0`
+  admits") once `38`'s cut settles, or pick up `02`/`04`/`05` directly if
+  continuing their in-progress work.
 
 ## Decisions so far
 
@@ -19211,12 +19220,15 @@ thin.
 - 43 — Pillar 7's `recall@5 >= 0.4` Floor Is Too Tight Against Real Build-to-Build Noise (ticket b3c6c2a7-b4a5-4f53-ac0a-2b250b3afe07) — real ONNX floating-point sensitivity, not a ranking regression: constructing ticket 29's `TransformersReranker` (unused on this pillar's `query()` path, no side effects) deterministically shifts recall@5 0.5→0.375 and MRR 0.294→0.213 versus a stub, reproduced across clean rebuilds; three unrelated edits didn't move it, so the sensitivity is real but narrow, not general build noise. Recalibrated both floors with headroom sized to the measured swing (recall@5 0.4→0.25, one case-width; MRR 0.25→0.13, the measured 0.081 delta) rather than a guess; rejected per-family floors as too noisy at n=2 per family. `npm test` 721/721, `tsc` clean, no `src/` changes.
 
 **True frontier as of this session (tracked in the `tickets` category, not
-this file):** `44` and the unnumbered header-fragment-fix ticket
-(ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — both unclaimed and unblocked;
-`02`, `04`, `05`, `38` claimed and in progress; `03` still blocked (on `02`,
-unaffected). Ticket 43 resolved 2026-08-13 (see its own Decisions-so-far
-entry above); didn't unblock anything directly.
+this file): none unclaimed-and-unblocked.** `02`, `04`, `05`, `38` remain
+claimed and in progress; `03` stays blocked (on `02`). Ticket 43 resolved
+2026-08-13 (see its own Decisions-so-far entry above); the header-fragment-fix
+ticket (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) resolved immediately
+after (see its own Decisions-so-far entry below) — see the Notes bullet
+immediately above for what that leaves open.
 - 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38) — fixed with a synchronous `mkdir`-based cross-process lock (`src/db.ts`'s `withSyncFileLock`, using `Atomics.wait` for a real blocking sleep since the constructor has no `await` point to yield at), mirroring `18`'s markdown lock but blocking rather than `async`. Wraps both `initialize()`'s `user_version`-gated migration chain (split out into `runMigrationChain()`) and `migrateDeclaredFields()`'s additive `ALTER TABLE ADD COLUMN` pass, which shares the identical race shape though the ticket's own Context only named the former. `:memory:` skips the lock (no cross-process audience). New fast repro (`test/e2e/init-lock.test.ts` + `workers/init-lock-worker.mjs`) needed a `START_AT` barrier to reproduce reliably — bare construction is fast enough (embedder loads lazily) that unsynchronized process-spawn jitter usually hid the race. Verified both ways via `git stash`: 12/32 failures on unfixed code with the ticket's exact predicted errors, 0/32 on fixed code across 4 repeat runs. `npm test` 721/721, `tsc` clean, Pillar 8 clean.
+
+- Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — re-audited the full live store (194 entries) rather than trusting the ticket's own "20" estimate and confirmed exactly the 7 cases already identified while chartering it. Patched each via `neuron memory update` against ground truth pulled from git history (`git show 010590f:.scratch/...`, the commit immediately before `42` deleted `.scratch/`), not a widened migration-script recognizer — the migration script has no live second caller to justify generalizing it. One entry (`#25`) needed care: only its `Priority:` line was leaked, since the `[!IMPORTANT]` callout and postmortem section after it are genuine content that legitimately precedes its real heading in the source. `npm test` 721/721, `tsc` clean, no `src/` changes.
 
 ## Not yet specified
 
@@ -25974,7 +25986,7 @@ tags:
   - 2.2.0
 taskId: null
 kind: task
-status: unclaimed
+status: resolved
 ---
 # Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40
 
@@ -25986,11 +25998,11 @@ old-number-to-new-id lookups for tickets migrated by
 bug in that migration: at least 20 of the 193 migrated entries have an orphaned
 line (or two) sitting before their real `# NN — Title` heading, because the
 migration script's header-stripping only recognized `Type:`/`Status:`/
-`Blocked by:`/`Band:` lines and stopped at the first unrecognized one — leaving
-any *other* header-style field (`Priority:`, `Plan:`, `Result:`, `Spec:`,
-`Superseded by:`) as leaked content, and (separately) any `Band:` value that
-wrapped across two physical source lines left its continuation line stranded
-too (confirmed: `neuron-2.2.0#27-minscore-is-inert`).
+`Blocked by:`/`Band:` lines and stopped at the first unrecognized one —
+leaving any *other* header-style field (`Priority:`, `Plan:`, `Result:`,
+`Spec:`, `Superseded by:`) as leaked content, and (separately) any `Band:`
+value that wrapped across two physical source lines left its continuation line
+stranded too (confirmed: `neuron-2.2.0#27-minscore-is-inert`).
 
 Confirmed affected (content doesn't start with `# `, checked against source —
 NOT a bug for the ~15 pre-wayfinder `saas-features`/`agent-memory-cli` entries
@@ -26014,3 +26026,58 @@ truth.
   per the one-ticket-per-session rule — found, not fixed, since it's
   unrelated to `41`'s own question (asset relocation) even though it
   surfaced during the same session's due-diligence lookups.
+
+## Answer
+
+**One-off per-entry content patch, not a widened recognizer.** The header-field
+recognizer only ever runs inside the now-deleted, one-shot `40` migration
+script — `.scratch/` is gone (`42`), there is no live migration path left to
+widen, so a generalized recognizer would be new product surface with no second
+caller. A direct patch against ground truth is also strictly safer here: it
+touches exactly the 7 confirmed entries and nothing else, versus re-deriving a
+parsing rule and trusting it not to clip real content elsewhere.
+
+**Re-audited before fixing, as the ticket asked** — a full-store scan (all 194
+live `tickets` entries, not just this map's own 51 referenced children) for
+"content doesn't start with a heading" found exactly the same **7** entries
+the charter session had already confirmed, no more: `neuron-2.2.0#06`
+(`03413681-f42e-4d20-899b-d8a65a8991f4`), `#22` (`0af78b99-…`), `#23`
+(`d31abade-…`), `#24` (`65a7b533-…`), `#25` (`ac0b22e1-…`), `#27`
+(`459036b9-…`), `architecture-scans-2.1.0#06` (`e93dae93-…`). The ticket's own
+title figure of "20" was the pre-verification grep estimate from `41`'s
+session, not a re-confirmed count — this audit is the re-confirmation, and it
+closes at 7.
+
+**Ground truth pulled from git history**, since `.scratch/` no longer exists
+on disk: `git show 010590f:.scratch/<effort>/issues/<file>.md` (the commit for
+ticket `41`, immediately before `42` deleted the tree) reproduces each
+source file byte-for-byte. For 6 of the 7, the leaked prefix is exactly the
+single (or, for `#24`, two consecutive) unrecognized field line(s) immediately
+preceding the real `# NN —` heading, confirmed against source. `#27` is the
+`Band:`-continuation case: the `Band: 2.2.0-rc3 — design resolved here...`
+line itself *was* recognized and stripped correctly (`Band:` is one of the 4
+known prefixes) — only its wrapped second physical line ("unblocked) and `39`
+(the one fitted constant)") leaked, confirmed by diffing the live pre-fix
+content against source rather than assuming the whole `Band:` field leaked.
+
+**`#25` is the one genuine surprise**, and the reason a blind "strip up to the
+first `# ` line" approach would have been wrong: its leaked prefix is only the
+single `Priority: ~~high~~ — deferred by the maintainer on 2026-08-01` line —
+everything after that (a `[!IMPORTANT]` callout and a full "Why this ticket
+was almost re-implemented by mistake" postmortem section) is genuine document
+content that, in the original source, *itself* precedes the real `# 25 —`
+heading by design. Confirmed against source before patching: stripping only
+the `Priority:` line, not "everything up to the first heading," is correct
+here specifically because the postmortem section is real and must survive.
+
+**Applied via `neuron memory update <id> "<content>" --category tickets`**
+against each of the 7, passing only the corrected `content` — confirmed
+`update` is a partial patch (`src/index.ts`'s `enforceFieldSchema`/
+`transactVector` only touch keys present in the passed `fields` object) before
+relying on it, so omitting `--status`/`--kind`/`--blocked-by` left each
+entry's existing `resolved`/`kind`/`blockedBy` untouched. Re-queried the live
+store after: all 7 now start with their real `# NN —` heading (`#25`
+correctly starts with its callout instead, per the paragraph above), and the
+full-store re-audit finds zero remaining leaked-fragment entries (the one
+non-heading-leading survivor left is `#25`'s callout, expected). `npm test`
+721/721, `tsc` clean — content-only fix, no `src/` changes.
