@@ -10,6 +10,7 @@ tags:
   - rc2
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 # Map — 2.1.x Hardening
@@ -103,6 +104,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: resolved
 ---
 # 01 — Argv Boundaries Silently Discarded on `memory add`/`update`/`query`
@@ -171,6 +173,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: resolved
 ---
 # 02 — Packaged Skill Understated `memory prune`'s Blast Radius by the Entire Dataset
@@ -237,6 +240,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: resolved
 ---
 # 03 — `memory delete`/`update` Required `--category`, Then Never Used It
@@ -301,6 +305,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: resolved
 ---
 # 04 — `dual`-Mode `update`/`delete` Reported Only Markdown's Outcome
@@ -369,6 +374,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: resolved
 ---
 # 05 — `neuron sync` Silently Overwrote Fresh Content With Stale Content
@@ -445,6 +451,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: resolved
 ---
 # 06 — `main` Was Orphaned at v2.1.0 While npm Shipped Through v2.1.2
@@ -495,6 +502,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: unclaimed
 ---
 # 07 — Give `sync` a Real Last-Modified Signal
@@ -548,6 +556,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: unclaimed
 ---
 # 08 — Are `split`-Mode Concurrent Writes Race-Safe?
@@ -601,6 +610,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: ef08152d-8c8a-4666-8fdb-144d6f1305e3
 status: unclaimed
 ---
 # 09 — Does `computeMemoryHash` Ever Get Compared Across Different IDs?
@@ -644,6 +654,7 @@ tags:
   - tdd
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 ## Destination
@@ -708,6 +719,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 ## Question
@@ -808,6 +820,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 ## Question
@@ -835,6 +848,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 ## Question
@@ -865,6 +879,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 ## Question
@@ -899,6 +914,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 ## Question
@@ -956,6 +972,7 @@ tags:
   - init
 taskId: null
 blockedBy: ""
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 06 — `neuron init` Harness Integration
@@ -1082,6 +1099,7 @@ tags:
   - memory
 taskId: null
 blockedBy: ""
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 07 — Bundle skill file and update Memory Store block
@@ -1116,6 +1134,7 @@ tags:
   - init
 taskId: null
 blockedBy: eb9fe087-ef87-4a36-bbab-4ca7ec7f97a7
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 08 — Harness auto-detection and skill scaffolding
@@ -1150,6 +1169,7 @@ tags:
   - config
 taskId: null
 blockedBy: ""
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 09 — `neuron exec` CLI Core & Stderr Banner
@@ -1176,6 +1196,7 @@ tags:
   - enrichment
 taskId: null
 blockedBy: ""
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 10 — High-Importance (4–5) Scope Lock in Maintenance
@@ -1200,6 +1221,7 @@ tags:
   - config
 taskId: null
 blockedBy: 09113f06-ac9a-4d25-b8f5-a9f7ffcb9153
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 11 — Skill & Harness Closed-Loop Feedback Integration
@@ -1224,6 +1246,7 @@ tags:
   - exec
 taskId: null
 blockedBy: 09113f06-ac9a-4d25-b8f5-a9f7ffcb9153,8017201a-0116-46b9-9a8b-370df68f8fd7
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 12 — End-to-End Test Suite for `exec` & Memory Feedback
@@ -1249,6 +1272,7 @@ tags:
   - adr
 taskId: null
 blockedBy: eca985b2-cd52-4e4e-a4ed-b1974d110999
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 13 — Default History Pruning Threshold Update (`importance <= 3`)
@@ -1274,6 +1298,7 @@ tags:
   - scan
 taskId: null
 blockedBy: eca985b2-cd52-4e4e-a4ed-b1974d110999,6de8728b-706c-4942-9472-3d9eb950b936
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 14 — Importance & Maintenance Integration Test Suite
@@ -1298,6 +1323,7 @@ tags:
   - architecture
 taskId: null
 blockedBy: ""
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 15 — Clean Up Prototype Hybrid Search Script & File
@@ -1323,6 +1349,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 ## Question
@@ -1345,6 +1372,7 @@ tags:
   - deep
 taskId: null
 blockedBy: 10336708-74bf-4876-aec2-5bbc7a98d962,2e5d808b-6b78-4b00-aabf-e40ed8063e82
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: resolved
 ---
 # 17 — Web UI Dashboard & Local Server (`neuron ui`)
@@ -1370,6 +1398,7 @@ tags:
   - architecture
 taskId: null
 blockedBy: 4bbe76bf-8302-490e-96e8-8a6ce40e408e
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 18 — Memory Import/Export & Git Sync (Push & Pull)
@@ -1395,6 +1424,7 @@ tags:
   - scan
 taskId: null
 blockedBy: 4bbe76bf-8302-490e-96e8-8a6ce40e408e
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 19 — Web UI Analytics & Scope Promotion Dashboard
@@ -1420,6 +1450,7 @@ tags:
   - init
 taskId: null
 blockedBy: feb1b475-7640-41a2-9451-3df625c5aaa8,8538501a-b7c1-41ff-9f44-6cd00a007f87
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 20 — Automated Git Post-Commit Hook Integration
@@ -1445,6 +1476,7 @@ tags:
   - enrichment
 taskId: null
 blockedBy: aa0b3510-4897-43b0-9f3b-71ff5fd059b0,cbf971fe-0135-4b57-870e-a2027e11c393
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 21 — Memory Deduplication & Rule Consolidation
@@ -1471,6 +1503,7 @@ tags:
   - scan
 taskId: null
 blockedBy: e7bc1deb-8539-4ed7-bd14-b3874d330608
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 22 — Multi-Provider Embedder Support (OpenAI, Ollama, Cohere)
@@ -1497,6 +1530,7 @@ tags:
   - llm
 taskId: null
 blockedBy: 10336708-74bf-4876-aec2-5bbc7a98d962
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 23 — CLI Shell Autocompletion (`neuron completion`)
@@ -1522,6 +1556,7 @@ tags:
   - failure-fix
 taskId: null
 blockedBy: eca985b2-cd52-4e4e-a4ed-b1974d110999,d4f7c7f7-2f42-4853-8c2c-70cbe94bb54d
+map: 5d85f9d6-6a17-404a-85c2-09846fb1e04b
 status: unclaimed
 ---
 # 24 — Interactive Rule Conflict Detection & Resolution
@@ -1547,6 +1582,7 @@ tags:
   - wayfinder
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 ## Destination
@@ -1586,6 +1622,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: resolved
 ---
 # 01 — Static Scanner Engine, Multi-Language AST Analyzer & SmolLM2 Summarizer (`2.1.0-rc2`)
@@ -1625,6 +1662,7 @@ tags:
 taskId: null
 blockedBy: f0a2b554-6303-40b6-9277-3d9d53d8a595
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: resolved
 ---
 # 02 — Light Local LLM Summarizer & Memory Store Ingestion (`2.1.0-rc3`)
@@ -1661,6 +1699,7 @@ tags:
 taskId: null
 blockedBy: f0a2b554-6303-40b6-9277-3d9d53d8a595,eee84740-af7b-4ed0-9b0d-a99021af737f
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: resolved
 ---
 # 03 — Architectural Drift Detection & Diffing (`2.1.0-rc4`)
@@ -1693,6 +1732,7 @@ tags:
 taskId: null
 blockedBy: f0a2b554-6303-40b6-9277-3d9d53d8a595,eee84740-af7b-4ed0-9b0d-a99021af737f,c9c83510-45fe-49b4-be47-3317e2f0d8da
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: resolved
 ---
 # 04 — Architecture Scans Deep Testing & Stress Suite (`2.1.0-rc5`)
@@ -1747,6 +1787,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: unclaimed
 ---
 # 04 — Shell Autocompletion & DX Enhancements (`2.1.0-rc5`)
@@ -1781,6 +1822,7 @@ tags:
 taskId: null
 blockedBy: f0a2b554-6303-40b6-9277-3d9d53d8a595,eee84740-af7b-4ed0-9b0d-a99021af737f,c9c83510-45fe-49b4-be47-3317e2f0d8da,fb3ec5ff-e401-4e42-a92c-ea599aa353f7,3f497439-5734-4cb2-a3b5-14b7955b2f01
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: resolved
 ---
 # 05 — Release Verification & 2.1.0 Publishing (`2.1.0` Stable)
@@ -1816,6 +1858,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 260dd778-0c67-49c5-9f6f-eda83bdbf3e0
 status: resolved
 ---
 # 06 — Replace the Pattern-Matching Scanner with a Real Tree-Sitter AST Engine
@@ -1920,6 +1963,7 @@ tags:
   - tdd
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 ## Destination
@@ -1954,6 +1998,7 @@ tags:
   - db-schema
 taskId: null
 blockedBy: ""
+map: 03dd2a7c-7952-4bb9-9410-86fcab28705e
 status: resolved
 ---
 # 01 — FTS5 Schema Migration & Triggers
@@ -1979,6 +2024,7 @@ tags:
   - tdd
 taskId: null
 blockedBy: ""
+map: 03dd2a7c-7952-4bb9-9410-86fcab28705e
 status: resolved
 ---
 # 02 — FTS Query Sanitizer & Parser Utility
@@ -2003,6 +2049,7 @@ tags:
   - fts5
 taskId: null
 blockedBy: 276bf58a-f153-4067-97df-e72201b094d1,85894f4f-9eb7-48df-8854-55b0533893b5
+map: 03dd2a7c-7952-4bb9-9410-86fcab28705e
 status: resolved
 ---
 # 03 — Hybrid Retrieval Engine & RRF Rank Fusion
@@ -2028,6 +2075,7 @@ tags:
   - topology
 taskId: null
 blockedBy: 5198577f-4f4e-4431-9031-8064c64241d3
+map: 03dd2a7c-7952-4bb9-9410-86fcab28705e
 status: resolved
 ---
 # 04 — Hybrid Search Integration & E2E Test Suite
@@ -2053,6 +2101,7 @@ tags:
   - hybrid-search
 taskId: null
 blockedBy: ""
+map: 03dd2a7c-7952-4bb9-9410-86fcab28705e
 status: resolved
 ---
 # 05 — BGE Query Instruction Prefix
@@ -2098,6 +2147,7 @@ tags:
   - memory
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 ## Destination
@@ -2137,6 +2187,7 @@ tags:
   - setup
 taskId: null
 blockedBy: ""
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 01 — `neuron.yaml` Configuration Schema & Parser
@@ -2172,6 +2223,7 @@ tags:
   - adr
 taskId: null
 blockedBy: be70800a-0175-44f3-982d-630897802e90
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 02 — Markdown File Storage Adapter (`MdStorageAdapter`)
@@ -2199,6 +2251,7 @@ tags:
   - md-file-management
 taskId: null
 blockedBy: 29efaacc-3a54-4fee-ac9e-41c738726bad
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 03 — Dual Storage Router (`DualStorageRouter`)
@@ -2225,6 +2278,7 @@ tags:
   - failure-fix
 taskId: null
 blockedBy: 3041572e-123b-4d98-bb1d-00c3bf2ab3a2
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 04 — Markdown Vector Sync Engine (`md-sync`)
@@ -2250,6 +2304,7 @@ tags:
   - config
 taskId: null
 blockedBy: f9dac992-ee71-4c1c-ab6c-a4c501cab508
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 05 — CLI `neuron sync` Command & Scaffolding
@@ -2275,6 +2330,7 @@ tags:
   - setup
 taskId: null
 blockedBy: 88fc9541-789a-424e-8e9f-4348fe376667
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 06 — Native Markdown Storage Delegation in NeuronMemory
@@ -2299,6 +2355,7 @@ tags:
   - tdd
 taskId: null
 blockedBy: 701b9a1e-c167-44da-8ed8-bd96df198fe5
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 07 — In-Memory Markdown Vector Embeddings & Timestamp Invalidation
@@ -2323,6 +2380,7 @@ tags:
   - failure-fix
 taskId: null
 blockedBy: b26a6b44-e5ff-4497-a889-e664d54130e8
+map: 09a1eed6-8b4c-427f-ad9f-b88f0ced81f2
 status: resolved
 ---
 # 08 — Bypassing SQLite File Creation in md-only Mode & E2E Verification
@@ -2347,6 +2405,7 @@ tags:
   - 2.2.0
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 # Map — neuron 2.2.0
@@ -3452,6 +3511,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 01 — Tree-Sitter Grammar Acquisition & Init-Time Caching
@@ -3608,6 +3668,7 @@ tags:
 taskId: null
 blockedBy: 2c2c18ac-a525-44c0-be08-f69329f15667
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 02 — Replace Regex Extraction with Parsed-AST Symbol Queries
@@ -3864,6 +3925,7 @@ tags:
 taskId: null
 blockedBy: 6ac28d9d-48ed-4ed9-a87e-0e3dc2253ade
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 03 — Parser Fidelity Labelling & Baseline Migration for Existing Users
@@ -4046,6 +4108,7 @@ tags:
 taskId: null
 blockedBy: 2c2c18ac-a525-44c0-be08-f69329f15667,6ac28d9d-48ed-4ed9-a87e-0e3dc2253ade,4a58b5c1-ddb2-4f3c-8813-45de21069a88
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 04 — Cut and Publish 2.2.0-rc1
@@ -4176,6 +4239,7 @@ tags:
 taskId: null
 blockedBy: ebcb5674-32c3-4aec-b7b7-17da170e117d
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 05 — LLM Job Quality & Latency Guardrails
@@ -4304,6 +4368,7 @@ tags:
 taskId: null
 blockedBy: f7028363-b189-4ea2-a880-d87aa75cb0ad
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 06 — Write-Side Enrichment: Auto Tags, Importance, Category
@@ -4531,6 +4596,7 @@ tags:
 taskId: null
 blockedBy: f7028363-b189-4ea2-a880-d87aa75cb0ad
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 07 — Salvage Expansion for Weak Retrieval
@@ -4763,6 +4829,7 @@ tags:
 taskId: null
 blockedBy: f7028363-b189-4ea2-a880-d87aa75cb0ad
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 08 — LLM-Assisted Consolidation & Dedupe
@@ -4927,6 +4994,7 @@ tags:
 taskId: null
 blockedBy: f7028363-b189-4ea2-a880-d87aa75cb0ad,03413681-f42e-4d20-899b-d8a65a8991f4,65a7b533-d37c-427a-8ee4-aa9db46decb4,bb06afd7-bc54-4dab-8d4c-5e9e24199313
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 09 — Cut and Publish 2.2.0-rc2
@@ -5148,6 +5216,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 10 — Harness Compatibility Research: Injection Surfaces Across Six Agents
@@ -5289,6 +5358,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 11 — Recall Adapter Architecture
@@ -5599,6 +5669,7 @@ tags:
 taskId: null
 blockedBy: 917944e7-36e8-403e-bebc-794602a03b52
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 12 — Claude Code Adapter (Deterministic Reference)
@@ -5778,6 +5849,7 @@ tags:
 taskId: null
 blockedBy: 917944e7-36e8-403e-bebc-794602a03b52
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 13 — Codex Adapter (Fallback Reference)
@@ -5965,6 +6037,7 @@ tags:
 taskId: null
 blockedBy: 45d010f5-6f69-4984-9612-622e408f8679,84f987c7-058c-40e7-b8ec-06fd93d65cdb
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 14 — Protocol Block Rewrite: Hooks Own Read, Agent Owns Write
@@ -6104,6 +6177,7 @@ tags:
 taskId: null
 blockedBy: 45d010f5-6f69-4984-9612-622e408f8679,84f987c7-058c-40e7-b8ec-06fd93d65cdb,cd6c8ac6-1a10-4084-9160-53373b0886d4
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 15 — Cut and Publish 2.2.0-rc3
@@ -6280,6 +6354,7 @@ tags:
 taskId: null
 blockedBy: e36e1618-7bbc-4861-bfc0-5c34ce2025a4
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 16 — GitHub Copilot CLI Adapter
@@ -6339,6 +6414,7 @@ tags:
 taskId: null
 blockedBy: e36e1618-7bbc-4861-bfc0-5c34ce2025a4
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 17 — Antigravity CLI Adapter
@@ -6416,6 +6492,7 @@ tags:
 taskId: null
 blockedBy: e36e1618-7bbc-4861-bfc0-5c34ce2025a4
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 18 — OpenCode Adapter
@@ -6501,6 +6578,7 @@ tags:
 taskId: null
 blockedBy: 3f3d2f1a-e626-4032-920f-78368b37ed23,873bcb90-7213-436b-b48b-2c13804debf5
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 19 — Compatibility Disclosure: `neuron init` Reporting & README Matrix
@@ -6566,6 +6644,7 @@ tags:
 taskId: null
 blockedBy: 3f3d2f1a-e626-4032-920f-78368b37ed23,873bcb90-7213-436b-b48b-2c13804debf5,48fa3d57-31e9-4dd4-bad3-53e6adbb08d6
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 20 — Cut and Publish 2.2.0-rc4
@@ -6613,6 +6692,7 @@ tags:
 taskId: null
 blockedBy: e36e1618-7bbc-4861-bfc0-5c34ce2025a4,75ca00e3-a397-4ec9-9d91-5aa43a618045,e4eb7ae5-7d77-46c5-a7a5-0bcf4a9fb8b8,fc7e082a-1647-4746-8219-23c1c19465a9,36c186eb-561b-4a9d-8f7b-e700958eb0fa,a5384183-dc23-43d5-b838-88e634319a1e,ed0004be-fde9-40df-974c-1cf3fab2d214,8500c2a1-0105-4ac2-8b17-2c82ececfccb,b9885df7-1b5a-45af-99e0-27cb69a3150e,d25bc28b-c1ef-42f7-88b8-b194bd33971c,92b988c4-2e1f-4db7-9aa3-ca885a52945b
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 21 — Release 2.2.0 Stable
@@ -6727,6 +6807,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 22 — LongMemEval Harness: a Comparable Public Number
@@ -6886,6 +6967,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 23 — Configurable Automatic Pruning
@@ -7048,6 +7130,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 24 — Pruning A/B: Does Automatic Pruning Earn Its Place in 2.2.0?
@@ -7149,6 +7232,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 > [!IMPORTANT]
@@ -7262,6 +7346,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 26 — Remove Model-Based Importance Inference
@@ -7450,6 +7535,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 27 — `minScore` Is Structurally Inert
@@ -7856,6 +7942,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 28 — What `md-only` Parity Actually Means
@@ -8091,6 +8178,7 @@ tags:
 taskId: null
 blockedBy: 801f2484-aabf-432b-b089-8ef4d9604b6d,a5384183-dc23-43d5-b838-88e634319a1e,8500c2a1-0105-4ac2-8b17-2c82ececfccb
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 29 — The Markdown↔Vector Reconcile Engine
@@ -8282,6 +8370,7 @@ tags:
 taskId: null
 blockedBy: 801f2484-aabf-432b-b089-8ef4d9604b6d,75ca00e3-a397-4ec9-9d91-5aa43a618045
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 30 — Write-Side Enrichment and Honest Counts in `md-only`
@@ -8412,6 +8501,7 @@ tags:
 taskId: null
 blockedBy: 75ca00e3-a397-4ec9-9d91-5aa43a618045,8500c2a1-0105-4ac2-8b17-2c82ececfccb
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 31 — Make `md` the Actual Default
@@ -8643,6 +8733,7 @@ tags:
 taskId: null
 blockedBy: 75ca00e3-a397-4ec9-9d91-5aa43a618045,e4eb7ae5-7d77-46c5-a7a5-0bcf4a9fb8b8,a5384183-dc23-43d5-b838-88e634319a1e,ed0004be-fde9-40df-974c-1cf3fab2d214,8500c2a1-0105-4ac2-8b17-2c82ececfccb,b9885df7-1b5a-45af-99e0-27cb69a3150e,92b988c4-2e1f-4db7-9aa3-ca885a52945b
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 32 — Ship the Repositioned README
@@ -8908,6 +8999,7 @@ tags:
 taskId: null
 blockedBy: fc7e082a-1647-4746-8219-23c1c19465a9
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 33 — Repoint the Docs from Architecture-First to Markdown-First
@@ -9026,6 +9118,7 @@ tags:
 taskId: null
 blockedBy: 75ca00e3-a397-4ec9-9d91-5aa43a618045,e4eb7ae5-7d77-46c5-a7a5-0bcf4a9fb8b8,fc7e082a-1647-4746-8219-23c1c19465a9,36c186eb-561b-4a9d-8f7b-e700958eb0fa,a5384183-dc23-43d5-b838-88e634319a1e,ed0004be-fde9-40df-974c-1cf3fab2d214,8500c2a1-0105-4ac2-8b17-2c82ececfccb,b9885df7-1b5a-45af-99e0-27cb69a3150e,d25bc28b-c1ef-42f7-88b8-b194bd33971c,92b988c4-2e1f-4db7-9aa3-ca885a52945b
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 34 — Cut and Publish 2.2.0-rc5
@@ -9111,6 +9204,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 35 — Frontmatter Round-Trip Integrity
@@ -9315,6 +9409,7 @@ tags:
 taskId: null
 blockedBy: a5384183-dc23-43d5-b838-88e634319a1e
 kind: grilling
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 36 — Configurable Frontmatter Schema: What "Deterministic" Guarantees
@@ -9581,6 +9676,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 37 — The Architecture Card as a Deterministic Artifact
@@ -9777,6 +9873,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 38 — Remove `scope`
@@ -9939,6 +10036,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 39 — Relevance Floor Validation (Blocks `11`)
@@ -10236,6 +10334,7 @@ tags:
 taskId: null
 blockedBy: e36e1618-7bbc-4861-bfc0-5c34ce2025a4
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 40 — Cursor Adapter
@@ -10317,6 +10416,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 41 — Decontaminate the Ranking Score and Land the Lexical Gate
@@ -10594,6 +10694,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 42 — Isolate CLI Tests From the Real `.neuron` Store
@@ -10737,6 +10838,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 43 — Declarable Category Field Schema: Tiers, Types, CLI Flag Surface
@@ -10847,6 +10949,7 @@ tags:
 taskId: null
 blockedBy: b9885df7-1b5a-45af-99e0-27cb69a3150e
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 44 — SQLite Additive Auto-Migration for Declared User-Defined Fields
@@ -10967,6 +11070,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 45 — `strict` Mode and Updated `neuron-memory` Skill Docs
@@ -11052,6 +11156,7 @@ tags:
 taskId: null
 blockedBy: b9885df7-1b5a-45af-99e0-27cb69a3150e,d25bc28b-c1ef-42f7-88b8-b194bd33971c
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 46 — `neuron status --check`/`--repair`: Report and Repair Non-Compliant Entries
@@ -11108,6 +11213,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: d2835c05-ad41-4f55-bf5f-8f5e9d518ff5
 status: resolved
 ---
 # 47 — Isolate E2E Benchmarks From the Real `.neuron` Store
@@ -11232,6 +11338,7 @@ tags:
   - rc2
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 # Map — neuron 2.3.0
@@ -12585,6 +12692,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 01 — GitHub Copilot CLI Adapter
@@ -12772,6 +12880,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 02 — Cursor Adapter
@@ -12943,6 +13052,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 03 — Compatibility Disclosure: `neuron init` Reporting & README Matrix
@@ -13084,6 +13194,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 04 — Cut and Publish 2.3.0
@@ -13231,6 +13342,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 05 — Storage Path: Top-Level Default with Per-Category Override
@@ -13443,6 +13555,7 @@ tags:
 taskId: null
 blockedBy: 92f165f7-7720-46f2-9abb-9fea846bd6c3
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 06 — Storage Mode: Top-Level Default with Per-Category Override, `split` Removed
@@ -13678,6 +13791,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 07 — Session Token Budget & Cost Telemetry
@@ -13865,6 +13979,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 08 — Injection Redundancy Audit
@@ -14060,6 +14175,7 @@ tags:
 taskId: null
 blockedBy: e3c46aed-56c9-493f-bb4a-f78eda791a5c
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 09 — Shrink the Resident Footprint
@@ -14229,6 +14345,7 @@ tags:
 taskId: null
 blockedBy: e3c46aed-56c9-493f-bb4a-f78eda791a5c,cb72e3f7-b397-42df-bc99-16cf65049307
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 10 — Counterfactual Token A/B: Does Neuron Pay for Itself?
@@ -14482,6 +14599,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 11 — Re-Inject the Architecture Card on the First `pre-prompt` of Each Epoch
@@ -14600,6 +14718,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 12 — Accumulate Real Per-Session Telemetry
@@ -14724,6 +14843,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 13 — `neuron status --check`/`--repair`: Report and Repair Non-Compliant Entries
@@ -14861,6 +14981,7 @@ tags:
 taskId: null
 blockedBy: b6634c8f-b66d-44c8-a495-e06b4483f4e4
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 14 — Git-Log Recall: Hook-Injected Search vs Agent-Invoked `git log`
@@ -15081,6 +15202,7 @@ tags:
 taskId: null
 blockedBy: b6634c8f-b66d-44c8-a495-e06b4483f4e4,0db13ed8-5d52-4370-99c6-19b79730a6b7
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 15 — Publish the Benchmark Suite: Neuron vs Raw Harness
@@ -15240,6 +15362,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 16 — Memory Supersession: Stop a Reversed Entry From Outcompeting Its Reversal
@@ -15412,6 +15535,7 @@ tags:
 taskId: null
 blockedBy: e329f037-389f-46d6-8254-6884eb0bfc96
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 17 — Implement Memory Supersession
@@ -15571,6 +15695,7 @@ tags:
 taskId: null
 blockedBy: bf824595-7cd2-4080-b578-06e84ba98f76
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 18 — Re-run Counterfactual A/B After Supersession
@@ -15700,6 +15825,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 20 — Verify Copilot CLI Adapter Against a Real Installation
@@ -15807,6 +15933,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 22 — Verify Cursor Adapter Against a Real Installation
@@ -15918,6 +16045,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 23 — `init.test.ts`'s "harness-idempotent-test" Case Still Pollutes the Real `.neuron` Store
@@ -16068,6 +16196,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 25 — Architecture Card: Fetch by Stable Id, Truncate Instead of Drop When Oversized
@@ -16215,6 +16344,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 26 — Shrink the Architecture Card: Drop the LLM, Deterministic Per-File Purpose Only
@@ -16396,6 +16526,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 27 — Structurally Compress the Architecture Card at Injection Time
@@ -16493,6 +16624,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 28 — Architecture Card: Split into an Index Entry + Per-Module Detail Cards
@@ -16659,6 +16791,7 @@ tags:
 taskId: null
 blockedBy: 7980c6ea-d896-499b-9bae-274d2c7095a9
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 29 — Reassemble the Diff Baseline from the Index + Module Cards
@@ -16796,6 +16929,7 @@ tags:
 taskId: null
 blockedBy: 7980c6ea-d896-499b-9bae-274d2c7095a9
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 30 — Injection Fetches Only the Index; Module Cards Surface via Ordinary Recall
@@ -16977,6 +17111,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 31 — Fix `neuron memory` Query/List Default Ordering and Limits
@@ -17087,6 +17222,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 34 — Cut and Publish 2.3.0-rc2
@@ -17281,6 +17417,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 35 — Is `categories` Authoritative or Advisory?
@@ -17505,6 +17642,7 @@ tags:
 taskId: null
 blockedBy: 7ed54ac0-af05-4a5a-b103-633f89a7ce16,dd62b28c-b347-44d8-97d1-60d9a3661b14
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 37 — Cut and Publish 2.3.0-rc3
@@ -17605,6 +17743,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 38 — `MdStorageAdapter`'s Frontmatter Parser Silently Drops Entries After a Stray `---` in Body Content
@@ -17768,6 +17907,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: cb2eaf8f-509a-4da8-a09b-b0c7d82deb3f
 status: resolved
 ---
 # 39 — Git-Log Index: Replace-vs-Supplement and Refresh Mechanism
@@ -17884,6 +18024,7 @@ tags:
   - topology
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 ## Destination
@@ -17922,6 +18063,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18175,6 +18317,7 @@ tags:
 taskId: null
 blockedBy: dfe2edf4-4e7b-4f54-b4f1-0891b1767d26
 kind: prototype
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18220,6 +18363,7 @@ tags:
 taskId: null
 blockedBy: dfe2edf4-4e7b-4f54-b4f1-0891b1767d26
 kind: grilling
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18255,6 +18399,7 @@ tags:
 taskId: null
 blockedBy: dfe2edf4-4e7b-4f54-b4f1-0891b1767d26
 kind: grilling
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18301,6 +18446,7 @@ tags:
 taskId: null
 blockedBy: dfe2edf4-4e7b-4f54-b4f1-0891b1767d26
 kind: grilling
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18322,6 +18468,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18343,6 +18490,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 7aa7f91b-16d0-42d7-9594-8afdfcd42228
 status: resolved
 ---
 ## Question
@@ -18363,6 +18511,7 @@ tags:
   - rc2
 taskId: null
 blockedBy: ""
+kind: map
 status: resolved
 ---
 # Map — neuron 2.4.0
@@ -19219,16 +19368,29 @@ thin.
 - 42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/` (ticket f16849c9-27f6-4022-b739-d896cf331507) — re-grepped the whole repo rather than trusting the ticket's own recon list. Found real scope `41` had missed — `neuron-2.2.0/research/` (`harness-compatibility.md`, `relevance-floor-baseline.{md,js}`), live-referenced from ADR 0012/0014 — and relocated it to `docs/design/harness-compatibility-research/`. Every other loose non-ticket asset across the 9 effort dirs had zero external referrers (confirmed by grepping the full relative path, not the bare filename) and went with the tree. Fixed every live `.scratch/` pointer found: `CLAUDE.md`'s now-stale tracker caveat, README's Cursor-adapter link, a dangling `benchmarks/salvage-expansion` README command (broken since `41`'s own move), a stale `REPORT.md` display path, and ~60 dead links across `CHANGELOG.md` and ADRs 0003/0011–0018 — resolved to real ids by cross-referencing the live `tickets` category (not the stale `.scratch` bookkeeping, which has since drifted — e.g. ticket 25's own migrated entry still carries the leaked-header-fragment bug `41` chartered a fix for). ADRs got the map's own `NN — Title (ticket <uuid>)` prose convention (precise, since numbers collide across efforts); `CHANGELOG.md`'s links were de-linked to plain text instead (no browsable URL exists for a store entry). Left frozen historical record alone throughout — `.neuron/*.md` including `tickets.md` (same falsify-the-record principle as the other three, just not named in the ticket's own exclusion list since `tickets.md` didn't exist when it was filed), `docs/design/md-first/handoff-response.md`, and all `results.json`/fixture-data transcripts. `npm test` 721/721, `tsc` clean, both before and after `git rm -r .scratch/`. **`.scratch/` no longer exists in this repository** — committed as `e7a8d8a`.
 - 43 — Pillar 7's `recall@5 >= 0.4` Floor Is Too Tight Against Real Build-to-Build Noise (ticket b3c6c2a7-b4a5-4f53-ac0a-2b250b3afe07) — real ONNX floating-point sensitivity, not a ranking regression: constructing ticket 29's `TransformersReranker` (unused on this pillar's `query()` path, no side effects) deterministically shifts recall@5 0.5→0.375 and MRR 0.294→0.213 versus a stub, reproduced across clean rebuilds; three unrelated edits didn't move it, so the sensitivity is real but narrow, not general build noise. Recalibrated both floors with headroom sized to the measured swing (recall@5 0.4→0.25, one case-width; MRR 0.25→0.13, the measured 0.081 delta) rather than a guess; rejected per-family floors as too noisy at n=2 per family. `npm test` 721/721, `tsc` clean, no `src/` changes.
 
+- 45 — Give the Tickets Category Real Per-Map Queries (ticket 56d915d0-9dbe-4391-9dc7-8273dc5ffd30) — built all four: a `map` declared field (backfilled across all 195 live entries — 186 children, 9 maps — by re-deriving membership from each map's own current content, since ticket 40's own slug-to-id table was a job-local artifact); `--where` made repeatable (ANDed) plus a new `field!=value` negation form; a real `kind: map` sentinel replacing ticket 40's flagged `status: resolved` workaround; and `neuron memory get <id>`. Found and corrected a real overcount along the way: this ticket's own Context claimed "10 real wayfinder maps" — the live store has exactly **9** (`--where "kind=map"` now proves it), matching what ticket 40 itself named. `docs/agents/issue-tracker.md`'s Wayfinding operations section rewritten against the real per-map query: `--where status=unclaimed --where map=<id> --refs-satisfy blockedBy:status=resolved`. 8 new tests, `npm test` 743/743, `tsc` clean.
+
 **True frontier as of this session (tracked in the `tickets` category, not
-this file): none unclaimed-and-unblocked.** `02`, `04`, `05`, `38` remain
-claimed and in progress; `03` stays blocked (on `02`). Ticket 43 resolved
-2026-08-13 (see its own Decisions-so-far entry above); the header-fragment-fix
-ticket (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) resolved immediately
-after (see its own Decisions-so-far entry below) — see the Notes bullet
-immediately above for what that leaves open.
+this file): none.** `04`, `05`, `38` remain claimed and in progress. Ticket
+43 resolved 2026-08-13 (see its own Decisions-so-far entry above); the
+header-fragment-fix ticket (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749)
+resolved immediately after (see its own Decisions-so-far entry below);
+tickets 02 and 03 (the publish-workflow build/verify pair) both closed
+2026-08-13 by maintainer decision (see their own entries below) — `03`'s
+own open threads were `02`'s items 3/5, so closing `02` left nothing scoped
+to `03` alone still open. Ticket 45 resolved 2026-08-14 (see its own entry
+above) — the per-map frontier query it built is now real, not prose:
+`neuron memory list --category tickets --where "status=unclaimed" --where
+"map=0a1d6d69-54ea-42bf-bc30-6ae4522172fd" --refs-satisfy
+"blockedBy:status=resolved" --json` confirms empty. The next session
+working this map should breadth-first grill it per its own long-standing
+Notes item ("Everything else `2.4.0` admits") once `38`'s cut settles, or
+pick up `04`/`05` directly if continuing their in-progress work.
 - 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38) — fixed with a synchronous `mkdir`-based cross-process lock (`src/db.ts`'s `withSyncFileLock`, using `Atomics.wait` for a real blocking sleep since the constructor has no `await` point to yield at), mirroring `18`'s markdown lock but blocking rather than `async`. Wraps both `initialize()`'s `user_version`-gated migration chain (split out into `runMigrationChain()`) and `migrateDeclaredFields()`'s additive `ALTER TABLE ADD COLUMN` pass, which shares the identical race shape though the ticket's own Context only named the former. `:memory:` skips the lock (no cross-process audience). New fast repro (`test/e2e/init-lock.test.ts` + `workers/init-lock-worker.mjs`) needed a `START_AT` barrier to reproduce reliably — bare construction is fast enough (embedder loads lazily) that unsynchronized process-spawn jitter usually hid the race. Verified both ways via `git stash`: 12/32 failures on unfixed code with the ticket's exact predicted errors, 0/32 on fixed code across 4 repeat runs. `npm test` 721/721, `tsc` clean, Pillar 8 clean.
 
 - Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — re-audited the full live store (194 entries) rather than trusting the ticket's own "20" estimate and confirmed exactly the 7 cases already identified while chartering it. Patched each via `neuron memory update` against ground truth pulled from git history (`git show 010590f:.scratch/...`, the commit immediately before `42` deleted `.scratch/`), not a widened migration-script recognizer — the migration script has no live second caller to justify generalizing it. One entry (`#25`) needed care: only its `Priority:` line was leaked, since the `[!IMPORTANT]` callout and postmortem section after it are genuine content that legitimately precedes its real heading in the source. `npm test` 721/721, `tsc` clean, no `src/` changes.
+- 02 — Verify the Publish Workflow Against a Real Push (ticket f256d034-ab25-4bb8-a26b-48cd373f75e2) — closed 2026-08-13 by maintainer decision rather than fully exercised. Real runs this session (carried over from neuron-2.3.0, where this ticket was numbered `36`) found and fixed a genuine bug (`publish.yml` pinned Node 20; `node:sqlite`'s `DatabaseSync` needs ≥22.13), then confirmed a real `-rcN` push all the way through: `build-and-test` green, `publish` runs, version lands under the `rc` dist-tag on the live registry, matching git tag pushed. Auth model changed mid-verification from an `NPM_TOKEN` secret to Trusted Publishing (OIDC), since npm is retiring Classic/Automation tokens registry-wide by January 2027 — confirmed live via a real published run with no token anywhere in the workflow. Left open and accepted as-is: a real stable (`MAJOR.MINOR.PATCH`) push under the `latest` tag, and a genuine non-exempt direct push actually being rejected by branch protection — both would require deliberately provoking an event rather than verifying one as a side effect of routine work, so the maintainer closed the ticket rather than force either.
+- 03 — GitHub Action: Automated npm Publish on Push to Main (ticket 78c33beb-3601-44d6-95bc-e69915576636) — closed 2026-08-13, immediately after `02`. This ticket had already built `.github/workflows/publish.yml` in full (dist-tag resolution from `package.json`'s own version, skip-if-unchanged, a two-job build-then-publish split gated by a required-reviewer `npm-publish` GitHub Environment, Trusted Publishing/OIDC auth after npm deprecated Automation tokens mid-session) and split real-install verification off into its own ticket (`36`, renumbered `02` on this map) rather than staying open on an action only the maintainer could take. With `02` now resolved — a real push proven end to end, real stable push and branch-protection-rejection left open there by maintainer decision — nothing scoped to this ticket specifically remains: the workflow is live, committed, and working as designed.
 
 ## Not yet specified
 
@@ -19394,6 +19556,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 01 — Implement Category Declaration Authority
@@ -19570,7 +19733,8 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
-status: claimed
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
+status: resolved
 ---
 # 02 — Verify the Publish Workflow Against a Real Push
 
@@ -19778,10 +19942,14 @@ a170e028ceec509de59a56ff8922c3e1d83f3dc1  refs/tags/v2.3.0-rc2
   push being rejected by the `main` ruleset itself was not attempted —
   still open, and arguably not worth deliberately provoking.
 
-`36` stays claimed, not resolved — items 3 and 5 are the only remainder,
-both low-value to force artificially. Recommend the maintainer closes
-this ticket manually once satisfied, or leaves it as a standing note for
-whenever a real stable-version cut happens naturally.
+**Closed 2026-08-13, maintainer decision.** Items 3 (real stable push) and
+5 (branch-protection rejection) remain unexercised for the reasons above —
+both require deliberately provoking an event (a stable-version cut, a
+rejected direct push) rather than being verifiable as a side effect of
+routine work. The maintainer closed this ticket now rather than force
+either artificially; if a real stable cut or a non-exempt push happens
+naturally later, that's free additional evidence, not a reason this was
+left open.
 
 ---
 id: 78c33beb-3601-44d6-95bc-e69915576636
@@ -19794,7 +19962,8 @@ tags:
 taskId: null
 blockedBy: f256d034-ab25-4bb8-a26b-48cd373f75e2
 kind: task
-status: claimed
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
+status: resolved
 ---
 # 03 — GitHub Action: Automated npm Publish on Push to Main
 
@@ -19986,6 +20155,20 @@ unused (harmless, left for the maintainer to delete at their discretion)
 — the `environment: npm-publish` gate itself is unchanged and still
 required-reviewer-protected.
 
+**Closed 2026-08-13, following `02`'s (formerly `36`'s) resolution.**
+`02` (ticket f256d034-ab25-4bb8-a26b-48cd373f75e2) is where the real
+verification landed: `build-and-test` proven green on a real push (after
+that ticket's own Node 20→22 fix), Trusted Publisher/OIDC configured and
+confirmed working with a real `npm publish` reaching the registry under
+the `rc` dist-tag, matching git tag pushed, and the `npm-publish`
+environment's required-reviewer gate observed actually pausing a run.
+This ticket's own two open threads — a real stable (`latest`-tag) push,
+and a genuine non-exempt push being rejected by branch protection — are
+`02`'s items 3 and 5, closed there by the same maintainer decision rather
+than force either artificially. `.github/workflows/publish.yml` is live,
+committed, and working as designed; nothing scoped to this ticket
+specifically remains open.
+
 ---
 id: c8dd711c-32b0-446d-a697-f91c855306bd
 createdAt: 2026-08-13T13:55:49.944Z
@@ -19997,6 +20180,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: claimed
 ---
 # 04 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets
@@ -20691,6 +20875,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: claimed
 ---
 # 05 — Architecture Card A/B: With vs Without
@@ -20863,6 +21048,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 06 — Per-Prompt Discovery-Command Hint
@@ -21004,6 +21190,7 @@ tags:
 taskId: null
 blockedBy: 781dbfe4-448f-4b4d-ba74-33c76020d68f
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 07 — Measure Whether the Discovery-Command Hint Gets Used
@@ -21160,6 +21347,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 08 — Implement the Git-Log Index
@@ -21262,6 +21450,7 @@ tags:
 taskId: null
 blockedBy: c1a02fca-240d-43d4-80fa-8c4e82e68211
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 09 — Update Generated Protocol Block, Packaged Skill & README for the Git-Log Index
@@ -21420,6 +21609,7 @@ tags:
 taskId: null
 blockedBy: c1a02fca-240d-43d4-80fa-8c4e82e68211,990292bc-073e-4532-9856-53b86c1e2f15
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 10 — Dogfood the Git-Log Index in This Repo
@@ -21563,6 +21753,7 @@ tags:
 taskId: null
 blockedBy: c1a02fca-240d-43d4-80fa-8c4e82e68211
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 11 — Re-run the Git-Log A/B Against the Real (Semantic) Mechanism
@@ -21733,6 +21924,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 12 — Should `neuron exec`'s Pre-Command Lookup Become a Hook Instead?
@@ -21842,6 +22034,7 @@ tags:
 taskId: null
 blockedBy: e26dc7f4-48a1-4b3c-87d9-2bb887ba6dcc
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 13 — Audit: Dogfooding Gaps in This Repo
@@ -21952,6 +22145,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 14 — Design: Should Neuron Replace `.scratch/` as This Repo's Issue Tracker?
@@ -22065,6 +22259,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 15 — Audit: Repo Cleanup Punch List
@@ -22171,6 +22366,7 @@ tags:
 taskId: null
 blockedBy: 2d3bc7aa-8ffe-41f5-8cba-2c47ed507487,9ef4cc7d-dee3-4565-a387-a0c5d718e088
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 16 — Curate This Repo's `.neuron/` Store as the Showcase
@@ -22273,6 +22469,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 17 — Antagonistic Recall: Does Neuron Abstain When Nothing Is Relevant?
@@ -22479,6 +22676,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 18 — Fix Concurrent-Write Data Loss in Markdown Storage
@@ -22634,6 +22832,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 19 — Non-Interactive Write Mode for Scheduled/Cron Writers
@@ -22728,6 +22927,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 20 — Ship `neuron doctor`
@@ -22914,6 +23114,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 21 — Warn When Recall Is Never Invoked (`sessionsObserved: 0`)
@@ -23010,6 +23211,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 22 — Implement the Pre-Command Hook
@@ -23157,6 +23359,7 @@ tags:
 taskId: null
 blockedBy: 74117049-3dfa-493e-8980-3a9d88a9e436
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 23 — Fidelity-Conditional Command Execution Step
@@ -23272,6 +23475,7 @@ tags:
 taskId: null
 blockedBy: 74117049-3dfa-493e-8980-3a9d88a9e436,cb397e7a-264d-4f8f-aed0-e6a67a54fc1d
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 24 — Dogfood the Pre-Command Hook in This Repo
@@ -23372,6 +23576,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 25 — Implement the Neuron-Backed Tracker: Declare `tickets` Category & Rewrite `issue-tracker.md`
@@ -23493,6 +23698,7 @@ tags:
 taskId: null
 blockedBy: a5fa6423-b2a3-4043-87cd-f654ad8f5de5
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 26 — Migrate All 19 `.scratch/` Efforts into the `tickets` Category, Then Delete `.scratch/`
@@ -23649,6 +23855,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: grilling
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 27 — Should Anything Be Done About the Gate's 99.80% False-Accept Rate?
@@ -23774,6 +23981,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 28 — Research: Find a Local ONNX Cross-Encoder Reranker
@@ -23861,6 +24069,7 @@ tags:
 taskId: null
 blockedBy: d43407e0-c016-418c-b274-19d8efba56e3
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 29 — Build and Pilot the Reranker Gate Layer
@@ -24017,6 +24226,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 30 — Fix `autoRescanIfDriftDetected`'s cwd/storage Project-Root Mismatch
@@ -24195,6 +24405,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 31 — `neuron init` Silently Onboards Every Detected Harness, Not Just the One In Use
@@ -24343,6 +24554,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 32 — CI Architecture-Drift Gate
@@ -24428,6 +24640,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 33 — Detect a Stale Global/Linked `neuron` Binary Against the Working Tree
@@ -24517,6 +24730,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 34 — Detect `CLAUDE.md` Protocol-Block Drift From `neuron.yaml`
@@ -24613,6 +24827,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 35 — Scheduled Store-Health Check
@@ -24708,6 +24923,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 36 — CI-Wire the Free Dry-Run Benchmark Harnesses
@@ -24808,6 +25024,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 37 — Cut and Publish 2.4.0-rc1
@@ -24976,6 +25193,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: claimed
 ---
 # 38 — Cut and Publish 2.4.0-rc2
@@ -25055,6 +25273,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 39 — Category Auto-Declare Can Write to an Ancestor `neuron.yaml` Outside an Isolated `projectRoot`
@@ -25231,6 +25450,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 40 — Migrate the 9 Wayfinder Efforts into the `tickets` Category
@@ -25381,6 +25601,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 41 — Relocate `.scratch` Asset Directories & Fix Their ADR Links
@@ -25500,6 +25721,7 @@ tags:
 taskId: null
 blockedBy: 3d4ada05-b80e-4aad-85af-68fc2d2c3bf4,46b889d3-d290-40ef-a110-f9f4c3021c19
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 42 — Sweep Repo-Wide `.scratch/` References & Delete `.scratch/`
@@ -25646,6 +25868,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: research
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 43 — Pillar 7's `recall@5 >= 0.4` Floor Is Too Tight Against Real Build-to-Build Noise
@@ -25831,6 +26054,7 @@ tags:
 taskId: null
 blockedBy: ""
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently
@@ -25986,6 +26210,7 @@ tags:
   - 2.2.0
 taskId: null
 kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
 status: resolved
 ---
 # Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40
@@ -26081,3 +26306,234 @@ correctly starts with its callout instead, per the paragraph above), and the
 full-store re-audit finds zero remaining leaked-fragment entries (the one
 non-heading-leading survivor left is `#25`'s callout, expected). `npm test`
 721/721, `tsc` clean — content-only fix, no `src/` changes.
+
+---
+id: 56d915d0-9dbe-4391-9dc7-8273dc5ffd30
+createdAt: 2026-08-14T12:38:04.967Z
+importance: 3
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
+status: resolved
+---
+# 45 — Give the Tickets Category Real Per-Map Queries (Map Membership, Compound `--where`, Map/Ticket Distinction, `get`)
+
+## Question
+
+What does the `tickets` category's schema and the `neuron memory` CLI need
+so the wayfinder skill's tracker assumptions — "open tickets are found by
+query" ([`SKILL.md`](../../.claude/skills/wayfinder/SKILL.md) line 29),
+children queryable per-map (line 21) — actually hold, instead of every
+session hand-maintaining a "True frontier as of this session" prose bullet
+on the map body as a workaround?
+
+## Context
+
+Surfaced live while resolving tickets `02`/`03`/claiming `04` this session,
+not from reading the skill cold. Four concrete gaps, each demonstrated
+against this repo's own real store rather than inferred from the docs:
+
+1. **No map-membership field.** `tickets` has no relationship from a
+   ticket to its parent map — only prose backlinks inside content. Running
+   [`docs/agents/issue-tracker.md`](../../docs/agents/issue-tracker.md)'s
+   own documented frontier query verbatim —
+   `neuron memory list --category tickets --where "status=unclaimed"
+   --refs-satisfy "blockedBy:status=resolved" --json` — returned 10
+   tickets, **none from `neuron-2.4.0`**: all ten are leftovers from four
+   older migrated efforts (`agent-memory-cli`, `md-file-management`, two
+   others), one still carrying a stale `status: "todo"` outside the
+   declared 3-value enum. The tracker doc already warns this pools every
+   effort together; in practice that means the query is unusable without a
+   human or agent manually cross-referencing every hit against the right
+   map's content — exactly the manual grep-and-cross-reference work this
+   session did by hand to resolve which "ticket 01"/"02"/"03"/"04" was
+   `neuron-2.4.0`'s own, across 7-8 same-numbered collisions per digit.
+2. **`--where` accepts exactly one clause — confirmed in code, not just by
+   testing.** `src/commands/utils.ts:272-273` does `where = args[++i]`, a
+   bare scalar with last-flag-wins semantics; `parseWhere`
+   (`src/commands/memory.ts:75`) parses a single `<field>=<value>` string.
+   Even after item 1 adds a `map` field, there is no way to compose
+   `status=unclaimed AND map=<id>` in one `list` call — repeating `--where`
+   silently drops the first.
+3. **Maps and tickets aren't structurally distinguishable — already
+   flagged, never fixed.** Ticket `40`'s own Answer (the tickets-category
+   migration) found that every map entry has to be force-set to
+   `status: resolved` as a workaround, because the schema has no 4th
+   "this is a map, not a ticket" state and the frontier convention doesn't
+   check `kind` either — flagged there as "a design call for whoever next
+   touches the schema," deliberately left open rather than fixed inline.
+4. **No single-entry fetch.** There is no `neuron memory get <id>`. The
+   documented fallback (`docs/agents/issue-tracker.md`'s "fetch the
+   relevant ticket" section) is `list --json` filtered client-side —
+   meaning every "resolve this one known id" this session pulled the
+   *entire* category (up to 111KB for one map, out of ~194 entries) rather
+   than one row.
+
+## Scope
+
+1. **Add a `map` declared field to `categories.tickets.fields`** in
+   `neuron.yaml` (string; a ticket's parent map's own entry id). Backfill
+   the 194 existing entries via a one-off script in the two-pass style
+   ticket `40` already established (id lookups, not bare-number guesses) —
+   membership is recoverable from each effort's own already-known
+   migration grouping (ticket `40`'s `<effort>#<slug> → <new-id>` table)
+   plus each map's own "Decisions so far" backlinks for anything migrated
+   since. Require `map` going forward on `neuron memory add --category
+   tickets --kind <task|research|prototype|grilling>` (a map itself has no
+   `kind` and no `map` value, per existing convention).
+2. **Make `--where` composable.** Support either a repeatable `--where
+   field=value` (ANDed across occurrences) or a single `field=value,
+   field2=value2` clause — pick whichever `parseWhere`/`parseFlags`
+   (`src/commands/memory.ts`, `src/commands/utils.ts`) can absorb with the
+   least disruption to the existing single-clause callers/tests. Extend
+   `--refs-satisfy` the same way if it turns out map-scoping needs both
+   filters to compose (it will: the real frontier query is `status`
+   *and* `map` *and* `blockedBy`-satisfied).
+3. **Give maps a real sentinel.** Add a `map` value to the `kind` enum (or
+   an equivalent boolean/field), stop force-setting `status: resolved` on
+   map entries as a proxy, and teach the frontier convention in
+   `docs/agents/issue-tracker.md` to filter `kind != map` explicitly —
+   closing ticket `40`'s flagged gap for real rather than leaving the
+   workaround in place.
+4. **Add `neuron memory get <id> [--category <name>]`** — single-entry
+   fetch by id, `--json` supported the same as `list`. `--category` is
+   optional (ids are unique store-wide) but should short-circuit the
+   lookup when given, matching `delete`/`update`'s existing pattern of
+   accepting (and in their case requiring) `--category`.
+5. **Rewrite `docs/agents/issue-tracker.md`'s "Wayfinding operations"
+   section** once 1-4 land: the real per-map frontier query becomes
+   `neuron memory list --category tickets --where "map=<id>,status=unclaimed"
+   --refs-satisfy "blockedBy:status=resolved" --json` (or the repeated-flag
+   equivalent, matching whichever syntax item 2 lands on), replacing the
+   current pools-everything caveat. Update the wayfinder `SKILL.md`
+   reference to this doc if its own wording needs adjusting.
+6. **CLI help documentation is not a follow-up — it's part of this
+   ticket's own deliverables**, matching the precedent ticket `19` set for
+   `--if-novel`: every new or changed flag (`map` on `add`/`update`, the
+   new `--where` compound syntax, the `get` subcommand and its flags) must
+   land in `neuron memory --help`'s output (`src/commands/utils.ts`'s help
+   text block) in the same commit that ships the behavior, not asserted
+   separately afterward.
+
+## Verification
+
+- Re-run this ticket's own reproduction: `neuron memory list --category
+  tickets --where "map=<neuron-2.4.0's own map id>,status=unclaimed"
+  --refs-satisfy "blockedBy:status=resolved" --json` returns only tickets
+  that are actually unclaimed-and-unblocked children of `neuron-2.4.0`,
+  cross-checked against this map's own hand-maintained "True frontier as
+  of this session" bullet as ground truth — the same live check this
+  ticket's Context section ran and got 10 wrong-map results from.
+- `neuron memory get <id>` round-trips a known ticket id and matches the
+  equivalent `list --json`-then-filter result exactly.
+- A map entry queried with `--where "kind=map"` returns every one of the
+  10 real wayfinder maps (`neuron-2.1.x` through `neuron-2.4.0`, plus the
+  non-wayfinder efforts) and nothing else.
+- `neuron memory --help` output includes `map`, the compound `--where`
+  syntax, and `get` — read the actual printed help text, don't just check
+  the flag was parsed.
+- `npm test` green, `tsc --noEmit` clean.
+
+## Deliverables
+
+- [x] `map` declared field added to `tickets` schema; all 194 existing
+      entries backfilled
+- [x] `--where` (and `--refs-satisfy` if needed) support compound/ANDed
+      clauses
+- [x] `kind: map` sentinel (or equivalent) replaces the `status: resolved`
+      workaround on map entries; frontier convention updated to filter on
+      it
+- [x] `neuron memory get <id>` implemented
+- [x] `docs/agents/issue-tracker.md`'s Wayfinding operations section
+      rewritten against the real per-map query
+- [x] `neuron memory --help` documents every flag/subcommand this ticket
+      adds or changes
+- [x] Tests per Verification section; `npm test` green, `tsc` clean
+## Answer
+
+Built exactly what the Scope laid out, with one correction found live: **the
+"10 real wayfinder maps" estimate was an overcount — there are 9**, confirmed
+two independent ways (a heading-shape scan and a `## Not yet specified`/
+`## Decisions so far` structural scan agreed exactly): `2.1.x-hardening`,
+`agent-memory-cli`, `architecture-scans-2.1.0`, `hybrid-search`,
+`md-file-management`, `neuron-2.2.0`, `neuron-2.3.0`, `neuron-2.4.0`,
+`saas-features` — the same 9 ticket 40 itself named as the real migrated
+efforts. `--where "kind=map" --json` now returns exactly those 9 and nothing
+else, matching this ticket's own Verification bullet once corrected.
+
+**1. `map` field + backfill.** Added `map` (string) to `categories.tickets.fields`
+in `neuron.yaml`, alongside a `map` value on the `kind` enum. Backfilled all
+195 live entries (186 child tickets' `map`, 9 maps' `kind: map`) via a one-off
+script calling `NeuronMemory.transact()` directly (ticket 40's own precedent —
+these are content-less, fields-only updates that never touch the embedder
+regardless). `ticket 40`'s own `<effort>#<slug> → <new-id>` table no longer
+exists (a job-local artifact, per `41`'s prior note), so membership was
+re-derived live from each map's own current content: every `(ticket <uuid>)`
+backlink inside a bulleted "NN — Title" block, scoped to the block it appears
+in (not a whole-content scan, which over-collects prose cross-references like
+"split off from X" or "inherited, not re-derived"). This resolved 181 of 186
+ids to exactly one owning map with zero ambiguity; 4 real conflicts (a ticket
+mentioned by two maps' prose, e.g. `neuron-2.3.0`'s own "04 — Cut and Publish"
+also narrated in passing by `neuron-2.4.0`'s "received ten tickets" note) were
+resolved by preferring the map with the real decision-shaped bullet over the
+one with a passing mention; 5 ids the block-scan missed entirely (multi-id
+bullets, e.g. `neuron-2.2.0`'s Out-of-scope entry naming both the OpenCode and
+Cursor adapters in one bold-linked sentence) were resolved by direct content
+grep. All 9 resolutions spot-checked against the live store after write;
+0 missing, 0 misassigned.
+
+**2. Compound `--where`.** Made it repeatable rather than switching to a
+comma-joined single clause (`src/commands/utils.ts`'s `parseFlags` now
+accumulates every `--where` occurrence into an array instead of
+`args[++i]`'s bare last-flag-wins overwrite); `filterList`
+(`src/commands/memory.ts`) ANDs all clauses. Also added `field!=value`
+negation — not originally scoped as its own item, but required to express
+the "kind != map" convention the Scope's item 3 explicitly asks the docs to
+teach: `--where` had no way to express "not equal" at all until now.
+`--refs-satisfy` was left single-clause; the real frontier query only ever
+needs one (`blockedBy`), so extending it wasn't warranted.
+
+**3. `kind: map` sentinel.** Added to the enum; the 9 maps now carry it
+(previous step). Existing maps' `status` values were left untouched (still
+whatever they were set to, mostly the old `resolved` workaround) — the Scope
+only asked to stop the workaround going forward and teach the frontier
+convention to check `kind`, not to retroactively rewrite historical `status`
+values that no longer drive anything.
+
+**4. `neuron memory get <id> [--category <name>]`.** Wraps the existing
+`NeuronMemory.findById()` (already a direct single-row SQL lookup, no code
+change needed there). `--category`, when given, turns a mismatch into
+`{"status": "not_found", "id": ...}` rather than silently ignoring the flag —
+same convention `delete`/`update` already use for a category mismatch.
+
+**5. Docs.** Rewrote `docs/agents/issue-tracker.md`'s Conventions and
+Wayfinding operations sections end to end: the real per-map frontier query
+(`--where status=unclaimed --where map=<id> --refs-satisfy
+blockedBy:status=resolved`), the global-frontier variant (`--where
+kind!=map`), `list every map` (`--where kind=map`), and the `get`-based
+"fetch the relevant ticket" path. The wayfinder `SKILL.md`'s own wording
+(checked per Scope item 5) needed no edit — it already defers to this doc by
+name and stays tracker-agnostic.
+
+**6. `neuron memory --help`.** Documents `get`, the repeatable `--where`
+(both `=` and `!=`), and the new `map` field under "Project-declared fields" —
+verified by reading the actual printed output, not just checking the flag
+parses.
+
+**7. Verification.** Re-ran this ticket's own reproduction scoped to
+`neuron-2.4.0`'s real id: returns exactly the true frontier (empty at the
+moment this resolves, correctly — `45` itself, the only real frontier ticket,
+is claimed mid-resolution). `neuron memory get` round-trips and matches the
+equivalent `list --json` entry exactly, including a category-mismatch case.
+`--where "kind=map"` returns exactly the 9 real maps (see the correction
+above) and nothing else. 8 new tests added to `src/commands/memory.test.ts`
+(compound `--where` ANDing, the real per-map frontier shape, `!=` negation,
+and 4 `get` cases including the argv-boundary guard). `npm test` 743/743
+(was 721/721 before this session — the +22 includes these 8 plus unrelated
+growth from concurrent sessions on other tickets), `tsc --noEmit` clean,
+`neuron status --check` reports `protocolBlockDrift: []` (no `CLAUDE.md`
+drift from the schema change).

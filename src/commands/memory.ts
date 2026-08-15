@@ -14,6 +14,8 @@ const FILTERED_LIST_FETCH_LIMIT = 1_000_000;
 export interface WhereClause {
   field: string;
   value: string;
+  /** `field!=value` (ticket 45) — negates the comparison instead of requiring equality. */
+  negate?: boolean;
 }
 
 export interface RefsSatisfyClause {
@@ -31,6 +33,10 @@ export interface RefsSatisfyClause {
  * own "what's actionable" query:
  *
  *   --where <field>=<value>            keep entries where fields[field] === value
+ *   --where <field>!=<value>           keep entries where fields[field] !== value
+ *                                      (repeatable — ticket 45 — every
+ *                                      occurrence ANDs onto the rest, equality
+ *                                      and negation freely mixed)
  *   --refs-satisfy <field>:<sub>=<val> keep entries where every comma-separated id
  *                                      in fields[field] names another entry (same
  *                                      category) with fields[sub] === val
@@ -42,7 +48,7 @@ export interface RefsSatisfyClause {
 async function filterList(
   memory: NeuronMemory,
   categories: string[] | undefined,
-  where: WhereClause | undefined,
+  where: WhereClause[] | undefined,
   refsSatisfy: RefsSatisfyClause | undefined,
   limit: number | undefined,
   includeSuperseded: boolean | undefined
@@ -56,8 +62,11 @@ async function filterList(
   const all = await memory.query({ categories, limit: FILTERED_LIST_FETCH_LIMIT, includeSuperseded });
 
   let results = all;
-  if (where) {
-    results = results.filter(e => e.fields?.[where.field] === where.value);
+  if (where && where.length > 0) {
+    results = results.filter(e => where.every(clause => {
+      const matches = e.fields?.[clause.field] === clause.value;
+      return clause.negate ? !matches : matches;
+    }));
   }
   if (refsSatisfy) {
     const satisfiedIds = new Set(all.filter(e => e.fields?.[refsSatisfy.subfield] === refsSatisfy.subvalue).map(e => e.id));
@@ -73,9 +82,13 @@ async function filterList(
 }
 
 function parseWhere(raw: string): WhereClause {
+  const neq = raw.indexOf('!=');
+  if (neq >= 1) {
+    return { field: raw.slice(0, neq), value: raw.slice(neq + 2), negate: true };
+  }
   const eq = raw.indexOf('=');
   if (eq < 1) {
-    console.error(`Error: --where expects "<field>=<value>", got "${raw}"`);
+    console.error(`Error: --where expects "<field>=<value>" or "<field>!=<value>", got "${raw}"`);
     process.exit(1);
   }
   return { field: raw.slice(0, eq), value: raw.slice(eq + 1) };
@@ -137,6 +150,11 @@ export async function handleMemoryCommand(
       max: 1,
       shape: 'a single id argument',
       example: `neuron memory delete <id> --category learning`,
+    },
+    get: {
+      max: 1,
+      shape: 'a single id argument',
+      example: `neuron memory get <id>`,
     },
   };
   const expected = EXPECTED[subCommand];
@@ -263,13 +281,31 @@ export async function handleMemoryCommand(
     // and silently had no filtering effect — `query` already reads both.
     const categories = options.categories ?? (options.category ? [options.category] : undefined);
     if (options.where || options.refsSatisfy) {
-      const where = options.where ? parseWhere(options.where) : undefined;
+      const where = options.where ? options.where.map(parseWhere) : undefined;
       const refsSatisfy = options.refsSatisfy ? parseRefsSatisfy(options.refsSatisfy) : undefined;
       console.log(JSON.stringify(await filterList(memory, categories, where, refsSatisfy, options.limit, options.includeSuperseded)));
       return;
     }
     const results = await memory.query({ categories, limit: options.limit, includeSuperseded: options.includeSuperseded });
     console.log(JSON.stringify(results));
+  } else if (subCommand === 'get') {
+    // Single-entry fetch by id (ticket 45) — the escape hatch for "resolve
+    // this one known id" that used to mean pulling the entire category via
+    // `list --json` and filtering client-side. Ids are unique store-wide
+    // (findById doesn't take a category), so --category here is optional and
+    // only asserts the caller's own assumption: a mismatch reads as
+    // not-found rather than silently ignoring the flag.
+    const id = positionals[0];
+    if (!id) {
+      console.error('Error: ID is required for memory get');
+      process.exit(1);
+    }
+    const entry = await memory.findById(id);
+    if (!entry || (category && entry.category !== category)) {
+      console.log(JSON.stringify({ status: 'not_found', id }));
+      return;
+    }
+    console.log(JSON.stringify(entry));
   } else if (subCommand === 'delete') {
     const id = positionals[0];
     if (!id) {
