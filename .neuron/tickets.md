@@ -29141,3 +29141,447 @@ _Not yet resolved._
 - 2026-08-15: Created by Ticket 8's resolution — this map's own "plan,
   don't do" discipline means Ticket 8 measures and reports the problem, it
   doesn't unilaterally pick the mitigation. Blocks Ticket 9.
+
+---
+id: 8b77da80-6df1-4683-8ec0-8495e7a7605e
+createdAt: 2026-08-15T19:19:47.999Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: null
+kind: grilling
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: unclaimed
+---
+# 3 — Past/Present/Future Ticket Storage Split; Verify Architecture-Scan Upsert Behavior
+
+## Question
+
+Restructure how this repo's own issue tracker (ADR 0018, the single
+`tickets` category) is stored: split it into three categories by temporal
+status — **past** (archived: closed maps and resolved tickets, vector-only
+storage), **present** (md storage, the map(s) actually being worked and
+their open tickets), and **future** (vector-only storage, maps that have
+been chartered/parked but aren't the current focus) — and confirm whether
+`neuron scan` already updates an existing architecture card in place
+rather than creating a new one on every run.
+
+## Context
+
+**The storage-mode mechanism this needs already exists.** `neuron.yaml`
+already supports `categories.<name>.storage` overriding the global
+`storage.mode`, and `vector`/`md` are already the two canonical modes
+(`src/config/neuronYaml.ts`, precedence documented in
+`src/config/scaffold.ts`). This ticket is about applying that existing
+mechanism to a 3-way split of the current single `tickets` category, plus
+the migration and archiving-trigger logic around it — not inventing
+per-category storage mode itself.
+
+**The architecture-scan half may already be solved.**
+`src/scanner/ingest.ts`'s `blueprintCardId(category)` and
+`moduleCardId(category, modulePath)` derive a *deterministic* id from a
+sha256 hash of category (+ module path) — "same category in, same id
+out" by design, specifically so re-running `neuron scan` upserts the same
+row instead of duplicating it (stale module cards are even explicitly
+deleted when a module disappears between scans). Confirm this in practice
+(e.g. `neuron scan` run twice, diff `architecture` category row count and
+ids) before treating this as new work — if it's already correct, this
+half of the ticket is a verification note, not a build.
+
+**Related but distinct from Ticket 2 — Memory Store Cleanup Pass (this
+map)**: Ticket 2 is a one-time content-quality pass over the existing
+store via `neuron status --health`/`--repair` (dedupe, prune, fix). This
+ticket is a structural/schema change to how the tracker itself is stored
+and organized going forward — complementary, not overlapping. Sequencing
+between them (does the cleanup pass happen before or after the category
+split?) is itself one of this ticket's open questions.
+
+## Design questions to resolve before implementation
+
+- **What does "current" mean in a repo that runs multiple wayfinder maps
+  concurrently by design?** This repo's own tracker right now has several
+  simultaneously-open maps (Map — neuron 2.4.2, Map — neuron 2.4.3, Map —
+  Global Config & Memory Store, plus older maps like Map — 2.1.x
+  Hardening that never formally closed). Is "present" (a) literally one
+  map at a time, (b) every map not yet closed, regardless of how many, or
+  (c) something else? One candidate reading worth testing: **present** =
+  actively sequenced/being-worked maps + their open children, **future**
+  = maps that are chartered/named but explicitly "not yet sequenced"
+  (this repo already uses that exact phrase for Map — Global Config &
+  Memory Store today), **past** = closed maps + every resolved ticket
+  underneath them. Confirm or replace this reading with the maintainer
+  before building against it.
+- **What triggers an archive move (present → past)?** Per-ticket, the
+  moment it resolves? Or only the whole map, once every child ticket
+  under it is closed? A ticket resolving mid-map is normal and frequent
+  in this repo's actual usage (see Map — neuron 2.4.2's own Decisions so
+  far) — decide whether resolved-but-still-has-open-siblings tickets
+  archive immediately or wait for the map to close.
+- **What triggers a promotion (future → present)?** Manual (maintainer
+  says "start this one now"), or automatic once its blocking conditions
+  clear (if it has any)?
+- **Migration of existing data.** All ~13 current map entries and their
+  children live in one `tickets` category today. Does this ticket also
+  perform the one-time migration (sorting every existing map into
+  past/present/future by the rule decided above), or does migration wait
+  and only new maps/tickets use the new split going forward, with the
+  legacy `tickets` category treated as a one-time "past" seed?
+- **Does every tracker operation still work unchanged against vector-only
+  storage?** In particular: `memory get <id>` direct fetch (docs/agents/
+  issue-tracker.md's "fetch one ticket by id" — must still resolve a
+  specific archived ticket without a semantic query), and whether
+  `--where`/`--refs-satisfy` filtering (used by the frontier query) is
+  available identically on `vector` mode or is md-only today — confirm in
+  `src/config/neuronYaml.ts`/the query path before assuming parity.
+- **Does `blockedBy` cross category boundaries?** A present-category
+  ticket could plausibly reference a `blockedBy` id that now lives in
+  `past` (an archived blocker) — confirm the frontier query's
+  `--refs-satisfy` still resolves ids across the three new categories,
+  not just within one.
+- **Sequencing against Ticket 2's cleanup pass** (this map): decide
+  whether the health/prune pass happens before this split (so the split
+  starts from a clean store) or after (so cleanup operates on the
+  already-split categories).
+
+## Deliverables
+
+- [ ] Design decisions above resolved with the maintainer
+- [ ] `neuron scan` upsert-in-place behavior confirmed (or, if actually
+      broken, root-caused and fixed)
+- [ ] `neuron.yaml` schema updated: `tickets` category split into three
+      (naming per the decisions above), each with the correct
+      `storage.mode`
+- [ ] `docs/agents/issue-tracker.md` and the `/wayfinder` skill's own
+      tracker-specific operations updated to match the new category
+      names/behavior
+- [ ] Migration path for existing tracker data decided and executed (or
+      explicitly deferred, per the migration design question above)
+- [ ] `npm test` and `tsc` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Requested directly by the maintainer, alongside four
+  standalone codebase-hygiene tickets (benchmarks/ cleanup, stray test
+  relocation, stray file cleanup, refactor-opportunity audit) created the
+  same session but not attached to any map — see those tickets'
+  own entries.
+
+---
+id: 1c4b37a5-0fc2-491c-81fd-26dcc542d7ca
+createdAt: 2026-08-15T19:22:09.923Z
+importance: 4
+tags:
+  - architecture
+  - release
+  - failure-fix
+taskId: null
+kind: task
+status: unclaimed
+---
+# Clean up benchmarks/ into a coherent, rerunnable release-benchmark module
+
+## Question
+
+`benchmarks/` mixes two genuinely different things under one folder with no
+separation between them: (1) a real, documented, rerunnable release-benchmark
+system, and (2) a growing pile of one-off validation scripts written per
+wayfinder ticket that were never meant to run again. Decide the right
+structure to make (1) presentable and reliably rerunnable for every new
+release, and where (2) should live so it stops looking like part of the same
+system.
+
+## Context
+
+**What's already coherent** (`benchmarks/README.md`): a documented
+three-tier system — `npm test` (unit), `npm run test:e2e` (sanity,
+`benchmarks/e2e-runner.js`), `npm run bench` (full, same runner
+`--full`) — plus `bench:report`/`bench:view` to re-render results, and a
+family of `bench:token-ab`/`bench:gitlog-ab`/`bench:swebench-ab`/
+`bench:hint-follow` scripts wired into `package.json`. This part already
+does what the ticket asks for.
+
+**What isn't wired in at all**: at least 7 subdirectories —
+`architecture-card-ab/`, `near-dup-ab/`, `nli-polarity-ab/`, `pruning-ab/`,
+`reranker-gate/`, `salvage-expansion/`, plus assorted loose top-level
+scripts (`token-economics.mjs`, `generate-dashboard.js`) — that are
+one-time A/B validation scripts written to resolve a specific wayfinder
+ticket (e.g. `near-dup-ab/run-ab.ts` for Ticket 7, `nli-polarity-ab/run-ab.ts`
+for Ticket 8, both under Map — neuron 2.4.2). None of these have a
+`package.json` script entry; each is invoked manually via
+`npx tsx benchmarks/<dir>/run-ab.ts`. They were written as ticket evidence,
+not as a recurring release gate — forcing them into the same "rerun every
+release" shape as `bench:*` may not even be correct for all of them.
+
+## Design questions to resolve before implementation
+
+- Which existing subdirectories are genuinely **release benchmarks**
+  (should be rerunnable, wired into `package.json`, part of the
+  documented tier system) versus **one-time ticket-validation evidence**
+  (historical, cited from a ticket/findings doc, not meant to be rerun on
+  every release)? Sorting this is most of the work — don't assume every
+  subdirectory belongs in the "coherent module."
+- Where does ticket-validation evidence live once separated out — stays
+  under `benchmarks/` in a clearly-labeled subtree (e.g.
+  `benchmarks/validations/`), or moves closer to the findings docs that
+  cite it (`docs/design/write-time-quality/*-findings.md` already link to
+  `benchmarks/near-dup-ab/raw-scores.json` etc. by path — moving the
+  scripts would break those links unless updated in lockstep)?
+- For whatever counts as the real release-benchmark set: one consistent
+  entry-point convention (npm script + CLI args), one consistent output
+  location (`benchmarks/reports/` already exists — is everything supposed
+  to land there?), one consistent corpus/fixture convention.
+- `results/` vs `reports/` — two top-level output directories exist today;
+  confirm whether both are still live or one is dead weight.
+- `agent-memory-benchmark/` is an external harness (per `.gitignore`'s own
+  comment, "cloned, not vendored") — confirm it's excluded correctly
+  everywhere (docs, any future module boundary) and isn't accidentally
+  swept into whatever "coherent module" packaging happens here.
+
+## Deliverables
+
+- [ ] Each existing subdirectory classified: release-benchmark or
+      ticket-validation-evidence
+- [ ] Release-benchmark set given one consistent entry-point/output
+      convention, documented in `benchmarks/README.md`
+- [ ] Ticket-validation evidence relocated (or explicitly left in place
+      with rationale), with every doc/ticket link that references it by
+      path updated to match
+- [ ] `npm run bench` (or equivalent) runs clean end to end against a
+      current build
+- [ ] `npm test` and `tsc` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Requested directly by the maintainer as a standalone
+  tracker entry (not attached to any wayfinder map).
+
+---
+id: f946d84b-7049-4a81-9c6b-96643befde2a
+createdAt: 2026-08-15T19:22:10.445Z
+importance: 4
+tags:
+  - testing
+  - deep
+  - scan
+taskId: null
+kind: task
+status: unclaimed
+---
+# Relocate tests out of src/ into test/
+
+## Question
+
+Move test files currently living inside `src/` into the top-level `test/`
+folder, so `src/` holds only production source.
+
+## Context
+
+**Scale of the change**: 63 `*.test.ts` files currently live inside `src/`,
+colocated next to the source file they exercise (e.g.
+`src/components/reranker.ts` / `src/components/reranker.ts.test.ts`,
+`src/storage/mdStorageAdapter.ts` / `.test.ts`). This is a full,
+consistent pattern across the entire tree, not scattered debris — every
+one of these follows the same naming convention and `tsconfig.json`
+already carries a dedicated exclude for it (`"exclude": ["src/**/*.test.ts",
+"src/e2e/**"]`), and `package.json`'s `test` script runs
+`vitest run --dir src` specifically to pick them up in place. Colocated
+unit tests next to source is itself a common, often deliberate convention
+(easy to find the test for a file, easy to see coverage gaps) — worth
+confirming this move is actually wanted, not just assumed, before doing
+the mechanical work.
+
+Separately, `test/e2e/` already exists as a **different** kind of test
+suite — Pillar-based end-to-end/integration tests (e.g.
+`test/e2e/antagonistic-write.test.ts`) that exercise the built CLI as a
+subprocess, not individual units. That split (unit tests colocated in
+src/, e2e tests in top-level test/) may be the intended architecture
+already, in which case this ticket's job is confirming/documenting that
+split rather than moving all 63 files into `test/`.
+
+## Design questions to resolve before implementation
+
+- Is colocation itself the problem (maintainer wants `src/` completely
+  test-free, moving all 63 files into `test/` mirroring `src/`'s
+  directory structure), or is the actual complaint something narrower —
+  e.g. specific test files that don't follow the `*.test.ts` colocation
+  pattern and are genuinely misplaced? Confirm which before starting;
+  the two are very different amounts of work.
+- If a full move is confirmed: mirrored directory structure under `test/`
+  (e.g. `test/components/reranker.test.ts`) or flattened? Import paths in
+  every one of the 63 files reference sibling source files by relative
+  path (`../` chains) and will all need updating.
+- Tooling that assumes colocation and needs updating in lockstep:
+  `tsconfig.json`'s exclude list, `package.json`'s `test` script
+  (`vitest run --dir src`), any vitest config controlling test discovery,
+  and coverage configuration if it exists.
+- Does `test/e2e/` stay where it is, or does this ticket also reorganize
+  it as part of a single `test/` layout decision?
+
+## Deliverables
+
+- [ ] Scope decided (full move vs. narrower fix) with the maintainer
+- [ ] Target `test/` layout decided
+- [ ] All in-scope files moved, imports updated
+- [ ] `tsconfig.json`, `package.json` test scripts, and any vitest config
+      updated to match the new layout
+- [ ] `npm test` runs clean at the same pass count as before the move
+- [ ] `tsc` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Requested directly by the maintainer as a standalone
+  tracker entry (not attached to any wayfinder map).
+
+---
+id: 3f174be0-ece9-4879-8259-33e1c3df39c6
+createdAt: 2026-08-15T19:22:10.957Z
+importance: 4
+tags:
+  - release
+  - git
+  - failure-fix
+taskId: null
+kind: task
+status: unclaimed
+---
+# Clean up stray files at the repo root
+
+## Question
+
+Several files sitting at the repo root look like leftover scratch/planning
+artifacts rather than live, maintained documentation. Decide, for each,
+whether to delete, relocate, or fold into an existing doc.
+
+## Context
+
+Found by direct inspection of the repo root:
+
+- **`RELEASE_2.0.0.md`** — a release checklist/notes doc for v2.0.0
+  specifically (last touched 2026-07-31, the 2.1.0-rc1 scanner/summarizer
+  commit). The project is now well past that (`CHANGELOG.md` is the live,
+  maintained release history and already covers 2.0.0 onward). This file
+  reads as superseded by `CHANGELOG.md`, sitting at root as a one-off
+  leftover rather than an ongoing reference.
+- **`TEST_INFRA.md`** and **`TEST_READY.md`** — planning/coverage-tracking
+  docs written while building the `md-file-management` e2e test module
+  (`test/e2e/mdFileManagement.e2e.test.ts`). Both sit at repo root rather
+  than in `docs/` or alongside the test module they describe. `TEST_INFRA.md`
+  was last touched 2026-08-08 (a config-related commit, likely incidental),
+  `TEST_READY.md` not touched since the original 2026-07-28 implementation
+  commit — plausibly stale status trackers for work that's long since
+  landed and is now covered by the actual test suite + `benchmarks/README.md`.
+- **`tmp/`** — a root-level directory, tracked in git, holding two files
+  (`24-live-capture-1.txt`, `24-live-capture-2.txt`) that are genuine
+  ticket evidence (captured hook-injection output from Ticket 24 / Map —
+  neuron 2.4.0's pre-command-hook dogfooding session) — not disposable
+  scratch. But the directory is named and positioned exactly like a scratch
+  space, and critically **is not in `.gitignore`** — anything else dropped
+  in `tmp/` in the future (by a human or an agent) will get committed by
+  accident, the opposite of what a directory named `tmp/` implies.
+
+None of this is disposable-without-thought: the `tmp/` evidence in
+particular is real ticket history and shouldn't just be deleted. This
+ticket is about giving each of these an intentional home, not a blanket
+sweep.
+
+## Deliverables
+
+- [ ] `RELEASE_2.0.0.md`: deleted (superseded by `CHANGELOG.md`) or
+      explicitly kept with a stated reason
+- [ ] `TEST_INFRA.md` / `TEST_READY.md`: deleted, merged into
+      `benchmarks/README.md` or `docs/`, or relocated next to
+      `test/e2e/mdFileManagement.e2e.test.ts` if any of their content is
+      still load-bearing
+- [ ] `tmp/`'s two evidence files relocated somewhere that reads as
+      permanent record (e.g. alongside other ticket evidence under
+      `docs/design/` or `benchmarks/reports/`), and the ticket(s) that
+      might reference them checked for path updates
+- [ ] Either `tmp/` is removed entirely once its current contents move, or
+      it's kept as deliberate scratch space and added to `.gitignore` so
+      this doesn't recur
+- [ ] A quick pass for anything else in the same category (leftover
+      root-level docs, accidentally-tracked scratch output) turned up
+      during this ticket's own work, since this survey wasn't exhaustive
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Requested directly by the maintainer as a standalone
+  tracker entry (not attached to any wayfinder map). Candidates above
+  found by a direct root-level survey, not a full repo sweep — the last
+  deliverable exists because this ticket's own execution is likely to
+  surface more.
+
+---
+id: fca8b0c9-437f-4fa9-afdd-d30aa240c682
+createdAt: 2026-08-15T19:22:11.434Z
+importance: 4
+tags:
+  - architecture
+  - release
+  - failure-fix
+taskId: null
+kind: research
+status: unclaimed
+---
+# Audit the codebase for refactor opportunities
+
+## Question
+
+Survey `src/` and identify concrete refactor opportunities — not perform
+them. Produce a prioritized findings doc the maintainer can turn into
+follow-up tickets.
+
+## Context
+
+No specific pain point named — this is a general health audit, not a
+response to a known problem. Scope it broadly but concretely: look for
+real signals (duplicated logic, oversized modules, leaky abstractions,
+inconsistent patterns across similar code, dead code, tangled
+dependencies) rather than stylistic nitpicks. The `codebase-design` skill's
+deep-module vocabulary (interface depth, where a seam belongs, testability)
+is a good lens to audit through, if useful.
+
+Two adjacent tickets from this same session are relevant context, not
+duplicates: the benchmarks/ cleanup and test-relocation tickets are
+structural/organizational (where files live); this ticket is about the
+production code's own design (how modules are shaped), a different axis
+entirely.
+
+## Deliverables
+
+- [ ] A findings doc (linked from this ticket, not pasted inline) listing
+      each identified opportunity: where it is, what's wrong with the
+      current shape, and a rough size/risk estimate for fixing it
+- [ ] Findings prioritized — flag anything that's blocking or actively
+      causing bugs/friction versus general improvement
+- [ ] Explicit recommendation on which findings deserve their own
+      follow-up ticket versus which are minor enough to fix opportunistically
+- [ ] No code changes made as part of this ticket — audit only, per its
+      own scope
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Requested directly by the maintainer as a standalone
+  tracker entry (not attached to any wayfinder map).
