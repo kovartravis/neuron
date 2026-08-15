@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-08-13T11:57:22.729Z",
+  "timestamp": "2026-08-15T03:52:35.446Z",
   "tier": "sanity",
-  "durationMs": 29109,
-  "durationMin": 0.49,
+  "durationMs": 30505,
+  "durationMin": 0.51,
   "meetsRuntimeFloor": true,
   "runtimeFloorMs": 0,
-  "overallStatus": "FAILED",
-  "grade": "B",
-  "scorePercent": 93,
+  "overallStatus": "PASSED",
+  "grade": "A+",
+  "scorePercent": 100,
   "pillarsRan": 14,
-  "pillarsPassed": 13,
-  "pillarsFailed": 1,
+  "pillarsPassed": 14,
+  "pillarsFailed": 0,
   "suiteConfig": {
     "SCAN_ITERATIONS": 3,
     "DRIFT_ITERATIONS": 3,
@@ -22,19 +22,17 @@
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
-      "status": "FAILED",
-      "durationMs": 637.1659579999996,
-      "failureMessages": [
-        "AssertionError: adversarial recall@5 collapsed: expected 0.375 to be greater than or equal to 0.4\n    at /Users/Travis/Repos/neuron/test/e2e/adversarial-recall.test.ts:199:63\n    at file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:533:5\n    at runTest (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1056:11)\n    at runSuite (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1205:15)\n    at runSuite (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1205:15)\n    at runFiles (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1262:5)\n    at startTests (file:///Users/Travis/Repos/neuron/node_modules/@vitest/runner/dist/index.js:1271:3)\n    at file:///Users/Travis/Repos/neuron/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:126:11\n    at withEnv (file:///Users/Travis/Repos/neuron/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:90:5)\n    at run (file:///Users/Travis/Repos/neuron/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:112:3)"
-      ],
+      "status": "PASSED",
+      "durationMs": 855.2532499999998,
+      "failureMessages": [],
       "metrics": {
         "samples": 8,
-        "p50Ms": 48.55,
-        "p95Ms": 188.43,
-        "p99Ms": 234.26,
-        "meanMs": 76.49,
-        "maxMs": 245.71,
-        "throughputPerSec": 13.07,
+        "p50Ms": 95.45,
+        "p95Ms": 199.09,
+        "p99Ms": 234.87,
+        "meanMs": 104.85,
+        "maxMs": 243.81,
+        "throughputPerSec": 9.54,
         "detail": {
           "corpusSize": 308,
           "cases": 8,
@@ -119,16 +117,16 @@
     {
       "pillar": "Pillar 13: Antagonistic Recall & Abstention",
       "status": "PASSED",
-      "durationMs": 353.57345799999894,
+      "durationMs": 434.474083000001,
       "failureMessages": [],
       "metrics": {
         "samples": 19,
-        "p50Ms": 17.63,
-        "p95Ms": 22.79,
-        "p99Ms": 30.27,
-        "meanMs": 18.58,
-        "maxMs": 32.14,
-        "throughputPerSec": 53.84,
+        "p50Ms": 21.54,
+        "p95Ms": 33.18,
+        "p99Ms": 37.67,
+        "meanMs": 22.79,
+        "maxMs": 38.79,
+        "throughputPerSec": 43.87,
         "detail": {
           "cases": 19,
           "falseAccepts": 0,
@@ -158,22 +156,22 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "status": "PASSED",
-      "durationMs": 6448.297874999998,
+      "durationMs": 9844.602208,
       "failureMessages": [],
       "metrics": {
         "samples": 1,
-        "p50Ms": 36.27,
-        "p95Ms": 36.27,
-        "p99Ms": 36.27,
-        "meanMs": 36.27,
-        "maxMs": 36.27,
-        "throughputPerSec": 27.57,
+        "p50Ms": 62.49,
+        "p95Ms": 62.49,
+        "p99Ms": 62.49,
+        "meanMs": 62.49,
+        "maxMs": 62.49,
+        "throughputPerSec": 16,
         "detail": {
           "curve": [
             {
               "corpusSize": 500,
-              "p50Ms": 36.267,
-              "p95Ms": 49.326,
+              "p50Ms": 62.491,
+              "p95Ms": 83.158,
               "recallAt1": 0.125
             }
           ]
@@ -183,16 +181,16 @@
     {
       "pillar": "Pillar 6: Real Pipeline Integrity",
       "status": "PASSED",
-      "durationMs": 11190.945083,
+      "durationMs": 10030.6405,
       "failureMessages": [],
       "metrics": {
         "samples": 3,
         "p50Ms": 0.06,
-        "p95Ms": 0.24,
-        "p99Ms": 0.25,
-        "meanMs": 0.11,
-        "maxMs": 0.26,
-        "throughputPerSec": 9445.1,
+        "p95Ms": 0.28,
+        "p99Ms": 0.3,
+        "meanMs": 0.13,
+        "maxMs": 0.31,
+        "throughputPerSec": 7926.92,
         "detail": {
           "coldSummaries": 3,
           "fallbackCount": 0,
@@ -203,16 +201,16 @@
     {
       "pillar": "Pillar 1: Polyglot AST Traversal at Scale",
       "status": "PASSED",
-      "durationMs": 1085.5440000000017,
+      "durationMs": 3233.380333000001,
       "failureMessages": [],
       "metrics": {
         "samples": 3,
-        "p50Ms": 176.56,
-        "p95Ms": 737.12,
-        "p99Ms": 786.95,
-        "meanMs": 361.05,
-        "maxMs": 799.4,
-        "throughputPerSec": 2.77,
+        "p50Ms": 556,
+        "p95Ms": 2116.5,
+        "p99Ms": 2255.21,
+        "meanMs": 1057.47,
+        "maxMs": 2289.89,
+        "throughputPerSec": 0.95,
         "detail": {
           "modules": 7,
           "componentsScanned": 55,
@@ -237,16 +235,16 @@
     {
       "pillar": "Pillar 2: Adversarial Semantic Recall & Distractor Resistance",
       "status": "PASSED",
-      "durationMs": 3638.359542,
+      "durationMs": 3851.9952920000014,
       "failureMessages": [],
       "metrics": {
         "samples": 30,
-        "p50Ms": 18.48,
-        "p95Ms": 29.35,
-        "p99Ms": 81.52,
-        "meanMs": 23.17,
-        "maxMs": 102.74,
-        "throughputPerSec": 43.16,
+        "p50Ms": 17.68,
+        "p95Ms": 26.11,
+        "p99Ms": 88.27,
+        "meanMs": 22.13,
+        "maxMs": 113.41,
+        "throughputPerSec": 45.19,
         "detail": {
           "corpusSize": 203,
           "queries": 30,
@@ -258,36 +256,36 @@
     {
       "pillar": "Pillar 3: High-Concurrency Multi-Agent Stress",
       "status": "PASSED",
-      "durationMs": 1226.8248329999988,
+      "durationMs": 1178.267499999998,
       "failureMessages": [],
       "metrics": {
         "samples": 1,
-        "p50Ms": 1225.46,
-        "p95Ms": 1225.46,
-        "p99Ms": 1225.46,
-        "meanMs": 1225.46,
-        "maxMs": 1225.46,
-        "throughputPerSec": 0.82,
+        "p50Ms": 1177.31,
+        "p95Ms": 1177.31,
+        "p99Ms": 1177.31,
+        "meanMs": 1177.31,
+        "maxMs": 1177.31,
+        "throughputPerSec": 0.85,
         "detail": {
           "operations": 100,
           "failures": 0,
-          "opsPerSec": 82
+          "opsPerSec": 85
         }
       }
     },
     {
       "pillar": "Pillar 4: Architectural Drift Detection & Latency SLA",
       "status": "PASSED",
-      "durationMs": 2895.551292,
+      "durationMs": 3245.181875000002,
       "failureMessages": [],
       "metrics": {
         "samples": 3,
-        "p50Ms": 221.71,
-        "p95Ms": 244.13,
-        "p99Ms": 246.13,
-        "meanMs": 219.4,
-        "maxMs": 246.62,
-        "throughputPerSec": 4.56,
+        "p50Ms": 174.62,
+        "p95Ms": 208.32,
+        "p99Ms": 211.32,
+        "meanMs": 184.18,
+        "maxMs": 212.06,
+        "throughputPerSec": 5.43,
         "detail": {
           "baselinePhantomChanges": 0,
           "mutatedChangesDetected": 3,
@@ -300,16 +298,16 @@
     {
       "pillar": "Pillar 5: Storage Corruption & Self-Healing",
       "status": "PASSED",
-      "durationMs": 386.31825000000026,
+      "durationMs": 237.62374999999884,
       "failureMessages": [],
       "metrics": {
         "samples": 20,
-        "p50Ms": 12.58,
-        "p95Ms": 15.51,
-        "p99Ms": 16.97,
-        "meanMs": 13.14,
-        "maxMs": 17.33,
-        "throughputPerSec": 76.09,
+        "p50Ms": 11.3,
+        "p95Ms": 13.03,
+        "p99Ms": 15.24,
+        "meanMs": 11.59,
+        "maxMs": 15.8,
+        "throughputPerSec": 86.27,
         "detail": {
           "corruptionVariants": 5,
           "probesSurvived": 20
@@ -319,16 +317,16 @@
     {
       "pillar": "Pillar 8: Multi-Process Contention & Crash Recovery",
       "status": "PASSED",
-      "durationMs": 2543.668,
+      "durationMs": 2031.031167,
       "failureMessages": [],
       "metrics": {
         "samples": 1,
-        "p50Ms": 2392.34,
-        "p95Ms": 2392.34,
-        "p99Ms": 2392.34,
-        "meanMs": 2392.34,
-        "maxMs": 2392.34,
-        "throughputPerSec": 0.42,
+        "p50Ms": 2010.85,
+        "p95Ms": 2010.85,
+        "p99Ms": 2010.85,
+        "meanMs": 2010.85,
+        "maxMs": 2010.85,
+        "throughputPerSec": 0.5,
         "detail": {
           "processes": 3,
           "writesPerWorker": 25,
@@ -343,8 +341,8 @@
           "initErrorSample": [],
           "nonZeroExits": 0,
           "otherErrors": [],
-          "wallMs": 2392,
-          "writesPerSec": 21,
+          "wallMs": 2011,
+          "writesPerSec": 25,
           "crashRecovery": [
             {
               "round": 0,
@@ -361,14 +359,14 @@
     {
       "pillar": "Pillar 8: Multi-Process Contention & Crash Recovery — SIGKILL mid-write recovery",
       "status": "PASSED",
-      "durationMs": 9146.582833,
+      "durationMs": 2937.374167,
       "failureMessages": [],
       "metrics": null
     },
     {
       "pillar": "Pillar 10: Prune Safety",
       "status": "PASSED",
-      "durationMs": 785.756917,
+      "durationMs": 1050.717333,
       "failureMessages": [],
       "metrics": {
         "samples": 0,
@@ -431,16 +429,16 @@
     {
       "pillar": "Pillar 11: Category Strategy A/B",
       "status": "PASSED",
-      "durationMs": 26187.274458,
+      "durationMs": 27108.559458,
       "failureMessages": [],
       "metrics": {
         "samples": 18,
-        "p50Ms": 228.24,
-        "p95Ms": 3874,
-        "p99Ms": 17335.09,
-        "meanMs": 1391.5,
-        "maxMs": 20700.36,
-        "throughputPerSec": 0.72,
+        "p50Ms": 227.18,
+        "p95Ms": 4000.49,
+        "p99Ms": 18013.24,
+        "meanMs": 1442.07,
+        "maxMs": 21516.43,
+        "throughputPerSec": 0.69,
         "detail": {
           "cases": 9,
           "accuracy": {
@@ -467,16 +465,16 @@
     {
       "pillar": "Pillar 12: Enrichment Retrieval Non-Regression",
       "status": "PASSED",
-      "durationMs": 1414.3651250000003,
+      "durationMs": 1530.9199579999986,
       "failureMessages": [],
       "metrics": {
         "samples": 16,
-        "p50Ms": 17.45,
-        "p95Ms": 66.08,
-        "p99Ms": 72.66,
-        "meanMs": 22.9,
-        "maxMs": 74.3,
-        "throughputPerSec": 43.67,
+        "p50Ms": 17.51,
+        "p95Ms": 65.06,
+        "p99Ms": 72.98,
+        "meanMs": 22.64,
+        "maxMs": 74.96,
+        "throughputPerSec": 44.18,
         "detail": {
           "corpusSize": 158,
           "cases": 8,
