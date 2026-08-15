@@ -26722,7 +26722,7 @@ tags:
 taskId: null
 kind: task
 map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
-status: unclaimed
+status: resolved
 ---
 # 46 — Verify 2.4.0-rc3 Live Once PR #8 Merges
 
@@ -26754,13 +26754,27 @@ can't be done until the PR actually merges.
 
 ## Deliverables
 
-- [ ] PR #8 confirmed merged
-- [ ] `2.4.0-rc3` verified live on npm's `rc` dist-tag
-- [ ] `v2.4.0-rc3` verified on `origin`'s tags
-- [ ] Fresh global install spot-checked
+- [x] PR #8 confirmed merged
+- [x] `2.4.0-rc3` verified live on npm's `rc` dist-tag
+- [x] `v2.4.0-rc3` verified on `origin`'s tags
+- [x] Fresh global install spot-checked
 
 ## Answer
 
-_Not yet resolved._
+**Yes, all four confirmed live, 2026-08-15.** PR #8 merged by the
+maintainer directly on GitHub (`ccd5291`, 2026-08-15T10:56:33Z). Watched
+`publish.yml`'s real run to completion (`build-and-test` then `publish`,
+both green) rather than assuming it fired. `npm view
+@kovartravis/neuron dist-tags` shows `rc: '2.4.0-rc3'`; `git ls-remote
+--tags origin` shows `v2.4.0-rc3` at the merge commit. `npm install -g
+@kovartravis/neuron@rc` installs `2.4.0-rc3` cleanly and `neuron --help`
+runs. (Scope item 4's literal `neuron --version` isn't a real flag this
+CLI supports — no bug, just an imprecise Scope line; `npm list -g` and a
+working `--help` invocation are the real version/functionality check.)
+
+Local `main` fast-forwarded to `ccd5291` in the same session — 39 commits
+behind before this, since this session's own work had been happening on
+feature branches diverged from an older point. This map's frontier is now
+fully empty; see the map's own Notes for the close-out entry.
 
 ## Comments
