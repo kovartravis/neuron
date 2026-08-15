@@ -142,6 +142,23 @@ export function recordPrePromptTurn(projectRoot: string, sessionId: string, ids:
 }
 
 /**
+ * Records a `pre-command` injection's ids into the same session-wide dedupe
+ * set `pre-prompt`/`session-start` share, but spends nothing against the
+ * epoch char budget (`chars: 0`) and never counts as a "turn". `pre-command`
+ * fires per tool call rather than per prompt turn — often many times per
+ * turn — so charging it against the same budget `pre-prompt`'s hard stop
+ * reads would let a busy tool-call sequence exhaust a turn's budget before
+ * the prompt itself ever ran, starving the higher-value injection. Sharing
+ * only the id set (not the spend) still gets the thing that actually caused
+ * live repetition: once any hook point has shown an entry this epoch, none
+ * of the others will show it again.
+ */
+export function recordPreCommandInjection(projectRoot: string, sessionId: string, ids: string[]): void {
+  if (ids.length === 0) return;
+  recordActivity(projectRoot, sessionId, ids, 0, false);
+}
+
+/**
  * Rolls the ledger into a new epoch: archives the finished epoch's cost into
  * `history`, then resets the dedupe set, spend and turn count. Bound to the
  * `context-reset` lifecycle point (ADR 0014 §5): compaction can silently drop

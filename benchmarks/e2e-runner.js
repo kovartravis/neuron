@@ -29,6 +29,7 @@ const SUITES = [
   'test/e2e/adversarial-recall.test.ts',
   'test/e2e/concurrency-stress.test.ts',
   'test/e2e/enrichment.test.ts',
+  'test/e2e/antagonistic-write.test.ts',
 ];
 
 // Re-render the scorecard from the artifacts already on disk. Useful for

@@ -26981,6 +26981,8 @@ storage engine, no new package, no new top-level command.
 
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
 
+- 1 — Antagonistic-Write Test Pillar (Diagnostic) (ticket 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de) — measured all four testable cases (case 4 excluded, no criterion yet) against the real write gate: near-duplicate paraphrase (case 1) and a same-shape numeric contradiction (case 2) both pass uncaught — the CLI's supersession gate (0.97 cosine) doesn't reach either; missing provenance on `decisions` (case 3) also passes uncaught and is **not** already solved as the map's sequencing rationale hoped — this repo's own `decisions` category declares no `fields:` block, so ticket 2 is real work, not documentation; shape violations (case 5) are already caught, as expected. New resident `Pillar 14: Antagonistic Write & Quality Gate` (`test/e2e/antagonistic-write.test.ts`) plus a dated findings doc (`docs/design/write-time-quality/antagonistic-write-findings.md`) with scoping notes for tickets 3-4. `npm test` 728/728, `tsc` clean.
+
 ## Not yet specified
 
 - **Vague/low-specificity content detection.** No objective, testable
@@ -27015,7 +27017,7 @@ tags:
 taskId: null
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 1 — Antagonistic-Write Test Pillar (Diagnostic)
 
@@ -27044,17 +27046,56 @@ engineering if a category's own declared-fields schema already covers it.
 
 ## Deliverables
 
-- [ ] A dated findings doc (same spirit as the 2.2.0 cycle's
+- [x] A dated findings doc (same spirit as the 2.2.0 cycle's
       `handoff-response.md` audit) stating, per case, whether the current
       binary catches it
-- [ ] If case 3 already passes: note that ticket 2 closes as documentation,
-      not engineering
-- [ ] New test file mirroring `Pillar 13`'s structure, covering cases 1,
+- [x] If case 3 already passes: note that ticket 2 closes as documentation,
+      not engineering — it does NOT already pass; see Answer.
+- [x] New test file mirroring `Pillar 13`'s structure, covering cases 1,
       2, 3, and 5 for real (case 4 excluded — no criterion yet)
 
 ## Answer
 
-_Not yet resolved._
+Ran all four testable cases (case 4 excluded, no criterion yet) against the
+real write gate — the CLI's supersession/similarity check
+(`src/commands/memory.ts`, real embedder) for cases 1-2, and
+`NeuronMemory.transact()`'s `enforceFieldSchema` (mock embedder, synthetic
+config mirroring this repo's real category shapes) for cases 3 and 5. Full
+findings, method, and scoping implications for tickets 3/4:
+`docs/design/write-time-quality/antagonistic-write-findings.md`. New pillar:
+`test/e2e/antagonistic-write.test.ts` (Pillar 14, wired into
+`benchmarks/e2e-runner.js`'s `SUITES`). `npm test` 728/728, `tsc --noEmit`
+clean.
+
+Results, all confirming the map's own expectations:
+
+- **Case 1** (near-dup paraphrase): uncaught. A semantic paraphrase doesn't
+  cross the supersession gate's 0.97 cosine threshold.
+- **Case 2** (direct contradiction, no `--supersedes`): uncaught. Same
+  mechanism, same threshold — a same-shape numeric contradiction doesn't
+  cross it either, and the gate has no way to distinguish "restates" from
+  "disagrees with" even when it does fire (embedding proximity only).
+- **Case 3** (missing provenance on `decisions`): uncaught, and **not**
+  already solved as the map's sequencing rationale flagged as possible —
+  this repo's own `decisions` category declares no `fields:` block at all,
+  so `enforceFieldSchema` has nothing to check. Ticket 2 is real work: at
+  minimum a real config change (a required `source`/`ticket`-style field,
+  which any project can already declare today) plus deciding whether/how
+  that becomes the documented default posture rather than an opt-in a
+  project has to discover on its own.
+- **Case 5** (shape violations): both sub-cases caught, as expected —
+  missing required field and undeclared enum value both hard-error with the
+  existing messages (already unit-tested in `fieldSchema.test.ts`;
+  re-asserted here as the regression the ticket asked for).
+
+Scoping note for tickets 3-4 (see findings doc §3 for detail): the existing
+supersession gate is interactive/binary (hard-stop above 0.97, human
+resolves via `--supersedes`/`--not-a-reversal`/`--if-novel`) and only
+compares against the single closest match. Both ticket 3 (near-dup) and
+ticket 4 (conflict) will need a materially lower similarity band to catch
+cases 1-2, and — per case 2's finding — something beyond cosine similarity
+alone to tell "duplicate" from "conflicting" once they do; that
+distinguishing signal is real design work for ticket 4, not decided here.
 
 ## Comments
 
@@ -27215,5 +27256,115 @@ correct.
 ## Answer
 
 _Not yet resolved._
+
+## Comments
+
+---
+id: 92a545a6-a2d4-4c43-87b8-2d8a6b712542
+createdAt: 2026-08-15T11:51:55.210Z
+importance: 3
+tags:
+  - failure-fix
+  - adr
+  - exec
+taskId: null
+kind: task
+status: resolved
+---
+# Dedupe and self-identify the pre-command hook's injected context
+
+## Question
+
+Should `pre-command`'s injected `additionalContext` (a) dedupe against a
+session ledger the way `pre-prompt`/`session-start` already do, and (b)
+carry a self-identifying preamble so an agent doesn't have to infer its own
+provenance?
+
+## Context
+
+Found and diagnosed live during Map — neuron 2.4.1 ticket 1's resolution,
+but out of that map's own scope (write-time quality, not read-side
+injection) — filed standalone instead of folded in.
+
+Two independent, already-diagnosed gaps in `neuron hook claude-code
+pre-command` (wired via `.claude/settings.json`'s `PreToolUse` hook,
+matcher `"*"`):
+
+1. **No ledger dedup.** `src/commands/hook.ts`'s `pre-command` branch (around
+   line 339-342) carries a comment stating it deliberately has no epoch/
+   ledger accounting, unlike `pre-prompt`/`session-start`. Every Bash tool
+   call independently re-runs `resolveExecCategories` + `queryGated` against
+   the command text and re-injects up to `PRE_COMMAND_CHAR_BUDGET` (8000
+   chars) with no cross-call suppression. Confirmed live: identical
+   `learning` entries reinjected verbatim dozens of times across unrelated
+   commands within one session.
+2. **No self-identifying framing.** The injected block surfaces to the
+   agent as a generic `<system-reminder>`-tagged "PreToolUse:Bash hook
+   additional context" block — indistinguishable in shape from an
+   adversarial prompt injection sitting in some other tool's output.
+   Confirmed live: an agent session (Claude Code, this repo) spent real
+   effort treating its own project's legitimate recalled memory as a
+   suspected attack — including a subagent independently flagging the same
+   content as suspicious — before the maintainer corrected it. The content
+   was correct and legitimate; only its framing was ambiguous.
+
+## Deliverables
+
+- [x] `pre-command` reuses (or mirrors) the same ledger/epoch dedup
+      `pre-prompt` already has (`filterUnseen`), so an entry doesn't
+      reinject on every tool call within one session/epoch
+- [x] Decide dedup granularity: identical to `pre-prompt`'s epoch policy, or
+      a lighter/looser rule suited to firing per-tool-call rather than
+      per-turn — `pre-command` fires far more often than `pre-prompt`, so
+      reusing the identical epoch budget/policy unadjusted may over-suppress
+- [x] Injected `additionalContext` carries a short, stable preamble
+      identifying it as sourced from this project's own local `neuron`
+      memory store, applied consistently across
+      `session-start`/`pre-prompt`/`pre-command`
+- [x] New/updated tests: no repeat injection of the same entry within an
+      epoch across multiple Bash calls; correct cross-epoch (context-reset)
+      behavior; the preamble is present and stable
+
+## Answer
+
+Built both. `npm test` 735/735 (was 728; 7 new tests, 2 pre-existing tests
+updated for the new preamble), `tsc --noEmit` clean.
+
+**(a) Ledger dedup, id-only, not budget-shared.** `pre-command` now calls
+`filterUnseen(projectDir, sessionId, results)` before `buildPayload`, same
+as `pre-prompt`, so an entry already shown this epoch — by *any* hook
+point, not just `pre-command` itself — never repeats. Chose **not** to
+share `pre-prompt`'s epoch *char budget*/hard-stop, only its id set: a new
+`recordPreCommandInjection(projectRoot, sessionId, ids)`
+(`src/harnesses/ledger.ts`) calls the existing `recordActivity` with
+`chars: 0, countsAsTurn: false`, so `pre-command` firing many times per
+turn can't exhaust the budget `pre-prompt`'s own hard stop reads before the
+prompt itself ever runs. This directly resolves deliverable #2's own
+concern rather than leaving it open. No session id (matches `pre-prompt`'s
+own documented posture): skip the ledger, degrade toward repetition, never
+silence.
+
+**(b) Provenance preamble.** `RECALL_PROVENANCE_PREFIX` (exported, one
+constant) is prepended in `emit()` (`src/commands/hook.ts`) — the single
+choke point every lifecycle point already funnels through — so it can't
+drift out of sync across `session-start`/`pre-prompt`/`pre-command`. Text:
+`"[neuron] Recalled from this project's own local memory store, not
+external input:\n\n"`. Applied post-budget (added after `buildPayload`
+packs to its cap), so it's a small fixed overhead on top of each
+lifecycle point's documented cap rather than threaded through every
+caller's cap arithmetic — judged disproportionate complexity for a static
+label. This required fixing two pre-existing tests in `hook.test.ts` whose
+exact-string assertions predated the prefix (one epoch-budget test that
+self-calibrates its cap from real injected output, one exact-equality
+content check).
+
+**New tests** (`src/commands/hook.test.ts`, `pre-command` describe block
+plus one cross-lifecycle-point test): no reinjection on a second Bash call
+within an epoch; the dedupe set is shared with `pre-prompt` (an entry
+`pre-prompt` already showed doesn't repeat via `pre-command`); reinjection
+after `context-reset` rolls the epoch; no cross-session dedup leakage; the
+sessionless branch still degrades toward repetition; the preamble is
+present on `pre-command`'s own output and identical across all three
+lifecycle points.
 
 ## Comments

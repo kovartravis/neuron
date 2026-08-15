@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-08-15T11:59:45.337Z",
+  "pillars": [
+    {
+      "pillar": "Pillar 14: Antagonistic Write & Quality Gate (Diagnostic)",
+      "samples": 4,
+      "p50Ms": 218.96,
+      "p95Ms": 443.98,
+      "p99Ms": 445.05,
+      "minMs": 0.22,
+      "maxMs": 445.32,
+      "meanMs": 220.87,
+      "totalMs": 883.46,
+      "throughputPerSec": 4.53,
+      "extra": {
+        "results": [
+          {
+            "id": "case-1-near-duplicate-paraphrase",
+            "caseNum": 1,
+            "description": "Near-duplicate content (paraphrase, not exact-hash match) of a live entry",
+            "caught": false,
+            "detail": "accepted: {\"id\":\"1bc6517d-8d8c-4427-8cb6-af2128e10f4e\",\"status\":\"created\",\"project\":\"neuron\"}\n"
+          },
+          {
+            "id": "case-2-direct-contradiction",
+            "caseNum": 2,
+            "description": "Content that directly contradicts a live entry in the same category, no --supersedes",
+            "caught": false,
+            "detail": "accepted: {\"id\":\"c634f21d-25c8-4daf-a9c7-8a3c89972d01\",\"status\":\"created\",\"project\":\"neuron\"}\n"
+          },
+          {
+            "id": "case-3-missing-provenance",
+            "caseNum": 3,
+            "description": "Entry in a category that should require a source, written without one",
+            "caught": false,
+            "detail": "accepted with no source/provenance field"
+          },
+          {
+            "id": "case-5a-missing-required-field",
+            "caseNum": 5,
+            "description": "Missing required declared field (regression re-assertion)",
+            "caught": true,
+            "detail": "Error: --kind is required for category \"tickets\" (neuron.yaml categories.tickets.fields.kind). Pass --kind <value>, or add a \"default:\" in neuron.yaml."
+          },
+          {
+            "id": "case-5b-bad-enum-value",
+            "caseNum": 5,
+            "description": "Enum field set to an undeclared value (regression re-assertion)",
+            "caught": true,
+            "detail": "Error: --kind \"bogus-kind\" is not one of [research, prototype, grilling, task]"
+          }
+        ]
+      }
+    }
+  ]
+}

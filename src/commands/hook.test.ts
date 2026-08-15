@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import { readHintEvents } from '../harnesses/hintFollowLog.js';
+import { RECALL_PROVENANCE_PREFIX } from './hook.js';
 
 describe('CLI Command: hook', () => {
   const tempDbDir = path.join(process.cwd(), 'src/__tests__/temp-hook');
@@ -64,6 +65,30 @@ describe('CLI Command: hook', () => {
     const parsed = JSON.parse(result.stdout.toString().trim());
     expect(parsed.hookSpecificOutput.hookEventName).toBe('SessionStart');
     expect(parsed.hookSpecificOutput.additionalContext).toContain('Repository Architectural Blueprint');
+  });
+
+  // Standalone ticket: every injecting lifecycle point funnels through the
+  // same `emit()` choke point, so the provenance preamble can't drift out of
+  // sync across them — asserted directly here rather than trusted from
+  // `emit()`'s own single definition.
+  it('prefixes every injecting lifecycle point with the identical recall-provenance preamble', () => {
+    execAdd('Repository Architectural Blueprint: 3 modules, 12 exports.', 'architecture');
+    execAdd('Always run npm run migrate before deploying database changes', 'learning');
+
+    const sessionStart = run(['hook', 'claude-code', 'session-start'], JSON.stringify({ session_id: 'preamble-s1' }));
+    const prePrompt = run(
+      ['hook', 'claude-code', 'pre-prompt'],
+      JSON.stringify({ session_id: 'preamble-s2', prompt: 'npm run migrate before deploying' })
+    );
+    const preCommand = run(
+      ['hook', 'claude-code', 'pre-command'],
+      JSON.stringify({ session_id: 'preamble-s3', tool_name: 'Bash', tool_input: { command: 'npm run migrate' } })
+    );
+
+    for (const result of [sessionStart, prePrompt, preCommand]) {
+      const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+      expect(context.startsWith(RECALL_PROVENANCE_PREFIX)).toBe(true);
+    }
   });
 
   // --- Ticket 21: proactive session-start warning for the write-only-store failure mode ---
@@ -153,10 +178,14 @@ describe('CLI Command: hook', () => {
 
     // Cap the epoch at exactly what turn 1 already spent, so turn 2 has
     // nothing left — a hard stop, not ordinary dedupe (the retry-backoff
-    // entry was never shown to this session).
+    // entry was never shown to this session). The ledger charges the
+    // pre-provenance-prefix body length (`emit()` prepends the prefix after
+    // the spend is recorded), so the cap must match that, not the full
+    // envelope's length.
+    const turn1Body = turn1Context.slice(RECALL_PROVENANCE_PREFIX.length);
     fs.writeFileSync(
       path.join(projectDir, 'neuron.yaml'),
-      `version: "1.0"\nrecall:\n  epochCharBudget: ${turn1Context.length}\n`
+      `version: "1.0"\nrecall:\n  epochCharBudget: ${turn1Body.length}\n`
     );
 
     const turn2 = run(
@@ -235,7 +264,9 @@ describe('CLI Command: hook', () => {
       JSON.stringify({ session_id: 'no-card-session', prompt: 'how should I access the database here' })
     );
     const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
-    expect(context).toBe('- [learning] Use the Repository Pattern for database access in this codebase');
+    expect(context).toBe(
+      RECALL_PROVENANCE_PREFIX + '- [learning] Use the Repository Pattern for database access in this codebase'
+    );
   });
 
   it('charges the architecture card against the same epoch budget as ordinary turns', () => {
@@ -359,6 +390,99 @@ describe('CLI Command: hook', () => {
       const result = run(['hook', 'claude-code', 'pre-command'], 'not json at all {{{');
       expect(result.status).toBe(0);
       expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    // --- Standalone ticket: dedupe and self-identify the pre-command
+    // hook's injected context. `pre-command` used to have no ledger at all
+    // (see the removed comment this replaces), so the same entry could
+    // reinject verbatim on every single Bash call for a whole session —
+    // confirmed live, not just theorized. ---
+
+    it('does not reinject the same entry on a second Bash call within the same epoch', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const sessionId = 'pre-command-dedup-session';
+      const stdin = JSON.stringify({ session_id: sessionId, tool_name: 'Bash', tool_input: { command: 'npm run migrate' } });
+
+      const first = run(['hook', 'claude-code', 'pre-command'], stdin);
+      expect(JSON.parse(first.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain(
+        'npm run migrate before deploying'
+      );
+
+      const second = run(['hook', 'claude-code', 'pre-command'], stdin);
+      expect(second.status).toBe(0);
+      expect(second.stdout.toString().trim()).toBe('');
+    });
+
+    it('shares its dedupe set with pre-prompt: an entry pre-prompt already showed this epoch does not repeat via pre-command', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const sessionId = 'shared-ledger-session';
+
+      const prePrompt = run(
+        ['hook', 'claude-code', 'pre-prompt'],
+        JSON.stringify({ session_id: sessionId, prompt: 'npm run migrate before deploying' })
+      );
+      expect(JSON.parse(prePrompt.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain(
+        'npm run migrate before deploying'
+      );
+
+      const preCommand = run(
+        ['hook', 'claude-code', 'pre-command'],
+        JSON.stringify({ session_id: sessionId, tool_name: 'Bash', tool_input: { command: 'npm run migrate' } })
+      );
+      expect(preCommand.status).toBe(0);
+      expect(preCommand.stdout.toString().trim()).toBe('');
+    });
+
+    it('reinjects after a context-reset rolls the epoch', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const sessionId = 'pre-command-reset-session';
+      const stdin = JSON.stringify({ session_id: sessionId, tool_name: 'Bash', tool_input: { command: 'npm run migrate' } });
+
+      run(['hook', 'claude-code', 'pre-command'], stdin);
+      const suppressed = run(['hook', 'claude-code', 'pre-command'], stdin);
+      expect(suppressed.stdout.toString().trim()).toBe('');
+
+      run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: sessionId }));
+
+      const after = run(['hook', 'claude-code', 'pre-command'], stdin);
+      expect(JSON.parse(after.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain(
+        'npm run migrate before deploying'
+      );
+    });
+
+    it('does not dedupe across sessions (each session id keeps its own ledger)', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const stdin = (sessionId: string) =>
+        JSON.stringify({ session_id: sessionId, tool_name: 'Bash', tool_input: { command: 'npm run migrate' } });
+
+      run(['hook', 'claude-code', 'pre-command'], stdin('session-a'));
+      const otherSession = run(['hook', 'claude-code', 'pre-command'], stdin('session-b'));
+      expect(JSON.parse(otherSession.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain(
+        'npm run migrate before deploying'
+      );
+    });
+
+    it('degrades toward repetition, never silence, when no session id is present', () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const stdin = JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'npm run migrate' } });
+
+      const first = run(['hook', 'claude-code', 'pre-command'], stdin);
+      const second = run(['hook', 'claude-code', 'pre-command'], stdin);
+      for (const result of [first, second]) {
+        expect(JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext).toContain(
+          'npm run migrate before deploying'
+        );
+      }
+    });
+
+    it("prefixes injected context with the recall-provenance preamble, matching session-start and pre-prompt", () => {
+      execAdd('Always run npm run migrate before deploying database changes', 'learning');
+      const result = run(
+        ['hook', 'claude-code', 'pre-command'],
+        JSON.stringify({ session_id: 'provenance-session', tool_name: 'Bash', tool_input: { command: 'npm run migrate' } })
+      );
+      const context = JSON.parse(result.stdout.toString().trim()).hookSpecificOutput.additionalContext as string;
+      expect(context.startsWith(RECALL_PROVENANCE_PREFIX)).toBe(true);
     });
   });
 

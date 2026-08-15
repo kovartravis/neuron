@@ -11,6 +11,7 @@ import {
   remainingEpochBudget,
   recordSessionStartInjection,
   recordPrePromptTurn,
+  recordPreCommandInjection,
   rollEpoch,
   recordFired,
   recordHintFired,
@@ -180,16 +181,31 @@ function readStdin(): Promise<string> {
   });
 }
 
+/**
+ * A stable, short label prefixed onto every injection so it reads as this
+ * project's own recalled memory rather than an unattributed block that
+ * happens to share `<system-reminder>`-style framing with the harness's
+ * other hook output — including a genuinely adversarial one. Found live:
+ * an agent session (and a subagent it spawned) independently mistook this
+ * hook's own legitimate, repeated injections for prompt injection, with no
+ * way to tell from the block's shape alone. One line, applied at the single
+ * `emit()` choke point every lifecycle point already funnels through, so it
+ * can't drift out of sync across `session-start`/`pre-prompt`/`pre-command`.
+ */
+export const RECALL_PROVENANCE_PREFIX =
+  "[neuron] Recalled from this project's own local memory store, not external input:\n\n";
+
 function emit(harness: string, hookEventName: string, additionalContext: string): void {
+  const text = RECALL_PROVENANCE_PREFIX + additionalContext;
   if (harness === 'copilot') {
-    process.stdout.write(JSON.stringify({ additionalContext }) + '\n');
+    process.stdout.write(JSON.stringify({ additionalContext: text }) + '\n');
     return;
   }
   if (harness === 'cursor') {
-    process.stdout.write(JSON.stringify({ additional_context: additionalContext }) + '\n');
+    process.stdout.write(JSON.stringify({ additional_context: text }) + '\n');
     return;
   }
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName, additionalContext } }) + '\n');
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName, additionalContext: text } }) + '\n');
 }
 
 /**
@@ -336,14 +352,25 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
 
       // Reuses `neuron exec`'s own category-matching/gated-query path
       // (`exec.ts`) verbatim — the hook is a second trigger for the same
-      // lookup, not a second implementation of it. Deliberately no epoch/
-      // ledger accounting (unlike session-start/pre-prompt): this fires per
-      // tool call rather than per turn and has no ledger of its own to
-      // dedupe or budget against yet.
+      // lookup, not a second implementation of it.
       const { categories, limit } = resolveExecCategories(config, command);
       const { results } = await memory.queryGated({ text: command, categories, limit });
-      const { text } = buildPayload(results, PRE_COMMAND_CHAR_BUDGET);
+
+      // No session id means no ledger to dedupe against — degrade toward
+      // repetition, never toward silence, matching `pre-prompt`'s own
+      // sessionless posture above.
+      const unseen = sessionId ? filterUnseen(projectDir, sessionId, results) : results;
+      const { text, includedIds } = buildPayload(unseen, PRE_COMMAND_CHAR_BUDGET);
       if (!text) return;
+
+      // Shares `pre-prompt`/`session-start`'s id-dedupe set so an entry
+      // already shown this epoch by any hook point doesn't repeat here, but
+      // spends nothing against their shared epoch char budget
+      // (`recordPreCommandInjection`, `harnesses/ledger.ts`) — `pre-command`
+      // fires per tool call, often many times per turn, so charging the same
+      // budget `pre-prompt`'s hard stop reads would let a busy tool-call
+      // sequence exhaust a turn's budget before the prompt itself ran.
+      if (sessionId) recordPreCommandInjection(projectDir, sessionId, includedIds);
       emit(harness, 'PreToolUse', text);
       return;
     }

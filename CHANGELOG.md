@@ -2,6 +2,34 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.1] - 2026-08-15
+
+**The `pre-command` hook no longer repeats itself, and every hook injection
+now says where it came from.** `pre-command` (the automatic pre-execution
+safety lookup shipped in 2.4.0) fired fresh on every single Bash tool call
+with no memory of what it had already shown — a busy session could see the
+identical entry reinjected dozens of times. It now shares the same
+session-scoped dedupe ledger `pre-prompt`/`session-start` already use, so
+an entry shown once by any hook point doesn't repeat again until the next
+compaction — without borrowing their char budget, so a burst of tool calls
+can't starve a turn's own prompt-time recall. Every injected block —
+`session-start`, `pre-prompt`, and `pre-command` alike — now also opens
+with a short, stable label identifying it as recalled from the project's
+own local memory store, so it reads as what it is rather than an
+unattributed block indistinguishable in shape from adversarial content
+elsewhere in a tool's output.
+
+**A new resident test pillar answers whether the write path catches bad
+writes, not just malformed ones.** `enforceFieldSchema` already rejects a
+missing required field or an undeclared enum value, but was never designed
+to catch a near-duplicate paraphrase, a direct contradiction of a live
+entry, or a category that should require a source and doesn't. Measured
+directly rather than assumed: none of those three are caught today. In
+particular, this repo's own `decisions` category has no required
+provenance field, so an unsourced decision entry is accepted with no error
+— a real, now-confirmed gap the next release's write-time-quality work
+addresses.
+
 ## [2.4.0] - 2026-08-15
 
 This section supersedes and consolidates `2.4.0-rc1`, `2.4.0-rc2`, and
