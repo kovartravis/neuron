@@ -59,6 +59,26 @@ stderr, so it's never a silent side effect (ticket 31, neuron-2.4.0).
 Model and grammar downloads are best-effort — a failure leaves that capability
 degraded rather than failing the whole bootstrap.
 
+### Recall fidelity by harness
+
+- **Deterministic** — Claude Code, OpenAI Codex CLI. Every injecting hook
+  point (`session-start`/`pre-prompt`/`context-reset`/`pre-command`) has a
+  known payload cap, failure posture and timeout; recall refreshes every
+  turn, guaranteed.
+- **Best-effort** — GitHub Copilot CLI, Cursor. Real, harness-executed
+  injection, but only at session start — neither harness exposes a
+  per-turn hook point, so mid-session drift in what's relevant isn't
+  re-checked automatically. Copilot CLI's adapter is verified against a
+  real installation; Cursor's ships on fixture/documentation evidence only
+  (no verified real-install pass yet).
+- **Instruction-only** — every other harness (`AGENTS.md` fallback). No
+  hook point ever injects context; recall depends entirely on the model
+  choosing to read `AGENTS.md` and run `neuron memory query` itself.
+
+`neuron init`'s own JSON output reports the real fidelity per harness
+(`protocol.written`), derived from each harness's actual `verify()` result,
+not inferred from a config file existing.
+
 ---
 
 ## `neuron hook <harness> <point>`

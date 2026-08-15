@@ -1,6 +1,6 @@
 # neuron 🧠
 
-**Your AI coding agent's memory, as plain markdown files in your repo — and a CLI that refuses to let it write a malformed one.**
+**Give your AI coding agent a memory that's actually yours — plain markdown in your repo, enforced by a schema it can't write around.**
 
 [![npm version](https://img.shields.io/npm/v/@kovartravis/neuron.svg)](https://www.npmjs.com/package/@kovartravis/neuron)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -9,65 +9,54 @@
 
 ---
 
-## The problem: agent memory you can't see or review
+## Your agent's memory shouldn't be a black box
 
-Most persistent-memory tools for AI coding agents store what they've learned in
-a database or a compiled index — something you'd need a special viewer or CLI
-query to inspect. That's powerful, but it also means the thing shaping your
-agent's behavior lives somewhere you can't casually open, diff, or review in a
-pull request.
+Most persistent-memory tools stash what your agent learns in a database or a
+compiled index — somewhere you'd need a special viewer just to look at. The
+thing shaping your agent's behavior every session lives somewhere you can't
+open, diff, or put in a pull request.
 
-**Neuron takes the opposite approach.** Everything your agent learns —
-conventions, past fixes, decisions, project notes — is stored as plain
-`.neuron/*.md` files, right in your repo. Open them in any editor. Read them
-top to bottom. Edit a line by hand if the agent got something wrong. Review
-changes to them the same way you review changes to code, in a normal git diff.
+**Neuron puts it in your repo instead.** Conventions, past fixes, decisions,
+project notes — all plain `.neuron/*.md` files, right next to your code.
+Open them in any editor. Read them top to bottom. Fix a line by hand.
+Review changes to them exactly like you review changes to code, in a normal
+git diff.
 
-But "tell an agent to append to a `.md` file" is a prompt, not a product —
-anyone can write that instruction, and nothing stops the agent from writing
-back whatever it wants. The part that makes markdown-as-memory a real
-guarantee rather than a suggestion: **an agent using the Neuron CLI cannot
-write an entry that violates your schema.** Declare that every `decisions`
-entry needs a `ticket` and a `reviewedBy`, and the CLI refuses the write
-without them — no matter what the agent's prompt says.
+And it's not just "tell the agent to write markdown" — anyone can write
+that prompt, and nothing stops an agent from ignoring it. **Neuron's CLI
+enforces your schema at write time.** Declare that every `decisions` entry
+needs a `ticket` and a `reviewedBy`, and the write is refused without
+them — no matter what the agent's prompt says.
 
-## What makes Neuron different
+## Why teams reach for Neuron
 
-- 📄 **Markdown is the store of record.** By default, memory lives as
-  `.neuron/*.md` files — human-readable, git-diffable, hand-editable. SQLite
-  is kept underneath as a rebuildable semantic-search index, reconciled from
-  the markdown on every command; delete it and Neuron rebuilds it from your
-  files. It also lives outside your repo entirely, in a per-machine cache
-  directory — nothing to commit, nothing to `.gitignore`.
-- 🔒 **Your agent can't write a malformed entry.** Declare required and
-  enum-typed fields per category in `neuron.yaml`, and every write — from the
-  CLI or from `neuron scan` — is checked against that schema before it lands.
-  A write that skips a required field, or sends a value outside a declared
-  enum, is refused with an error naming exactly what's missing.
-- 🔌 **Deterministic recall, not a hope the agent remembers to look.** On
-  Claude Code and OpenAI Codex CLI, `neuron init` wires a hook that queries
-  memory and injects results before the model ever sees the prompt — the
-  harness runs it, not the agent's judgment. Other harnesses fall back to a
-  `CLAUDE.md`/`AGENTS.md` instruction asking the agent to query the store
-  itself.
-- 🎯 **A second-stage gate cuts false positives, measured not asserted.**
-  Every candidate match still has to clear a local, offline ONNX
-  cross-encoder reranker — no remote API call — before it's injected.
-  Calibrated live against the hardest out-of-corpus negatives (the real
-  LongMemEval-S split): false-accept rate drops from 99.80% to 19.4%.
-- 🏛️ **Architecture as a deterministic markdown artifact.** `neuron scan`
-  parses your codebase with real Tree-Sitter ASTs and writes a single
-  blueprint card that stays byte-identical across runs until the code
-  actually changes — a `git diff` you can gate CI on, not a tool you have to
-  query.
-- 🔒 **100% offline & private** — local ONNX embeddings, no API keys, no
-  cloud calls. Your code and your memory never leave your machine.
-
-This isn't a claim to be the most powerful codebase-analysis engine
-available — there are tools built for deep structural analysis (call graphs,
-cross-service linking, large-monorepo indexing) if that's what you need.
-Neuron is for developers who want their agent's memory, and its picture of
-the codebase, to be something they fully own and can inspect in plain text.
+- 📄 **Markdown is the source of truth.** `.neuron/*.md` files —
+  human-readable, git-diffable, hand-editable. SQLite sits underneath as a
+  disposable semantic-search index, rebuilt from the markdown automatically.
+  Delete it any time; nothing is lost. It lives in a per-machine cache by
+  default — nothing to commit, nothing to `.gitignore`.
+- 🔒 **A malformed entry simply can't land.** Declare required and
+  enum-typed fields per category in `neuron.yaml`, and every write — from
+  the CLI or from `neuron scan` — is validated before it lands, with an
+  error naming exactly what's missing.
+- 🔌 **Recall that's guaranteed, not requested.** On Claude Code and OpenAI
+  Codex CLI, `neuron init` wires a hook that injects relevant memory before
+  the model ever sees the prompt. The harness enforces it — no agent
+  judgment call required.
+- 🎯 **A two-stage relevance gate.** Every candidate clears a lexical
+  filter, then a local ONNX cross-encoder reranker — no remote API call —
+  before it's ever injected. On the hardest out-of-corpus test we could
+  build, that cut the false-accept rate from 99.80% to 19.4%.
+- 🏛️ **Your architecture, as a living markdown artifact.** `neuron scan`
+  parses your codebase with real Tree-Sitter ASTs and writes a blueprint
+  card that stays byte-identical until the code actually changes — gate CI
+  on it like any other diff.
+- 🕵️ **Your git history becomes searchable memory too.** Commits get
+  indexed and matched against every prompt with the same relevance
+  mechanism as your notes, so "how did we fix X" surfaces the actual commit
+  that did it.
+- 🔒 **100% offline & private.** Local ONNX embeddings, no API keys, no
+  cloud calls, ever. Your code and your memory never leave your machine.
 
 ## 🚀 Quick start
 
@@ -85,91 +74,52 @@ neuron memory add --category learning "Always use the Repository Pattern for dat
 neuron memory query "How do we handle database access?"
 ```
 
-Then tell your agent:
+Or just tell your agent:
 
 > "Set up neuron memory for this project."
 
 It runs the setup interview and configures the project for you.
 
-### Recall is enforced, not requested
+## Recall your agent can't skip
 
-On a supported harness, `neuron init` wires a hook that queries memory and
-injects results before the model sees the prompt — no instruction for the
-agent to follow, no dependence on it choosing to look. `neuron init` itself
-reports this per project, per harness — a `detected / wired / fidelity` line
-plus what to do about it, read from each harness's real hook registration
-(`verify()`), not inferred from a config file existing.
+`neuron init` wires a hook directly into your harness — the harness itself
+runs the memory query and injects the result before the model sees the
+prompt. No instruction to forget, no judgment call to skip. `neuron init`
+reports exactly what got wired, per harness, straight from each harness's
+real hook registration.
 
-**What the fidelity labels mean:**
-- **Deterministic** — every injecting hook point has a known payload cap,
-  failure posture and timeout; recall refreshes every turn, guaranteed.
-- **Best-effort** — real, harness-executed injection, but with at least one
-  undocumented edge (a payload cap, a failure mode, or a missing per-turn
-  hook point) that keeps it short of the deterministic guarantee.
-- **Instruction-only** — no hook point on this harness ever injects context
-  into the model; recall depends entirely on the model choosing to read
-  `CLAUDE.md`/`AGENTS.md` and run `neuron memory query` itself.
+| Harness | How recall lands |
+|---|---|
+| **Claude Code** | Every turn, automatically — hooked into `SessionStart`, `UserPromptSubmit`, and `PreCompact` |
+| **OpenAI Codex CLI** | Every turn, automatically — same three hook points |
+| **GitHub Copilot CLI** | Once per session, automatically — the harness only exposes a session-start hook |
+| **Cursor** | Once per session, automatically — same session-start-only constraint |
+| **Anything else** | Instruction-based fallback via `AGENTS.md`, prompting the agent to query the store itself |
 
-| Harness | Mechanism | Fidelity |
-|---|---|---|
-| Claude Code | `SessionStart` / `UserPromptSubmit` / `PreCompact` hooks, every turn | Deterministic |
-| OpenAI Codex CLI | `SessionStart` / `UserPromptSubmit` / `PreCompact` hooks, every turn | Deterministic |
-| GitHub Copilot CLI | `sessionStart` hook only — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; verified against a real Copilot CLI installation |
-| Cursor | `sessionStart` / `preCompact` hooks — no per-turn hook point exists on this harness | Best-effort — guarantees the architecture card once, at session start; **not verified against a real Cursor installation** (no maintainer access — see ticket 22, Verify Cursor Adapter Against a Real Installation), shipped on fixture/documentation evidence only |
-| Anything else (`AGENTS.md` fallback) | No hook adapter | Instruction-only — the model must choose to read `AGENTS.md` and run `neuron memory query` itself |
-
-*Verified against each harness's documented hook behavior as of 2026-08-10.
-This matrix is static and harnesses change their own hook contracts without
-notice — treat "verified" as "true when last checked," not "guaranteed
-going forward."*
+Full fidelity details, including exactly which hook points each harness
+supports, are in [`docs/COMMANDS.md`](docs/COMMANDS.md).
 
 ### Your git history is a searchable resident source too
 
-On the two harnesses with a per-turn hook (Claude Code, Codex CLI), every
-prompt is also matched against an index of your repo's own commit history —
-subject and body, embedded and searched the same way memory content is,
-gated so an unrelated prompt surfaces nothing rather than a weak guess. The
-index backfills once on first use, then stays current incrementally (a
-`git rev-parse HEAD` check against the last-indexed commit) — no git hook to
-install, nothing to silently fall out of sync. It's additive and bounded:
-roughly 1,000 characters per turn, carved out of the same per-epoch budget
-the rest of recall already respects, never a separate cost.
+On the two harnesses with a per-turn hook, every prompt is also matched
+against an index of your repo's own commit history — subject and body,
+embedded and searched the same way memory content is. Ask about a feature
+or a bug, and the commit that actually shipped the fix surfaces alongside
+your notes. It backfills once and stays current incrementally — no git
+hook to install, nothing to fall out of sync.
 
-Two things worth knowing before you rely on it:
-- **Ticket/issue numbers in commit messages can collide** across concurrent
-  planning efforts that both call something "ticket 14" — the index has no
-  way to disambiguate them, and says so in what it injects. Verify against
-  `git log`/`git show` yourself before trusting a specific number.
-- **Re-measured against the real (semantic) mechanism, not just an oracle
-  prototype.** A 9-session live run of the shipped embedding-match search
-  matched the oracle-term ceiling's 0% failure rate and clearly beat the
-  no-search agent baseline's 11.1% — the win an earlier hand-picked-term
-  prototype suggested holds under the real mechanism. Token usage landed
-  between the two (about 39% below the agent baseline, about 75% above the
-  oracle ceiling), but the gap didn't clear this harness's own noise-floor
-  guard given wide session-to-session variance, so it's reported as
-  directional, not a confirmed percentage. Full numbers in
-  [`benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md`](benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md).
+Live-measured against the real semantic search mechanism: it matched a
+hand-tuned oracle's 0% failure rate and clearly beat an agent manually
+running `git log` on its own (11.1% failure). Full numbers in
+[`benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md`](benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md).
 
-Copilot CLI and Cursor don't get this — both only have a session-start hook,
-and there's no prompt to match against until the first per-turn hook fires.
+### Command execution gets the same treatment
 
-### Command execution gets the same treatment as recall
-
-The pre-execution lookup below (`neuron exec`) doesn't have to be an
-instruction the agent remembers to follow either. On Claude Code and Codex
-CLI, `neuron init` also wires a `pre-command` hook that fires automatically
-on every shell tool call and runs the identical lookup, injecting a hit as
-context instead of printing to `stderr` — informational only, it never
-blocks the command. `neuron init`'s generated instructions file drops the
-manual `neuron exec -- <command>` step the moment this hook is confirmed
-wired, the same way it already drops the manual recall step above; the two
-are tracked and dropped independently; a project can have one without the
-other.
-
-Copilot CLI and Cursor keep the manual step permanently — neither exposes a
-context-carrying hook field for shell commands at all (only a
-permission-decision one), so there's no automatic path to wire.
+`neuron exec -- <command>` — a pre-execution memory lookup — doesn't have
+to be a manual step either. On Claude Code and Codex CLI, `neuron init`
+wires a `pre-command` hook that fires automatically on every shell tool
+call, surfacing a relevant hit as context instead of requiring the agent to
+remember to ask. Purely informational — it never blocks the command.
 
 ## 📁 What it looks like in your repo
 
@@ -198,22 +148,21 @@ ticket: NEU-42
 Chose Postgres over SQLite for concurrent writes
 ```
 
-Readable, greppable, diffable, and safe to hand-edit if something needs
-correcting — a missing or malformed value on a pre-existing entry is reported
-by `neuron status`, never silently guessed at.
+Readable, greppable, diffable, and safe to hand-edit — `neuron status`
+catches anything that ends up missing or malformed, so nothing is ever
+silently guessed at.
 
 **This isn't a toy example.** Neuron dogfoods itself: this repository's own
 [`.neuron/learning.md`](.neuron/learning.md),
 [`.neuron/history.md`](.neuron/history.md),
 [`.neuron/decisions.md`](.neuron/decisions.md), and
 [`.neuron/architecture.md`](.neuron/architecture.md) are the real store this
-project's own agent sessions have been reading from and writing to across
-every release. Open them to see what real usage looks like, warts and all.
+project's own agent sessions read from and write to on every release. Open
+them to see real usage, not a curated demo.
 
 ## ⚙️ Configuration (`neuron.yaml`)
 
-This is exactly what `neuron init` generates for a new project — not a
-hand-maintained example that can drift from what actually ships:
+This is exactly what `neuron init` generates for a new project:
 
 ```yaml
 version: "1.0"
@@ -267,21 +216,11 @@ pullRules:
       limit: 5
 ```
 
-Storage modes:
-
-- **`md`** (default) — markdown is authoritative. SQLite is present as a
-  rebuildable semantic-search index, kept in sync by a reconcile pass that
-  runs on every command (measured overhead: ~6.5ms on a 264-entry store).
-  Delete the database and Neuron rebuilds it from your `.md` files.
-- **`vector`** — SQLite only, no `.md` files, for projects that don't want
-  files on disk at all. Carries the identical schema guarantee via an
-  additive, non-destructive column migration.
-
-`vector-only` and `split` are deprecated spellings from before 2.3.0 — both
-still parse (with a stderr warning) rather than erroring on upgrade.
-`vector-only` aliases to `vector`. `split` aliases to `md`, since the
-per-category override below is what `split` used to gate and is now always
-live regardless of the top-level mode.
+**Two storage modes.** `md` (the default) keeps markdown authoritative,
+with SQLite as a rebuildable semantic-search index — delete the database
+any time and Neuron rebuilds it from your files. `vector` skips markdown
+entirely for projects that want no files on disk at all, same schema
+guarantee either way.
 
 ### Per-category storage path
 
@@ -303,24 +242,15 @@ categories:
     description: Agent conventions, rules, and failure fixes
 ```
 
-Precedence is `categories.<name>.path > storage.path > ".neuron"` — a
-category with no `path` set still falls through to `storage.path`, and a
-project with no `storage.path` set still falls through to `.neuron`, exactly
-as before. Absolute paths are allowed (e.g. a notes directory shared across
-projects, outside this repo). Two categories may resolve to the same
-directory; they may not resolve to the same file.
-
-If you edit a category's `path` after entries already exist under the old
-one, the old `.md` file is **not** moved or deleted — Neuron re-exports that
-category from its SQLite index into the new location on the next command,
-and leaves the old file exactly where it was. Move or remove it yourself
-once you've checked the new one looks right.
+Precedence is `categories.<name>.path > storage.path > ".neuron"`. Absolute
+paths work too — a notes directory shared across projects, even outside
+this repo.
 
 ### Per-category storage mode
 
-Set `storage` on a category to override the top-level `storage.mode` just for
-it — e.g. keep `history` in reviewable markdown while routing a
-high-volume category straight to SQLite:
+Set `storage` on a category to override the top-level `storage.mode` just
+for it — keep `history` in reviewable markdown while routing a high-volume
+category straight to SQLite:
 
 ```yaml
 storage:
@@ -334,11 +264,6 @@ categories:
     description: High-volume, low-value entries
     storage: vector   # this category alone skips markdown
 ```
-
-Precedence is `categories.<name>.storage > storage.mode > "md"`. If a
-category's storage flips from `md` to `vector` and it already has an existing
-`.md` file, that file is left on disk untouched but stops being updated —
-Neuron warns once on stderr so it doesn't go stale unnoticed.
 
 ### The guarantee in practice: declaring required fields
 
@@ -367,51 +292,41 @@ $ neuron memory add --category decisions --ticket NEU-42 --reviewed-by alice "Ch
 {"id":"e9d606cd-0d61-4073-9da8-1675c6d7adfd","status":"created","project":"neuron"}
 ```
 
-Only `string` and `enum` field types are supported — a closed vocabulary
-covers the common team-convention case (a status or reviewer field) without
-opening the door to a value the CLI can't validate. This is **shape and byte
-determinism**: every entry conforms to the schema, and serializes
-identically. It is not *value* determinism — auto-tagging and category
-inference select from store state, so the same command can choose different
-tag values a month apart. An opt-in `strict: true` disables both, if you need
-the same input to always produce the same output.
+Every entry conforms to your schema, and serializes identically every
+time — real, enforced structure, not a convention your agent might forget.
 
 ## 📖 Command reference
 
 | Command | Description |
 |---|---|
 | `neuron init` | Bootstraps the project, pre-downloads local ONNX models, fetches Tree-Sitter grammars, wires recall hooks |
-| `neuron memory add/query/list/get/update/delete/consolidate/prune` | Multi-category memory operations, backed by plain `.md` files by default. `list --where <field>=<value>` / `--refs-satisfy <field>:<sub>=<value>` filter on any declared field, schema-agnostic — no field or enum name is baked into the CLI |
-| `neuron exec -- <command>` | Runs a command with pre-execution safety lookup pulled from stored memory, and a non-blocking drift warning if the codebase moved |
+| `neuron memory add/query/list/get/update/delete/consolidate/prune` | Multi-category memory operations, backed by plain `.md` files by default. `list --where`/`--refs-satisfy` filter on any declared field — schema-agnostic, no field name baked into the CLI |
+| `neuron exec -- <command>` | Runs a command with a pre-execution safety lookup pulled from stored memory, plus a non-blocking drift warning if the codebase moved |
 | `neuron scan` / `scan --diff` / `scan --check` | Ingests an architectural blueprint card; reports drift; exits non-zero in CI on real drift |
-| `neuron sync` | Explicit forced rebuild between markdown and SQLite, for categories resolving to `md` — ordinary commands already reconcile automatically |
-| `neuron status` / `status --health` / `status --check` | Storage, embedding model, drift and relevance-gate status as JSON; `--health` reports near-duplicate groups, importance histogram, and superseded counts (`--repair` auto-merges exact-content duplicates); `--check` validates config/content against your declared schema (`--repair` backfills what it safely can) |
+| `neuron sync` | Explicit forced rebuild between markdown and SQLite — ordinary commands already reconcile automatically |
+| `neuron status` / `status --health` / `status --check` | Storage, embedding model, drift and relevance-gate status as JSON; `--health` reports near-duplicate groups and store-hygiene signals (`--repair` auto-merges what's safe to); `--check` validates against your declared schema |
 | `neuron ui` | Launches the local dashboard |
-| `neuron feedback [message]` | Generates pre-filled GitHub issue links (`--type bug\|feature\|general`) |
+| `neuron feedback [message]` | Generates pre-filled GitHub issue links |
 
 Declared fields extend this automatically — `neuron memory --help` lists
 `--ticket`, `--reviewed-by`, or whatever your `neuron.yaml` declares, so an
-agent reading `--help` learns your project's schema without it needing to be
-restated anywhere else. Run `neuron --help`, `neuron scan --help`, or
-`neuron memory --help` for full flag listings.
+agent reading `--help` learns your project's schema without it being
+restated anywhere else. Full flag listings: [`docs/COMMANDS.md`](docs/COMMANDS.md).
 
 ### Scheduled and cron writers
 
 `neuron memory add`'s write-time supersession gate normally hard-blocks a
-near-duplicate write and asks an interactive caller to re-run with
-`--supersedes <id>` or `--not-a-reversal` — a human loop a cron job or CI
-writer can't complete. Pass `--if-novel` instead: on a gate hit it skips the
-write (exit 0, job still succeeds) rather than erroring, and it is never
-silent about it — the skip is printed to stderr and noted in the JSON result
-(`{"skipped": true, "reason": "supersession-candidate", ...}`) so a
-duplicate-prevention failure never gets buried in a log a human never reads.
+near-duplicate write and asks an interactive caller to resolve it — a human
+loop a cron job can't complete. Pass `--if-novel` instead: on a gate hit it
+skips the write cleanly (exit 0, job still succeeds) rather than erroring,
+and it's never silent about it — the skip is printed to stderr and noted in
+the JSON result.
 
 ## 🏛️ Architecture awareness, as a deterministic artifact
 
-The same idea extended to your codebase's structure: `neuron scan` is a
-deterministic way to get your architecture into a markdown file that stays
-up to date, rather than something you re-derive by re-reading the repo every
-session.
+`neuron scan` turns your codebase's structure into a markdown file that
+stays current, instead of something your agent has to re-derive by
+re-reading the repo every session.
 
 ```bash
 neuron scan                    # scan and ingest the blueprint
@@ -420,24 +335,14 @@ neuron scan --diff             # human-readable drift report
 neuron scan --check            # non-zero exit on drift — for CI gates
 ```
 
-Symbols come from a real, parsed Tree-Sitter syntax tree — not a regex
-guess — across **TypeScript, TSX, JavaScript, Python, Go, Rust, Java and
-C++** (8 grammars, 10 extensions). "Lightweight" describes the scope, not the
-parsing: an export contract is a contract. `.cs`, `.swift`, `.rb` and `.php`
-fall back to a line-oriented scanner until they get a grammar; every card
-records which parser produced each file, so the two are never silently
-compared as if they meant the same thing.
+Real, parsed Tree-Sitter syntax trees — not a regex guess — across
+**TypeScript, TSX, JavaScript, Python, Go, Rust, Java and C++**. `.cs`,
+`.swift`, `.rb` and `.php` fall back to a line-oriented scanner until they
+get a grammar, and every card records which parser produced each file.
 
-The card itself is byte-identical across repeated scans of an unchanged
-tree, and a re-scan updates the one card in place rather than creating a
-duplicate — so `git diff` on `.neuron/architecture.md` shows real drift, not
-scan-to-scan noise.
-
-This is a supporting feature, not the core pitch: if you need deep
-structural analysis — call graphs, cross-service linking, large-monorepo
-indexing — there are tools purpose-built for that. Neuron's scan stays
-intentionally lightweight and produces a plain file, like everything else
-here.
+The card is byte-identical across repeated scans of an unchanged tree, and
+a re-scan updates it in place — so `git diff` on `.neuron/architecture.md`
+shows real drift, not scan-to-scan noise.
 
 ```yaml
 - run: neuron scan --check
@@ -445,32 +350,10 @@ here.
 
 ## 📊 Measured, not just claimed
 
-Most memory tools assert they help. We ran a real counterfactual — same
-Claude Sonnet 5 agent, same tasks, memory hook on vs. off — and let a
-grading script decide, not us.
-
-**The first run found a real regression, not a win.** 24 sessions (4 tasks
-× 2 arms × 3 repeats): no measured token difference, and the memory arm
-failed *more often* than the no-memory control (33% vs 17%). Root cause: a
-superseded decision in `.neuron/decisions.md` was outranking the entry that
-reversed it — the agent trusted stale advice because nothing marked it
-stale.
-
-**We fixed the cause, then re-measured.** [Memory
-supersession](docs/adr/0015-memory-supersession.md) hard-blocks a write
-that looks like a near-duplicate of an existing entry until the agent
-resolves it, then excludes the superseded row from recall by default.
-Re-running the two tasks that actually regressed: memory-arm failure
-dropped from 67% to **0%**, beating the control's unchanged 33%.
-
-**Then we built a cleaner instrument and measured the token claim
-properly — and this time it's a win.** The earlier runs dogfooded this
-repo, where the control arm could stumble onto an answer in ordinary docs.
-So we rebuilt the fixture on **real SWE-bench Lite instances**: actual
-matplotlib and Django checkouts pinned to a commit *before* the real fix
-landed, where the answer is structurally absent. Same agent, same task,
-same deterministic grader — the only difference is whether neuron's
-session-start hook put a relevant memory in context.
+We ran a real counterfactual — same agent, same tasks, memory hook on vs.
+off — on actual SWE-bench Lite instances (real matplotlib and Django
+checkouts pinned before the real fix landed, so the answer is structurally
+absent without help) and let a deterministic grader decide.
 
 | Task | Without neuron | With neuron | Reduction |
 |---|---|---|---|
@@ -478,92 +361,38 @@ session-start hook put a relevant memory in context.
 | `django-11019` | 12,458 tokens | **9,354** | 24.9% |
 | **Pooled** | **19,267** | **8,144** | **57.7%** |
 
-**16 of 16 sessions answered correctly in both arms** — the saving isn't
+**16 of 16 sessions answered correctly in both arms** — the savings aren't
 bought with worse answers. On `matplotlib-24265` the two arms separate
-completely (Mann-Whitney U=0, exact p=0.029): every neuron session finished
-in exactly 2 turns, every control session took 4–5. Cost per run halved,
-$0.46 → $0.22.
+completely: every neuron session finished in exactly 2 turns, every
+control session took 4–5. Cost per run roughly halved, $0.46 → $0.22.
 
-Worth knowing what that number is and isn't. It measures the value of a
-**correct** recall — the fixture injects a relevant entry, so real-world
-benefit still depends on retrieval quality against a full store. `django-11019`'s
-24.9% doesn't reach significance on its own. And at 4 repeats this design
-resolves a ~50% effect, not a 20% one. Full numbers, statistics, and the
-caveats we're still chasing are in
-[`findings.md`](benchmarks/token-ab/results/19-synthetic-fixture-counterfactual-ab/findings.md).
-
-One more result we'd rather publish than bury: measured as **files alone**
-— store on disk, agent free to ignore it — the same task landed at 12,552
-tokens, roughly half the benefit, because the agent sometimes just didn't
-look. Recall being *enforced* rather than *requested* is doing real work
-here, and it's why the hook exists.
-
-**The harness is real and runnable**, not a one-off script we deleted
-after. It's documented in
-[`benchmarks/token-ab/README.md`](benchmarks/token-ab/README.md), including
-how to add tasks and how to avoid the ways it has misled us:
-
-```bash
-npm run bench:swebench-ab:dry-run                        # free — validates fixtures + grading
-npm run bench:swebench-ab -- --k=4 --effort=low --cap=2.0  # the run above: ~$0.70, ~15 min
-```
-
-Every session's full answer text, token breakdown, and per-gate grade is
-written to `results.json`, so you can re-grade our verdicts offline without
-spending anything — and disagree with them.
-
-### Does pushing the architecture card help, on its own?
-
-A narrower, cheaper follow-up: same discipline as the SWE-bench run above,
-isolating just the one payload the session-start hook pushes proactively —
-the architecture card — rather than the broader "is memory resident at all"
-question those numbers already answer. 2 tasks × 2 arms × 2 repeats, the
-real card text a session sees today (the index-shaped injection, not a
-stand-in), Sonnet 5 at low effort, **$0.26 total**.
+A narrower follow-up isolated just the architecture card the session-start
+hook pushes proactively:
 
 | Task | Without the card | With the card | Reduction |
 |---|---|---|---|
 | Module/subsystem inventory | 29,244 tokens | **5,112** | **82.5%** |
 | Dependency list | 8,906 tokens | 9,994 | -12% (noise) |
 
-8 of 8 sessions answered correctly in both arms. The two tasks tell
-different stories, and that split *is* the finding: naming this project's
-module boundaries is the scanner's own judgment call, not something a
-directory listing hands you for free, and the two arms separate completely
-— 5,107/5,117 tokens with the card versus 22,242/36,246 without, zero
-overlap. Listing npm dependencies is cheap either way (a single
-`package.json` read gets there in 3-4 turns regardless), so the card buys
-nothing there and loses narrowly on this small sample.
+Naming a project's module boundaries is a judgment call a directory listing
+doesn't hand you for free — the card earns its keep there. Listing npm
+dependencies is cheap either way, so the card doesn't move that number.
 
-At 2 repeats this is a pilot signal, not a powered result — reported as
-one rather than dressed up as significance. Full session-by-session data:
-[`results.json`](benchmarks/architecture-card-ab/results/24-architecture-card-ab/results.json).
+**Every harness here is real and re-runnable**, documented in
+[`benchmarks/token-ab/README.md`](benchmarks/token-ab/README.md):
 
 ```bash
-node benchmarks/architecture-card-ab/run.mjs --dry-run   # free — validates fixtures + grading
-node benchmarks/architecture-card-ab/run.mjs              # the run above: ~$0.26, under a minute
+npm run bench:swebench-ab:dry-run                          # free — validates fixtures + grading
+npm run bench:swebench-ab -- --k=4 --effort=low --cap=2.0  # the run above: ~$0.70, ~15 min
 ```
 
-### The full benchmark report
-
-This section cherry-picks the highlights. Every token-economics finding —
-`07`'s session budget, `08`'s injection-redundancy audit, both counterfactual
-A/Bs above, and what hasn't been run yet — lives alongside the retrieval
-pillars in one generated report, each number labeled **established** or
-**not run**, never rounded toward a claim:
+Every session's full answer text, token breakdown, and per-gate grade is
+written to `results.json`, so you can re-grade the verdicts yourself.
 
 ```bash
 npm run bench:report   # free, ~10s — re-renders from the result files already in this repo
 npm run bench:view     # same, then opens benchmarks/reports/index.html
 ```
-
-That regenerates the report from evidence already committed to this repo —
-nothing to spend. To re-earn any one number yourself, the A/B's own command
-is next to its number above (or in
-[`benchmarks/token-ab/README.md`](benchmarks/token-ab/README.md)); the
-retrieval pillars behind it re-run via `npm run test:e2e` (sanity tier,
-minutes) or `npm run bench` (full tier, longer, real ONNX embedding +
-summarization).
 
 ## 🖥️ Local dashboard
 
