@@ -1318,3 +1318,15 @@ tags:
 taskId: null
 ---
 Near-dup gate validation (ticket 7, neuron-2.4.2): the reranking-over-cosine approach itself is validated (N=10, bar=3 separates cleanly on isolated prose), but that calibration is not sufficient to build Ticket 6 against directly. A real-store counterfactual against this repo's own 683 live entries found the same bar/N flags mostly-false-positive pairs, driven by shared structural templates (scanner-generated architecture cards, templated wayfinder history logs) and by-design cross-category restatement (decisions/learning + history recording the same ticket twice on purpose) — content shapes the synthetic corpus never modeled. Decided not to let Ticket 6 proceed on the unvalidated bar/N: created Ticket 10 to decide the mitigation (exclude scanner-generated categories, scope to same-category only, a template pre-filter, or a separately-calibrated bar), and re-blocked Ticket 6 on it. Rationale: shipping the naive gate would visibly misfire on this repo's own store on day one — a dogfooding failure this map exists to prevent, not cause.
+
+---
+id: c19e8c03-ac83-41d8-9f8c-68069e9bc3de
+createdAt: 2026-08-15T20:40:51.631Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: null
+---
+Map — neuron 2.4.2, Ticket 12 (Redesign Session-Conclusion Recording), resolved 2026-08-15: decisions/learning and history entries cross-reference via the existing taskId field rather than each independently restating a session's resolution in full -- decisions/learning keeps the full content, history shrinks to a short pointer (plus the same taskId) whenever a decisions/learning entry exists for that session, and only keeps its current full-narrative shape when nothing was decided. This is the source-side fix Ticket 10 chose over gate-side special-casing in the near-dup gate (a config allowlist / taskId exemption inside the gate were both already rejected there). Explicitly scoped to new writes only: the maintainer declined to backfill the ~219 existing decisions/learning entries with null taskId (86/96 decisions, 133/133 learning) after confirming they resulted from CLAUDE.md's own documented command template never including --task-id for decisions/learning (unlike history's), not from entries bypassing the CLI -- backfilling them would be a retroactive migration pass, which this map's own non-goals already rule out. A companion neuron status --check finding to catch future drift was explored (blanket taskId-null check, then a category-scoped version, then a new non-required recommended: field-schema tier) and explicitly declined as unneeded scope. Implementation graduated to Ticket 48 rather than built in-session, matching this map's own Ticket 2->5 / 3->6 / 4->9 precedent; Ticket 6 now blocks on Ticket 48 instead of this design ticket, since Ticket 6's near-dup gate is only safe from the cross-category false-positive shape once new sessions actually stop producing full-restatement pairs.

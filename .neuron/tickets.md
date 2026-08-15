@@ -27016,6 +27016,7 @@ storage engine, no new package, no new top-level command.
 - 10 — Resolve Template/Structural False-Positive Risk Before Building Ticket 6 (ticket d121513e-0942-461b-87d0-77830d44e71a) — split resolution, the two false-positive shapes needed different fixes. Template/structural collision (architecture's 17 + history's ~106 pairs): deterministic template fingerprint/strip against the known fixed templates, no new model — a model-based detector was raised and rejected as reopening the map's own "no new model" non-goal beyond Ticket 4/8's narrow NLI carve-out, when a known fixed string doesn't need a model to recognize it. By-design cross-category restatement (83 pairs, decisions/learning ↔ history ↔ tickets): not a gate problem — the reranker is correctly scoring these as real restatements, so a config-driven allowlist and a taskId exemption were both rejected in favor of fixing the duplication at its source. Graduated to Ticket 12 — Redesign Session-Conclusion Recording to Eliminate Cross-Category Duplication (ticket c29a3c30-95ba-4f63-b74e-037f9d52dce6), which now co-blocks Ticket 6 alongside this ticket. Residual same-category false positive (the two independent `decisions` entries at 4.72): accepted, resolved via the existing `--supersedes`/`--not-a-reversal`/`--if-novel` override — no new mechanism.
 - 11 — Resolve Hard-Block Posture Given NLI False-Positive Rate on Compatible-Related Pairs, Before Building Ticket 9 (ticket 5a0b8be0-5f5b-4e2a-a177-c7a3ebe30ea4) — decided to test before deciding, not default to soft-flag outright: rather than picking a fallback posture unvalidated, chartered Ticket 13 — A/B Test Alternative NLI Models for Hard-Block Viability (ticket e5aeaa6a-bc94-4b3e-b6a1-3086924b939e) to test a shortlist of alternative NLI models — prioritizing ANLI-trained ones, which counter the specific SNLI/MultiNLI annotation artifact Ticket 8 traced the failure to, plus one larger same-data model as a control — against Ticket 8's own corpus and joint-bar method. Branches on that result: a model clearing a joint-low false-silence/false-accept bar lets Ticket 9 build hard-block; none clearing it falls back to soft-flag as Ticket 4's refuse-vs-flag choice, narrowly amended for this one signal. Ticket 9 re-blocked on Ticket 13.
 - 13 — A/B Test Alternative NLI Models for Hard-Block Viability (ticket e5aeaa6a-bc94-4b3e-b6a1-3086924b939e) — no-go across every candidate tested. Shortlisted two ANLI-trained models (`anli-base`, `anli-large`) plus one larger SNLI/MultiNLI-only control per Ticket 11's criteria; none clears the joint-low false-silence/false-accept bar. Every model, original Ticket 8 baseline included, cleanly separates contradiction from paraphrase — the entire verdict turns on compatible-related pairs, where none improves enough. Ranked by joint-worst: original Ticket 8 model (20%) < `anli-large` (27%) < `anli-base` (40%) < the larger same-data control (60%, dramatically worse — scale alone amplifies the same annotation-artifact bias rather than fixing it). ANLI training helped only when combined with other adversarial/diverse data (`anli-large`), not alone at base scale (`anli-base`). Per Ticket 11's pre-agreed branch, Ticket 9 is unblocked to build **soft-flag**, not hard-block. Findings: `docs/design/write-time-quality/nli-alt-models-ab-findings.md`.
+- 12 — Redesign Session-Conclusion Recording to Eliminate Cross-Category Duplication (ticket c29a3c30-95ba-4f63-b74e-037f9d52dce6) — shared `taskId` links a short `history` pointer to its full `decisions`/`learning` entry, replacing today's full restatement in both; write path only, no backfill of the ~219 existing null-`taskId` entries (maintainer call — backfill collides with this map's own out-of-scope non-goal); a follow-on `neuron status --check` finding for drift was explored and declined. Implementation graduated to Ticket 48 — Implement Session-Conclusion Recording Redesign (ticket 707532ee-3377-4822-9111-8f44cff06dde), which now blocks Ticket 6 alongside Ticket 10 — Ticket 6's gate is only safe from the cross-category false-positive shape once sessions actually stop producing full-restatement pairs, not merely once this design is settled. Tracker hygiene, same session: Ticket 9 — Implement Conflict Detection at Write Time was missing a real dependency in its own `blockedBy` — its deliverables assume Ticket 3/6's relatedness pre-filter exists, but Ticket 6 hasn't landed (still blocked); added ab516584-1fc6-4522-a046-2da2397095ab to Ticket 9's `blockedBy` so it stops showing as frontier-unblocked before that foundation exists.
 
 ## Not yet specified
 
@@ -27960,7 +27961,7 @@ tags:
   - longmemeval
   - rc2
 taskId: null
-blockedBy: d121513e-0942-461b-87d0-77830d44e71a,c29a3c30-95ba-4f63-b74e-037f9d52dce6
+blockedBy: d121513e-0942-461b-87d0-77830d44e71a,c29a3c30-95ba-4f63-b74e-037f9d52dce6,707532ee-3377-4822-9111-8f44cff06dde
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
 status: unclaimed
@@ -28378,7 +28379,7 @@ tags:
   - rc2
   - benchmark
 taskId: null
-blockedBy: e5aeaa6a-bc94-4b3e-b6a1-3086924b939e
+blockedBy: e5aeaa6a-bc94-4b3e-b6a1-3086924b939e,ab516584-1fc6-4522-a046-2da2397095ab
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
 status: unclaimed
@@ -28455,6 +28456,7 @@ _Not yet resolved._
   decided, rather than defaulting to soft-flag now.
 - 2026-08-15: Ticket 13 resolved, no-go on hard-block for all candidates
   tested. Unblocked — posture is soft-flag, deliverables updated above.
+- 2026-08-15: Tracker hygiene — added Ticket 6 (ab516584-1fc6-4522-a046-2da2397095ab) to blockedBy. This ticket's own deliverables scope the NLI check to 'Ticket 3/6's pre-filter survivors' but Ticket 6 (the widen+rerank relatedness gate replacing findSupersessionCandidate) has not landed yet — the production code still only has the single-candidate 0.97-cosine supersession gate, which is the wrong relatedness bar for this purpose (case 2 in Ticket 1's findings shows a genuine contradiction pair sitting below 0.97 cosine, i.e. invisible to that gate). Building this ticket against the current gate would not exercise the pre-filter it's specified to depend on. Re-blocked pending Ticket 6.
 
 ---
 id: dfa73027-7c73-4a29-b3d4-1f8c087f3a54
@@ -29715,7 +29717,7 @@ tags:
 taskId: null
 kind: grilling
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 12 — Redesign Session-Conclusion Recording to Eliminate Cross-Category Duplication
 
@@ -29772,7 +29774,66 @@ Full findings behind the 83-pair figure:
 
 ## Answer
 
-_Not yet resolved._
+One entry, cross-referenced via the existing `taskId` field (no new field,
+no new mechanism) — `decisions`/`learning` and `history` both set `--task-id
+<ticket-id>` for the same session, and that shared value is the link, not a
+direct id-to-id pointer.
+
+**Concrete shape**: when a session produces a `decisions`/`learning` entry,
+its `history` entry for the same session shrinks to a short pointer (what
+happened, in a line or two, plus the same `--task-id`) instead of restating
+the resolution. When a session has nothing to decide (pure execution against
+a `task`-kind ticket, nothing new decided), `history` keeps today's
+full-narrative shape — there's nothing else to point at. Mirrors the
+index/detail split wayfinder's own map already uses (Decisions-so-far is a
+gist + link, never a restatement) — same pattern, applied to CLAUDE.md's
+protocol instead of invented fresh.
+
+**Protocols touched**: CLAUDE.md's `## 2. Session Conclusion` and the
+`neuron-memory` skill's `## 4. End of Run` (`.claude/skills/neuron-memory/SKILL.md`)
+— confirmed both carry the same duplicating instructions independently, so
+both need the same edit. Wayfinder's own resolution-recording (ticket
+=full detail, map = gist + link) already avoids this pattern; confirmed by
+reading the wayfinder skill directly, not assumed — no change needed there.
+
+**Backward compatibility, maintainer call**: write path going forward only,
+no backfill. Checked first whether the ~219 existing null-`taskId`
+`decisions`/`learning` entries (86/96 `decisions`, 133/133 `learning`) were
+evidence of writes bypassing the CLI — they are not: the split matches
+CLAUDE.md's own documented command exactly (`history`'s example passes
+`--task-id`, `decisions`/`learning`'s doesn't), so these went through the CLI
+correctly per the old, incomplete protocol. Backfilling them would be a
+retroactive migration pass, which collides with this map's own stated
+out-of-scope (`Retroactive re-scoring of existing live entries`); raised
+that tension directly rather than assuming either way, and the maintainer
+chose to leave the ~219 as-is. A follow-on idea (a new `neuron status
+--check` finding, either blanket-`taskId`-null or a new non-required
+`recommended:` field-schema tier, to catch drift going forward) was explored
+and explicitly declined as unneeded scope for this ticket.
+
+**Residual near-dup-gate handling**: none needed. This is the source-side
+fix Ticket 10 chose over gate-side special-casing (Ticket 10 already
+rejected a config allowlist / taskId exemption inside the gate itself). Once
+the new protocol is followed, a short `history` pointer and its paired full
+`decisions`/`learning` entry are structurally dissimilar in length and
+content, so they won't reproduce the near-duplicate shape Ticket 7's A/B 4
+found (83 of 214 false-positive pairs) — but only for writes made under the
+new protocol. The already-live 83 pairs are inert either way: Ticket 6's
+gate only ever compares a *new* write against existing entries, never
+existing entries against each other, so they were never actually at risk of
+being re-flagged by the live gate (only by Ticket 7's own offline replay
+script) — consistent with the no-backfill call above.
+
+Implementation graduated to Ticket 48 — Implement Session-Conclusion
+Recording Redesign (History Pointer + --task-id on Decisions/Learning),
+matching the Ticket 2→5 / 3→6 / 4→9 precedent of not building in the
+grilling session itself. Ticket 6 — Implement Near-Duplicate Suppression
+now blocks on Ticket 48 specifically (added alongside Ticket 10 and this
+ticket in its `blockedBy`), not just this design ticket, since Ticket 6's
+gate is only safe from the cross-category false-positive shape once new
+sessions actually stop producing full-restatement pairs — every session run
+under the old protocol between now and Ticket 48 landing keeps adding more
+of exactly the pairs Ticket 6 would misfire on.
 
 ## Comments
 
@@ -29780,6 +29841,11 @@ _Not yet resolved._
   fix the cross-category duplication at its source (the session-conclusion
   recording pattern) rather than have the near-dup gate special-case it.
   Blocks Ticket 6.
+- 2026-08-15: Resolved via /grilling with the maintainer. Design: shared
+  `taskId` links a short `history` pointer to its full `decisions`/`learning`
+  entry; write path only, no backfill of the ~219 existing null-`taskId`
+  entries; no new status-check finding (explored, declined). Implementation
+  graduated to Ticket 48. Ticket 6's `blockedBy` updated to include it.
 
 ---
 id: a9ee9c8a-b889-4b13-9896-f85bac50e3c4
@@ -30826,3 +30892,75 @@ Script: `benchmarks/nli-polarity-ab/run-ab-alt-models.ts`.
 - 2026-08-15: Created by Ticket 11's resolution — re-blocks Ticket 9.
 - 2026-08-15: Resolved. No-go on hard-block for all three candidates;
   Ticket 9 unblocked to build soft-flag.
+
+---
+id: 707532ee-3377-4822-9111-8f44cff06dde
+createdAt: 2026-08-15T20:39:02.455Z
+importance: 3
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: null
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 48 — Implement Session-Conclusion Recording Redesign (History Pointer + --task-id on Decisions/Learning)
+
+## Question
+
+Build what Ticket 12 designed: stop CLAUDE.md's `## 2. Session Conclusion`
+protocol and the `neuron-memory` skill's `## 4. End of Run` section (same
+duplicating instructions in two places) from producing two full-narrative
+entries — one in `history`, one in `decisions`/`learning` — for the same
+session resolution.
+
+## Deliverables
+
+- [ ] `decisions`/`learning` command examples in both CLAUDE.md and
+  `neuron-memory` SKILL.md gain `--task-id <ticket-id>`, matching the
+  `history` example (neither currently passes it — confirmed live: 133/133
+  `learning` entries and 86/96 `decisions` entries in this repo's own store
+  carry `taskId: null`, consistent with the documented command never
+  including the flag, not with entries bypassing the CLI).
+- [ ] Both protocol docs' `history` step: when a `decisions`/`learning`
+  entry is also being written this session for the same task, the
+  `history` entry shrinks to a short pointer (one or two lines: what
+  happened, plus the same `--task-id`) instead of restating the resolution.
+  When no `decisions`/`learning` entry exists (pure execution, nothing
+  decided), `history` keeps today's full-narrative shape — there is nothing
+  else to point at.
+- [ ] Wayfinder's own resolution-recording step is untouched — already
+  gist+link only (Decisions-so-far), not full restatement; confirmed during
+  Ticket 12's grilling, not this ticket's concern.
+- [ ] No backfill: the ~219 existing null-`taskId` `decisions`/`learning`
+  entries and their paired full-narrative `history` entries are left as-is,
+  per Ticket 12's explicit maintainer call (write path going forward only —
+  retroactive backfill is this map's own stated out-of-scope).
+- [ ] No new `neuron status --check` finding, no new field-schema tier —
+  explored during Ticket 12's grilling and explicitly declined by the
+  maintainer as unneeded scope.
+
+## Context
+
+Graduated from Ticket 12 — Redesign Session-Conclusion Recording to
+Eliminate Cross-Category Duplication's design resolution, mirroring how
+Ticket 2/3/4 each graduated their own implementation to a separate ticket
+(5/6/9) rather than building in the grilling session itself.
+
+Ticket 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate) is
+blocked on this ticket landing, not merely on Ticket 12's design being
+settled: Ticket 6's gate is only safe from the cross-category
+false-positive shape (Ticket 7's A/B 4, 83 of 214 pairs) once new sessions
+actually stop producing full-restatement pairs. Until these doc edits land,
+every session run under the old protocol keeps adding more of exactly the
+pairs Ticket 6's gate would misfire on.
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Created by Ticket 12's resolution.

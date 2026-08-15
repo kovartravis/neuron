@@ -3050,3 +3050,15 @@ tags:
 taskId: null
 ---
 Wayfinder pickup on the neuron-2.4.2 map: claimed and resolved Ticket 7 (Validate Near-Duplicate Detection Approach, A/B Tests). Built a 40-pair labeled corpus (near-dup/related-distinct/unrelated) and ran A/B 1-3: reranking beats raw cosine on isolated prose pairs (N=10, bar=3 reaches 0%/0% false-silence/false-accept). Ran A/B 4 (counterfactual replay against all 683 live entries in this repo's own store) and A/B 5: found the bar/N calibration does not transfer to real content — 214 mostly-false-positive pairs driven by shared structural templates (architecture cards, wayfinder history log template) and by-design cross-category restatement, not modeled in the synthetic corpus. Findings doc: docs/design/write-time-quality/near-dup-detection-ab-findings.md. Created Ticket 10 (Resolve Template/Structural False-Positive Risk Before Building Ticket 6) and re-blocked Ticket 6 on it rather than letting it proceed on the unvalidated bar/N alone.
+
+---
+id: 088cb138-26b0-4e32-a598-c29b8ce61a43
+createdAt: 2026-08-15T20:40:51.169Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: c29a3c30-95ba-4f63-b74e-037f9d52dce6
+---
+Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 12 (Redesign Session-Conclusion Recording to Eliminate Cross-Category Duplication) via /grilling. Found Ticket 9 — Implement Conflict Detection at Write Time was showing as frontier-unblocked despite a real, unwired dependency on Ticket 6's not-yet-built relatedness pre-filter, and fixed its blockedBy as tracker hygiene before picking a ticket to work. Design settled with the maintainer: decisions/learning and history entries link via a shared --task-id (no new field); history shrinks to a short pointer instead of a full restatement whenever a decisions/learning entry captures the same session's resolution, and keeps today's full-narrative shape only when nothing was decided. Confirmed the ~219 existing null-taskId decisions/learning entries came from the CLI being used correctly per the old (incomplete) documented protocol, not from writes bypassing it. Maintainer explicitly scoped this to the write path going forward only -- no backfill of existing entries, and a follow-on neuron status --check finding for drift was explored and declined. Implementation graduated to new Ticket 48 (CLAUDE.md + neuron-memory SKILL.md edits), which now blocks Ticket 6 in place of this design ticket. No code changed this session -- tracker/map updates only.
