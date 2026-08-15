@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T03:52:36.719Z",
+  "generatedAt": "2026-08-15T11:13:20.597Z",
   "budget": {
     "honestyBand": "established",
     "ticket": 7,
@@ -14,10 +14,10 @@
       "epochTokenBudgetApprox": 6000,
       "sessionsObserved": 105,
       "epochsObserved": 105,
-      "medianCharsPerEpoch": 5681,
+      "medianCharsPerEpoch": 5691,
       "p95CharsPerEpoch": 16692,
       "maxCharsPerEpoch": 17970,
-      "meanCharsPerTurn": 4011
+      "meanCharsPerTurn": 3991
     },
     "narrative": "Per-epoch (not per-session) char budget, hard stop on exhaustion, published at a conservative 3 chars/token (~3% of a 200K window). \"live\" is this repo's own recorded cost from `neuron status`, not a projection."
   },

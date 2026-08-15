@@ -258,5 +258,18 @@
     "adversarialMrr": 0.213,
     "droppedWriteRatio": 0,
     "lostWrites": 0
+  },
+  {
+    "timestamp": "2026-08-15T11:13:19.129Z",
+    "tier": "sanity",
+    "grade": "A+",
+    "scorePercent": 100,
+    "pillarsRan": 14,
+    "pillarsPassed": 14,
+    "durationMin": 0.6,
+    "adversarialRecallAt1": 0.125,
+    "adversarialMrr": 0.213,
+    "droppedWriteRatio": 0,
+    "lostWrites": 0
   }
 ]

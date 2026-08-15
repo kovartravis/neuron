@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-08-15T03:52:10.551Z",
+  "timestamp": "2026-08-15T11:12:57.030Z",
   "tier": "sanity",
-  "suiteDurationMs": 4971,
+  "suiteDurationMs": 13199,
   "pillars": [
     {
       "pillar": "Pillar 8: Multi-Process Contention & Crash Recovery",
       "samples": 1,
-      "p50Ms": 2010.85,
-      "p95Ms": 2010.85,
-      "p99Ms": 2010.85,
-      "minMs": 2010.85,
-      "maxMs": 2010.85,
-      "meanMs": 2010.85,
-      "totalMs": 2010.85,
-      "throughputPerSec": 0.5,
+      "p50Ms": 2165.8,
+      "p95Ms": 2165.8,
+      "p99Ms": 2165.8,
+      "minMs": 2165.8,
+      "maxMs": 2165.8,
+      "meanMs": 2165.8,
+      "totalMs": 2165.8,
+      "throughputPerSec": 0.46,
       "extra": {
         "processes": 3,
         "writesPerWorker": 25,
@@ -28,8 +28,8 @@
         "initErrorSample": [],
         "nonZeroExits": 0,
         "otherErrors": [],
-        "wallMs": 2011,
-        "writesPerSec": 25,
+        "wallMs": 2166,
+        "writesPerSec": 23,
         "crashRecovery": [
           {
             "round": 0,

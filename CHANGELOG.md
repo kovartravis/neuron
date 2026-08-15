@@ -2,6 +2,48 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.0] - 2026-08-15
+
+This section supersedes and consolidates `2.4.0-rc1`, `2.4.0-rc2`, and
+`2.4.0-rc3` below into one stable release.
+
+**Recall is more accurate and covers more ground.** A local, offline
+cross-encoder reranker now second-gates every relevance match before it's
+injected — on the hardest out-of-corpus test we could build, that cut the
+false-accept rate from 99.80% to 19.4%, with no remote API call involved.
+Your repo's own commit history joins memory as a searchable resident
+source: a prompt naming a feature or a bug now surfaces the real commit
+that shipped the fix, not just your written notes — live-measured to match
+a hand-tuned oracle's 0% failure rate. And on Claude Code and Codex CLI,
+the pre-execution safety lookup that used to be a manual step now fires
+automatically on every shell command, the same way prompt-time recall
+already did.
+
+**`neuron status` grew from a health check into a real diagnostic
+surface.** `--health`/`--repair` finds and cleans up near-duplicate
+entries; `--check` now also catches a stale global binary and a
+`CLAUDE.md`/`AGENTS.md` instructions file that's drifted from what your
+config would generate today — all four checks are gated in this repo's own
+CI, not just available locally.
+
+**Several real, previously-latent bugs got found and fixed** while working
+on other things this cycle: `neuron init` was silently onboarding harnesses
+you don't use whenever a bare `.github/` directory existed; drift detection
+could resolve the wrong project root and overwrite your architecture card
+with a scan of the wrong tree; category auto-declare could climb past an
+isolated project's own root and mutate an *ancestor* project's config; a
+fresh SQLite database opened by multiple processes at once could hit a
+migration race.
+
+**The memory store's filtering primitives are now schema-agnostic and
+reusable for any structured category** — `neuron memory get <id>`,
+repeatable and negatable `list --where`, and `--refs-satisfy` for
+cross-referencing declared fields, none of it tied to any one project's
+vocabulary.
+
+Full detail on every change is in the `2.4.0-rc1`/`rc2`/`rc3` sections
+below.
+
 ## [2.4.0-rc3] - 2026-08-14
 
 Third interim checkpoint on the neuron-2.4.0 map, audited directly from

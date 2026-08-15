@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-08-15T03:52:25.757Z",
+  "timestamp": "2026-08-15T11:13:04.389Z",
   "tier": "sanity",
-  "suiteDurationMs": 20172,
+  "suiteDurationMs": 20550,
   "pillars": [
     {
       "pillar": "Pillar 7: Adversarial Retrieval Quality",
       "samples": 8,
-      "p50Ms": 95.45,
-      "p95Ms": 199.09,
-      "p99Ms": 234.87,
-      "minMs": 50.03,
-      "maxMs": 243.81,
-      "meanMs": 104.85,
-      "totalMs": 838.76,
-      "throughputPerSec": 9.54,
+      "p50Ms": 32.96,
+      "p95Ms": 97.75,
+      "p99Ms": 122.89,
+      "minMs": 24.11,
+      "maxMs": 129.18,
+      "meanMs": 44.37,
+      "totalMs": 354.95,
+      "throughputPerSec": 22.54,
       "extra": {
         "corpusSize": 308,
         "cases": 8,
@@ -97,14 +97,14 @@
     {
       "pillar": "Pillar 13: Antagonistic Recall & Abstention",
       "samples": 19,
-      "p50Ms": 21.54,
-      "p95Ms": 33.18,
-      "p99Ms": 37.67,
-      "minMs": 14.92,
-      "maxMs": 38.79,
-      "meanMs": 22.79,
-      "totalMs": 433.09,
-      "throughputPerSec": 43.87,
+      "p50Ms": 15.07,
+      "p95Ms": 16.4,
+      "p99Ms": 16.85,
+      "minMs": 14.31,
+      "maxMs": 16.96,
+      "meanMs": 15.29,
+      "totalMs": 290.6,
+      "throughputPerSec": 65.38,
       "extra": {
         "cases": 19,
         "falseAccepts": 0,
@@ -133,20 +133,20 @@
     {
       "pillar": "Pillar 9: Retrieval Scale Curve",
       "samples": 1,
-      "p50Ms": 62.49,
-      "p95Ms": 62.49,
-      "p99Ms": 62.49,
-      "minMs": 62.49,
-      "maxMs": 62.49,
-      "meanMs": 62.49,
-      "totalMs": 62.49,
-      "throughputPerSec": 16,
+      "p50Ms": 40.88,
+      "p95Ms": 40.88,
+      "p99Ms": 40.88,
+      "minMs": 40.88,
+      "maxMs": 40.88,
+      "meanMs": 40.88,
+      "totalMs": 40.88,
+      "throughputPerSec": 24.46,
       "extra": {
         "curve": [
           {
             "corpusSize": 500,
-            "p50Ms": 62.491,
-            "p95Ms": 83.158,
+            "p50Ms": 40.879,
+            "p95Ms": 57.63,
             "recallAt1": 0.125
           }
         ]
