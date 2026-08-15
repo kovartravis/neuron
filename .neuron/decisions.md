@@ -1306,3 +1306,15 @@ tags:
 taskId: null
 ---
 commitRef declared-field type (ticket 5, neuron-2.4.2): git-history-verified provenance, not a general verifier. Implemented as a single closed, built-in field type — validated via git rev-parse --verify --quiet <ref>^{commit} at the same enforceFieldSchema choke point every other declared field already goes through — rather than a pluggable custom-code verifier, which ticket 2's grilling rejected outright as a pluggable-provider surface this map's non-goals rule out. The not-a-git-repo case is distinguished from an unknown-commit case at the gitLog.ts level (git rev-parse --is-inside-work-tree checked before ref resolution) so a refused write always names why, never silently degrading the way read-path git-log parsing does. Not dogfooded onto decisions/learning (would collide with this project's own same-session decision-recording convention) — the new git-notes category is commitRef's real consumer instead. ADR 0013 amended rather than reopened: its original 'string and enum only' type-floor decision stands, commitRef is recorded as the one narrow exception.
+
+---
+id: 293b68d4-9d34-40b5-b8dd-e5b72e950fda
+createdAt: 2026-08-15T18:47:58.922Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+---
+Near-dup gate validation (ticket 7, neuron-2.4.2): the reranking-over-cosine approach itself is validated (N=10, bar=3 separates cleanly on isolated prose), but that calibration is not sufficient to build Ticket 6 against directly. A real-store counterfactual against this repo's own 683 live entries found the same bar/N flags mostly-false-positive pairs, driven by shared structural templates (scanner-generated architecture cards, templated wayfinder history logs) and by-design cross-category restatement (decisions/learning + history recording the same ticket twice on purpose) — content shapes the synthetic corpus never modeled. Decided not to let Ticket 6 proceed on the unvalidated bar/N: created Ticket 10 to decide the mitigation (exclude scanner-generated categories, scope to same-category only, a template pre-filter, or a separately-calibrated bar), and re-blocked Ticket 6 on it. Rationale: shipping the naive gate would visibly misfire on this repo's own store on day one — a dogfooding failure this map exists to prevent, not cause.

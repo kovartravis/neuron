@@ -3038,3 +3038,15 @@ tags:
 taskId: 7c785243-17da-44e2-af28-3436a0e92520
 ---
 Wayfinder pickup on Map — neuron 2.4.2: resolved Ticket 5 — Implement commitRef Field Type & git-notes Category, the map's first-in-order frontier ticket (5, 7, 8 were all unblocked). Built ticket 2's settled design test-first: verifyCommitRef (src/harnesses/gitLog.ts) resolves full/abbreviated SHAs via git rev-parse --verify --quiet <ref>^{commit}, distinguishing a not-a-git-repo error from an unknown-commit one (an empty-but-real repo correctly reports the latter, not the former). Wired into enforceFieldSchema's existing per-field validation loop in src/index.ts alongside the enum branch — same choke point, same refused-write-is-never-partial posture. Declared the new git-notes category in this repo's own neuron.yaml with a required commitRef field, and smoke-tested it live (accepted real HEAD, hard-refused an all-zero placeholder hash) before deleting the smoke-test entry. Updated docs/COMMANDS.md's field-type reference and added a 2026-08-15 amendment to ADR 0013 recording commitRef as one narrow, closed addition to its original string-and-enum type floor — no pluggable-verifier reopening. 31 new tests added across src/harnesses/gitLog.test.ts and new src/commitRefField.test.ts; npm test 746/746, tsc clean. Ticket 5 closed, map's Decisions-so-far updated; frontier now Ticket 7 (Validate Near-Duplicate Detection Approach) and Ticket 8 (Validate NLI Polarity Detection), both A/B-test tickets gating tickets 6 and 9 respectively.
+
+---
+id: a5409e65-3e85-4cab-aae4-ba046271ae75
+createdAt: 2026-08-15T18:47:49.214Z
+importance: 3
+tags:
+  - retrieval
+  - longmemeval
+  - rc2
+taskId: null
+---
+Wayfinder pickup on the neuron-2.4.2 map: claimed and resolved Ticket 7 (Validate Near-Duplicate Detection Approach, A/B Tests). Built a 40-pair labeled corpus (near-dup/related-distinct/unrelated) and ran A/B 1-3: reranking beats raw cosine on isolated prose pairs (N=10, bar=3 reaches 0%/0% false-silence/false-accept). Ran A/B 4 (counterfactual replay against all 683 live entries in this repo's own store) and A/B 5: found the bar/N calibration does not transfer to real content — 214 mostly-false-positive pairs driven by shared structural templates (architecture cards, wayfinder history log template) and by-design cross-category restatement, not modeled in the synthetic corpus. Findings doc: docs/design/write-time-quality/near-dup-detection-ab-findings.md. Created Ticket 10 (Resolve Template/Structural False-Positive Risk Before Building Ticket 6) and re-blocked Ticket 6 on it rather than letting it proceed on the unvalidated bar/N alone.

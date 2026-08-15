@@ -27011,6 +27011,7 @@ storage engine, no new package, no new top-level command.
 - 3 — Near-Duplicate Suppression (ticket c0d494fb-ab8b-447d-916c-48298b701cb7) — rejected a new raw-cosine threshold outright: ADR 0015 and ticket 39 both already found no reliable intermediate cosine band exists on real text, and ticket 1 found a genuine paraphrase slips under 0.97 uncaught. Instead, `findSupersessionCandidate` gets rebuilt as one unified gate — widen to the top-N candidates by cosine (a cheap pre-filter, not a decision), rerank each with the existing `TransformersReranker`, and gate on a freshly-calibrated reranker-score bar (the existing `-8` is tuned for a different, asymmetric task and doesn't transfer). Same CLI surface (`--supersedes`/`--not-a-reversal`/`--if-novel`), now catching near-dup restatements as well as reversals; hit behavior is inherited for free. Implementation graduated to Ticket 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate) (ticket ab516584-1fc6-4522-a046-2da2397095ab), but Ticket 6 is itself gated on Ticket 7 — Validate Near-Duplicate Detection Approach (A/B Tests) (ticket 4615099c-aebf-4088-ac18-52b55677e61a), created afterward at the maintainer's request to test the reranking-beats-cosine premise itself (plus N-sensitivity, the bar frontier, a real counterfactual store-growth measurement, and a false-positive friction check) before Ticket 6 spends engineering time building against it.
 - 4 — Conflict Detection at Write Time (ticket bc1fad4b-9317-4c2f-8cff-1ba8329283e9) — polarity signal is an NLI cross-encoder (`cross-encoder/nli-MiniLM2-L6-H768`), not a heuristic and not a chat model — a deliberate, narrow amendment to this map's own "no new model" non-goal (see Notes), distinct from the pluggable-provider system that stays banned. Layered on Ticket 3/6's relatedness gate as a pre-filter — the NLI model only ever scores candidates that already cleared that bar, never a full-category scan. Hits hard-block on the same `--supersedes`/`--not-a-reversal`/`--if-novel` UX as the existing gate, one consistent resolution path regardless of trigger. Implementation graduated to Ticket 8 — Validate NLI Polarity Detection (A/B) (ticket b8900ad0-0579-4263-98f5-6f8acee75025), gating Ticket 9 — Implement Conflict Detection at Write Time (ticket 78c7b32d-274a-4cac-bab6-55e83fa868b8) — mirroring the Ticket 6/7 precedent.
 - 5 — Implement `commitRef` Field Type & `git-notes` Category (ticket 7c785243-17da-44e2-af28-3436a0e92520) — built exactly as ticket 2 specified: `verifyCommitRef` (`src/harnesses/gitLog.ts`) resolves full/abbreviated SHAs via `git rev-parse --verify --quiet <ref>^{commit}`, distinguishing `not-a-git-repo` from `unknown-commit` (an empty-but-real repo correctly reports the latter). Wired into `enforceFieldSchema`'s existing per-field loop alongside `enum`, same choke point, same refused-write-is-never-partial posture. `git-notes` category declared in this repo's own `neuron.yaml` and smoke-tested against real HEAD. ADR 0013 amended (2026-08-15) to record this as one narrow, closed addition to the "string and enum only" type floor — no pluggable-verifier reopening. `npm test` 746/746, `tsc` clean.
+- 7 — Validate Near-Duplicate Detection Approach (A/B Tests) (ticket 4615099c-aebf-4088-ac18-52b55677e61a) — split verdict. On a 40-pair synthetic corpus, reranking cleanly beats raw cosine (N=10, bar=3 reaches 0%/0% false-silence/false-accept; no cosine floor does) — A/B 1's premise holds. But the real-store counterfactual (A/B 4, replayed against all 683 live entries in this repo's own store) found that same bar/N flags 214 mostly-false-positive pairs, dominated by content the synthetic corpus never modeled: shared structural templates (`architecture`'s scanner-generated cards, `history`'s wayfinder-session template) and by-design cross-category restatement (`decisions`/`learning` + `history` recording the same ticket twice on purpose) — plus one genuine same-category false positive (two independent `decisions` entries on the same topic, scored 4.72). Ticket 6 re-blocked on new Ticket 10 — Resolve Template/Structural False-Positive Risk Before Building Ticket 6 (ticket d121513e-0942-461b-87d0-77830d44e71a) rather than proceeding on this ticket's bar/N alone. Findings: `docs/design/write-time-quality/near-dup-detection-ab-findings.md`.
 
 ## Not yet specified
 
@@ -27955,7 +27956,7 @@ tags:
   - longmemeval
   - rc2
 taskId: null
-blockedBy: 4615099c-aebf-4088-ac18-52b55677e61a
+blockedBy: d121513e-0942-461b-87d0-77830d44e71a
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
 status: unclaimed
@@ -27994,15 +27995,27 @@ re-litigated here:
   surfaced, `--supersedes <id>` / `--not-a-reversal` named as the
   resolution — the existing gate's behavior already covers this.
 
-**Blocked on Ticket 7 — Validate Near-Duplicate Detection Approach (A/B
-Tests)**, created 2026-08-15 at the maintainer's request. Ticket 7 tests
-the approach itself (does reranking actually separate near-dups better
-than cosine, on this task?) before this ticket spends engineering time
-building it, and produces the widen-count (N) and reranker bar as
-findings rather than this ticket re-deriving them mid-implementation. If
-Ticket 7 returns a no-go on A/B 1 (reranking doesn't beat cosine here),
-this ticket's own design — not just its calibration — needs to go back to
-the maintainer before any of the deliverables below still apply.
+**Ticket 7 resolved (2026-08-15) with a split verdict, not a clean go.** On
+its own 40-pair synthetic corpus, reranking does separate near-dup from
+same-topic-different-fact hard negatives better than raw cosine (N=10,
+bar=3 — see its findings doc). But Ticket 7's own real-store counterfactual
+(A/B 4) found that same bar/N produces 214 false-positive-dominated
+"duplicate" pairs against this repo's actual 683 live entries — driven by
+two shapes the synthetic corpus never modeled: shared structural/narrative
+templates (`architecture`'s scanner-generated cards, `history`'s
+wayfinder-session template) and by-design cross-category restatement
+(`decisions`/`learning` + `history` recording the same ticket twice on
+purpose). A genuine same-category false positive was also found with no
+template involved. Full detail:
+`docs/design/write-time-quality/near-dup-detection-ab-findings.md`.
+
+**Blocked on Ticket 10 — Resolve Template/Structural False-Positive Risk
+Before Building Ticket 6**, created by Ticket 7's resolution. This ticket's
+own deliverables below (in particular "apply Ticket 7's chosen N and
+bar" — no longer sufficient on its own) are stale until Ticket 10 decides
+how the gate is meant to tell "shares scaffolding/topic" apart from
+"restates the same fact." Do not start implementation from the deliverables
+below as currently written; they need Ticket 10's answer folded in first.
 
 ## Deliverables
 
@@ -28018,6 +28031,10 @@ the maintainer before any of the deliverables below still apply.
       category-name logic) — verify the new gate, like the old one, applies
       uniformly across categories with no category-scoped special-casing
 - [ ] `npm test` and `tsc` clean
+- [ ] **Added 2026-08-15, pending Ticket 10:** apply whichever
+      template/structural-collision mitigation Ticket 10 decides on, before
+      or alongside the widen/rerank/bar mechanism above — the deliverable
+      list above is necessary but, per Ticket 7's findings, not sufficient.
 
 ## Answer
 
@@ -28029,6 +28046,9 @@ _Not yet resolved._
 - 2026-08-15: Blocked on Ticket 7, created at the maintainer's request so
   the approach and its parameters are validated before this ticket builds
   against them.
+- 2026-08-15: Ticket 7 resolved. Re-blocked on Ticket 10 — its bar/N
+  calibration alone does not survive contact with this repo's own real
+  content (see Context above).
 
 ---
 id: 7fed4f53-3251-4b7a-94a0-3d344fb9a59a
@@ -28117,7 +28137,7 @@ tags:
 taskId: null
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 7 — Validate Near-Duplicate Detection Approach (A/B Tests)
 
@@ -28183,31 +28203,80 @@ discipline this codebase already used for `RERANKER_ACCEPT_THRESHOLD=-8`
 
 ## Deliverables
 
-- [ ] Labeled near-dup / related-but-distinct / unrelated corpus built
-      (feeds A/B 1, 3, and Ticket 6's own calibration deliverable)
-- [ ] A/B 1 run: reranking vs. raw cosine separation compared; go/no-go
-      on the reranking approach itself
-- [ ] A/B 2 run: widen count (N) chosen from the sweep, documented
-      rationale
-- [ ] A/B 3 run: reranker bar chosen from the frontier, documented
-      rationale
-- [ ] A/B 4 run: counterfactual store-growth impact measured and reported
-- [ ] A/B 5 run: false-positive friction on real iterative writes checked
-- [ ] Findings doc (mirroring `docs/design/write-time-quality/
+- [x] Labeled near-dup / related-but-distinct / unrelated corpus built
+      (feeds A/B 1, 3, and Ticket 6's own calibration deliverable) —
+      `benchmarks/near-dup-ab/corpus.ts`, 40 pairs across 15 topic groups
+      plus 41 distractor seeds
+- [x] A/B 1 run: reranking vs. raw cosine separation compared; go/no-go
+      on the reranking approach itself — **go**, reranker reaches a clean
+      0%/0% false-silence/false-accept point (bar 3-4) that no raw-cosine
+      floor reaches on this corpus (best cosine floor still leaves 13%
+      cross-pool false-accept)
+- [x] A/B 2 run: widen count (N) chosen from the sweep, documented
+      rationale — **N=10**; N=5 already saturates recall on this corpus,
+      N=10 kept as a real-store margin, not because a larger N measurably
+      helped
+- [x] A/B 3 run: reranker bar chosen from the frontier, documented
+      rationale — **bar=3** (own reranker-score scale); tightest point
+      where false-silence and cross-pool false-accept both hit 0%,
+      confirmed the existing `RERANKER_ACCEPT_THRESHOLD=-8` does not
+      transfer (93% false-accept at that threshold on this task)
+- [x] A/B 4 run: counterfactual store-growth impact measured and
+      reported — **the decisive result**: replayed against all 683 live
+      entries in this repo's own store, the bar=3/N=10 gate flags 214 new
+      pairs beyond today's 0.97-cosine gate, and the large majority are
+      false positives driven by shared structural templates
+      (`architecture`'s scanner-generated cards, `history`'s
+      wayfinder-session template) and by-design cross-category
+      restatement, not modeled in the A/B 1-3 corpus
+- [x] A/B 5 run: false-positive friction on real iterative writes
+      checked — answered directly by A/B 4 (a real-write-history replay);
+      friction is severe — concrete example: two distinct `decisions`
+      entries about the same pruning-ceiling topic scored 4.72, above
+      bar=3
+- [x] Findings doc (mirroring `docs/design/write-time-quality/
       antagonistic-write-findings.md`'s shape) with all five results and
-      a clear go/no-go recommendation for Ticket 6
-- [ ] Ticket 6 updated with the resulting N and bar so its own
-      calibration deliverable becomes "apply this ticket's findings"
-      rather than a re-derivation
+      a clear go/no-go recommendation for Ticket 6 —
+      `docs/design/write-time-quality/near-dup-detection-ab-findings.md`
+- [x] Ticket 6 updated — not with a clean "apply this ticket's findings"
+      as originally envisioned, since A/B 4 found the findings alone
+      aren't sufficient. Ticket 6 re-blocked on a new Ticket 10 — Resolve
+      Template/Structural False-Positive Risk Before Building Ticket 6.
 
 ## Answer
 
-_Not yet resolved._
+Split verdict, not a clean go. **A/B 1's core premise holds**: reranking
+does separate near-dup restatements from same-topic-different-fact hard
+negatives better than raw cosine on isolated prose pairs (N=10, bar=3
+reaches 0%/0% false-silence/false-accept; no cosine floor does). **But the
+calibration doesn't transfer to this repo's own real content** — A/B 4's
+counterfactual replay against all 683 live entries found the same bar/N
+produces 214 mostly-false-positive "duplicate" flags, dominated by two
+content shapes the synthetic corpus never modeled: entries sharing a
+structural/narrative template (scanner-generated `architecture` cards,
+templated `history` session logs) with unrelated facts, and by-design
+cross-category restatement (this repo's own workflow records the same
+ticket's resolution once as a `decisions`/`learning` entry and again as a
+`history` log entry, on purpose). A genuine same-category false positive
+was also found with no template involved (two independent `decisions`
+entries about the same pruning-ceiling topic, scored 4.72).
+
+Ticket 6 cannot proceed against this ticket's bar/N alone — see
+**Ticket 10 — Resolve Template/Structural False-Positive Risk Before
+Building Ticket 6**, created by this resolution and now blocking Ticket 6,
+for the open design question this surfaced (deliberately not decided
+here — a validation ticket measures, it doesn't design the mitigation).
+
+Full method, every measured number, and the counterfactual's category
+breakdown: `docs/design/write-time-quality/near-dup-detection-ab-findings.md`.
+Raw data: `benchmarks/near-dup-ab/raw-scores.json`,
+`benchmarks/reports/near-dup-ab4-counterfactual.json`.
 
 ## Comments
 
 - 2026-08-15: Created at the maintainer's request, to run before Ticket 6
   rather than fold calibration into that ticket's own implementation pass.
+- 2026-08-15: Resolved. Ticket 6 updated and re-blocked on new Ticket 10.
 
 ---
 id: b8900ad0-0579-4263-98f5-6f8acee75025
@@ -28850,3 +28919,81 @@ Add a "docs reviewed against this release's CLI/config surface" checklist item t
 ## Context
 
 Independent of every other ticket — editing process documentation, not building anything. First needs to locate where the release checklist actually lives in this repo.
+
+---
+id: d121513e-0942-461b-87d0-77830d44e71a
+createdAt: 2026-08-15T18:44:55.807Z
+importance: 3
+tags:
+  - retrieval
+  - longmemeval
+  - rc2
+taskId: null
+kind: grilling
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 10 — Resolve Template/Structural False-Positive Risk Before Building Ticket 6
+
+## Question
+
+Ticket 7's real-store counterfactual (A/B 4) found that the widen/rerank/bar
+gate Ticket 3 designed and Ticket 7 calibrated (N=10, bar=3) massively
+over-triggers on this repo's own live content — 214 of the "new" pairs it
+would catch beyond today's 0.97-cosine gate, and the large majority are not
+genuine near-duplicates. Two content shapes drive this, neither modeled in
+Ticket 7's synthetic corpus:
+
+1. **Shared structural/narrative template, different facts.** This repo's
+   `architecture` category is scanner-generated from a fixed template
+   (`"### 🧩 X (path) Primary X module containing core application
+   capabilities..."`); its `history` category is written through a fixed
+   wayfinder-session template (`"Wayfinder pickup on the neuron-X.Y.Z map:
+   resolved ticket N..."`). A cross-encoder reranker trained on natural
+   relevance treats shared phrasing as a real similarity signal even when
+   the underlying facts are unrelated.
+2. **By-design cross-category restatement.** This repo's own workflow
+   records the same piece of work twice on purpose — once as a
+   `decisions`/`learning` entry, once as a `history` log entry. 83 of the
+   214 new pairs were exactly this shape.
+
+A genuine false positive was also found within a single category with no
+template involved: two distinct `decisions` entries about the same
+pruning-ceiling topic, stating different decisions, scored 4.72 (above
+bar=3). So the problem isn't solely "exclude templated categories" — some
+real same-category, same-topic, different-fact pairs need distinguishing
+too.
+
+This ticket decides how the gate tells "shares scaffolding/topic" apart
+from "restates the same fact," before Ticket 6 builds against a bar that
+would visibly misfire on this repo's own store on day one. Candidate
+directions (not evaluated, this ticket's job to weigh, not to build):
+
+- Exclude scanner-generated categories (`architecture`) from the gate
+  entirely — cuts 17 of 214 pairs, leaves cross-category and history
+  collisions untouched.
+- Scope the gate to same-category comparisons only — cuts the 83
+  cross-category pairs, leaves the ~106 same-category `history` template
+  collisions and the genuine `decisions` false positive untouched.
+- A template/boilerplate pre-filter ahead of reranking (e.g. structural
+  fingerprint or a fixed-prefix check) that suppresses candidates sharing a
+  known template regardless of reranker score.
+- A separately-calibrated, much higher bar for boilerplate-heavy
+  categories specifically, accepting a real-content-specific tradeoff
+  rather than one bar for the whole store.
+- Something else entirely — this is real `/domain-modeling` territory, the
+  same kind of "restates vs. disagrees" distinction the map's own Notes
+  already anticipated for Ticket 4.
+
+Full findings, method, and every measured number:
+`docs/design/write-time-quality/near-dup-detection-ab-findings.md`.
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Created by Ticket 7's resolution — this map's own "plan,
+  don't do" discipline means Ticket 7 measures and reports the problem, it
+  doesn't unilaterally pick the mitigation. Blocks Ticket 6.

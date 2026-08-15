@@ -14,7 +14,7 @@ taskId: null
 # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 16 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 17 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
@@ -38,6 +38,7 @@ Default: `ast/2`
 @kovartravis/neuron
 ├── benchmarks (benchmarks)
 ├── longmemeval (benchmarks/longmemeval)
+├── near-dup-ab (benchmarks/near-dup-ab)
 ├── reranker-gate (benchmarks/reranker-gate)
 ├── salvage-expansion (benchmarks/salvage-expansion)
 ├── src (src)
@@ -57,9 +58,10 @@ Default: `ast/2`
 ## 📦 Primary Subsystems
 - **benchmarks** — `benchmarks` (3 files)
 - **longmemeval** — `benchmarks/longmemeval` (4 files)
+- **near-dup-ab** — `benchmarks/near-dup-ab` (3 files)
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
-- **src** — `src` (12 files)
+- **src** — `src` (13 files)
 - **commands** — `src/commands` (29 files)
 - **components** — `src/components` (14 files)
 - **config** — `src/config` (11 files)
@@ -128,6 +130,7 @@ Primary src module containing core application capabilities.
 **Key Components & Export Contracts:**
 - **`src/cli.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
 - **`src/cli.ts`**: Methods: main(), slice(), log(), exit().
+- **`src/commitRefField.test.ts`**: `commitRef` declared-field type (ticket 5, neuron-2.4.2), graduated from ticket 2's provenance-enforcement design. Covers write-time enforcement at the `transact()` choke point (`enforceFieldSchema`, `src/index.ts`) against a real git repository — valid full SHA, valid abbreviated SHA, an invalid hash, and the not-a-git-repo case. `src/harnesses/gitLog.test.ts` covers `verifyCommitRef` itself in isolation.
 - **`src/db.test.ts`**: Methods: describe(), it(), openDatabase(), expect().
 - **`src/db.ts`** (Exports: `createNodeSqliteWrapper, openDatabase, withSyncFileLock`): Synchronous cross-process mutex over `fn`, using `mkdir` as the atomic primitive — the same approach `MdStorageAdapter.acquireLock` uses for markdown writes, but blocking rather than `async`: `NeuronMemory`'s constructor runs its schema-migration chain synchronously, with no `await` point to yield at, so the wait between poll attempts uses `Atomics.wait` for a real OS-level sleep (Node's main thread, unlike a browser's, permits it) instead of a `setTimeout`-based one. Serializes `NeuronMemory.initialize()`'s migration chain across processes opening the same fresh database file concurrently — without it, two processes can both read `user_version` as `0` before either commits its first migration, producing `duplicate column name` / `no such table` races (the SQLite schema-migration race ticket, id `2fbfa9ff-1469-4b21- b781-cef371ea7d38` — this repo's wayfinder ticket numbers collide across maps, and bare "ticket 44" already names an unrelated declared-fields SQLite-column change elsewhere in this codebase, so this comment spells out the id rather than the number).
 - **`src/enrichment.test.ts`**: Write-side enrichment, asserted at the transaction entry point — what ends up in the store. That was once two seams; the query seam carried the enrichment backlog's drain guarantee, and ticket 26 removed the only deferred job, so a read has no enrichment behaviour left to assert. Nothing here asserts how a tag was chosen. The category strategy in particular was A/B'd precisely because its winner was unknown, so tests that pinned the mechanism would have been rewritten by the experiment they existed to support.
@@ -285,7 +288,7 @@ Primary harnesses module containing core application capabilities.
 - **`src/harnesses/discoveryHint.test.ts`**: Methods: describe(), it(), expect(), toBeNull().
 - **`src/harnesses/discoveryHint.ts`** (Exports: `buildDiscoveryHint`): Ticket 06 (neuron-2.4.0): a per-turn hint that teaches the agent the broader `neuron memory query` surface exists, fired only when this turn's relevance-gated recall actually left something on the table — never a generic "you can search" note, always the real command with the real count. Counts against the same per-turn char budget as everything else `hook.ts` injects (no reserved allotment), so a tight budget just drops it.
 - **`src/harnesses/gitLog.test.ts`**: Methods: describe(), join(), git(), execFileSync().
-- **`src/harnesses/gitLog.ts`** (Exports: `GitLogCommit, getHeadSha, listAllCommits, listCommitsSince`): Ticket 08 (neuron-2.4.0) / ADR-less design ruling on ticket 39 (neuron-2.3.0): pure git shell-out, no DB access, so the parsing itself is testable without a `NeuronMemory` instance. `NeuronMemory`'s own `refreshGitLogIndex`/`searchGitLog` (`src/index.ts`) own the SQLite side.
+- **`src/harnesses/gitLog.ts`** (Exports: `GitLogCommit, getHeadSha, listAllCommits, listCommitsSince, CommitRefCheck, verifyCommitRef`): Ticket 08 (neuron-2.4.0) / ADR-less design ruling on ticket 39 (neuron-2.3.0): pure git shell-out, no DB access, so the parsing itself is testable without a `NeuronMemory` instance. `NeuronMemory`'s own `refreshGitLogIndex`/`searchGitLog` (`src/index.ts`) own the SQLite side.
 - **`src/harnesses/hintFollowLog.test.ts`**: Methods: describe(), join(), beforeEach(), rmSync().
 - **`src/harnesses/hintFollowLog.ts`** (Exports: `HintEvent, recordHintFired, recordToolUse, readHintEvents`): Ticket 07 (neuron-2.4.0): does the per-turn discovery-command hint (ticket 06) actually get followed? This module is the recording half of that measurement — append-only, so a 'fired' event and a later 'query-run' event are two independent rows a separate analysis pass joins, never a single record mutated in place (no lock needed, no race between a pre-prompt hook and a concurrent post-tool-use hook writing at once). Deliberately not a `LifecyclePoint` / `HarnessAdapter` citizen: this is dogfood-only instrumentation for this one measurement, wired by hand into this repo's own `.claude/settings.json` `PostToolUse` entry, not part of what `neuron init` installs for a user's project.
 - **`src/harnesses/hookState.ts`** (Exports: `recordFired, readFiringState`): Firing evidence, not inference from file contents. Ticket 10 found no harness researched documents an external way to confirm a registered hook actually fired — so neuron manufactures its own evidence: the hook command records a timestamp the moment it runs, before doing any of the work that could fail. `verify()` reads this file to answer "is this hook firing" as a fact, not a guess from `settings.json` being present.
@@ -480,3 +483,22 @@ Primary salvage-expansion module containing core application capabilities.
 **Key Components & Export Contracts:**
 - **`benchmarks/salvage-expansion/salvage-calibration.probe.ts`**: Ticket 07 calibration probe — throwaway. Question: does raw top-1 cosine `similarity` separate a query retrieval got RIGHT from a query it got WRONG? If it does not, the salvage trigger has nothing to fire on and ticket 07's scope step 3 kills it.
 - **`benchmarks/salvage-expansion/vitest.probe.config.ts`**: Runs the salvage calibration probe on demand without letting it join the normal suites. The probe is named `.probe.ts` rather than `.test.ts` so a bare `vitest` run never collects it; this config names it explicitly. node ./node_modules/vitest/vitest.mjs run \ --config benchmarks/salvage-expansion/vitest.probe.config.ts
+
+---
+id: cf4d08df-405a-262c-21ca-48c45ed04a77
+createdAt: 2026-08-15T18:44:28.976Z
+importance: 5
+tags:
+  - architecture
+  - topology
+  - scan
+  - deep
+taskId: null
+---
+### 🧩 near-dup-ab (`benchmarks/near-dup-ab`)
+Primary near-dup-ab module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/near-dup-ab/ab4-counterfactual.ts`**: Ticket 7 (neuron-2.4.2), A/B 4 — counterfactual store-growth measurement. Replays this repo's own live memory store through two clustering passes: - "gate inactive" (today): `getStoreHealth()`'s real, shipped logic — pairwise raw cosine, union-find, `SUPERSESSION_SIMILARITY_THRESHOLD` (0.97). - "gate active" (proposed): the same live entries, but pairwise candidates are widened to the top-N=10 by cosine per entry (A/B 2's finding: recall saturates at N=5 on the synthetic corpus, N=10 kept here as a real-store margin) then reranked, union-find on reranker score >= 3 (A/B 3's chosen bar). This is the only A/B leg that measures the thing the map's Destination actually cares about (store quality on real content), not gate mechanics on a synthetic corpus. Read-only: never writes to the store. Run: npx tsx benchmarks/near-dup-ab/ab4-counterfactual.ts
+- **`benchmarks/near-dup-ab/corpus.ts`** (Exports: `PairLabel, Pair`): Ticket 7 (neuron-2.4.2): labeled corpus for the near-duplicate-detection A/B tests. Extends Pillar 14's case-1 fixture (the real paraphrase pair that slipped past the 0.97 cosine supersession gate uncaught — see `test/e2e/antagonistic-write.test.ts` and `docs/design/write-time-quality/antagonistic-write-findings.md`) into a full labeled set. Each pair is `{ seed, candidate }`: `seed` mirrors an entry already live in the store, `candidate` mirrors a new write being evaluated against it — the same seed/new-write shape `findSupersessionCandidate` and the CLI's `memory add` gate actually compare. Three labels: - `near-dup`   — candidate restates the seed's same fact in different words. A real gate should catch these (today's 0.97 cosine gate does not — Pillar 14 case 1). - `related-distinct` — candidate shares the seed's topic/category and surface vocabulary but states a different fact. These are the hard negatives: a gate tuned only on vocabulary overlap will false-positive on these, which is exactly what A/B 5 (false-positive friction) checks for downstream. A gate must NOT catch these. - `unrelated`  — candidate shares no topic with the seed at all. Easy negative control, included so the frontier (A/B 3) has a floor to compare the hard negatives against. All content is either lifted verbatim from this repo's own real decisions/learning/tickets prose (paraphrased for the `near-dup` side) or written in the same register, so the corpus measures the actual domain this gate will run against — not generic sentences.
+- **`benchmarks/near-dup-ab/run-ab.ts`**: Ticket 7 (neuron-2.4.2): A/B 1-3 for near-duplicate-detection approach validation — does reranking beat raw cosine on this task, what widen count (N) is worth its cost, and where does the reranker-bar frontier sit? Mirrors ticket 29/39's measure-first, sweep-the-frontier discipline (`benchmarks/reranker-gate/calibrate-threshold.ts`). One expensive pass computes every score once: for each corpus candidate, embed it, rank the whole seed pool by raw cosine, and reranker-score the top MAX_N by cosine (plus the candidate's own true seed if it fell outside that window, so it's never silently missing from the report). N-sweeps (A/B 2) and bar-sweeps (A/B 3) then just re-slice/re-threshold this one cached pass — no repeated model calls. Run: npx tsx benchmarks/near-dup-ab/run-ab.ts
