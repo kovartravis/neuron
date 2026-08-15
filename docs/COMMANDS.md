@@ -175,6 +175,7 @@ Multi-category memory operations.
 | Subcommand | Description |
 |---|---|
 | `add` | Add an entry. `--category` required |
+| `get <id>` | Fetch a single entry by id — direct row lookup, not a filtered `list` |
 | `query` | Semantic + keyword hybrid search |
 | `list` | List entries |
 | `update` | Update an entry. `--category` required |
@@ -184,18 +185,23 @@ Multi-category memory operations.
 
 | Flag | Description |
 |---|---|
-| `--category <name>` | Single category — required for `add`, `update`, `delete` |
+| `--category <name>` | Single category — required for `add`, `update`, `delete`. Optional on `get`, where it turns a category mismatch into a `not_found` result instead of ignoring the flag (ids are unique store-wide) |
 | `--categories a,b` | Restrict `query`/`list` to specific categories |
 | `--tags a,b` | Attach or filter by tags |
 | `--importance <1-5>` | Entry importance. Never inferred — an omitted value stores `3`, which is also the default `prune` ceiling |
 | `--task-id <id>` | Link an entry to a ticket or spec |
-| `--limit <n>` | Max results |
+| `--limit <n>` | Max results — caps what `list`/`query` return, not the internal scan used to compute filtered results |
+| `--if-novel` | `add` only: on a supersession-gate hit, skip the write (exit `0`) instead of erroring — for cron/scheduled writers that can't answer an interactive prompt. The skip is never silent: reason + candidate id on `stderr`, `{"skipped": true, ...}` on stdout in place of the written entry. Mutually exclusive with `--supersedes`/`--not-a-reversal` |
+| `--where <field>=<value>` | `list` only: keep entries whose declared field equals `value` (`field!=value` negates). Repeatable — each occurrence ANDs onto the rest. Schema-agnostic: any category, any declared field, not specific to any one project's vocabulary |
+| `--refs-satisfy <field>:<sub>=<value>` | `list` only: keep entries where every comma-separated id in `field` names a same-category entry whose own `sub` field equals `value`. A dangling id (no matching entry) fails the predicate rather than silently passing. Requires exactly one `--category`, since ids are resolved within it |
 
 `query` and `list` span every category by default.
 
 ```bash
 neuron memory query "auth flow" --categories learning,decisions
 neuron memory add --category learning "..." --tags failure-fix --importance 4
+neuron memory get 033459c0-d6a6-4366-a1a8-9f16c357c05d
+neuron memory list --category tickets --where "status=unclaimed" --refs-satisfy "blockedBy:status=resolved"
 ```
 
 ### Project-declared fields (ticket 43 / ADR 0013)
@@ -252,7 +258,7 @@ already reconcile markdown into the index automatically.
 Prints database, Markdown storage, embedding model and architectural drift status
 as JSON.
 
-`--check`/`--repair` fold in two validation surfaces:
+`--check`/`--repair` fold in four validation surfaces:
 
 - ADR 0013: entries whose category's *currently*-declared `fields` schema
   (see Configuration below) they violate — most commonly a field declared
@@ -264,11 +270,21 @@ as JSON.
   `violations` above. Most writes never reach this, since a category missing
   from `neuron.yaml` auto-declares itself on its first write (see
   Configuration below); it only catches categories that predate that hook.
+- `binaryVersionMismatch`: the running `neuron` binary's own resolved
+  version (symlinks followed) doesn't match `cwd`'s `package.json` — only
+  fires when `cwd`'s `package.json` names `@kovartravis/neuron` itself, so
+  an ordinary consumer project never trips it. No `--repair` counterpart:
+  the fix is re-linking or reinstalling outside this process.
+- `protocolBlockDrift`: a harness's generated instructions file (e.g.
+  `CLAUDE.md`) no longer matches what `neuron.yaml` would generate today.
+  No `--repair` counterpart either — run `neuron init --overwrite-hooks`.
 
 | Flag | Description |
 |---|---|
-| `--check` | List entries missing a currently-required field and undeclared categories; exits `1` if either is non-empty |
-| `--repair` | Apply a configured `default:`, or centroid-based inference for enum-typed fields only, and declare every undeclared category found. Never fabricates a value for a free-text field (e.g. `reviewedBy`, `ticket`) — those come back unresolved, and `--repair` exits `1` if anything is left unresolved |
+| `--check` | List entries missing a currently-required field, undeclared categories, a stale binary, and protocol-block drift; exits `1` if any is non-empty |
+| `--repair` | Apply a configured `default:`, or centroid-based inference for enum-typed fields only, and declare every undeclared category found. Never fabricates a value for a free-text field (e.g. `reviewedBy`, `ticket`) — those come back unresolved, and `--repair` exits `1` if anything is left unresolved. No effect on `binaryVersionMismatch`/`protocolBlockDrift`, which have no automated fix |
+| `--health` | Reports near-duplicate entry groups (embedding-cosine, union-find clustering across the whole store), an importance histogram, and superseded-entry counts |
+| `--health --repair` | Auto-merges exact-content duplicate subgroups within a cluster (latest survives, rest marked `supersededBy` it — never deleted); genuinely different-worded near-dups are left for a human `--supersedes` call |
 
 ---
 

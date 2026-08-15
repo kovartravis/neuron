@@ -2,12 +2,30 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
-## [2.4.0-rc2] - 2026-08-12
+## [2.4.0-rc3] - 2026-08-14
+
+Third interim checkpoint on the neuron-2.4.0 map, audited directly from
+`git log v2.4.0-rc2..HEAD` rather than assumed from the map's nominal
+ticket numbering.
+
+- **Fixed a real SQLite schema-migration race**: multiple processes opening
+  a fresh database concurrently could hit `no such column` errors mid-write.
+  Now serialized with a synchronous, cross-process file lock (mirrors rc1's
+  markdown-storage lock, but blocking rather than async, since the database
+  constructor has no `await` point to yield at). `:memory:` databases skip
+  the lock — no cross-process audience.
+- **`memory get`/`list --where` got sharper**: `neuron memory get <id>`
+  fetches a single entry directly (no full-category scan); `--where` is now
+  repeatable (ANDed) and supports negation (`field!=value`); `--refs-satisfy`
+  composes with both to cross-reference declared fields across entries in
+  the same category — built for this repo's own dogfooded issue tracker but
+  nothing about the implementation is tracker-specific.
+
+## [2.4.0-rc2] - 2026-08-13
 
 Second interim checkpoint on the neuron-2.4.0
-map, audited from `git log
-v2.4.0-rc1..HEAD` directly rather than assumed from the map's nominal
-ticket numbering.
+map, audited directly from `git log v2.4.0-rc1..HEAD` rather
+than assumed from the map's nominal ticket numbering.
 
 - **Closes rc1's flagged known issue: a local reranker cuts the relevance
   gate's false-accept rate by 5x.** A second-stage gate
@@ -36,13 +54,34 @@ ticket numbering.
   from a subdirectory with no config of its own could silently overwrite
   the real architecture card with a scan of the wrong tree. Both roots now
   resolve through the same lookup.
-- Re-ran rc1's git-log-index A/B against the real shipped semantic search
-  mechanism (rc1's own number used an oracle stand-in). Directionally
-  confirms the same win — real semantic search matched an oracle's 0%
-  failure rate and beat the agent's own `git log` calls — but the measured
-  token-usage gap didn't clear this harness's noise-floor guard given
+- **Re-ran rc1's git-log-index A/B against the real shipped semantic search
+  mechanism** (rc1's own number used an oracle stand-in). The real mechanism
+  matched the oracle ceiling's 0% failure rate and clearly beat the
+  no-search agent baseline's 11.1% — the win the oracle prototype suggested
+  holds under the real mechanism. Token usage landed between the two (about
+  39% below the agent baseline, about 75% above the oracle ceiling), but the
+  gap didn't clear this harness's own noise-floor guard given
   session-to-session variance, so it's reported as directional, not a
   confirmed percentage.
+- **`memory list` gained schema-agnostic filtering**, built for this repo's
+  own dogfooded issue tracker but nothing about the implementation is
+  tracker-specific: `--where <field>=<value>` and `--refs-satisfy
+  <field>:<sub>=<value>` filter and cross-reference on any declared field of
+  any category.
+- **`neuron status --check` gained two more finding kinds**:
+  `binaryVersionMismatch` (the running `neuron` binary is stale relative to
+  the current project's own `package.json`, symlinks followed — for
+  projects developing neuron itself) and `protocolBlockDrift` (a harness's
+  generated instructions file no longer matches what `neuron.yaml` would
+  generate today). Both are report-only — re-link/reinstall, or
+  `neuron init --overwrite-hooks`, respectively.
+- **Fixed a real, previously-latent bug**: category auto-declare could
+  climb past an isolated project's own root and mutate an *ancestor*
+  project's real `neuron.yaml`.
+- This repo's own CI now gates pull requests on architecture-card and
+  `CLAUDE.md` protocol-block drift, runs a weekly scheduled store-health
+  check, and exercises the free dry-run benchmark harnesses on every push —
+  dogfooding the checks above rather than only shipping them.
 
 ## [2.4.0-rc1] - 2026-08-12
 

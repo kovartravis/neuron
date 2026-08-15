@@ -50,6 +50,11 @@ without them — no matter what the agent's prompt says.
   harness runs it, not the agent's judgment. Other harnesses fall back to a
   `CLAUDE.md`/`AGENTS.md` instruction asking the agent to query the store
   itself.
+- 🎯 **A second-stage gate cuts false positives, measured not asserted.**
+  Every candidate match still has to clear a local, offline ONNX
+  cross-encoder reranker — no remote API call — before it's injected.
+  Calibrated live against the hardest out-of-corpus negatives (the real
+  LongMemEval-S split): false-accept rate drops from 99.80% to 19.4%.
 - 🏛️ **Architecture as a deterministic markdown artifact.** `neuron scan`
   parses your codebase with real Tree-Sitter ASTs and writes a single
   blueprint card that stays byte-identical across runs until the code
@@ -135,12 +140,16 @@ Two things worth knowing before you rely on it:
   planning efforts that both call something "ticket 14" — the index has no
   way to disambiguate them, and says so in what it injects. Verify against
   `git log`/`git show` yourself before trusting a specific number.
-- **It's shipped and dogfooded, not yet independently re-measured.** An
-  earlier prototype (hand-picked, oracle search terms) showed a favorable
-  result, but the real mechanism — semantic embedding match, not keyword
-  search — turned out to need its own measurement; that re-run hasn't
-  landed yet. Treat it as "surfaces real, correct commits" (confirmed live
-  against this repo's own history), not yet as a quantified improvement.
+- **Re-measured against the real (semantic) mechanism, not just an oracle
+  prototype.** A 9-session live run of the shipped embedding-match search
+  matched the oracle-term ceiling's 0% failure rate and clearly beat the
+  no-search agent baseline's 11.1% — the win an earlier hand-picked-term
+  prototype suggested holds under the real mechanism. Token usage landed
+  between the two (about 39% below the agent baseline, about 75% above the
+  oracle ceiling), but the gap didn't clear this harness's own noise-floor
+  guard given wide session-to-session variance, so it's reported as
+  directional, not a confirmed percentage. Full numbers in
+  [`benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md`](benchmarks/token-ab/results/11-rerun-gitlog-ab-semantic-mechanism/findings.md).
 
 Copilot CLI and Cursor don't get this — both only have a session-start hook,
 and there's no prompt to match against until the first per-turn hook fires.
@@ -372,11 +381,11 @@ the same input to always produce the same output.
 | Command | Description |
 |---|---|
 | `neuron init` | Bootstraps the project, pre-downloads local ONNX models, fetches Tree-Sitter grammars, wires recall hooks |
-| `neuron memory add/query/list/update/delete/consolidate/prune` | Multi-category memory operations, backed by plain `.md` files by default |
+| `neuron memory add/query/list/get/update/delete/consolidate/prune` | Multi-category memory operations, backed by plain `.md` files by default. `list --where <field>=<value>` / `--refs-satisfy <field>:<sub>=<value>` filter on any declared field, schema-agnostic — no field or enum name is baked into the CLI |
 | `neuron exec -- <command>` | Runs a command with pre-execution safety lookup pulled from stored memory, and a non-blocking drift warning if the codebase moved |
 | `neuron scan` / `scan --diff` / `scan --check` | Ingests an architectural blueprint card; reports drift; exits non-zero in CI on real drift |
 | `neuron sync` | Explicit forced rebuild between markdown and SQLite, for categories resolving to `md` — ordinary commands already reconcile automatically |
-| `neuron status` | Displays storage, embedding model, drift and relevance-gate status as JSON |
+| `neuron status` / `status --health` / `status --check` | Storage, embedding model, drift and relevance-gate status as JSON; `--health` reports near-duplicate groups, importance histogram, and superseded counts (`--repair` auto-merges exact-content duplicates); `--check` validates config/content against your declared schema (`--repair` backfills what it safely can) |
 | `neuron ui` | Launches the local dashboard |
 | `neuron feedback [message]` | Generates pre-filled GitHub issue links (`--type bug\|feature\|general`) |
 
