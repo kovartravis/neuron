@@ -27020,6 +27020,8 @@ storage engine, no new package, no new top-level command.
 
 - 48 — Implement Session-Conclusion Recording Redesign (ticket 707532ee-3377-4822-9111-8f44cff06dde) — built Ticket 12's design: CLAUDE.md's `## 2. Session Conclusion` and the `neuron-memory` skill's `## 4. End of Run` both now branch on whether a `decisions`/`learning` entry was written this session — if so it gains `--task-id`, and `history` shrinks to a short pointer sharing that id instead of restating the resolution; if not, `history` keeps its full-narrative shape. Went one layer deeper than the two docs Ticket 12 named: this repo's CLAUDE.md managed block is generated, not hand-written, by `sessionEndStep()` in `src/config/protocolBlock.ts` — updated the generator too and replaced CLAUDE.md's block with its literal output (verified byte-identical) rather than a hand copy that could drift, which also fixed an unrelated pre-existing gap (the block's category list was missing `git-notes`, added by Ticket 5). `npm test` 746/746, `tsc` clean. Ticket 6 — Implement Near-Duplicate Suppression is now fully unblocked (its other two blockers, Ticket 10 and Ticket 12, were already resolved).
 
+- 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate) (ticket ab516584-1fc6-4522-a046-2da2397095ab) — built exactly as Ticket 3 designed and Ticket 7/10 calibrated: `findSupersessionCandidate` (`src/index.ts`) is now widen-by-cosine (`NEAR_DUP_WIDEN_N=10`) → strip known template boilerplate (new `stripKnownTemplates`, `src/components/templateFingerprint.ts`, implementing Ticket 10's fingerprint decision, no category-name branching) → rerank with the existing `TransformersReranker` → gate on `NEAR_DUP_RERANK_BAR=3`, replacing the old single-candidate 0.97-cosine check. CLI surface (`--supersedes`/`--not-a-reversal`/`--if-novel`) unchanged; the refusal message and `--if-novel` payload now also surface the reranker score alongside cosine. Live-measured via Pillar 14 (real embedder + reranker): case 1's near-dup paraphrase now correctly hard-blocks (reranker score 8.5), closing the exact gap Ticket 1 found; case 2's numeric contradiction also now blocks, since a relevance reranker alone can't yet tell "restates" from "contradicts" — that distinction stays Ticket 9's job, not a defect here. Fixed incidental fallout in several pre-existing subprocess-CLI tests (`hook.test.ts`, `memory.test.ts`, `cli.test.ts`, `history.test.ts`) whose near-templated fixture writes started genuinely tripping the now-always-real write-time reranker; fixed by declaring those writes `--not-a-reversal` at the fixture level, not by weakening the gate. `npm test` 752/752, `tsc` clean.
+
 ## Not yet specified
 
 - **Commit-to-entry knowledge-graph traversal.** Once `commitRef`/`git-notes`
@@ -27966,7 +27968,7 @@ taskId: null
 blockedBy: d121513e-0942-461b-87d0-77830d44e71a,c29a3c30-95ba-4f63-b74e-037f9d52dce6,707532ee-3377-4822-9111-8f44cff06dde
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate)
 
@@ -28026,26 +28028,84 @@ below as currently written; they need Ticket 10's answer folded in first.
 
 ## Deliverables
 
-- [ ] Apply Ticket 7's chosen widen count (N) and reranker bar — no
+- [x] Apply Ticket 7's chosen widen count (N) and reranker bar — no
       re-derivation here
-- [ ] `findSupersessionCandidate` reimplemented: widen by cosine → rerank →
+- [x] `findSupersessionCandidate` reimplemented: widen by cosine → rerank →
       gate on Ticket 7's bar, replacing the single-candidate 0.97 cosine
       check
-- [ ] Existing CLI flags (`--supersedes` / `--not-a-reversal` / `--if-novel`)
+- [x] Existing CLI flags (`--supersedes` / `--not-a-reversal` / `--if-novel`)
       verified to still resolve the gate correctly against the new
       mechanism
-- [ ] Config-driven per the map's own non-goals (no hardcoded
+- [x] Config-driven per the map's own non-goals (no hardcoded
       category-name logic) — verify the new gate, like the old one, applies
       uniformly across categories with no category-scoped special-casing
-- [ ] `npm test` and `tsc` clean
-- [ ] **Added 2026-08-15, pending Ticket 10:** apply whichever
+- [x] `npm test` and `tsc` clean
+- [x] **Added 2026-08-15, pending Ticket 10:** apply whichever
       template/structural-collision mitigation Ticket 10 decides on, before
       or alongside the widen/rerank/bar mechanism above — the deliverable
       list above is necessary but, per Ticket 7's findings, not sufficient.
 
 ## Answer
 
-_Not yet resolved._
+Built exactly as Ticket 3 designed and Ticket 7/10 calibrated, all six
+deliverables done, `npm test` 752/752, `tsc` clean.
+
+`findSupersessionCandidate` (`src/index.ts`) is now three stages instead of
+one cosine check: **widen** to the top `NEAR_DUP_WIDEN_N=10` candidates by
+raw embedding cosine (a cheap pre-filter, not a decision) → **strip** each
+candidate's known template boilerplate via a new
+`stripKnownTemplates` (`src/components/templateFingerprint.ts`) → **rerank**
+the stripped pair with the existing `TransformersReranker` and gate on
+`NEAR_DUP_RERANK_BAR=3`. `SUPERSESSION_SIMILARITY_THRESHOLD` (0.97) is no
+longer the write-time gate; it's left in place only for `getStoreHealth`'s
+own separate store-wide clustering.
+
+`stripKnownTemplates` implements Ticket 10's decision: two deterministic,
+content-pattern regexes (not category-scoped — no category-name branching
+anywhere in the new code, satisfying the map's own non-goal) strip the
+`architecture` module-card heading + generic fallback purpose sentence, and
+the wayfinder-pickup history opener in each of its observed phrasings,
+before either side of a pair reaches the reranker. Covered by its own unit
+suite (`templateFingerprint.test.ts`, 4 tests).
+
+CLI surface is unchanged (`--supersedes` / `--not-a-reversal` / `--if-novel`
+in `src/commands/memory.ts` still resolve the gate identically); the
+refusal message now shows both the reranker score (the actual decision
+variable) and the raw cosine, and the `--if-novel` JSON payload gained a
+`rerankerScore` field alongside the existing `similarity` one — additive,
+not a breaking rename.
+
+**Live-measured effect (Pillar 14 / `test/e2e/antagonistic-write.test.ts`,
+real embedder + real reranker, dist rebuilt):** case 1 (near-dup paraphrase)
+flips from uncaught to caught (reranker score 8.5, bar 3) — the exact gap
+Ticket 1 originally found. Case 2 (a same-shape numeric contradiction) also
+now catches — not because this gate detects contradiction, but because
+"restates the same fact" and "states a different fact in near-identical
+phrasing" aren't yet distinguishable by a relevance-trained reranker alone
+(reranker score 8.2, same bar). That distinction is explicitly out of this
+ticket's scope — it's Ticket 9's job (conflict/polarity detection, still
+soft-flag-only per Ticket 13's no-go) — and refusing pending
+`--supersedes`/`--not-a-reversal` confirmation is the correct fallback
+either way: a human sees the real prior entry on both the true near-dup and
+the contradiction. Both Pillar 14 assertions updated to the new measured
+values, per that file's own "snapshot to update deliberately" discipline.
+
+**Incidental fallout, fixed:** the reranker was already real and already
+ran during writes at the CLI layer once `findSupersessionCandidate` used it
+(it always fired during reads via `queryGated`). Several pre-existing
+subprocess-CLI tests across `hook.test.ts`, `memory.test.ts`, `cli.test.ts`,
+and `history.test.ts` write intentionally near-templated fixture content
+("Blocker one"/"Blocker two", "Repository Pattern note ${i}: ...", etc.) for
+reasons unrelated to supersession (FTS-count behavior, `--where` query
+composition, deprecated-flag handling, prune-by-age) — under the old
+cosine-only gate these never collided (the `NEURON_MOCK_EMBEDDER` fixture
+embeds everything to an all-zero vector, so cosine similarity was always
+0.000, never near the 0.97 floor); under the new gate, cosine is only a
+widen pre-filter, so these started genuinely tripping the real reranker.
+Fixed at the fixture level (`--not-a-reversal` added to each affected
+helper/call site) rather than by weakening the gate — these writes were
+never meant to exercise supersession, so declaring them explicitly novel is
+the semantically correct fix, not a workaround.
 
 ## Comments
 
@@ -28056,6 +28116,10 @@ _Not yet resolved._
 - 2026-08-15: Ticket 7 resolved. Re-blocked on Ticket 10 — its bar/N
   calibration alone does not survive contact with this repo's own real
   content (see Context above).
+- 2026-08-15: Ticket 10 resolved (template fingerprint for
+  structural/template collision; cross-category restatement deferred to
+  Ticket 12, which co-blocked this ticket alongside Ticket 10). Both
+  blockers now resolved; picked up and resolved in this session.
 
 ---
 id: 7fed4f53-3251-4b7a-94a0-3d344fb9a59a

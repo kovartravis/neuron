@@ -648,10 +648,15 @@ describe('CLI Command: hook', () => {
     });
   });
 
+  // `--not-a-reversal`: these are read-path/hook fixtures, not exercises of
+  // the write-time near-dup gate (ticket 17 / Ticket 6, neuron-2.4.2) — some
+  // callers intentionally plant many near-identical entries (e.g. numbered
+  // "note ${i}" loops) to test FTS/discovery-count behavior, which the real
+  // gate would otherwise start refusing now that it reranks every write.
   function execAdd(content: string, category: string) {
     spawnSync(
       'node',
-      [cliPath, 'memory', 'add', content, '--category', category, '--importance', '5'],
+      [cliPath, 'memory', 'add', content, '--category', category, '--importance', '5', '--not-a-reversal'],
       { cwd: projectDir, env: env() }
     );
   }

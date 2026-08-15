@@ -1,32 +1,32 @@
 {
-  "timestamp": "2026-08-15T11:59:45.337Z",
+  "timestamp": "2026-08-15T22:12:00.999Z",
   "pillars": [
     {
       "pillar": "Pillar 14: Antagonistic Write & Quality Gate (Diagnostic)",
       "samples": 4,
-      "p50Ms": 218.96,
-      "p95Ms": 443.98,
-      "p99Ms": 445.05,
+      "p50Ms": 236.15,
+      "p95Ms": 480.69,
+      "p99Ms": 482.08,
       "minMs": 0.22,
-      "maxMs": 445.32,
-      "meanMs": 220.87,
-      "totalMs": 883.46,
-      "throughputPerSec": 4.53,
+      "maxMs": 482.43,
+      "meanMs": 238.74,
+      "totalMs": 954.96,
+      "throughputPerSec": 4.19,
       "extra": {
         "results": [
           {
             "id": "case-1-near-duplicate-paraphrase",
             "caseNum": 1,
             "description": "Near-duplicate content (paraphrase, not exact-hash match) of a live entry",
-            "caught": false,
-            "detail": "accepted: {\"id\":\"1bc6517d-8d8c-4427-8cb6-af2128e10f4e\",\"status\":\"created\",\"project\":\"neuron\"}\n"
+            "caught": true,
+            "detail": "Error: this write looks like it may supersede an existing entry (reranker score 8.516, cosine 0.899):\n  [25028407-e38c-4277-81c7-88c97926008f] (learning) The default request timeout is 30 seconds.\n  If this is a reversal, re-run with --supersedes 25028407-e38c-4277-81c7-88c97926008f\n  If it is not, "
           },
           {
             "id": "case-2-direct-contradiction",
             "caseNum": 2,
             "description": "Content that directly contradicts a live entry in the same category, no --supersedes",
-            "caught": false,
-            "detail": "accepted: {\"id\":\"c634f21d-25c8-4daf-a9c7-8a3c89972d01\",\"status\":\"created\",\"project\":\"neuron\"}\n"
+            "caught": true,
+            "detail": "Error: this write looks like it may supersede an existing entry (reranker score 8.246, cosine 0.953):\n  [8f4f0a3e-d6d3-4833-b0e2-d476eef68a50] (learning) Query results are limited to 10 items by default.\n  If this is a reversal, re-run with --supersedes 8f4f0a3e-d6d3-4833-b0e2-d476eef68a50\n  If it i"
           },
           {
             "id": "case-3-missing-provenance",

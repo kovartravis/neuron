@@ -14,7 +14,7 @@ taskId: null
 # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 17 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 18 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
@@ -39,6 +39,7 @@ Default: `ast/2`
 ├── benchmarks (benchmarks)
 ├── longmemeval (benchmarks/longmemeval)
 ├── near-dup-ab (benchmarks/near-dup-ab)
+├── nli-polarity-ab (benchmarks/nli-polarity-ab)
 ├── reranker-gate (benchmarks/reranker-gate)
 ├── salvage-expansion (benchmarks/salvage-expansion)
 ├── src (src)
@@ -59,11 +60,12 @@ Default: `ast/2`
 - **benchmarks** — `benchmarks` (3 files)
 - **longmemeval** — `benchmarks/longmemeval` (4 files)
 - **near-dup-ab** — `benchmarks/near-dup-ab` (3 files)
+- **nli-polarity-ab** — `benchmarks/nli-polarity-ab` (3 files)
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
 - **src** — `src` (13 files)
 - **commands** — `src/commands` (29 files)
-- **components** — `src/components` (14 files)
+- **components** — `src/components` (16 files)
 - **config** — `src/config` (11 files)
 - **e2e** — `src/e2e` (1 file)
 - **harnesses** — `src/harnesses` (22 files)
@@ -136,7 +138,7 @@ Primary src module containing core application capabilities.
 - **`src/enrichment.test.ts`**: Write-side enrichment, asserted at the transaction entry point — what ends up in the store. That was once two seams; the query seam carried the enrichment backlog's drain guarantee, and ticket 26 removed the only deferred job, so a read has no enrichment behaviour left to assert. Nothing here asserts how a tag was chosen. The category strategy in particular was A/B'd precisely because its winner was unknown, so tests that pinned the mechanism would have been rewritten by the experiment they existed to support.
 - **`src/fieldSchema.test.ts`**: Declarable per-category frontmatter fields (ticket 43 / ADR 0013), asserted at the `transact()` choke point — required-but-missing, defaults, enum membership, and the reject-undeclared-field guard — plus the markdown round-trip that makes a written field value durable. Storage: SQLite column support for `vector`-storage categories shipped in ticket 44 — see `sqliteFieldSchema.test.ts` for the column migration and round-trip coverage. These tests use `storage.mode: md` where the markdown round-trip is meaningful.
 - **`src/index.gitLog.test.ts`**: Bag-of-hashed-words, normalized — dot product tracks shared-word overlap, close enough to real embedding behavior for ranking assertions without a model.
-- **`src/index.supersession.test.ts`**: Methods: primitives(), vecAt(), Float32Array(), describe().
+- **`src/index.supersession.test.ts`**: Methods: primitives(), 6(), pipeline(), vecAt().
 - **`src/index.test.ts`**: Methods: describe(), it(), NeuronMemory(), getDb().
 - **`src/index.ts`** (Exports: `GitLogHit, NeuronMemory`): A `searchGitLog` hit: an indexed commit that cleared the ADR 0012-style relevance gate.
 - **`src/sqliteFieldSchema.test.ts`**: SQLite additive auto-migration for declared category fields (ticket 44 / ADR 0013) — the `vector`-storage counterpart to `fieldSchema.test.ts`'s markdown round-trip. Covers the migration mechanics (additive, idempotent, never `DROP COLUMN`) and the write-then-query round trip through real SQLite columns rather than frontmatter.
@@ -215,6 +217,8 @@ Primary components module containing core application capabilities.
 - **`src/components/reranker.ts`** (Exports: `Reranker, TransformersReranker`): Raw cross-encoder relevance logit for one query/passage pair — not a probability. Positive means the model predicts the pair relevant, negative means not; callers threshold at 0, not at 0.5.
 - **`src/components/summarizer.test.ts`**: Handles dual storage reads and writes across Markdown and SQLite
 - **`src/components/summarizer.ts`** (Exports: `SmolLM2Summarizer`): Delegates to the process-wide loader so write-side enrichment (which calls `getTextGenerator()` directly, `enricher.ts`) and anything else warming the model in the same process share one load rather than paying for it twice. Kept on this class only because `neuron init` already calls `preloadModel()` here to warm enrichment's model ahead of time (ticket 26 removed this class's own use of it \u2014 per-file architecture summaries are deterministic now, not model-generated).
+- **`src/components/templateFingerprint.test.ts`**: Methods: describe(), it(), widgets(), Button().
+- **`src/components/templateFingerprint.ts`** (Exports: `stripKnownTemplates`): Ticket 6 (neuron-2.4.2) / Ticket 10's answer: a closed set of known, deterministic content templates this repo's own write paths generate, stripped from a candidate pair before it reaches the near-duplicate reranker gate — so shared scaffolding stops contributing to the score at all, regardless of bar. Not category-scoped (the map's own non-goals rule out category-name branching): each pattern matches on the literal boilerplate text itself, wherever it appears, and leaves everything else untouched. A new template shape needs a new pattern here, the same tradeoff as any other closed enum (mirrors `commitRef`'s field-type floor, Ticket 5).
 - **`src/components/timeout.ts`** (Exports: `TimeoutError, withTimeout`): The timeout primitive. Before this, the only `timeout` in the codebase was SQLite's `busy_timeout`; a hung `generate()` hung its caller forever. ADR 0010 §3 requires every model call to be a bounded wait. It bounds the wait, not the work: the underlying ONNX generation cannot be cancelled, so a timed-out call keeps running to completion in the background and its result is discarded. That is acceptable because the process is short-lived — but it means a timeout does not free the CPU it was spending.
 
 ---
@@ -502,3 +506,22 @@ Primary near-dup-ab module containing core application capabilities.
 - **`benchmarks/near-dup-ab/ab4-counterfactual.ts`**: Ticket 7 (neuron-2.4.2), A/B 4 — counterfactual store-growth measurement. Replays this repo's own live memory store through two clustering passes: - "gate inactive" (today): `getStoreHealth()`'s real, shipped logic — pairwise raw cosine, union-find, `SUPERSESSION_SIMILARITY_THRESHOLD` (0.97). - "gate active" (proposed): the same live entries, but pairwise candidates are widened to the top-N=10 by cosine per entry (A/B 2's finding: recall saturates at N=5 on the synthetic corpus, N=10 kept here as a real-store margin) then reranked, union-find on reranker score >= 3 (A/B 3's chosen bar). This is the only A/B leg that measures the thing the map's Destination actually cares about (store quality on real content), not gate mechanics on a synthetic corpus. Read-only: never writes to the store. Run: npx tsx benchmarks/near-dup-ab/ab4-counterfactual.ts
 - **`benchmarks/near-dup-ab/corpus.ts`** (Exports: `PairLabel, Pair`): Ticket 7 (neuron-2.4.2): labeled corpus for the near-duplicate-detection A/B tests. Extends Pillar 14's case-1 fixture (the real paraphrase pair that slipped past the 0.97 cosine supersession gate uncaught — see `test/e2e/antagonistic-write.test.ts` and `docs/design/write-time-quality/antagonistic-write-findings.md`) into a full labeled set. Each pair is `{ seed, candidate }`: `seed` mirrors an entry already live in the store, `candidate` mirrors a new write being evaluated against it — the same seed/new-write shape `findSupersessionCandidate` and the CLI's `memory add` gate actually compare. Three labels: - `near-dup`   — candidate restates the seed's same fact in different words. A real gate should catch these (today's 0.97 cosine gate does not — Pillar 14 case 1). - `related-distinct` — candidate shares the seed's topic/category and surface vocabulary but states a different fact. These are the hard negatives: a gate tuned only on vocabulary overlap will false-positive on these, which is exactly what A/B 5 (false-positive friction) checks for downstream. A gate must NOT catch these. - `unrelated`  — candidate shares no topic with the seed at all. Easy negative control, included so the frontier (A/B 3) has a floor to compare the hard negatives against. All content is either lifted verbatim from this repo's own real decisions/learning/tickets prose (paraphrased for the `near-dup` side) or written in the same register, so the corpus measures the actual domain this gate will run against — not generic sentences.
 - **`benchmarks/near-dup-ab/run-ab.ts`**: Ticket 7 (neuron-2.4.2): A/B 1-3 for near-duplicate-detection approach validation — does reranking beat raw cosine on this task, what widen count (N) is worth its cost, and where does the reranker-bar frontier sit? Mirrors ticket 29/39's measure-first, sweep-the-frontier discipline (`benchmarks/reranker-gate/calibrate-threshold.ts`). One expensive pass computes every score once: for each corpus candidate, embed it, rank the whole seed pool by raw cosine, and reranker-score the top MAX_N by cosine (plus the candidate's own true seed if it fell outside that window, so it's never silently missing from the report). N-sweeps (A/B 2) and bar-sweeps (A/B 3) then just re-slice/re-threshold this one cached pass — no repeated model calls. Run: npx tsx benchmarks/near-dup-ab/run-ab.ts
+
+---
+id: 008609f6-4276-39ac-affa-34d570b7605c
+createdAt: 2026-08-15T22:19:09.795Z
+importance: 5
+tags:
+  - architecture
+  - topology
+  - scan
+  - deep
+taskId: null
+---
+### 🧩 nli-polarity-ab (`benchmarks/nli-polarity-ab`)
+Primary nli-polarity-ab module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`benchmarks/nli-polarity-ab/corpus.ts`** (Exports: `PolarityLabel, Pair`): Ticket 8 (neuron-2.4.2): labeled corpus for validating `cross-encoder/nli-MiniLM2-L6-H768` as the polarity signal Ticket 9 would hard-block on. Mirrors Ticket 7's near-dup-ab corpus in register and size — same topics, same seed prose lifted from this repo's own decisions/learning/tickets content — so this measures the actual domain the gate will run against. Each pair is `{ premise, hypothesis }`: `premise` mirrors an entry already live in the store, `hypothesis` mirrors a new write being evaluated against it — the same shape a real NLI call would take, layered on top of Ticket 3/6's relatedness gate (this corpus only contains pairs that would already have cleared that gate; polarity detection is never asked to separate related from unrelated, only contradiction from everything else that's already related). Two labels: - `contradiction` — hypothesis asserts a different value/fact for the same slot the premise fixed (numeric flip, policy reversal, named-value swap, direct negation). A real gate must catch these — this is Pillar 14 case 2's shape, generalized to 15 pairs. - `compatible` — hypothesis does NOT conflict with the premise. Two subtypes, both must NOT be caught: - `compatible-paraphrase` — same fact, reworded (NLI entailment). Reused verbatim from Ticket 7's near-dup-ab `CORPUS` (`nd-` label `near-dup`) — these already cleared the relatedness gate at a high bar in Ticket 7's own A/B run, so they're exactly the kind of pair polarity detection would see downstream of Ticket 6. - `compatible-related` — same topic, different non-conflicting fact (NLI neutral). Reused verbatim from Ticket 7's near-dup-ab `CORPUS` (`rd-` label `related-distinct`) — the hard negative that a vocabulary-overlap-only signal false-positives on.
+- **`benchmarks/nli-polarity-ab/run-ab-alt-models.ts`**: Ticket 13 (neuron-2.4.2): A/B tests alternative pretrained NLI cross-encoders against the exact same corpus and method Ticket 8 used (`benchmarks/nli-polarity-ab/corpus.ts`, `run-ab.ts`) to see whether a hard-block posture can be justified after all — no new corpus, no new evaluation method, only the model under test changes. Ticket 8 found `cross-encoder/nli-MiniLM2-L6-H768` (SNLI+MultiNLI only) cannot separate contradiction from compatible-related pairs at any bar, traced to an SNLI/MultiNLI annotation artifact. Per Ticket 11's resolution, this shortlist prioritizes models trained (also) on ANLI — collected specifically to counter that artifact — plus one larger SNLI/MultiNLI-only model as a control (tests whether bigger-same-data reproduces the bias or fixes it). Unlike `run-ab.ts`, this script does NOT assume a fixed id2label index order — Ticket 8's model happened to use {0: contradiction, 1: entailment, 2: neutral}, but candidates here use a different order ({0: entailment, 1: neutral, 2: contradiction}), confirmed by fetching each model's config.json before committing to this shortlist. The label index for each class is resolved per-model from its own config. Run: npx tsx benchmarks/nli-polarity-ab/run-ab-alt-models.ts
+- **`benchmarks/nli-polarity-ab/run-ab.ts`**: Ticket 8 (neuron-2.4.2): A/B validation of `cross-encoder/nli-MiniLM2-L6-H768` as the polarity signal Ticket 9 would hard-block on — does it separate "contradicts" from "compatible" (paraphrase or related-but-different) on real write-time pairs, and what confidence bar should trigger the block? Mirrors Ticket 7's measure-first discipline (`benchmarks/near-dup-ab/run-ab.ts`): one pass computes every score once, the bar sweep just re-thresholds the cached pass. `premise` = the live entry already in the store; `hypothesis` = the new write being evaluated against it — order matters for NLI (asymmetric), and this is the direction a real write-time call would make. Run: npx tsx benchmarks/nli-polarity-ab/run-ab.ts

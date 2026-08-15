@@ -231,13 +231,24 @@ describe('Antagonistic Write Benchmark', () => {
 
     const byId = Object.fromEntries(results.map(r => [r.id, r]));
 
-    // Measured against a real (non-mocked) embedder: neither a semantic
-    // paraphrase nor a same-shape numeric contradiction crosses
-    // SUPERSESSION_SIMILARITY_THRESHOLD (0.97) — the supersession gate is
-    // tuned for near-exact rewording/reversal, not general near-duplicates
-    // or conflicts. Both pass through uncaught today.
-    expect(byId['case-1-near-duplicate-paraphrase'].caught, byId['case-1-near-duplicate-paraphrase'].detail).toBe(false);
-    expect(byId['case-2-direct-contradiction'].caught, byId['case-2-direct-contradiction'].detail).toBe(false);
+    // Measured against a real (non-mocked) embedder and reranker, post
+    // Ticket 6 (neuron-2.4.2): the widen(N=10)/rerank/bar=3 gate replaced
+    // the old single-candidate 0.97-cosine check that let a genuine
+    // paraphrase (case 1) slip through uncaught. Case 1 now hard-blocks, as
+    // designed — reranker score 8.5, comfortably above bar=3.
+    //
+    // Case 2 (a same-shape numeric contradiction) *also* now hard-blocks —
+    // not because this gate detects contradiction, but because it can't
+    // yet tell "restates the same fact" apart from "states a different
+    // fact in near-identical phrasing" (reranker score 8.2, same bar). That
+    // distinction is deliberately out of this ticket's scope: Ticket 9
+    // (conflict/polarity detection, still soft-flag-only per Ticket 13's
+    // no-go) owns telling the two apart. Refusing pending
+    // `--supersedes`/`--not-a-reversal` confirmation is the correct
+    // fallback in the meantime, not a bug — a human sees the real prior
+    // entry either way, on both the true near-dup and the contradiction.
+    expect(byId['case-1-near-duplicate-paraphrase'].caught, byId['case-1-near-duplicate-paraphrase'].detail).toBe(true);
+    expect(byId['case-2-direct-contradiction'].caught, byId['case-2-direct-contradiction'].detail).toBe(true);
 
     // `decisions` declares no `fields:` block in this repo's own
     // neuron.yaml, so enforceFieldSchema has nothing to check against —

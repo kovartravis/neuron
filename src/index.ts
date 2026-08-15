@@ -15,7 +15,8 @@ import {
   buildTagVocabulary,
   buildCategoryCentroids,
   selectTags,
-  selectCategory
+  selectCategory,
+  stripKnownTemplates
 } from './components/index.js';
 import {
   MemoryKind,
@@ -942,18 +943,35 @@ export class NeuronMemory {
   }
 
   /**
-   * The write-time supersession gate (ticket 17 / ADR 0015 Decision 1):
-   * shortlist the single closest existing, non-superseded entry by raw
-   * embedding cosine, across every category — the CLI calls this before a
-   * category is even known (category inference runs later, inside
-   * `enrichUpsert`), so there is no category to scope the search to yet.
-   * Returns `null` below `SUPERSESSION_SIMILARITY_THRESHOLD`; the embedder
-   * only shortlists, it never decides whether the relationship is a real
-   * reversal — that stays the agent's call via `--supersedes`.
+   * The write-time supersession/near-duplicate gate (ticket 17 / ADR 0015
+   * Decision 1; rebuilt by Ticket 6, neuron-2.4.2, per Ticket 3's design and
+   * Ticket 7/10's calibration) — the CLI calls this before a category is
+   * even known (category inference runs later, inside `enrichUpsert`), so
+   * there is no category to scope the search to yet.
+   *
+   * Three stages, not one cosine check:
+   *  1. **Widen** to the top `NEAR_DUP_WIDEN_N` candidates by raw embedding
+   *     cosine, across every category — a cheap pre-filter, not a decision
+   *     (Ticket 7 §3: N=10 already gives 100% near-dup recall on its
+   *     corpus; wider N neither helps recall nor changes what triggers).
+   *  2. **Strip** each candidate's known template boilerplate
+   *     (`stripKnownTemplates`, Ticket 10) before it reaches the reranker,
+   *     so shared scaffolding (an `architecture` module-card heading, a
+   *     wayfinder-pickup history opener) stops contributing to the score.
+   *  3. **Rerank** the stripped pair and gate on `NEAR_DUP_RERANK_BAR`
+   *     (Ticket 7 §4: bar=3 is the tightest point where both false-silence
+   *     and cross-pool false-accept hit 0% on that corpus) — replacing the
+   *     old single-candidate 0.97 raw-cosine check, which Ticket 1 found a
+   *     genuine paraphrase slips under uncaught.
+   *
+   * Returns the highest-scoring candidate clearing the bar, or `null` if
+   * none does; the embedder+reranker only shortlist, they never decide
+   * whether the relationship is a real reversal — that stays the agent's
+   * call via `--supersedes`.
    */
   public async findSupersessionCandidate(
     content: string
-  ): Promise<{ id: string; category: string; content: string; similarity: number } | null> {
+  ): Promise<{ id: string; category: string; content: string; similarity: number; rerankerScore: number } | null> {
     if (!this.db) return null;
     await this.router.query({ limit: 0 });
     const embedding = await this.embedder.embed(content);
@@ -962,11 +980,24 @@ export class NeuronMemory {
       WHERE project_id = ? AND superseded_by IS NULL
     `).all(this.projectId) as any[];
 
-    let best: { id: string; category: string; content: string; similarity: number } | null = null;
-    for (const row of rows) {
-      const similarity = dotProduct(embedding, toFloat32(row.embedding));
-      if (similarity >= SUPERSESSION_SIMILARITY_THRESHOLD && (!best || similarity > best.similarity)) {
-        best = { id: row.id, category: row.category, content: row.content, similarity };
+    const widened = rows
+      .map(row => ({
+        id: row.id as string,
+        category: row.category as string,
+        content: row.content as string,
+        similarity: dotProduct(embedding, toFloat32(row.embedding)),
+      }))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, NEAR_DUP_WIDEN_N);
+
+    if (widened.length === 0) return null;
+
+    const strippedContent = stripKnownTemplates(content);
+    let best: { id: string; category: string; content: string; similarity: number; rerankerScore: number } | null = null;
+    for (const candidate of widened) {
+      const rerankerScore = await this.reranker.score(strippedContent, stripKnownTemplates(candidate.content));
+      if (rerankerScore >= NEAR_DUP_RERANK_BAR && (!best || rerankerScore > best.rerankerScore)) {
+        best = { ...candidate, rerankerScore };
       }
     }
     return best;
@@ -1989,13 +2020,41 @@ const DEGRADATION_KEY_PREFIX = 'enrichment_degraded:';
 const RELEVANCE_GATE_REJECTED_KEY = 'relevance_gate_rejected_total';
 
 /**
- * Write-time supersession gate threshold (ticket 17 / ADR 0015 Decision 1),
- * calibrated against ticket 27/39's measured same-topic band rather than a
- * fresh number: real near-duplicate cosines cluster near 1.0 with almost no
- * intermediate range, so a floor this close to 1.0 still separates a genuine
- * same-topic reversal candidate from merely-related entries.
+ * `getStoreHealth()`'s own near-duplicate clustering threshold (ticket 17 /
+ * ADR 0015 Decision 1), calibrated against ticket 27/39's measured
+ * same-topic band: real near-duplicate cosines cluster near 1.0 with almost
+ * no intermediate range, so a floor this close to 1.0 still separates a
+ * genuine same-topic reversal candidate from merely-related entries. No
+ * longer the write-time gate itself — Ticket 6 (neuron-2.4.2) replaced
+ * `findSupersessionCandidate`'s use of this threshold with the widen/
+ * rerank/`NEAR_DUP_RERANK_BAR` gate below, which Ticket 1 found this raw
+ * cosine floor lets a genuine paraphrase slip under uncaught. Left as-is for
+ * `getStoreHealth`'s own store-wide clustering, a separate, unticketed
+ * concern.
  */
 export const SUPERSESSION_SIMILARITY_THRESHOLD = 0.97;
+
+/**
+ * Ticket 6 (neuron-2.4.2) / Ticket 7's calibration: how many candidates the
+ * write-time near-dup gate widens to by raw cosine before reranking. N=10
+ * already gives 100% near-dup recall on Ticket 7's 40-pair corpus, and
+ * widening further (up to 50 tested) neither improved recall nor changed
+ * which candidates triggered a false accept — chosen as a real-store margin
+ * above that observed floor, not because a larger N measurably helped.
+ */
+export const NEAR_DUP_WIDEN_N = 10;
+
+/**
+ * Ticket 6 (neuron-2.4.2) / Ticket 7's calibration: the `TransformersReranker`
+ * score bar the write-time near-dup gate accepts a widened candidate at.
+ * Own reranker-score scale, not `queryGated`'s `RERANKER_ACCEPT_THRESHOLD`
+ * — that -8 is calibrated for a different, asymmetric query-vs-passage
+ * relevance task and does not transfer (measured directly: it would
+ * false-accept 93% of this gate's own related-but-distinct hard negatives).
+ * bar=3 is the tightest point on Ticket 7's own corpus where both
+ * false-silence and cross-pool false-accept hit 0% simultaneously.
+ */
+export const NEAR_DUP_RERANK_BAR = 3;
 
 /**
  * Category is a non-nullable column that determines storage routing, so no

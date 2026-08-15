@@ -1604,3 +1604,15 @@ tags:
 taskId: null
 ---
 Fix for a SQLite schema-migration race when multiple processes construct NeuronMemory against a fresh (not-yet-existing) database file: initialize()'s user_version-gated migration chain and migrateDeclaredFields()'s additive ALTER TABLE pass were unguarded across processes, so two processes both reading currentVersion=0 (or a missing column) before either committed would both replay the same ALTER TABLE/CREATE TABLE, producing 'duplicate column name' or 'no such table' errors. Fixed with a synchronous mkdir-based cross-process lock (src/db.ts's withSyncFileLock) using Atomics.wait for a real blocking sleep between poll attempts, since NeuronMemory's constructor runs migrations synchronously with no await point to yield at — better-sqlite3's own busy_timeout does not help here because the race is a stale in-memory currentVersion variable, not lock contention. A fast repro test spawning unsynchronized child processes against one fresh dbPath initially passed even on unfixed code, because TransformersEmbedder loads its ONNX model lazily so bare NeuronMemory construction is too fast for independent process-startup jitter to reliably overlap; adding a shared START_AT epoch-ms barrier each worker busy-waits on before constructing made the race reproduce reliably (12/32 failures pre-fix, 0/32 post-fix across 4 repeat runs).
+
+---
+id: 52f4ad13-9964-4754-bbd6-c7e38f350c0e
+createdAt: 2026-08-15T22:20:38.887Z
+importance: 4
+tags:
+  - failure-fix
+  - adr
+  - exec
+taskId: ab516584-1fc6-4522-a046-2da2397095ab
+---
+Fix for CLI subprocess test failures after wiring findSupersessionCandidate to a real reranker call on every write (Ticket 6, neuron-2.4.2): several pre-existing tests (hook.test.ts, memory.test.ts, cli.test.ts, history.test.ts) started failing with "this write looks like it may supersede an existing entry" on fixture writes that had nothing to do with supersession. Root cause: the old gate only reranked once raw cosine already cleared 0.97 (never true under NEURON_MOCK_EMBEDDER's all-zero embeddings, so the real TransformersReranker effectively never ran during writes in these subprocess tests); the new widen(N=10)-then-always-rerank design reranks the top-N candidates regardless of cosine, so genuinely near-templated fixture content (numbered "note ${i}" loops, "Blocker one"/"Blocker two", etc.) now trips the gate for real. Resolution: add --not-a-reversal to the specific fixture writers that intentionally plant near-duplicate content for unrelated reasons (FTS-count tests, --where composition, deprecated-flag handling), e.g. `memory add "..." --category learning --not-a-reversal` — declaring the write as genuinely novel is correct here, not a workaround, since these fixtures were never meant to exercise supersession. Edge case: only bites subprocess CLI tests writing multiple near-identical strings without --supersedes/--not-a-reversal/--if-novel; in-process unit tests injecting a mock reranker are unaffected.

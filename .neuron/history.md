@@ -3062,3 +3062,15 @@ tags:
 taskId: c29a3c30-95ba-4f63-b74e-037f9d52dce6
 ---
 Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 12 (Redesign Session-Conclusion Recording to Eliminate Cross-Category Duplication) via /grilling. Found Ticket 9 — Implement Conflict Detection at Write Time was showing as frontier-unblocked despite a real, unwired dependency on Ticket 6's not-yet-built relatedness pre-filter, and fixed its blockedBy as tracker hygiene before picking a ticket to work. Design settled with the maintainer: decisions/learning and history entries link via a shared --task-id (no new field); history shrinks to a short pointer instead of a full restatement whenever a decisions/learning entry captures the same session's resolution, and keeps today's full-narrative shape only when nothing was decided. Confirmed the ~219 existing null-taskId decisions/learning entries came from the CLI being used correctly per the old (incomplete) documented protocol, not from writes bypassing it. Maintainer explicitly scoped this to the write path going forward only -- no backfill of existing entries, and a follow-on neuron status --check finding for drift was explored and declined. Implementation graduated to new Ticket 48 (CLAUDE.md + neuron-memory SKILL.md edits), which now blocks Ticket 6 in place of this design ticket. No code changed this session -- tracker/map updates only.
+
+---
+id: 1ddba01c-5190-4804-9c5a-9e077bffca80
+createdAt: 2026-08-15T22:20:52.732Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: ab516584-1fc6-4522-a046-2da2397095ab
+---
+Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 6 (Implement Near-Duplicate Suppression, Widen + Rerank Gate), the map's sole frontier ticket. Full design, calibration, and live-measured Pillar 14 results are on the ticket itself; see the linked learning entry for the incidental pre-existing-test fallout and its fix. Ticket 9 (Implement Conflict Detection at Write Time) is now the map's new frontier.

@@ -211,7 +211,7 @@ export async function handleMemoryCommand(
         if (options.ifNovel) {
           console.error(
             `[neuron] skipped: this write looks like it may supersede an existing entry ` +
-              `(similarity ${candidate.similarity.toFixed(3)}), and --if-novel was set:`
+              `(reranker score ${candidate.rerankerScore.toFixed(3)}, cosine ${candidate.similarity.toFixed(3)}), and --if-novel was set:`
           );
           console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
           console.log(JSON.stringify({
@@ -219,13 +219,14 @@ export async function handleMemoryCommand(
             reason: 'supersession-candidate',
             candidateId: candidate.id,
             similarity: candidate.similarity,
+            rerankerScore: candidate.rerankerScore,
           }));
           process.exit(0);
           return;
         }
         console.error(
           `Error: this write looks like it may supersede an existing entry ` +
-            `(similarity ${candidate.similarity.toFixed(3)}):`
+            `(reranker score ${candidate.rerankerScore.toFixed(3)}, cosine ${candidate.similarity.toFixed(3)}):`
         );
         console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
         console.error(`  If this is a reversal, re-run with --supersedes ${candidate.id}`);

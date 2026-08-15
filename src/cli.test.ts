@@ -94,8 +94,11 @@ describe('Neuron CLI Core & Flag Options', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    execSync(`node ${cliPath} learn add "Scope Alpha rule" --scope alpha`, { env, cwd: projectDir });
-    execSync(`node ${cliPath} learn add "Scope Beta rule" --scope beta`, { env, cwd: projectDir });
+    // --not-a-reversal: these two entries only differ by "Alpha"/"Beta" —
+    // this test exercises the deprecated --scopes flag, not the write-time
+    // near-dup gate (ticket 17 / Ticket 6, neuron-2.4.2).
+    execSync(`node ${cliPath} learn add "Scope Alpha rule" --scope alpha --not-a-reversal`, { env, cwd: projectDir });
+    execSync(`node ${cliPath} learn add "Scope Beta rule" --scope beta --not-a-reversal`, { env, cwd: projectDir });
 
     // --scopes no longer filters anything — every stored entry matches
     // regardless of what value (or how many) is passed.
