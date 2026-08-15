@@ -1282,3 +1282,27 @@ tags:
 taskId: null
 ---
 Provenance enforcement in neuron's write gate (Map -- neuron 2.4.2, ticket 2) will use a small, closed set of built-in declared-field types -- starting with a new commitRef type that validates a value resolves to a real commit via git -- rather than a pluggable field-verifier mechanism where projects supply their own validation code. Rationale: a custom-code verifier is a pluggable-provider surface, which this map's own non-goals explicitly rule out ('No new package, SDK, or pluggable-provider system'), and it would open a code-execution-on-write security question that a closed, named set of validator types avoids entirely. This repo's own decisions/learning categories will NOT get required commitRef/source fields as part of this work -- a decisions entry is routinely written before the commit that resolves it exists (this project's own session-time recording convention), so a required commitRef there would be unsatisfiable at write time. Instead a new git-notes category (required commitRef, durable commentary attached to an already-existing commit) is the mechanism's real live consumer, distinct from the auto-populated read-only git_log_index.
+
+---
+id: b2a804c7-09bf-477b-8743-45d3e8f9f59e
+createdAt: 2026-08-15T12:53:41.555Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+---
+Map — neuron 2.4.2, Ticket 3 (Near-Duplicate Suppression), resolved 2026-08-15: rejected adding any new raw-cosine similarity threshold below the existing 0.97 supersession gate, because ADR 0015 Decision 2 and ticket 39's LongMemEval sweep (0.50-0.70, every floor regressed recall) already established that real text has no reliable intermediate cosine band between 'same topic' and 'unrelated' -- picking a fresh guessed cosine number for near-dup detection would have repeated a pattern this codebase already disqualified twice. Decided instead to rebuild findSupersessionCandidate as a single unified gate: widen the candidate net to the top-N by raw cosine (a cheap pre-filter, not a decision), rerank each candidate with the existing TransformersReranker (src/components/reranker.ts, resident since ticket 29/ADR 0012), and gate on a newly-calibrated reranker-score bar rather than the existing RERANKER_ACCEPT_THRESHOLD=-8, since -8 is tuned for an asymmetric query-relevance task and is deliberately loose (19.4% false-accept rate) -- the wrong direction for a write-time block. The existing --supersedes/--not-a-reversal/--if-novel CLI surface and hit behavior carry over unchanged; only the detection signal underneath changes. This also sharpens ticket 4 (Conflict Detection): it can reuse the same widen-then-rerank primitive, but still needs its own signal to distinguish 'restates' from 'disagrees with', since reranker score alone measures relatedness, not polarity.
+
+---
+id: 1b51c428-d4e4-4475-b357-6ce4d54ac292
+createdAt: 2026-08-15T18:13:17.717Z
+importance: 4
+tags:
+  - release
+  - git
+  - 2.2.0
+taskId: null
+---
+commitRef declared-field type (ticket 5, neuron-2.4.2): git-history-verified provenance, not a general verifier. Implemented as a single closed, built-in field type — validated via git rev-parse --verify --quiet <ref>^{commit} at the same enforceFieldSchema choke point every other declared field already goes through — rather than a pluggable custom-code verifier, which ticket 2's grilling rejected outright as a pluggable-provider surface this map's non-goals rule out. The not-a-git-repo case is distinguished from an unknown-commit case at the gitLog.ts level (git rev-parse --is-inside-work-tree checked before ref resolution) so a refused write always names why, never silently degrading the way read-path git-log parsing does. Not dogfooded onto decisions/learning (would collide with this project's own same-session decision-recording convention) — the new git-notes category is commitRef's real consumer instead. ADR 0013 amended rather than reopened: its original 'string and enum only' type-floor decision stands, commitRef is recorded as the one narrow exception.

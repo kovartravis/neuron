@@ -26957,7 +26957,21 @@ storage engine, no new package, no new top-level command.
   - No new embedding model or reranker — reuse whatever the read-side
     pipeline already uses. Confirm the exact model/component name against
     the current codebase before ticket 3/4 land — do not assume it matches
-    an older doc's reference.
+    an older doc's reference. **Confirmed 2026-08-15 (ticket 3's grilling):
+    `TransformersReranker`, `src/components/reranker.ts`.** **Amended
+    2026-08-15 (ticket 4's grilling):** this non-goal is scoped to a
+    *pluggable/swappable* model system, not to a single fixed-purpose
+    classifier — Ticket 4 adds one specific NLI cross-encoder
+    (`cross-encoder/nli-MiniLM2-L6-H768`) for polarity detection only,
+    layered on top of `TransformersReranker`'s relatedness gate rather
+    than replacing it.
+  - No new *raw-cosine* threshold band, below the existing 0.97
+    supersession gate. Settled 2026-08-15 by ticket 3's grilling: ADR 0015
+    §2 and ticket 39's LongMemEval sweep both already found no reliable
+    intermediate cosine band exists on real text — any mechanism here that
+    wants a similarity-based bar must calibrate a reranker-score bar
+    instead (per Ticket 29 / ADR 0012's own `-8` derivation method), not a
+    freshly-guessed cosine number.
 - **In scope**: a test pillar proving which "bad write" categories are
   currently caught and which aren't (ticket 1); config-only provenance
   enforcement, if ticket 1 shows it's already possible via declared fields
@@ -26994,6 +27008,9 @@ storage engine, no new package, no new top-level command.
 
 - 1 — Antagonistic-Write Test Pillar (Diagnostic) (ticket 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de) — measured all four testable cases (case 4 excluded, no criterion yet) against the real write gate: near-duplicate paraphrase (case 1) and a same-shape numeric contradiction (case 2) both pass uncaught — the CLI's supersession gate (0.97 cosine) doesn't reach either; missing provenance on `decisions` (case 3) also passes uncaught and is **not** already solved as the map's sequencing rationale hoped — this repo's own `decisions` category declares no `fields:` block, so ticket 2 is real work, not documentation; shape violations (case 5) are already caught, as expected. New resident `Pillar 14: Antagonistic Write & Quality Gate` (`test/e2e/antagonistic-write.test.ts`) plus a dated findings doc (`docs/design/write-time-quality/antagonistic-write-findings.md`) with scoping notes for tickets 3-4. `npm test` 728/728, `tsc` clean.
 - 2 — Provenance Enforcement (ticket e98d9b8e-6280-421b-993a-c0dc320be2ad) — real engineering, confirmed by ticket 1. Two field types, not one: free text already works today via existing `type: string, required: true` (no new code); a new `commitRef` type is needed for commit-linked provenance specifically, validating a value resolves to a real commit via a git existence check (reusing `src/harnesses/gitLog.ts`'s shell-out pattern). A general custom-code verifier field was explicitly rejected — it's a pluggable-provider surface this map's own non-goals rule out; decided instead on a small, closed set of built-in field types. Not dogfooded onto this repo's `decisions`/`learning` (collides with same-session decision-recording); instead a new `git-notes` category (commentary attached to an already-existing commit, distinct from the auto-populated `git_log_index`) gives `commitRef` a real live consumer. Implementation graduated to Ticket 5 — Implement `commitRef` Field Type & `git-notes` Category (ticket 7c785243-17da-44e2-af28-3436a0e92520) rather than built in this session.
+- 3 — Near-Duplicate Suppression (ticket c0d494fb-ab8b-447d-916c-48298b701cb7) — rejected a new raw-cosine threshold outright: ADR 0015 and ticket 39 both already found no reliable intermediate cosine band exists on real text, and ticket 1 found a genuine paraphrase slips under 0.97 uncaught. Instead, `findSupersessionCandidate` gets rebuilt as one unified gate — widen to the top-N candidates by cosine (a cheap pre-filter, not a decision), rerank each with the existing `TransformersReranker`, and gate on a freshly-calibrated reranker-score bar (the existing `-8` is tuned for a different, asymmetric task and doesn't transfer). Same CLI surface (`--supersedes`/`--not-a-reversal`/`--if-novel`), now catching near-dup restatements as well as reversals; hit behavior is inherited for free. Implementation graduated to Ticket 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate) (ticket ab516584-1fc6-4522-a046-2da2397095ab), but Ticket 6 is itself gated on Ticket 7 — Validate Near-Duplicate Detection Approach (A/B Tests) (ticket 4615099c-aebf-4088-ac18-52b55677e61a), created afterward at the maintainer's request to test the reranking-beats-cosine premise itself (plus N-sensitivity, the bar frontier, a real counterfactual store-growth measurement, and a false-positive friction check) before Ticket 6 spends engineering time building against it.
+- 4 — Conflict Detection at Write Time (ticket bc1fad4b-9317-4c2f-8cff-1ba8329283e9) — polarity signal is an NLI cross-encoder (`cross-encoder/nli-MiniLM2-L6-H768`), not a heuristic and not a chat model — a deliberate, narrow amendment to this map's own "no new model" non-goal (see Notes), distinct from the pluggable-provider system that stays banned. Layered on Ticket 3/6's relatedness gate as a pre-filter — the NLI model only ever scores candidates that already cleared that bar, never a full-category scan. Hits hard-block on the same `--supersedes`/`--not-a-reversal`/`--if-novel` UX as the existing gate, one consistent resolution path regardless of trigger. Implementation graduated to Ticket 8 — Validate NLI Polarity Detection (A/B) (ticket b8900ad0-0579-4263-98f5-6f8acee75025), gating Ticket 9 — Implement Conflict Detection at Write Time (ticket 78c7b32d-274a-4cac-bab6-55e83fa868b8) — mirroring the Ticket 6/7 precedent.
+- 5 — Implement `commitRef` Field Type & `git-notes` Category (ticket 7c785243-17da-44e2-af28-3436a0e92520) — built exactly as ticket 2 specified: `verifyCommitRef` (`src/harnesses/gitLog.ts`) resolves full/abbreviated SHAs via `git rev-parse --verify --quiet <ref>^{commit}`, distinguishing `not-a-git-repo` from `unknown-commit` (an empty-but-real repo correctly reports the latter). Wired into `enforceFieldSchema`'s existing per-field loop alongside `enum`, same choke point, same refused-write-is-never-partial posture. `git-notes` category declared in this repo's own `neuron.yaml` and smoke-tested against real HEAD. ADR 0013 amended (2026-08-15) to record this as one narrow, closed addition to the "string and enum only" type floor — no pluggable-verifier reopening. `npm test` 746/746, `tsc` clean.
 
 ## Not yet specified
 
@@ -27013,14 +27030,6 @@ storage engine, no new package, no new top-level command.
 
 - **Vague/low-specificity content detection.** No objective, testable
   definition exists yet — stays fog until one does, not a ticket.
-- **Whether tickets 3 and 4 share one embedding-comparison code path.**
-  Near-dup and conflict are both "high similarity to a live entry,"
-  differing only in what happens after the match — genuinely distinct
-  mechanisms, or one path with two outcomes? Not decidable until both are
-  scoped in detail.
-- **Whether conflict detection (ticket 4) needs its own antagonistic-write
-  test cases** beyond what ticket 1 already specifies, once the mechanism
-  exists to test against.
 
 ## Out of scope
 
@@ -27239,7 +27248,7 @@ taskId: null
 blockedBy: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 3 — Near-Duplicate Suppression
 
@@ -27274,9 +27283,69 @@ in `pullRules`.
 
 ## Answer
 
-_Not yet resolved._
+Resolved 2026-08-15, via `/grilling` with the maintainer.
+
+**No new cosine threshold.** ADR 0015 §2 already found no calibrated
+intermediate cosine band exists (the 0.97 same-topic band has "almost no
+intermediate range"), and ticket 39's LongMemEval sweep (0.50–0.70)
+confirmed this generalizes to real conversational text — every floor
+regressed recall. Ticket 1's diagnostic found a genuine near-dup paraphrase
+slips under 0.97 with no known score, which would have reopened exactly
+the anti-pattern ADR 0015 already disqualified once. Picking a new guessed
+cosine floor was rejected outright rather than attempted.
+
+**Mechanism: widen-then-rerank, replacing `findSupersessionCandidate`.**
+Instead of a single closest-match-by-cosine at a fixed threshold, the gate
+widens to the top-N candidates by raw cosine (a cheap pre-filter, not a
+decision) and reranks each with the existing `TransformersReranker`
+(`src/components/reranker.ts`, already resident for the read-path
+relevance gate, ticket 29 / ADR 0012). The reranker score — not raw
+cosine — becomes the decision signal. This directly sharpens the map's own
+"Not yet specified" question on whether tickets 3 and 4 share a code path:
+ticket 4 (Conflict Detection) can evaluate reusing this same
+widen-then-rerank primitive rather than inventing a second scoring
+mechanism, though it will still need a different signal than magnitude
+alone to tell "restates" from "disagrees with" — that distinction remains
+ticket 4's own open question.
+
+**The existing `-8` reranker bar does not transfer.** It's calibrated for
+an asymmetric task (query-vs-passage relevance, ticket 29 / ADR 0012) and
+deliberately loose (19.4% false-accept rate, tuned to avoid false silence
+on retrieval) — the opposite failure mode from what a write-time block
+wants. Near-dup detection needs its own calibration pass: seed genuine
+near-dup, related-but-distinct, and unrelated pairs (extending ticket 1's
+Pillar 14 case-1 fixture), score them with the reranker, and pick a bar
+from the measured distribution with a documented rationale — the same
+discipline ticket 29 used to derive `-8` and ticket 39 used to test (and
+reject) a cosine floor, applied fresh to a new task rather than assumed to
+carry over.
+
+**Architecture: one unified gate, not two.** This replaces
+`findSupersessionCandidate`'s internals; it does not add a second,
+parallel gate. Ticket 1 already found the existing supersession gate
+cannot distinguish "reworded" from "disagrees" — both currently hard-block
+identically — so one gate catching near-dups in addition to reversals fits
+the existing shape rather than adding new surface. The CLI surface
+(`--supersedes` / `--not-a-reversal` / `--if-novel`) is unchanged.
+
+**Hit behavior: inherited, not a new decision.** The existing gate already
+combines hard refusal with a specific suggested resolution (surfaces the
+candidate id/content/similarity, names `--supersedes <id>` and
+`--not-a-reversal` as next steps) — this already is
+"refuse-with-suggestion" in the ticket's own original framing. No new
+behavior needed.
+
+**Deliberately not decided here**: the widen count (N) for the cosine
+pre-filter, and the calibrated reranker bar's actual number — both real
+engineering/measurement work, graduated to Ticket 6 — Implement
+Near-Duplicate Suppression (Widen + Rerank Gate) rather than built in this
+session (matching ticket 2 → Ticket 5's precedent).
 
 ## Comments
+
+- 2026-08-15: Grilled with the maintainer. Implementation (calibration +
+  widen-then-rerank build) graduated to Ticket 6 — Implement
+  Near-Duplicate Suppression (Widen + Rerank Gate).
 
 ---
 id: bc1fad4b-9317-4c2f-8cff-1ba8329283e9
@@ -27290,7 +27359,7 @@ taskId: null
 blockedBy: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 4 — Conflict Detection at Write Time
 
@@ -27309,8 +27378,22 @@ embedding similarity" at smaller scale.
 **Guardrail to hold firm during implementation**: this checks consistency
 with existing memory, not truth. A new entry that contradicts a live entry
 gets flagged or refused with a pointer to the conflicting entry and a
-prompt to use `--supersedes` — the system is not adjudicating which one is
+prompt to use `--supersedes`. The system is not adjudicating which one is
 correct.
+
+**Update, 2026-08-15 — Ticket 3 resolved.** Ticket 3 (Near-Duplicate
+Suppression) settled on widening `findSupersessionCandidate` to a top-N
+cosine pre-filter, reranking each candidate with the existing
+`TransformersReranker`, and gating on a freshly-calibrated reranker-score
+bar (not raw cosine — ADR 0015 and ticket 39 both found no usable
+intermediate cosine band). This ticket's own design question below ("does
+this reuse the existing reranker") is now a concrete option: reuse Ticket
+3/6's widen-then-rerank primitive directly, rather than inventing a second
+scoring mechanism. What is still open, and still this ticket's own job: a
+reranker score alone tells you *how related* two entries are, not whether
+they *agree* — Ticket 3's mechanism has no notion of polarity. Whatever
+signal distinguishes "restates" from "disagrees with" is this ticket's
+real content, not something Ticket 3 resolved for it.
 
 ## Design questions to resolve before implementation
 
@@ -27328,14 +27411,55 @@ correct.
 
 ## Deliverables
 
-- [ ] "Likely contradiction" defined precisely enough to test
-- [ ] Scoring mechanism decided (reuse reranker vs. new)
-- [ ] Refuse vs. flag-and-acknowledge decided
-- [ ] Implementation
+- [x] "Likely contradiction" defined precisely enough to test
+- [x] Scoring mechanism decided (reuse reranker vs. new)
+- [x] Refuse vs. flag-and-acknowledge decided
+- [ ] Implementation — graduated to Tickets 8 and 9, see Answer
 
 ## Answer
 
-_Not yet resolved._
+**Resolved 2026-08-15, via `/grilling`.** All three design questions
+decided; implementation graduated to two new tickets rather than built
+this session, mirroring how Ticket 3 graduated to Ticket 6 gated on
+Ticket 7.
+
+1. **Polarity signal — an NLI cross-encoder, not a heuristic and not a
+   chat model.** `cross-encoder/nli-MiniLM2-L6-H768` (verified to exist and
+   ship its own quantized ONNX export directly in its HF repo — same
+   L6-H768 size class and `AutoModelForSequenceClassification` loading
+   pattern as the already-shipped `Xenova/ms-marco-MiniLM-L-6-v2` reranker,
+   no separate Xenova conversion needed) outputs a 3-way
+   entailment/contradiction/neutral classification per pair — no
+   generation, no parsing, sidestepping the failure mode that sank several
+   of the six Qwen1.5-0.5B-Chat attempts this project has already tried and
+   rejected (see the `qwen-05b-loses-every-ab` memory). **This amends the
+   map's own non-goal** ("No new embedding model or reranker") —
+   deliberately, not silently: the non-goal against a *pluggable/swappable
+   model system* stands unchanged; this is one fixed, purpose-built
+   classifier for one purpose (polarity), not a second general-purpose
+   reranker or a provider abstraction.
+2. **Layering — reuses Ticket 3/6's relatedness gate as a pre-filter,
+   doesn't replace or duplicate it.** The NLI model only ever runs on
+   candidates that already cleared the widen-then-rerank relatedness bar;
+   it never scans a whole category. Ticket 3/6's mechanism answers "how
+   related," the NLI model answers "how they relate" for the handful of
+   survivors.
+3. **Refuse vs. flag — hard-block**, same interactive UX the existing 0.97
+   gate and Ticket 3/6's widened gate already use: refuse the write, point
+   at the conflicting entry, require `--supersedes`/`--not-a-reversal`/
+   `--if-novel` to proceed. One consistent resolution path regardless of
+   which signal (relatedness or polarity) triggered the hit — no second
+   interaction paradigm for the user to learn.
+
+**Implementation graduated, not built this session:**
+- Ticket 8 — Validate NLI Polarity Detection (A/B) (ticket
+  b8900ad0-0579-4263-98f5-6f8acee75025) — calibrates the confidence bar
+  against Pillar 14's antagonistic-write cases plus new compatible-but-
+  related pairs (false-positive check), before any code is written.
+  Mirrors Ticket 7's role for Ticket 6.
+- Ticket 9 — Implement Conflict Detection at Write Time (ticket
+  78c7b32d-274a-4cac-bab6-55e83fa868b8) — gated on Ticket 8, builds the
+  NLI-on-survivors gate with the hard-block UX above.
 
 ## Comments
 
@@ -27460,7 +27584,7 @@ tags:
 taskId: null
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 5 — Implement `commitRef` Field Type & `git-notes` Category
 
@@ -27513,19 +27637,78 @@ re-open here):
 
 ## Deliverables
 
-- [ ] `commitRef` field type implemented and validated at write time
-- [ ] Tests: valid full SHA, valid abbreviated SHA, invalid/nonexistent
+- [x] `commitRef` field type implemented and validated at write time
+- [x] Tests: valid full SHA, valid abbreviated SHA, invalid/nonexistent
       hash, non-git-repo case
-- [ ] `git-notes` category declared in this repo's own `neuron.yaml` with
+- [x] `git-notes` category declared in this repo's own `neuron.yaml` with
       required `commitRef`
-- [ ] Docs updated to name the new field type and category, per this
+- [x] Docs updated to name the new field type and category, per this
       project's own documentation discipline (`docs/agents/issue-
       tracker.md` and/or wherever declared-field types are documented for
       `neuron.yaml` authors)
 
 ## Answer
 
-_Not yet resolved._
+Implemented exactly as ticket 2 specified — no re-litigation needed.
+
+- **`CategoryFieldCommitRefSchema`** added to the discriminated union in
+  `src/config/neuronYaml.ts` (`{ type: 'commitRef', required, default }`),
+  alongside the existing string/enum variants. The "type floor" comment
+  above it, and `--help`'s per-field kind display (`src/commands/utils.ts`),
+  both updated to name it rather than silently falling through to the
+  `string` default label.
+- **`verifyCommitRef(projectRoot, ref)`** added to `src/harnesses/gitLog.ts`,
+  reusing the module's existing `execFileSync` pattern rather than a new
+  git-shelling mechanism. Returns a tagged result — `{valid:true}` /
+  `{valid:false, reason:'not-a-git-repo'}` /
+  `{valid:false, reason:'unknown-commit'}` — so the two refusal cases the
+  design called out stay distinguishable at the call site, rather than
+  collapsing to one boolean the way `runLog`'s read-path catch-all
+  deliberately does. `not-a-git-repo` is detected via
+  `git rev-parse --is-inside-work-tree` *before* attempting ref resolution
+  — an empty-but-real repo (`git init`, zero commits) correctly reports
+  `unknown-commit`, not `not-a-git-repo`; only a directory that isn't a git
+  repo at all gets the latter. Ref resolution is
+  `git rev-parse --verify --quiet <ref>^{commit}`, which accepts both full
+  and abbreviated SHAs and rejects non-commit objects.
+- **`enforceFieldSchema`** (`src/index.ts`) gained a `commitRef` branch in
+  its existing per-field validation loop, alongside the `enum` branch —
+  same choke point, same "refused write must not be a partial write"
+  posture, distinct error text per failure reason. `this.projectRoot` (a
+  field the class already carried) is the check target, so no constructor
+  or call-site changes were needed. The pre-existing `def.type !== 'enum'`
+  guard in `repairFieldCompliance` already treats `commitRef` as
+  unresolved-not-fabricable for free — no change needed there; a missing
+  commit ref has no safe synthesizable default, same reasoning ADR 0013
+  already applied to free-text identity fields.
+- **`git-notes`** declared in this repo's own `neuron.yaml`:
+  `fields.commitRef: { type: commitRef, required: true }`, with a
+  description distinguishing it from the auto-populated `git_log_index`.
+  Smoke-tested live against this repo's own history (`neuron memory add
+  --category git-notes --commit-ref <real HEAD sha> "..."` succeeded; the
+  all-zero placeholder hash was hard-refused with "does not resolve to a
+  commit in this repository's history"); the smoke-test entry was deleted
+  afterward, so `.neuron/git-notes.md` carries only its header, no content.
+- **Docs**: `docs/COMMANDS.md`'s "Project-declared fields" section now
+  lists `commitRef` alongside `string`/`enum` with a `git-notes` example,
+  plus a paragraph on its git-history-backed validation and the two
+  refusal cases. `docs/adr/0013-configurable-frontmatter-schema.md` got a
+  new Amendment (2026-08-15) recording this as one narrow, closed addition
+  to the ADR's original "string and enum only" type-floor decision — not a
+  reopening of the no-pluggable-verifier stance. `docs/agents/issue-
+  tracker.md` was not touched — it documents the `tickets` category
+  specifically, not the general field-type vocabulary, and `git-notes` has
+  no wayfinder relationship to describe there.
+- **Tests**: `src/harnesses/gitLog.test.ts` gained a `verifyCommitRef`
+  describe block (full SHA, abbreviated SHA, nonexistent hash, not-a-repo,
+  and the empty-repo edge case distinguishing the two failure reasons).
+  New `src/commitRefField.test.ts` covers write-time enforcement through
+  `NeuronMemory.transact()` against a real temp git repo: accepts full and
+  abbreviated SHAs, hard-refuses a nonexistent hash, confirms no partial
+  entry is created on refusal, gives the distinct not-a-git-repo error, and
+  confirms required-ness still fires when `commitRef` is omitted entirely.
+  `npm test`: 746/746 (was 728/728 before this ticket — Pillar 14 plus this
+  ticket's 31 new tests). `tsc --noEmit` clean.
 
 ## Comments
 
@@ -27575,27 +27758,30 @@ existed.
   - No autonomous/unattended deletion. Cleanup is reviewed before
     anything is pruned or repaired — matches this project's standing
     discipline around destructive actions.
-- **What already exists, relevant to ticket 1**: the read side has an
-  active mechanism for exactly this shape of problem — ticket 06
-  (neuron-2.4.0) built a per-turn discovery hint nudging
-  `neuron memory query` when relevant recall was left on the table, and
-  ticket 07 built `hintFollowLog.ts`, instrumentation measuring whether
-  the hint actually gets followed. The write side has no equivalent: no
-  `Stop`/`SessionEnd` hook is registered in this repo's own
-  `.claude/settings.json`, and nothing measures whether
-  `neuron memory add` gets called when the protocol calls for it.
-  Enforcement today is 100% passive prose (the CLAUDE.md protocol block).
-- **What already exists, relevant to ticket 2**: `neuron status --health`
-  reports store-health signals (duplicates, importance distribution,
-  superseded count); `--repair` acts on what `--health` finds. Both
-  already shipped (ticket 13/ADR 0013, ticket 20/neuron-2.4.0) — this map
-  is about *using* them on this repo's own store, not building anything
-  new for ticket 2 specifically, unless the review turns up a real gap.
-- **Skills to consult**: ticket 1 is squarely `/grilling` territory (same
-  shape as Map — neuron 2.4.2's own ticket 2 resolution) — trigger,
-  measurement, and dogfood-vs-ship-generally are all maintainer calls, not
-  facts to look up. `/tdd` fits once ticket 1's design is settled and
-  implementation is graduated, mirroring how ticket 06/07 were built.
+- **What already exists, relevant to the write-compliance question**
+  (not yet chartered as its own ticket): the read side has an active
+  mechanism for exactly this shape of problem — ticket 06 (neuron-2.4.0)
+  built a per-turn discovery hint nudging `neuron memory query` when
+  relevant recall was left on the table, and ticket 07 built
+  `hintFollowLog.ts`, instrumentation measuring whether the hint actually
+  gets followed. The write side has no equivalent: no `Stop`/`SessionEnd`
+  hook is registered in this repo's own `.claude/settings.json`, and
+  nothing measures whether `neuron memory add` gets called when the
+  protocol calls for it. Enforcement today is 100% passive prose (the
+  CLAUDE.md protocol block).
+- **What already exists, relevant to the store-cleanup question** (not
+  yet chartered as its own ticket beyond Ticket 1 below): `neuron status
+  --health` reports store-health signals (duplicates, importance
+  distribution, superseded count); `--repair` acts on what `--health`
+  finds. Both already shipped (ticket 13/ADR 0013, ticket 20/neuron-2.4.0)
+  — this map is about *using* them on this repo's own store, not building
+  anything new, unless the review turns up a real gap.
+- **Skills to consult**: the write-compliance question is squarely
+  `/grilling` territory (same shape as Map — neuron 2.4.2's own ticket 2
+  resolution) — trigger, measurement, and dogfood-vs-ship-generally are
+  all maintainer calls, not facts to look up. `/tdd` fits once that
+  design is settled and implementation is graduated, mirroring how
+  ticket 06/07 were built.
 
 ## Decisions so far
 
@@ -27603,15 +27789,15 @@ existed.
 
 ## Not yet specified
 
-- **Should the write-compliance mechanism (ticket 1) ship to every
-  project `neuron init` touches, or stay dogfood-only on this repo** —
-  the way ticket 06/07's own `hintFollowLog.ts` explicitly is ("not part
-  of what `neuron init` installs for a user's project")? Not decidable
-  until ticket 1 itself defines what the mechanism actually is.
-- **Whether this repo's cleanup pass (ticket 2) surfaces a recurring
-  policy** (e.g. a periodic health check) rather than a one-time pass —
-  stays fog until the one-time pass actually runs and shows whether
-  staleness reaccumulates fast enough to matter.
+- **Should the write-compliance mechanism ship to every project `neuron
+  init` touches, or stay dogfood-only on this repo** — the way ticket
+  06/07's own `hintFollowLog.ts` explicitly is ("not part of what `neuron
+  init` installs for a user's project")? Not decidable until the
+  mechanism itself is designed — still fog, not yet a ticket.
+- **Whether this repo's broader cleanup work surfaces a recurring policy**
+  (e.g. a periodic health check) rather than a one-time pass — stays fog
+  until a one-time pass actually runs and shows whether staleness
+  reaccumulates fast enough to matter.
 
 ## Out of scope
 
@@ -27759,3 +27945,908 @@ is why it's chartered here instead.
 _Not yet resolved._
 
 ## Comments
+
+---
+id: ab516584-1fc6-4522-a046-2da2397095ab
+createdAt: 2026-08-15T12:52:13.762Z
+importance: 3
+tags:
+  - retrieval
+  - longmemeval
+  - rc2
+taskId: null
+blockedBy: 4615099c-aebf-4088-ac18-52b55677e61a
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate)
+
+## Question
+
+Build the widen-then-rerank near-duplicate gate that Ticket 3 — Near-Duplicate
+Suppression designed but deliberately did not build: apply the validated
+bar/N from Ticket 7's A/B tests, then replace `findSupersessionCandidate`'s
+cosine-only single-candidate lookup with a widen-by-cosine, rerank,
+gate-on-calibrated-bar implementation.
+
+## Context
+
+Graduated from Ticket 3's resolution (2026-08-15), mirroring how Ticket 2 —
+Provenance Enforcement graduated its own implementation to Ticket 5 rather
+than building in-session. Ticket 3's design decisions, not to be
+re-litigated here:
+
+- **One unified gate.** This replaces `findSupersessionCandidate`
+  (`src/index.ts`) internals; it does not add a second, parallel gate. The
+  CLI surface (`--supersedes` / `--not-a-reversal` / `--if-novel` in
+  `src/commands/memory.ts`) is unchanged — it now also fires on near-dup
+  restatements, not just reversals.
+- **Signal is reranker score, not raw cosine.** Widen to the top-N
+  candidates by raw cosine (a cheap pre-filter, not a decision), then score
+  each with the existing `TransformersReranker`
+  (`src/components/reranker.ts`).
+- **The existing `RERANKER_ACCEPT_THRESHOLD = -8` (`src/index.ts`) does not
+  transfer.** It's calibrated for an asymmetric task (query-vs-passage
+  relevance, ticket 29 / ADR 0012) and deliberately loose. This gate needs
+  its own bar.
+- **Hit behavior is inherited, not new**: hard refuse, candidate id/content
+  surfaced, `--supersedes <id>` / `--not-a-reversal` named as the
+  resolution — the existing gate's behavior already covers this.
+
+**Blocked on Ticket 7 — Validate Near-Duplicate Detection Approach (A/B
+Tests)**, created 2026-08-15 at the maintainer's request. Ticket 7 tests
+the approach itself (does reranking actually separate near-dups better
+than cosine, on this task?) before this ticket spends engineering time
+building it, and produces the widen-count (N) and reranker bar as
+findings rather than this ticket re-deriving them mid-implementation. If
+Ticket 7 returns a no-go on A/B 1 (reranking doesn't beat cosine here),
+this ticket's own design — not just its calibration — needs to go back to
+the maintainer before any of the deliverables below still apply.
+
+## Deliverables
+
+- [ ] Apply Ticket 7's chosen widen count (N) and reranker bar — no
+      re-derivation here
+- [ ] `findSupersessionCandidate` reimplemented: widen by cosine → rerank →
+      gate on Ticket 7's bar, replacing the single-candidate 0.97 cosine
+      check
+- [ ] Existing CLI flags (`--supersedes` / `--not-a-reversal` / `--if-novel`)
+      verified to still resolve the gate correctly against the new
+      mechanism
+- [ ] Config-driven per the map's own non-goals (no hardcoded
+      category-name logic) — verify the new gate, like the old one, applies
+      uniformly across categories with no category-scoped special-casing
+- [ ] `npm test` and `tsc` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Created by Ticket 3 — Near-Duplicate Suppression's resolution.
+- 2026-08-15: Blocked on Ticket 7, created at the maintainer's request so
+  the approach and its parameters are validated before this ticket builds
+  against them.
+
+---
+id: 7fed4f53-3251-4b7a-94a0-3d344fb9a59a
+createdAt: 2026-08-15T12:59:19.989Z
+importance: 3
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: null
+kind: task
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: unclaimed
+---
+# 1 — Remove the `history` Category (Superseded)
+
+## Question
+
+Retire the `history` category: it's superseded by what the `tickets`
+category (ADR 0018) now captures on every wayfinder ticket's own
+`Answer`/`Comments` sections. What does removal actually require, and what
+happens to the 20 entries already in it?
+
+## Context
+
+`history` is still live infrastructure, not dead weight to just delete:
+
+- Declared in `neuron.yaml` (`categories.history`) and referenced in
+  `pullRules.onExec`'s `npm test`/`git commit` rule (alongside `learning`
+  and `decisions`).
+- CLAUDE.md's protocol block explicitly instructs every session to log one
+  at conclusion: `neuron memory add --category history "<summary>"
+  --task-id <ticket-id>`.
+- 20 entries currently live in the category (`neuron memory list
+  --category history`).
+
+Wayfinder-driven sessions (this repo's actual majority of work, per its own
+git log) already record an equivalent-or-richer summary on the ticket
+itself — Question/Context/Deliverables/Answer/Comments, plus the map's own
+Decisions-so-far gist-and-link. A `history` entry for a wayfinder session
+is close to a duplicate of what the ticket it references already holds,
+just in a separate, less-structured category with no link back to the
+ticket beyond an optional `--task-id`.
+
+## Design questions to resolve before implementation
+
+- Do the 20 existing entries get migrated (into `decisions`? left
+  as-is and just excluded from future writes?), or deleted outright? This
+  map's own non-goals rule out autonomous/unattended deletion — any
+  removal needs review, not an automatic pass.
+- Does `history` fully disappear, or does non-wayfinder work (a session
+  with no ticket to record against) still need somewhere to log a
+  completed-task summary? If so, what replaces it?
+- `CLAUDE.md`'s protocol block, `AGENTS.md`, and `pullRules.onExec` all
+  reference `history` by name and need to change in lockstep with
+  `neuron.yaml` — per the standing failure-fix precedent, a partial update
+  (config changes, docs don't) silently drifts.
+- Does this need a migration/deprecation path (matching how `minScore` was
+  deprecated with a warning rather than hard-removed), or is a clean
+  removal appropriate since this is this project's own store, not a
+  published feature other projects depend on?
+
+## Deliverables
+
+- [ ] Fate of the 20 existing `history` entries decided
+- [ ] Fate of non-wayfinder session summaries decided (if `history` had
+      a use beyond wayfinder work)
+- [ ] `neuron.yaml`, `CLAUDE.md`, `AGENTS.md`, and `pullRules.onExec`
+      updated in lockstep
+- [ ] Implementation
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: 4615099c-aebf-4088-ac18-52b55677e61a
+createdAt: 2026-08-15T13:00:06.692Z
+importance: 3
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 7 — Validate Near-Duplicate Detection Approach (A/B Tests)
+
+## Question
+
+Before Ticket 6 builds the widen-then-rerank near-dup gate, does the
+approach Ticket 3 designed actually work better than the alternatives it
+was chosen over? Run the measurements that test the assumption, not just
+the calibration Ticket 6 already plans to do.
+
+## Context
+
+Ticket 3 (Near-Duplicate Suppression) decided the *shape* of the fix
+(widen candidates by cosine, rerank, gate on a freshly-calibrated
+reranker-score bar) largely on structural grounds — prior calibration
+failures elsewhere in this codebase (ADR 0015, ticket 39) ruled out a new
+raw-cosine threshold, and reranking was the fallback with existing infra
+behind it. That's a sound reason to *try* reranking; it isn't yet evidence
+that reranking actually separates near-duplicates better than cosine does
+on *this* task — the reranker's only proven track record is the
+asymmetric query-vs-passage relevance task (ticket 29/ADR 0012), not
+entry-vs-entry equivalence. This ticket runs that check, plus three more,
+before Ticket 6 commits engineering time to the approach.
+
+Blocks Ticket 6 — its calibration deliverable ("seed pairs, measure
+distribution, pick a bar") is a subset of this ticket's A/B 1 and A/B 3;
+running them here first means Ticket 6 starts from a validated approach
+and a real dataset instead of re-deriving both mid-implementation.
+
+## Design questions to resolve
+
+Five measurements, not one — mirroring the same measure-don't-assume
+discipline this codebase already used for `RERANKER_ACCEPT_THRESHOLD=-8`
+(ticket 29) and the cosine-floor sweep (ticket 39):
+
+- **A/B 1 — Reranking vs. raw cosine, on this task.** Build a labeled
+  corpus (near-dup pairs, related-but-distinct pairs, unrelated pairs),
+  extending ticket 1's Pillar 14 case-1 fixture (the real paraphrase pair
+  that slipped through 0.97 uncaught). Score every pair two ways: raw
+  cosine, and top-N-by-cosine → reranker score. Compare separation between
+  near-dup and related-but-distinct for each. If reranking doesn't clearly
+  beat cosine here, Ticket 3's approach itself needs to go back to the
+  maintainer, not just the bar.
+- **A/B 2 — Widen count (N) sensitivity.** Sweep N ∈ {5, 10, 20, 50}:
+  does near-dup recall keep improving past some N, or flatten? Each extra
+  candidate is a real reranker inference call, so this is a real
+  cost/recall tradeoff, not a free knob.
+- **A/B 3 — Reranker bar: false-accept vs. false-silence frontier.** Same
+  method as ticket 29/39: sweep the reranker-score bar across the A/B 1
+  corpus, report the frontier, pick a bar with a stated rationale rather
+  than a single guessed number.
+- **A/B 4 — Counterfactual: gate on vs. gate off, real store growth.**
+  Same shape as ticket 10's counterfactual A/B. Replay a session (or this
+  repo's own write history) through `memory add` twice — gate active,
+  gate inactive — and diff `getStoreHealth()`'s `duplicateGroups` output.
+  This is the only measurement that tests the thing the map's Destination
+  actually cares about (store quality), not just gate mechanics.
+- **A/B 5 — False-positive friction on legitimate iterative writes.** Run
+  the calibrated gate against a sample of this repo's own genuinely-similar
+  but non-duplicate entries (amended ADRs, sequential ticket resolutions
+  that restate prior context by design). If it over-blocks these, the bar
+  from A/B 3 is too aggressive regardless of what the frontier said.
+
+## Deliverables
+
+- [ ] Labeled near-dup / related-but-distinct / unrelated corpus built
+      (feeds A/B 1, 3, and Ticket 6's own calibration deliverable)
+- [ ] A/B 1 run: reranking vs. raw cosine separation compared; go/no-go
+      on the reranking approach itself
+- [ ] A/B 2 run: widen count (N) chosen from the sweep, documented
+      rationale
+- [ ] A/B 3 run: reranker bar chosen from the frontier, documented
+      rationale
+- [ ] A/B 4 run: counterfactual store-growth impact measured and reported
+- [ ] A/B 5 run: false-positive friction on real iterative writes checked
+- [ ] Findings doc (mirroring `docs/design/write-time-quality/
+      antagonistic-write-findings.md`'s shape) with all five results and
+      a clear go/no-go recommendation for Ticket 6
+- [ ] Ticket 6 updated with the resulting N and bar so its own
+      calibration deliverable becomes "apply this ticket's findings"
+      rather than a re-derivation
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Created at the maintainer's request, to run before Ticket 6
+  rather than fold calibration into that ticket's own implementation pass.
+
+---
+id: b8900ad0-0579-4263-98f5-6f8acee75025
+createdAt: 2026-08-15T13:22:16.512Z
+importance: 3
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 8 — Validate NLI Polarity Detection (A/B)
+
+## Question
+
+Does `cross-encoder/nli-MiniLM2-L6-H768` reliably distinguish "restates" from
+"disagrees with" on real write-time pairs, and what confidence bar should
+trigger Ticket 9's hard-block?
+
+## Context
+
+Graduated from Ticket 4's design resolution (ticket
+bc1fad4b-9317-4c2f-8cff-1ba8329283e9): the NLI cross-encoder is the chosen
+polarity signal, layered on Ticket 3/6's widen-then-rerank relatedness gate
+as a pre-filter — the NLI model only ever scores candidates that already
+cleared that bar, never a whole category. This ticket validates the premise
+and calibrates the threshold before Ticket 9 spends engineering time
+building against it, mirroring Ticket 7's role for Ticket 6.
+
+Reuse Pillar 14 (`test/e2e/antagonistic-write.test.ts`)'s existing cases as
+a starting corpus — case 2 (direct numeric contradiction) is the known
+must-catch case. Also construct compatible-but-related pairs (same topic,
+non-conflicting detail) to measure the false-positive rate a hard-block
+posture can't tolerate being high.
+
+## Deliverables
+
+- [ ] Confidence bar (or score range) that separates contradiction from
+  neutral/entailment on real pairs, not just SNLI/MultiNLI's original
+  benchmark distribution
+- [ ] False-positive rate measured against compatible-but-related pairs
+- [ ] Verdict: does this justify Ticket 9's hard-block posture as scoped, or
+  does Ticket 4's refuse-vs-flag decision need revisiting first
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: 78c7b32d-274a-4cac-bab6-55e83fa868b8
+createdAt: 2026-08-15T13:22:26.962Z
+importance: 3
+tags:
+  - longmemeval
+  - rc2
+  - benchmark
+taskId: null
+blockedBy: b8900ad0-0579-4263-98f5-6f8acee75025
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 9 — Implement Conflict Detection at Write Time
+
+## Question
+
+Build the write-time conflict gate: `neuron memory add`/`transact` runs
+`cross-encoder/nli-MiniLM2-L6-H768` against candidates that already cleared
+Ticket 3/6's relatedness pre-filter, and hard-blocks (same UX as the
+existing supersession gate: refuse, point at the conflicting entry, require
+`--supersedes`/`--not-a-reversal`/`--if-novel`) when the calibrated
+confidence bar is crossed.
+
+## Context
+
+Graduated from Ticket 4's design resolution (ticket
+bc1fad4b-9317-4c2f-8cff-1ba8329283e9). Gated on Ticket 8's validation — the
+confidence bar this ticket gates on is Ticket 8's output, not a value to
+invent here.
+
+## Deliverables
+
+- [ ] NLI model wired into the write path, scoped to Ticket 3/6's pre-filter
+  survivors only (no full-category scan)
+- [ ] Hard-block behavior matching the existing gate's UX exactly
+- [ ] Pillar 14 extended to assert case 2 (and any new cases from Ticket 8)
+  is now caught
+- [ ] `npm test` and `tsc --noEmit` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: dfa73027-7c73-4a29-b3d4-1f8c087f3a54
+createdAt: 2026-08-15T13:36:21.989Z
+importance: 3
+tags:
+  - memory
+  - config
+  - setup
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — Global Config & Memory Store
+
+## Destination
+
+A working global config-and-store mode: a machine-global `neuron.yaml` and
+memory store (env-paths-located, bootstrapped via `neuron init --global`)
+that any category can fall through to when a repo's own local `neuron.yaml`
+doesn't declare it — so `neuron` has somewhere real and persistent to write
+when a project doesn't want its own memory state committed into that
+repo's git tree, without changing behavior for any repo that already
+declares its own categories locally.
+
+## Notes
+
+- **Prepared 2026-08-15**, chartered directly from a maintainer request (not
+  spun out of another map's ticket) via `/grilling`. Not yet sequenced
+  against Map — neuron 2.4.2 or Map — neuron 2.4.3 — this map is thematic,
+  not version-numbered, until it's actually queued for a release (mirrors
+  how "Map — 2.1.x Hardening" stayed thematic, and how 2.4.2 itself was
+  renamed from 2.4.1 once a real version number was claimed).
+- **Non-goals**:
+  - Not a live query-merge across stores. Each category resolves to
+    exactly one store (local or global); a query never blends results
+    from both. Ruled out explicitly at charter — a real fork that was put
+    to the maintainer directly, not assumed.
+  - Not a new default. Any repo with its own local `neuron.yaml` keeps
+    working exactly as it does today — local always wins when a category
+    is declared there. This map only changes what happens for categories
+    (or whole repos) that declare nothing locally.
+  - Not cloud sync or multi-user sharing — carried over from the original
+    Neuron CLI Design map's own out-of-scope ruling ("this is a
+    local-only CLI"). A global-but-local store is not that, and this map
+    keeps it that way deliberately.
+- **Decided at charter (facts the tickets build on, not open questions)**:
+  - **Precedence — config/schema level, per-category granularity.** A
+    repo's local `neuron.yaml` redeclaring a category overrides just that
+    category; anything undeclared locally falls through to the global
+    `neuron.yaml`. The two stores stay physically separate and unmerged.
+  - **Location — the existing `env-paths` convention**, the same package
+    already used for the model cache (`src/components/reranker.ts`):
+    global config at `envPaths('neuron', {suffix:''}).config`, global
+    store under `.data`. No new directory-resolution scheme.
+  - **Bootstrap — `neuron init --global`**, extending the existing
+    `init`/`scaffoldNeuronYaml` path (`src/commands/init.ts`) rather than
+    a new command.
+  - **Today's actual gap, verified in `src/config/neuronYaml.ts`**:
+    `findNeuronYaml` walks upward from cwd to the nearest `neuron.yaml` or
+    a repo boundary (`.git`/`package.json`); `loadNeuronYaml` silently
+    falls back to an in-memory `DEFAULT_CONFIG` with **no persistence**
+    when nothing is found. Running `neuron` outside any repo today
+    doesn't error — it just quietly loses every write. That's the
+    concrete problem Ticket 1 fixes.
+- **A sharper version of an already-documented risk**: this repo's own
+  test suite has a verified failure mode where CLI-invoking tests never
+  override the markdown storage path and pollute this repo's *actual*
+  `.neuron/*.md` files during `npm test` (see the matching `learning`
+  entry). A machine-global directory is the same footgun at higher
+  stakes — an unisolated test could touch the real developer or CI
+  machine's actual global store, not just this repo's own. Ticket 1 treats
+  a test-isolation override as required scope, not optional polish.
+- **Skills to consult**: `/tdd` once Ticket 1's design is settled — the
+  resolution logic and its test-isolation mechanism are naturally
+  test-first. No `/domain-modeling` need identified yet.
+
+## Decisions so far
+
+<!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
+
+## Not yet specified
+
+- **CLI-level transparency**: how (if at all) a user sees, for a given
+  category, whether it resolved to local or global scope. Not sharp
+  enough to ticket yet — worth revisiting once Ticket 1's resolution
+  mechanism actually exists and there's something concrete to report on.
+
+## Out of scope
+
+- **Live query-merge across the local and global stores** — ruled out at
+  charter (see Notes). A future map's question, if ever wanted, not this
+  one's.
+- **Cloud sync or multi-user sharing** — carried over from the original
+  Neuron CLI Design map; this stays a local-machine-only feature.
+
+---
+id: 47873d0b-3fca-419d-af9e-ad7b3ddd5ec6
+createdAt: 2026-08-15T13:36:35.155Z
+importance: 3
+tags:
+  - memory
+  - config
+  - llm
+taskId: null
+kind: task
+map: dfa73027-7c73-4a29-b3d4-1f8c087f3a54
+status: unclaimed
+---
+# 1 — Extend Config/Category Resolution to Local-Over-Global Layering
+
+## Question
+
+How does `neuron` resolve, per category, whether to use a repo-local
+`neuron.yaml`/store or fall through to a machine-global one — and how is
+that resolution logic tested without touching a real developer's actual
+global directory?
+
+## Context
+
+Settled at this map's charter (see map Notes): precedence is
+config/schema-level, per-category — a repo's local `neuron.yaml`
+redeclaring a category overrides just that category; anything undeclared
+locally falls through to the global `neuron.yaml`. The two stores (local
+`.neuron/`, global under `envPaths('neuron', {suffix:''}).data`) stay
+physically separate and unmerged — a query for a resolved category only
+ever talks to the one store it resolved to, never both.
+
+Today, `findNeuronYaml` (`src/config/neuronYaml.ts`) walks upward from cwd
+to the nearest `neuron.yaml` or a repo boundary (`.git`/`package.json`),
+and `loadNeuronYaml` falls back to an in-memory `DEFAULT_CONFIG` with no
+persistence when nothing is found. This ticket replaces that silent
+fallback with a real global config/store when one exists, without changing
+behavior for any repo that already declares its own categories locally.
+
+This repo's own test suite already has a documented, verified failure mode
+directly relevant here: several CLI-invoking test files never override the
+markdown storage path, so they read/write this repo's *actual*
+`.neuron/*.md` files during `npm test` (see the matching `learning`
+entry). A machine-global directory is a bigger version of the same
+footgun — any test that doesn't override it risks touching the real
+developer or CI machine's actual global neuron store. An env var override
+for the global location (mirroring how `NEURON_DB_PATH` already isolates
+the SQLite side) is required scope here, not optional polish.
+
+## Deliverables
+
+- [ ] Per-category resolution: local declaration wins if present, else
+  fall through to global
+- [ ] Global config/store used (not the `DEFAULT_CONFIG` in-memory
+  fallback) when no local `neuron.yaml` exists anywhere in the upward walk
+  and a global one does
+- [ ] Env var override for the global config/store location, for test
+  isolation — applied to every existing CLI-invoking test that touches
+  config resolution, not just new tests
+- [ ] Regression proof: a repo with its own fully-declared `neuron.yaml`
+  behaves identically to today, with or without a global config present
+- [ ] `npm test` and `tsc --noEmit` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: cdc62ecd-65e7-49c6-a705-2030dc920d63
+createdAt: 2026-08-15T13:36:46.627Z
+importance: 3
+tags:
+  - harness
+  - init
+  - neuron-memory
+taskId: null
+blockedBy: 47873d0b-3fca-419d-af9e-ad7b3ddd5ec6
+kind: task
+map: dfa73027-7c73-4a29-b3d4-1f8c087f3a54
+status: unclaimed
+---
+# 2 — Wire `neuron init --global` Bootstrap
+
+## Question
+
+Extend `neuron init` with a `--global` flag that scaffolds the global
+`neuron.yaml` (and store) at the env-paths config/data location — and
+decide whether it runs any of `init`'s existing repo-oriented steps
+(harness detection, CLAUDE.md/AGENTS.md scaffolding, architecture scan) at
+all, given there's no single repo to attach IDE-agent hooks to.
+
+## Context
+
+Graduated from this map's charter grilling: bootstrapping reuses the
+existing `neuron init`/`scaffoldNeuronYaml` path (`src/commands/init.ts`)
+rather than a new command, matching how the repo-local case already works.
+Blocked on Ticket 1 — this needs the resolution/location logic Ticket 1
+establishes before there's a real target to scaffold into.
+
+## Design questions to resolve before implementation
+
+- Does `--global` run harness detection/CLAUDE.md scaffolding at all? A
+  global config isn't tied to any single project's `.claude`/`.codex`/etc,
+  so today's per-harness install steps may not have a sensible target — or
+  may need a different one (e.g. writing to a user-global Claude config
+  instead of a repo-local one, if that's even wanted).
+- Does `--global` accept the same category-declaration flags/interactive
+  prompts as repo-local `init`, or does it scaffold a minimal default set
+  of categories only?
+
+## Deliverables
+
+- [ ] `neuron init --global` scaffolds a global `neuron.yaml` at the
+  env-paths config location (idempotent, matching repo-local `init`'s
+  existing unchanged-on-rerun behavior)
+- [ ] Harness/CLAUDE.md scaffolding question above resolved and
+  implemented (or explicitly skipped, documented)
+- [ ] `npm test` and `tsc --noEmit` clean
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: 943650ce-f12c-47f6-9c61-63f79305d055
+createdAt: 2026-08-15T13:54:08.907Z
+importance: 4
+tags:
+  - planning
+  - setup
+  - publish
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — neuron.github.io Site (2.5.0)
+
+## Destination
+
+A live, published dev-tool site at `kovartravis.github.io/neuron` — Astro +
+Starlight, in this repo — with a SaaS-quality homepage that sells neuron to
+developers evaluating it for their own agentic coding setups, and dev docs
+(usage + a curated architecture overview, not raw ADR dumps) accurate to the
+current release. Reached when the site is live at that URL *and* a
+docs-review step exists in the release process, so the docs don't start
+rotting the moment 2.5.0 ships.
+
+## Notes
+
+- **Prepared 2026-08-15**, chartered at the maintainer's direct request to
+  give neuron a public face ahead of 2.5.0.
+- **Settled during chartering** (pre-ticket scoping calls, not tickets):
+  - **Site location**: `kovartravis.github.io/neuron`, a GitHub Pages
+    *project* page served from this repo. No org named `neuron` exists
+    (repo is `kovartravis/neuron`), so a literal org-level page isn't
+    available; a custom domain was considered and declined. Repo is already
+    public, MIT-licensed (confirmed via `gh repo view`).
+  - **Stack**: Astro + Starlight — plain Astro pages for a fully custom
+    homepage, Starlight for docs nav/search/structure.
+  - **Audience**: developers evaluating neuron for adoption, not a
+    portfolio piece — the homepage needs a real value prop and a working
+    quickstart, not just a showcase.
+  - **Docs depth**: user-facing usage (install, CLI reference,
+    configuration, harness adapters, wayfinder) plus a curated "How It
+    Works" layer (hybrid search/RRF, write-side enrichment, declared field
+    schema, storage adapters). No raw ADR link-dump — `CONTEXT.md`'s
+    glossary is the primary source, not `docs/adr/` directly.
+  - **Versioning**: docs track latest only. No versioned doc snapshots.
+  - **Reference pages**: CLI/config reference is hand-written and reviewed
+    per release, not generated from source — a generated approach would
+    better guarantee sync but was explicitly declined in favor of manual
+    review.
+  - **Sync enforcement**: a manual checklist item in the existing release
+    process (mirrors the CHANGELOG/version-bump discipline already there),
+    not a CI gate. See ticket 10.
+- **Skills to consult**: `/prototype` for the homepage's visual direction
+  (ticket 4); `/grilling` and `/domain-modeling` for messaging (ticket 2)
+  and docs IA (ticket 3) — pull vocabulary from `CONTEXT.md` rather than
+  inventing marketing language that drifts from what the tool does.
+- **This map carries execution**, per the wayfinder skill's own override
+  clause — the destination is a live site, not a spec, so build/deploy
+  tickets (5-9) are in scope alongside the decision tickets.
+
+## Decisions so far
+
+## Not yet specified
+
+- **Whether the homepage needs a live/interactive demo** (e.g. an
+  asciinema-style terminal recording) — likely surfaces once ticket 4's
+  prototype session has something concrete to react to; not sharp enough
+  to ticket yet.
+- **Analytics/telemetry for the live site** — low priority, not worth
+  pinning down before the site exists to put it on.
+- **SEO/discoverability** (README badge linking to the site, any tool
+  directory submissions) — fog until the site itself is live.
+
+## Out of scope
+
+- **Custom domain** — `kovartravis.github.io/neuron` chosen instead;
+  revisiting this would be a fresh scoping decision, not a resumption of
+  this map.
+- **A new GitHub org named `neuron`** — same reasoning; the project-page
+  URL was chosen over standing up new org infrastructure.
+- **Versioned docs per release** — latest-only chosen; if release cadence
+  later demands version-pinned docs, that's a new effort.
+- **Generating reference docs from source** — considered, declined in
+  favor of hand-written pages reviewed per release.
+
+---
+id: ab6103ac-1b08-4ea6-aadd-816a8d5d4e46
+createdAt: 2026-08-15T13:54:24.051Z
+importance: 4
+tags:
+  - planning
+  - benchmark
+  - setup
+taskId: null
+kind: research
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 1 — Survey Dev-Tool Marketing + Docs Sites for Patterns
+
+## Question
+
+What do best-in-class developer-tool sites (marketing homepage + docs) actually do well that neuron's site should borrow or deliberately avoid — hero-section structure, how they explain a technical value prop, docs IA, code-sample presentation, whether/how they use a live demo? Survey 4-6 real sites (e.g. Stripe, Linear, Vercel, Resend, Supabase, or closer analogues among local-first/dev-tool CLI products) and produce a markdown summary of concrete, reusable patterns — not just impressions — as a linked asset.
+
+## Context
+
+Chartered directly from the "something like a SaaS would have" framing in the original request. Collected once here so ticket 2 (messaging) and ticket 4 (homepage prototype) don't each re-derive inspiration from scratch.
+
+---
+id: 96a9be90-1b56-4a78-9162-e9584f706877
+createdAt: 2026-08-15T13:54:24.463Z
+importance: 4
+tags:
+  - benchmark
+  - planning
+  - setup
+taskId: null
+blockedBy: ab6103ac-1b08-4ea6-aadd-816a8d5d4e46
+kind: grilling
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 2 — Homepage Messaging & Positioning
+
+## Question
+
+What's neuron's actual value prop and headline message for a developer landing on the homepage cold — what does it do, why does it matter over the status quo (plain CLAUDE.md/AGENTS.md prose memory), and what's the call to action? Resolve the headline, the supporting sections' framing, and how (if at all) neuron is positioned against alternatives.
+
+## Context
+
+Feeds ticket 4 (homepage visual prototype) and ticket 7 (homepage build) — a design pass without settled words to design around isn't useful. Use CONTEXT.md's glossary for accurate terminology (hybrid search, harness adapter, wayfinder, etc.) rather than inventing marketing language that drifts from what the tool actually does. Informed by ticket 1's survey.
+
+---
+id: ee1b0d6f-783a-4dc5-95f9-dc39d6828910
+createdAt: 2026-08-15T13:54:24.870Z
+importance: 4
+tags:
+  - adr
+  - 2.2.0
+  - rc2
+taskId: null
+kind: grilling
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 3 — Docs Information Architecture
+
+## Question
+
+What pages/sections does the docs half of the site actually have, in what order, under what nav structure — within the "user-facing + architecture overview" depth already scoped on the map (Getting Started, CLI Reference, Configuration, Harness Adapters, Wayfinder, How It Works, anything else)? Resolve the sitemap and each page's scope, not the content itself.
+
+## Context
+
+Feeds ticket 8 (docs content) and ticket 9 (CLI/config reference) — both need a settled structure before writing lands anywhere durable. Can run in parallel with tickets 1/2 — it doesn't depend on messaging or the competitive survey.
+
+---
+id: 19f204e7-ed0c-4883-8a86-9416bb257c02
+createdAt: 2026-08-15T13:54:35.550Z
+importance: 4
+tags:
+  - planning
+  - ui
+  - release
+taskId: null
+blockedBy: ab6103ac-1b08-4ea6-aadd-816a8d5d4e46,96a9be90-1b56-4a78-9162-e9584f706877
+kind: prototype
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 4 — Homepage Visual & Brand Direction
+
+## Question
+
+What should the homepage actually look and feel like — layout, color, typography, hero treatment, whether it needs a live/interactive demo? Use /prototype to produce a rough, concrete homepage draft to react to, informed by ticket 1's survey and ticket 2's settled messaging.
+
+## Context
+
+This is where "does the homepage need a live terminal demo" (currently fog on the map's Not yet specified) gets resolved — don't pre-decide it here, let the prototype session surface it.
+
+---
+id: 2cfb58c4-305e-414f-b40d-f2d4e46ad016
+createdAt: 2026-08-15T13:54:35.951Z
+importance: 4
+tags:
+  - publish
+  - setup
+  - release
+taskId: null
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 5 — Scaffold Astro + Starlight in This Repo
+
+## Question
+
+Stand up a working Astro + Starlight site (placeholder content) inside this repo, configured for the kovartravis.github.io/neuron project-page base path, with local dev (astro dev) running clean and not colliding with the existing TypeScript/npm build or test pipeline. Decide and document where the site source lives (e.g. /site).
+
+## Context
+
+Purely mechanical — no design or content decision blocks this from starting immediately. AFK-drivable.
+
+---
+id: b7e4dab5-5b0f-44e9-bcb8-0c8475ed785c
+createdAt: 2026-08-15T13:54:51.647Z
+importance: 4
+tags:
+  - git
+  - release
+  - publish
+taskId: null
+blockedBy: 2cfb58c4-305e-414f-b40d-f2d4e46ad016
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 6 — GitHub Pages Deploy Pipeline
+
+## Question
+
+Wire a GitHub Actions workflow that builds the Astro site and deploys it to GitHub Pages on merge to main (or on release), and enable Pages in the repo settings pointed at that deployment. Confirm the live URL actually resolves to kovartravis.github.io/neuron.
+
+## Context
+
+Needs a real build to deploy against, hence blocked on ticket 5's scaffold. Try gh api / gh CLI for the Pages settings step before assuming it needs manual GitHub UI action.
+
+---
+id: 531c631b-cf9b-4a6b-be27-b3fa5529a202
+createdAt: 2026-08-15T13:54:52.041Z
+importance: 4
+tags:
+  - planning
+  - release
+  - wayfinder
+taskId: null
+blockedBy: 96a9be90-1b56-4a78-9162-e9584f706877,19f204e7-ed0c-4883-8a86-9416bb257c02,2cfb58c4-305e-414f-b40d-f2d4e46ad016
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 7 — Build the Homepage
+
+## Question
+
+Implement the homepage in Astro against ticket 2's settled messaging and ticket 4's resolved visual direction.
+
+## Context
+
+Blocked on both decision tickets plus the scaffold (ticket 5) existing to build into.
+
+---
+id: ab00735c-765e-4575-aa0d-4bacaaa0cd1c
+createdAt: 2026-08-15T13:54:52.431Z
+importance: 4
+tags:
+  - adr
+  - md-storage
+  - enrichment
+taskId: null
+blockedBy: ee1b0d6f-783a-4dc5-95f9-dc39d6828910,2cfb58c4-305e-414f-b40d-f2d4e46ad016
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 8 — Write Docs Content Pages
+
+## Question
+
+Write the docs content (Starlight markdown pages) for every section ticket 3's IA settles, sourced primarily from CONTEXT.md's glossary and the relevant ADRs for the "How It Works" layer.
+
+## Context
+
+May need to graduate into further per-section tickets once ticket 3 resolves and the real page count is known — expected, not a planning failure.
+
+---
+id: 61c267a2-de42-4fae-a581-7435c0f4e9f7
+createdAt: 2026-08-15T13:54:52.824Z
+importance: 4
+tags:
+  - config
+  - memory
+  - setup
+taskId: null
+blockedBy: ee1b0d6f-783a-4dc5-95f9-dc39d6828910,2cfb58c4-305e-414f-b40d-f2d4e46ad016
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 9 — Write CLI & Config Reference Pages
+
+## Question
+
+Write hand-authored reference pages for every CLI command and every neuron.yaml declared field/config option, accurate to the current (2.4.x) surface.
+
+## Context
+
+Kept separate from ticket 8 because reference pages need exhaustive accuracy against the actual CLI surface (neuron <cmd> --help, neuronYaml.ts), not prose — a different kind of writing task.
+
+---
+id: f075521d-16fc-4873-a27c-0e96eb73727e
+createdAt: 2026-08-15T13:54:53.223Z
+importance: 4
+tags:
+  - release
+  - git
+  - failure-fix
+taskId: null
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 10 — Add a Docs-Review Step to the Release Checklist
+
+## Question
+
+Add a "docs reviewed against this release's CLI/config surface" checklist item to wherever this repo's release process is already documented (mirrors the discipline already given to CHANGELOG/version-bump steps), so the manual sync the maintainer chose (over a CI gate) has a real home instead of living only in this map's Notes.
+
+## Context
+
+Independent of every other ticket — editing process documentation, not building anything. First needs to locate where the release checklist actually lives in this repo.

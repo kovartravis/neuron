@@ -2990,3 +2990,51 @@ tags:
 taskId: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
 ---
 Chartered Map -- neuron 2.4.3, spun out of Map -- neuron 2.4.2's ticket 2 grilling session. The maintainer raised two concerns that don't fit 2.4.2's write-gate destination and directly collide with its own Out of scope ('retroactive re-scoring... not a backfill/migration pass'): agents not voluntarily writing memories often enough, and this repo's own store needing a cleanup pass. Rather than fold either into 2.4.2, chartered a new map: Destination is closing the loop on store quality via the two axes a write-time gate can't fix -- writes that never happen, and writes that predate any gate. Grounded both items in the actual codebase before ticketing: found the read side already has an active nudge-plus-instrument pair (ticket 06's per-turn discovery hint, ticket 07's hintFollowLog.ts) that the write side has no equivalent of -- no Stop/SessionEnd hook registered, compliance enforced only by passive CLAUDE.md prose -- so ticket 1 (Write-Side Compliance Nudge & Instrumentation, kind grilling) is scoped to mirror that exact pattern. Also found neuron doctor doesn't exist and was rejected twice (ADR 0013 ticket 13, ticket 20/2.4.0) in favor of neuron status --health/--repair, so ticket 2 (Memory Store Cleanup Pass, kind task) is scoped to use that real surface rather than a command that isn't real. Both tickets are independent, unblocked, and unclaimed. No tickets resolved this session on the new map -- charting is its own session per wayfinder discipline.
+
+---
+id: 0f124452-e6d2-4973-aa25-4f705350faff
+createdAt: 2026-08-15T12:53:41.111Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: "3"
+---
+Wayfinder pickup on Map — neuron 2.4.2: claimed the frontier's first ticket, Ticket 3 — Near-Duplicate Suppression, and ran a full /grilling session with the maintainer. Investigated the codebase before asking anything: found the ticket's own premise (extends 'computeMemoryHash exact-match dedup') was wrong — that function only serves markdown/vector drift sync, never write-time dedup — and that ADR 0015 plus ticket 39's LongMemEval sweep had already disqualified any new intermediate raw-cosine threshold on real text. Put that tension to the maintainer directly rather than assuming a threshold; they rejected the cosine-threshold approach outright, chose to widen findSupersessionCandidate's candidate net and rerank with the existing TransformersReranker instead of raw cosine, chose to calibrate a fresh reranker bar rather than reuse the existing -8 (which is tuned for a different, asymmetric query-relevance task), and chose to replace findSupersessionCandidate as one unified gate rather than add a second parallel one -- meaning the existing --supersedes/--not-a-reversal/--if-novel CLI surface is unchanged and now also catches near-dup restatements. Resolved Ticket 3 with the full design recorded in its Answer section, graduated the calibration-plus-implementation work to a new Ticket 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate) (matching Ticket 2 -> Ticket 5's precedent of not building in the grilling session itself), lightly updated Ticket 4 — Conflict Detection at Write Time's Context to note it can reuse the same widen-then-rerank primitive but still needs its own polarity signal, and updated the map's Notes/Decisions-so-far/Not yet specified sections accordingly. The next wayfinder session should pick up Ticket 6 (unblocked) or continue toward Ticket 4's own grilling.
+
+---
+id: d7c30430-ae63-4395-adeb-a72cf74489f3
+createdAt: 2026-08-15T13:24:09.402Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: bc1fad4b-9317-4c2f-8cff-1ba8329283e9
+---
+Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 4 (Conflict Detection at Write Time) via /grilling. Three design questions decided: (1) polarity signal is a purpose-built NLI cross-encoder (cross-encoder/nli-MiniLM2-L6-H768, verified to exist with its own quantized ONNX export, same loading pattern as the shipped TransformersReranker) rather than a heuristic or a chat model — deliberately amends the map's 'no new model' non-goal, scoped narrowly to one fixed classifier, not a pluggable system; (2) it layers on Ticket 3/6's widen-then-rerank relatedness gate as a pre-filter rather than scanning full categories; (3) hits hard-block using the same --supersedes/--not-a-reversal/--if-novel UX as the existing supersession gate. Implementation graduated to two new tickets rather than built in-session, mirroring the Ticket 6/7 precedent: Ticket 8 (Validate NLI Polarity Detection, A/B) gating Ticket 9 (Implement Conflict Detection at Write Time). Map's Decisions-so-far, Notes non-goal, and Not-yet-specified fog updated accordingly. No code changed this session.
+
+---
+id: caed11e8-8342-4a40-a392-66c625d0bc06
+createdAt: 2026-08-15T13:37:00.460Z
+importance: 3
+tags:
+  - memory
+  - 2.2.0
+  - wayfinder
+taskId: dfa73027-7c73-4a29-b3d4-1f8c087f3a54
+---
+Chartered a new wayfinder map, Map — Global Config & Memory Store, via /grilling — split out rather than added as a ticket to Map — neuron 2.4.3, since a global (outside-any-repo) config/store doesn't touch either of that map's two axes (write-compliance nudging, existing-store cleanup). Destination: a machine-global neuron.yaml and memory store (env-paths-located, bootstrapped via 'neuron init --global') that any category falls through to when a repo's local neuron.yaml doesn't declare it, so state doesn't have to be committed into a repo's git tree — without changing behavior for any repo that already declares categories locally. Settled at charter: precedence is config/schema-level per-category (local overrides just the categories it declares, rest falls through to global); the two stores stay physically separate, never merged at query time; location reuses the existing env-paths convention already used for the model cache; bootstrap reuses neuron init rather than a new command. Verified the actual current gap in src/config/neuronYaml.ts: findNeuronYaml's upward walk plus loadNeuronYaml's DEFAULT_CONFIG fallback means neuron outside any repo today silently loses every write with no persistence and no error. Created two child tickets: Ticket 1 (Extend Config/Category Resolution to Local-Over-Global Layering, unblocked/frontier, includes required test-isolation env var mirroring NEURON_DB_PATH given this repo's own documented real-store test-pollution failure mode) and Ticket 2 (Wire neuron init --global Bootstrap, blocked on Ticket 1). No code changed this session; map chartering only, no tickets resolved.
+
+---
+id: 1e1fd81d-6d29-4f07-affe-6cfb92393c8c
+createdAt: 2026-08-15T18:13:09.318Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: 7c785243-17da-44e2-af28-3436a0e92520
+---
+Wayfinder pickup on Map — neuron 2.4.2: resolved Ticket 5 — Implement commitRef Field Type & git-notes Category, the map's first-in-order frontier ticket (5, 7, 8 were all unblocked). Built ticket 2's settled design test-first: verifyCommitRef (src/harnesses/gitLog.ts) resolves full/abbreviated SHAs via git rev-parse --verify --quiet <ref>^{commit}, distinguishing a not-a-git-repo error from an unknown-commit one (an empty-but-real repo correctly reports the latter, not the former). Wired into enforceFieldSchema's existing per-field validation loop in src/index.ts alongside the enum branch — same choke point, same refused-write-is-never-partial posture. Declared the new git-notes category in this repo's own neuron.yaml with a required commitRef field, and smoke-tested it live (accepted real HEAD, hard-refused an all-zero placeholder hash) before deleting the smoke-test entry. Updated docs/COMMANDS.md's field-type reference and added a 2026-08-15 amendment to ADR 0013 recording commitRef as one narrow, closed addition to its original string-and-enum type floor — no pluggable-verifier reopening. 31 new tests added across src/harnesses/gitLog.test.ts and new src/commitRefField.test.ts; npm test 746/746, tsc clean. Ticket 5 closed, map's Decisions-so-far updated; frontier now Ticket 7 (Validate Near-Duplicate Detection Approach) and Ticket 8 (Validate NLI Polarity Detection), both A/B-test tickets gating tickets 6 and 9 respectively.

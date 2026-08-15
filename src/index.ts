@@ -55,7 +55,7 @@ import {
 import { resolveAllCategoryRoots } from './config/categoryPath.js';
 import { suggestClosest } from './shared/textMatch.js';
 import { findProjectRoot } from './shared/projectRoot.js';
-import { getHeadSha, listAllCommits, listCommitsSince } from './harnesses/gitLog.js';
+import { getHeadSha, listAllCommits, listCommitsSince, verifyCommitRef } from './harnesses/gitLog.js';
 
 /** A `searchGitLog` hit: an indexed commit that cleared the ADR 0012-style relevance gate. */
 export interface GitLogHit {
@@ -1330,6 +1330,16 @@ export class NeuronMemory {
           `Error: --${fieldKeyToFlagName(key)} "${value}" is not one of [${def.values.join(', ')}]` +
             (suggestion ? ` — did you mean "${suggestion}"?` : '')
         );
+      }
+      if (def.type === 'commitRef') {
+        const check = verifyCommitRef(this.projectRoot, value);
+        if (!check.valid) {
+          throw new Error(
+            check.reason === 'not-a-git-repo'
+              ? `Error: --${fieldKeyToFlagName(key)} "${value}" cannot be verified — "${this.projectRoot}" is not a git repository.`
+              : `Error: --${fieldKeyToFlagName(key)} "${value}" does not resolve to a commit in this repository's history.`
+          );
+        }
       }
     }
 

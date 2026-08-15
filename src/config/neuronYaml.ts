@@ -103,9 +103,12 @@ const RawCategoryStorageSchema = z.preprocess((val) => {
 
 /**
  * Declarable per-category frontmatter fields (ticket 43, from ADR 0013 /
- * ticket 36's design). Type system floor is deliberately just `string` and
- * `enum` — no number/date — per ticket 36's answer to question 1. This is
- * the "user-defined" tier only: the structural tier (`id`, `createdAt`) and
+ * ticket 36's design). Type system floor was originally just `string` and
+ * `enum` — no number/date — per ticket 36's answer to question 1; `commitRef`
+ * (ticket 5, neuron-2.4.2) is the one narrow addition since, still no
+ * number/date/pluggable-verifier general escape hatch (see ADR 0013's
+ * Amendments). This is the "user-defined" tier only: the structural tier
+ * (`id`, `createdAt`) and
  * semantic-reserved tier (`importance`, `tags`, `taskId`) are not
  * declarable here, they already have dedicated CLI flags and reserved
  * column/frontmatter slots.
@@ -128,9 +131,24 @@ const CategoryFieldEnumSchema = z.object({
   values: z.array(z.string()).min(1, 'enum field must declare at least one value in "values"'),
 });
 
+/**
+ * Ticket 5 (neuron-2.4.2), graduated from ticket 2's provenance-enforcement
+ * design: a value must resolve to a real commit in this project's own git
+ * history (checked at write time in `enforceFieldSchema`, `src/index.ts`).
+ * A narrow, closed addition to the "string and enum only" type floor ADR
+ * 0013 set (see that ADR's Amendments) — not a general custom-code verifier
+ * field, which ticket 2 rejected outright as a pluggable-provider surface.
+ */
+const CategoryFieldCommitRefSchema = z.object({
+  type: z.literal('commitRef'),
+  required: z.boolean().default(false),
+  default: z.string().optional(),
+});
+
 export const CategoryFieldSchema = z.discriminatedUnion('type', [
   CategoryFieldStringSchema,
   CategoryFieldEnumSchema,
+  CategoryFieldCommitRefSchema,
 ]);
 
 export type CategoryField = z.infer<typeof CategoryFieldSchema>;

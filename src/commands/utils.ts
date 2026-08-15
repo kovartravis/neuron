@@ -638,7 +638,7 @@ export function getMemoryHelp(config: NeuronConfig): string {
   for (const [category, flags] of byCategory) {
     lines.push(`  ${category}:`);
     for (const f of flags) {
-      const kind = f.def.type === 'enum' ? `enum: ${f.def.values.join('|')}` : 'string';
+      const kind = f.def.type === 'enum' ? `enum: ${f.def.values.join('|')}` : f.def.type === 'commitRef' ? 'commitRef' : 'string';
       const req = f.def.required && f.def.default === undefined ? ', required' : '';
       lines.push(`    ${f.flag} <value>${' '.repeat(Math.max(1, 24 - f.flag.length))}${kind}${req}`);
     }

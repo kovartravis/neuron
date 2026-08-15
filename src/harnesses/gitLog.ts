@@ -75,3 +75,43 @@ export function listAllCommits(projectRoot: string): GitLogCommit[] {
 export function listCommitsSince(projectRoot: string, sinceSha: string): GitLogCommit[] {
   return runLog(projectRoot, [`${sinceSha}..HEAD`]);
 }
+
+/**
+ * Ticket 5 (neuron-2.4.2): the `commitRef` declared-field type's validator.
+ * Distinguishes "not a git repo at all" from "repo exists, ref doesn't" —
+ * `enforceFieldSchema` (`src/index.ts`) surfaces these as different errors
+ * per ticket 5's own spec, rather than collapsing both to a silent pass the
+ * way `runLog`'s catch-all degrade does for read paths.
+ */
+export type CommitRefCheck =
+  | { valid: true }
+  | { valid: false; reason: 'not-a-git-repo' }
+  | { valid: false; reason: 'unknown-commit' };
+
+function isGitRepo(projectRoot: string): boolean {
+  try {
+    const out = execFileSync('git', ['rev-parse', '--is-inside-work-tree'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    return out === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** Resolves `ref` (full or abbreviated SHA) against real commit objects in `projectRoot`'s history. */
+export function verifyCommitRef(projectRoot: string, ref: string): CommitRefCheck {
+  if (!isGitRepo(projectRoot)) return { valid: false, reason: 'not-a-git-repo' };
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: 'unknown-commit' };
+  }
+}
