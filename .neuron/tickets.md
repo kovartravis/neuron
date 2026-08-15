@@ -27012,6 +27012,7 @@ storage engine, no new package, no new top-level command.
 - 4 — Conflict Detection at Write Time (ticket bc1fad4b-9317-4c2f-8cff-1ba8329283e9) — polarity signal is an NLI cross-encoder (`cross-encoder/nli-MiniLM2-L6-H768`), not a heuristic and not a chat model — a deliberate, narrow amendment to this map's own "no new model" non-goal (see Notes), distinct from the pluggable-provider system that stays banned. Layered on Ticket 3/6's relatedness gate as a pre-filter — the NLI model only ever scores candidates that already cleared that bar, never a full-category scan. Hits hard-block on the same `--supersedes`/`--not-a-reversal`/`--if-novel` UX as the existing gate, one consistent resolution path regardless of trigger. Implementation graduated to Ticket 8 — Validate NLI Polarity Detection (A/B) (ticket b8900ad0-0579-4263-98f5-6f8acee75025), gating Ticket 9 — Implement Conflict Detection at Write Time (ticket 78c7b32d-274a-4cac-bab6-55e83fa868b8) — mirroring the Ticket 6/7 precedent.
 - 5 — Implement `commitRef` Field Type & `git-notes` Category (ticket 7c785243-17da-44e2-af28-3436a0e92520) — built exactly as ticket 2 specified: `verifyCommitRef` (`src/harnesses/gitLog.ts`) resolves full/abbreviated SHAs via `git rev-parse --verify --quiet <ref>^{commit}`, distinguishing `not-a-git-repo` from `unknown-commit` (an empty-but-real repo correctly reports the latter). Wired into `enforceFieldSchema`'s existing per-field loop alongside `enum`, same choke point, same refused-write-is-never-partial posture. `git-notes` category declared in this repo's own `neuron.yaml` and smoke-tested against real HEAD. ADR 0013 amended (2026-08-15) to record this as one narrow, closed addition to the "string and enum only" type floor — no pluggable-verifier reopening. `npm test` 746/746, `tsc` clean.
 - 7 — Validate Near-Duplicate Detection Approach (A/B Tests) (ticket 4615099c-aebf-4088-ac18-52b55677e61a) — split verdict. On a 40-pair synthetic corpus, reranking cleanly beats raw cosine (N=10, bar=3 reaches 0%/0% false-silence/false-accept; no cosine floor does) — A/B 1's premise holds. But the real-store counterfactual (A/B 4, replayed against all 683 live entries in this repo's own store) found that same bar/N flags 214 mostly-false-positive pairs, dominated by content the synthetic corpus never modeled: shared structural templates (`architecture`'s scanner-generated cards, `history`'s wayfinder-session template) and by-design cross-category restatement (`decisions`/`learning` + `history` recording the same ticket twice on purpose) — plus one genuine same-category false positive (two independent `decisions` entries on the same topic, scored 4.72). Ticket 6 re-blocked on new Ticket 10 — Resolve Template/Structural False-Positive Risk Before Building Ticket 6 (ticket d121513e-0942-461b-87d0-77830d44e71a) rather than proceeding on this ticket's bar/N alone. Findings: `docs/design/write-time-quality/near-dup-detection-ab-findings.md`.
+- 8 — Validate NLI Polarity Detection (A/B) (ticket b8900ad0-0579-4263-98f5-6f8acee75025) — split verdict, same shape as Ticket 7's. `cross-encoder/nli-MiniLM2-L6-H768` cleanly separates contradiction from paraphrase (0% false-accept at any bar >= 0.7), but does **not** separate contradiction from compatible-related pairs (same topic, different, non-conflicting fact) — 80% false-accept at bar-free argmax alone, still 27% at bar 0.90, only single digits past bar 0.98 at the cost of 40%+ false-silence on real contradictions. Root cause: the model's SNLI/MultiNLI training target reads "premise doesn't mention this fact" as contradiction by design, not miscalibration — and compatible-related pairs are structurally exactly that shape. Secondary finding: the model is reliable on lexical/numeric value-swap contradictions but weak on ones requiring policy/cardinality reasoning. **No-go on Ticket 9's hard-block posture as scoped.** Ticket 9 re-blocked on new Ticket 11 — Resolve Hard-Block Posture Given NLI False-Positive Rate on Compatible-Related Pairs, Before Building Ticket 9 (ticket 5a0b8be0-5f5b-4e2a-a177-c7a3ebe30ea4) rather than proceeding on Ticket 4's refuse-vs-flag assumption unrevisited. Findings: `docs/design/write-time-quality/nli-polarity-detection-ab-findings.md`.
 
 ## Not yet specified
 
@@ -28289,7 +28290,7 @@ tags:
 taskId: null
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 8 — Validate NLI Polarity Detection (A/B)
 
@@ -28326,7 +28327,42 @@ posture can't tolerate being high.
 
 ## Answer
 
-_Not yet resolved._
+Split verdict, same shape as Ticket 7's. On a 45-pair corpus (15 fresh
+contradiction pairs generalizing Pillar 14 case 2's shape, plus Ticket 7's
+own `near-dup`/`related-distinct` corpora reused verbatim as the
+compatible classes): the model cleanly separates contradiction from
+**paraphrase** (any bar >= 0.7 gives 0% false-accept), but does **not**
+separate contradiction from **compatible-related** (same topic, different,
+non-conflicting fact) at any bar — 80% false-accept at argmax alone, still
+27% at bar 0.90, only reaching single digits past bar 0.98 at the cost of
+40%+ false-silence on real contradictions. This is the exact population
+Ticket 9's gate sees in practice (everything that already cleared Ticket
+3/6's relatedness pre-filter), so it's not a corner case.
+
+Root cause, not just the number: `cross-encoder/nli-MiniLM2-L6-H768` is
+trained on SNLI/MultiNLI's "contradiction" label, which crowdworkers wrote
+by introducing any specific fact absent from the premise — a known
+annotation-artifact bias. `compatible-related` pairs are structurally
+exactly that shape, so the model reads them as contradiction by design of
+its training target, not by threshold miscalibration.
+
+Secondary finding: within the contradiction set itself, the model is
+reliable on lexical/numeric value-swap contradictions (10/15 scored
+P >= 0.94) but unreliable on ones requiring policy/cardinality reasoning
+(the two weakest cases, P = 0.19 and 0.52, are both this shape).
+
+**Verdict: no-go on Ticket 9's hard-block posture as scoped.** Does not
+justify hard-blocking on this model's raw output at any threshold — Ticket
+4's refuse-vs-flag decision needs revisiting. Graduated to Ticket 11 —
+Resolve Hard-Block Posture Given NLI False-Positive Rate on
+Compatible-Related Pairs, Before Building Ticket 9 (ticket
+5a0b8be0-5f5b-4e2a-a177-c7a3ebe30ea4) rather than picked unilaterally here,
+mirroring Ticket 7 -> Ticket 10's precedent — a validation ticket measures
+and reports, it doesn't choose the mitigation.
+
+Scripts: `benchmarks/nli-polarity-ab/run-ab.ts`, corpus:
+`benchmarks/nli-polarity-ab/corpus.ts`. Full findings:
+`docs/design/write-time-quality/nli-polarity-detection-ab-findings.md`.
 
 ## Comments
 
@@ -28339,7 +28375,7 @@ tags:
   - rc2
   - benchmark
 taskId: null
-blockedBy: b8900ad0-0579-4263-98f5-6f8acee75025
+blockedBy: 5a0b8be0-5f5b-4e2a-a177-c7a3ebe30ea4
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
 status: unclaimed
@@ -28362,6 +28398,27 @@ bc1fad4b-9317-4c2f-8cff-1ba8329283e9). Gated on Ticket 8's validation — the
 confidence bar this ticket gates on is Ticket 8's output, not a value to
 invent here.
 
+**Ticket 8 resolved (2026-08-15) with a split verdict, not a clean go.**
+The model cleanly separates contradiction from paraphrase (any bar >= 0.7
+works, 0% false-accept). But its own real-negative set — compatible-related
+pairs, same topic, different, non-conflicting fact, exactly what this
+gate's pre-filtered input looks like in practice — overlaps contradiction
+severely: 80% false-accept at argmax alone, and no bar in the swept range
+gets both false-silence and false-accept-related low simultaneously (bar
+0.90 still false-accepts 27%; bar 0.98 gets that to 7% but false-silences
+40% of real contradictions). Full detail:
+`docs/design/write-time-quality/nli-polarity-detection-ab-findings.md`.
+
+**Blocked on Ticket 11 — Resolve Hard-Block Posture Given NLI
+False-Positive Rate on Compatible-Related Pairs, Before Building Ticket
+9**, created by Ticket 8's resolution. This ticket's hard-block posture (in
+particular the Deliverables below — "hard-block ... when the calibrated
+confidence bar is crossed") is stale until Ticket 11 decides whether that
+posture survives contact with the measured false-positive rate, or
+whether the gate needs to flag instead of refuse, narrow its scope, or use
+a different signal. Do not start implementation from the deliverables
+below as currently written; they need Ticket 11's answer folded in first.
+
 ## Deliverables
 
 - [ ] NLI model wired into the write path, scoped to Ticket 3/6's pre-filter
@@ -28370,12 +28427,22 @@ invent here.
 - [ ] Pillar 14 extended to assert case 2 (and any new cases from Ticket 8)
   is now caught
 - [ ] `npm test` and `tsc --noEmit` clean
+- [ ] **Added 2026-08-15, pending Ticket 11:** apply whichever
+      hard-block/flag/scope posture Ticket 11 decides on — the deliverable
+      list above assumes a hard-block gate that Ticket 8's findings did not
+      validate as-is.
 
 ## Answer
 
 _Not yet resolved._
 
 ## Comments
+
+- 2026-08-15: Created by Ticket 4 — Conflict Detection at Write Time's
+  resolution, gated on Ticket 8's validation.
+- 2026-08-15: Ticket 8 resolved. Re-blocked on Ticket 11 — its
+  false-positive rate against compatible-related pairs does not survive
+  contact with the hard-block posture as scoped (see Context above).
 
 ---
 id: dfa73027-7c73-4a29-b3d4-1f8c087f3a54
@@ -28997,3 +29064,80 @@ _Not yet resolved._
 - 2026-08-15: Created by Ticket 7's resolution — this map's own "plan,
   don't do" discipline means Ticket 7 measures and reports the problem, it
   doesn't unilaterally pick the mitigation. Blocks Ticket 6.
+
+---
+id: 5a0b8be0-5f5b-4e2a-a177-c7a3ebe30ea4
+createdAt: 2026-08-15T19:07:13.674Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+kind: grilling
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 11 — Resolve Hard-Block Posture Given NLI False-Positive Rate on Compatible-Related Pairs, Before Building Ticket 9
+
+## Question
+
+Ticket 8's A/B validation found `cross-encoder/nli-MiniLM2-L6-H768` cleanly
+separates contradiction from paraphrase, but does **not** cleanly separate
+contradiction from compatible-related pairs (same topic, different,
+non-conflicting fact) — the exact population Ticket 9's gate would run
+against constantly, since it only ever scores candidates that already
+cleared Ticket 3/6's relatedness pre-filter. At bar-free argmax alone the
+model already calls 80% (12/15) of compatible-related pairs "contradiction"
+as its top class. No threshold in the swept range gets both false-silence
+(missed real contradictions) and false-accept (wrongly blocked
+compatible-related writes) low at once: bar 0.90 still false-accepts 27% of
+compatible-related pairs; tightening to bar 0.98 to suppress that pushes
+false-silence to 40%.
+
+This isn't a rare edge case a bigger corpus would need to surface — it's
+visible directly in a 15-pair hard-negative set, and traces to a known
+annotation-artifact bias in the SNLI/MultiNLI training distribution this
+model was built on: hypotheses stating a fact the premise doesn't mention
+get read as "contradiction" rather than "unrelated slot, no conflict."
+
+A secondary finding: within the contradiction set itself, the model is
+reliable on lexical/numeric value-swap contradictions (10/15 scored
+P >= 0.94) but unreliable on contradictions requiring policy/cardinality
+reasoning rather than a value swap (the two weakest cases, P = 0.19 and
+0.52, are both this shape).
+
+This ticket decides what to do about it before Ticket 9 builds a hard-block
+gate against a signal that would misfire on 1-in-4-to-8 legitimate writes
+in the plausible operating range. Candidate directions (not evaluated,
+this ticket's job to weigh, not to build):
+
+- Reopen Ticket 4's refuse-vs-flag choice specifically for this signal —
+  soft-flag (surface the possible conflict, don't hard-block) instead of
+  refuse, given the measured false-positive rate.
+- Narrow the gate's scope to the contradiction subtype the model is
+  actually reliable on (lexical/numeric value swaps) and decline to catch
+  policy/cardinality contradictions at all, rather than trying to catch
+  everything NLI training calls "contradiction."
+- A different or fine-tuned polarity model — e.g. one trained or
+  calibrated specifically to distinguish "different slot" from "same slot,
+  different value," rather than general-purpose SNLI/MultiNLI contradiction.
+- An additional filter ahead of the NLI call (analogous to what Ticket 10
+  is weighing for the relatedness gate) that narrows candidates to
+  same-slot pairs before polarity scoring runs at all.
+- Something else entirely — may be `/domain-modeling` territory, the same
+  "restates vs. disagrees" distinction the map's own Notes anticipated for
+  Ticket 4.
+
+Full findings, method, and every measured number:
+`docs/design/write-time-quality/nli-polarity-detection-ab-findings.md`.
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Created by Ticket 8's resolution — this map's own "plan,
+  don't do" discipline means Ticket 8 measures and reports the problem, it
+  doesn't unilaterally pick the mitigation. Blocks Ticket 9.
