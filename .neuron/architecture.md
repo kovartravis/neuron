@@ -64,8 +64,8 @@ Default: `ast/2`
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
 - **src** — `src` (13 files)
-- **commands** — `src/commands` (29 files)
-- **components** — `src/components` (16 files)
+- **commands** — `src/commands` (30 files)
+- **components** — `src/components` (17 files)
 - **config** — `src/config` (11 files)
 - **e2e** — `src/e2e` (1 file)
 - **harnesses** — `src/harnesses` (22 files)
@@ -172,6 +172,7 @@ Primary commands module containing core application capabilities.
 - **`src/commands/init.ts`** (Exports: `HarnessFidelityReport, ProtocolWriteReport, ProtocolBlockDrift, checkProtocolBlockDrift, handleInitCommand`): The three points `recallStep()`/this file's own fidelity reporting have always meant by "recall" — deliberately excludes `pre-command` (ticket 22, neuron-2.4.0). Filtering the full `LIFECYCLE_POINTS` instead would mean a harness upgraded to a neuron version that knows about `pre-command` but not yet re-`init`'d reports recall as un-wired the moment `pre-command` isn't registered, even though session-start/pre-prompt recall itself never changed — exactly the kind of self-inflicted regression the capability-map design exists to avoid. `pre-command`'s own wiring is a separate question for `execStep()` (ticket 23) to answer, not this one.
 - **`src/commands/learn.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
 - **`src/commands/learn.ts`** (Exports: `handleLearnCommand`): Function handleLearnCommand (Methods: handleLearnCommand(), error(), exit(), log()).
+- **`src/commands/memory.conflict.test.ts`**: Methods: 9(), behavior(), vecAt(), Float32Array().
 - **`src/commands/memory.supersession.test.ts`**: Methods: process(), vecAt(), Float32Array(), makeMemory().
 - **`src/commands/memory.test.ts`**: A project whose config names a literal fallback category. The model is disabled under NODE_ENV=test, so the fallback is what makes the success path deterministic without loading 500M parameters.
 - **`src/commands/memory.ts`** (Exports: `WhereClause, RefsSatisfyClause, handleMemoryCommand`): `field!=value` (ticket 45) — negates the comparison instead of requiring equality.
@@ -213,6 +214,7 @@ Primary components module containing core application capabilities.
 - **`src/components/fts-query.ts`** (Exports: `isStopword, cleanFtsQuery`): Converts a natural language query string into a safe SQLite FTS5 MATCH expression. ## Why stopwords are dropped The keyword leg is fused with the semantic leg by Reciprocal Rank Fusion, which rewards a document's rank position in each list rather than how well it actually matched. Because terms are joined with `OR`, a document matching a single common word enters the FTS ranking at all — and if it is the only match, it enters at rank 1 and collects the full RRF contribution. Observed: the query "what payment provider do we use" ranked a document about a Rust auth daemon above the correct billing document, because `"do"`, `"we"` and `"use"` were searchable terms. Noise words give noise a guaranteed seat. Dropping them means an all-stopword query produces an empty expression, which the caller treats as "no keyword leg" and answers semantically — the correct degradation, and far better than a MATCH that hits every row.
 - **`src/components/generator.ts`** (Exports: `GeneratorProgress, getTextGenerator, isTextGeneratorLoaded, resetTextGenerator`): The shared text-generation model (`Xenova/Qwen1.5-0.5B-Chat`). Loading it costs ~3.2s and dominates its total cost — the load is 87% of a single-inference invocation, and every CLI command is its own process. The loader is therefore a module-level singleton so that a `neuron scan` which has already paid for the model can hand it to write-side enrichment for free, rather than each consumer loading its own copy.
 - **`src/components/index.ts`**: No exported symbols detected.
+- **`src/components/nliClassifier.ts`** (Exports: `PolarityClassifier, TransformersNLIClassifier`): P(contradiction) for a premise/hypothesis pair, softmax-normalized over the model's 3-way {contradiction, entailment, neutral} head. `premise` is the existing live entry, `hypothesis` the new write being evaluated against it — order matters (NLI is asymmetric) and matches Ticket 8's own A/B corpus direction.
 - **`src/components/reranker.test.ts`**: Methods: describe(), it(), TransformersReranker(), score().
 - **`src/components/reranker.ts`** (Exports: `Reranker, TransformersReranker`): Raw cross-encoder relevance logit for one query/passage pair — not a probability. Positive means the model predicts the pair relevant, negative means not; callers threshold at 0, not at 0.5.
 - **`src/components/summarizer.test.ts`**: Handles dual storage reads and writes across Markdown and SQLite

@@ -1330,3 +1330,15 @@ tags:
 taskId: null
 ---
 Map — neuron 2.4.2, Ticket 12 (Redesign Session-Conclusion Recording), resolved 2026-08-15: decisions/learning and history entries cross-reference via the existing taskId field rather than each independently restating a session's resolution in full -- decisions/learning keeps the full content, history shrinks to a short pointer (plus the same taskId) whenever a decisions/learning entry exists for that session, and only keeps its current full-narrative shape when nothing was decided. This is the source-side fix Ticket 10 chose over gate-side special-casing in the near-dup gate (a config allowlist / taskId exemption inside the gate were both already rejected there). Explicitly scoped to new writes only: the maintainer declined to backfill the ~219 existing decisions/learning entries with null taskId (86/96 decisions, 133/133 learning) after confirming they resulted from CLAUDE.md's own documented command template never including --task-id for decisions/learning (unlike history's), not from entries bypassing the CLI -- backfilling them would be a retroactive migration pass, which this map's own non-goals already rule out. A companion neuron status --check finding to catch future drift was explored (blanket taskId-null check, then a category-scoped version, then a new non-required recommended: field-schema tier) and explicitly declined as unneeded scope. Implementation graduated to Ticket 48 rather than built in-session, matching this map's own Ticket 2->5 / 3->6 / 4->9 precedent; Ticket 6 now blocks on Ticket 48 instead of this design ticket, since Ticket 6's near-dup gate is only safe from the cross-category false-positive shape once new sessions actually stop producing full-restatement pairs.
+
+---
+id: 0facf45f-b8a4-4f9f-9ec3-ff28eb28c7a0
+createdAt: 2026-08-15T23:25:35.155Z
+importance: 3
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
+---
+Map — neuron 2.4.2, Ticket 9 (Implement Conflict Detection at Write Time), resolved 2026-08-15: two design points its own text flagged as undecided were confirmed with the maintainer before building, rather than assumed. (1) Soft-flag surfacing mechanism is an inline, non-persisted CLI warning (stderr + a possibleConflict field on that one call's JSON response) — a persisted flag state was the alternative and was rejected because it would reopen the map's own "no PM-software creep, no workflow states beyond live/superseded" non-goal by needing a new declared field. (2) The soft-flag confidence bar is P(contradiction) >= 0.90, adopted directly from Ticket 8's own findings doc, which already names this as the best joint false-silence/false-accept operating point in its bar sweep (13%/27%) — a fresh pick for a soft-flag (non-blocking) posture, not a value Ticket 8/13 themselves chose, since those tickets calibrated for a hard-block posture Ticket 13 then ruled out entirely. A stricter bar (0.98) was offered and declined as favoring quiet warnings over useful ones.

@@ -1616,3 +1616,15 @@ tags:
 taskId: ab516584-1fc6-4522-a046-2da2397095ab
 ---
 Fix for CLI subprocess test failures after wiring findSupersessionCandidate to a real reranker call on every write (Ticket 6, neuron-2.4.2): several pre-existing tests (hook.test.ts, memory.test.ts, cli.test.ts, history.test.ts) started failing with "this write looks like it may supersede an existing entry" on fixture writes that had nothing to do with supersession. Root cause: the old gate only reranked once raw cosine already cleared 0.97 (never true under NEURON_MOCK_EMBEDDER's all-zero embeddings, so the real TransformersReranker effectively never ran during writes in these subprocess tests); the new widen(N=10)-then-always-rerank design reranks the top-N candidates regardless of cosine, so genuinely near-templated fixture content (numbered "note ${i}" loops, "Blocker one"/"Blocker two", etc.) now trips the gate for real. Resolution: add --not-a-reversal to the specific fixture writers that intentionally plant near-duplicate content for unrelated reasons (FTS-count tests, --where composition, deprecated-flag handling), e.g. `memory add "..." --category learning --not-a-reversal` — declaring the write as genuinely novel is correct here, not a workaround, since these fixtures were never meant to exercise supersession. Edge case: only bites subprocess CLI tests writing multiple near-identical strings without --supersedes/--not-a-reversal/--if-novel; in-process unit tests injecting a mock reranker are unaffected.
+
+---
+id: b692a4e5-a147-419b-b5ae-0ffc7cd5f36d
+createdAt: 2026-08-15T23:25:46.081Z
+importance: 4
+tags:
+  - failure-fix
+  - architecture
+  - exec
+taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
+---
+Fix for a "local_files_only=true or env.allowRemoteModels=false" error when adding a second @huggingface/transformers model loader (Ticket 9, neuron-2.4.2): a new TransformersNLIClassifier failed to download its model on first use even though it was never cached, despite no local-only flag being set anywhere in its own code. Root cause: @huggingface/transformers's env object is a process-wide singleton shared by every model loader in the process; TransformersReranker's loader only ever sets env.allowRemoteModels = false conditionally (when its own model is already cached) and never sets it back to true otherwise, so a reranker load earlier in the same CLI invocation left allowRemoteModels pinned false for every loader that ran after it, including one whose own model genuinely wasn't cached yet. Fixed by having the new loader set env.allowRemoteModels explicitly in both branches: env.allowRemoteModels = !fs.existsSync(onnxPath), so its behavior never depends on what an earlier loader in the same process did. A related but separate bug found in the same debugging pass: the new loader requested { dtype: 'q8' } and checked for onnx/model_quantized.onnx, but the model had only ever been cached at full precision (onnx/model.onnx, no dtype override) by the A/B scripts that calibrated the bar this code gates on — fixed by dropping the dtype override to match exactly what was calibrated, not just what happened to load successfully.

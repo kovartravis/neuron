@@ -27022,6 +27022,8 @@ storage engine, no new package, no new top-level command.
 
 - 6 — Implement Near-Duplicate Suppression (Widen + Rerank Gate) (ticket ab516584-1fc6-4522-a046-2da2397095ab) — built exactly as Ticket 3 designed and Ticket 7/10 calibrated: `findSupersessionCandidate` (`src/index.ts`) is now widen-by-cosine (`NEAR_DUP_WIDEN_N=10`) → strip known template boilerplate (new `stripKnownTemplates`, `src/components/templateFingerprint.ts`, implementing Ticket 10's fingerprint decision, no category-name branching) → rerank with the existing `TransformersReranker` → gate on `NEAR_DUP_RERANK_BAR=3`, replacing the old single-candidate 0.97-cosine check. CLI surface (`--supersedes`/`--not-a-reversal`/`--if-novel`) unchanged; the refusal message and `--if-novel` payload now also surface the reranker score alongside cosine. Live-measured via Pillar 14 (real embedder + reranker): case 1's near-dup paraphrase now correctly hard-blocks (reranker score 8.5), closing the exact gap Ticket 1 found; case 2's numeric contradiction also now blocks, since a relevance reranker alone can't yet tell "restates" from "contradicts" — that distinction stays Ticket 9's job, not a defect here. Fixed incidental fallout in several pre-existing subprocess-CLI tests (`hook.test.ts`, `memory.test.ts`, `cli.test.ts`, `history.test.ts`) whose near-templated fixture writes started genuinely tripping the now-always-real write-time reranker; fixed by declaring those writes `--not-a-reversal` at the fixture level, not by weakening the gate. `npm test` 752/752, `tsc` clean.
 
+- 9 — Implement Conflict Detection at Write Time (ticket 78c7b32d-274a-4cac-bab6-55e83fa868b8) — built the soft-flag gate Ticket 13 scoped: new `TransformersNLIClassifier` (`src/components/nliClassifier.ts`, `cross-encoder/nli-MiniLM2-L6-H768`, full precision — Ticket 8/13's calibration never measured a quantized variant) plugs into `src/commands/memory.ts`'s `add` handler between "candidate found" and "decide hard-block" — a candidate with `P(contradiction) >= NLI_CONTRADICTION_BAR (0.90)` downgrades from Ticket 6's hard-block to a non-blocking `possibleConflict` pointer (stderr warning + JSON field, nothing persisted); below the bar, Ticket 6's hard-block (including `--if-novel`) is unchanged. Two open design points this ticket's own text flagged as undecided — surfacing mechanism and the soft-flag bar — were confirmed with the maintainer before building rather than assumed: inline warning only (not a persisted flag state, which would have reopened the map's "no workflow states beyond live/superseded" non-goal), and bar=0.90 (Ticket 8's own findings doc names this the best joint operating point in its sweep — adopted directly since it was already-measured for a lower-cost posture, not invented). Live-measured via Pillar 14: case 2's numeric contradiction now soft-flags (P=0.996) instead of hard-blocking; case 1's paraphrase is unaffected (NLI correctly reads it as compatible, not contradiction). Caught and fixed two real bugs before Pillar 14 could measure anything: a `dtype: 'q8'` mismatch against an uncalibrated model variant, and `env.allowRemoteModels` (a process-wide singleton shared with the reranker) inheriting a stale `false` from an earlier reranker load and blocking this classifier's own first download. `npm test` 757/757, `tsc` clean. This map's frontier is now empty — every ticket 1-13 is resolved; Ticket 6/9's own graduated implementation work is done, and no new tickets or fog were surfaced by either.
+
 ## Not yet specified
 
 - **Commit-to-entry knowledge-graph traversal.** Once `commitRef`/`git-notes`
@@ -28448,7 +28450,7 @@ taskId: null
 blockedBy: e5aeaa6a-bc94-4b3e-b6a1-3086924b939e,ab516584-1fc6-4522-a046-2da2397095ab
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 9 — Implement Conflict Detection at Write Time
 
@@ -28493,22 +28495,110 @@ refused) — exact UX (inline warning vs. a queryable pending-review state)
 is this ticket's own design decision, not fixed by Ticket 13. Full detail:
 `docs/design/write-time-quality/nli-alt-models-ab-findings.md`.
 
+**Two open design points confirmed with the maintainer before building
+(2026-08-15):** neither the surfacing mechanism nor the soft-flag bar was
+actually fixed by any prior ticket — Ticket 8/13's bar sweep was calibrated
+for a hard-block posture Ticket 13 then ruled out, and this ticket's own
+deliverables explicitly named the surfacing mechanism as its own call. Both
+confirmed directly rather than assumed (see Answer).
+
 ## Deliverables
 
-- [ ] NLI model wired into the write path, scoped to Ticket 3/6's pre-filter
+- [x] NLI model wired into the write path, scoped to Ticket 3/6's pre-filter
   survivors only (no full-category scan)
-- [ ] **Soft-flag** behavior (updated 2026-08-15 per Ticket 13 — NOT the
+- [x] **Soft-flag** behavior (updated 2026-08-15 per Ticket 13 — NOT the
   hard-block UX originally scoped): write succeeds, flagged with a pointer
   to the compatible-related-or-contradicting entry it may conflict with;
   exact surfacing mechanism (CLI warning output vs. a persisted flag state)
   is this ticket's own design decision
-- [ ] Pillar 14 extended to assert case 2 (and any new cases from Ticket 8)
+- [x] Pillar 14 extended to assert case 2 (and any new cases from Ticket 8)
   is now caught by the soft-flag path
-- [ ] `npm test` and `tsc --noEmit` clean
+- [x] `npm test` and `tsc --noEmit` clean
 
 ## Answer
 
-_Not yet resolved._
+Built exactly as scoped, all four deliverables done, `npm test` 757/757,
+`tsc --noEmit` clean.
+
+**Two open design points, confirmed with the maintainer before building
+rather than assumed:**
+
+1. **Surfacing mechanism: inline CLI warning only, not persisted state.**
+   Matches the existing gate's UX (the `--if-novel` skip message shape) and
+   avoids reopening the map's own "no PM-software creep... no workflow
+   states beyond live/superseded" non-goal, which a new persisted flag
+   field would have collided with.
+2. **Soft-flag bar: `NLI_CONTRADICTION_BAR = 0.90`.** Ticket 8's own
+   findings doc names this as the best joint operating point in its sweep
+   (13% false-silence, 27% false-accept against compatible-related pairs) —
+   adopted directly since it's already-measured, not invented; a stricter
+   bar (0.98) was offered and declined as favoring quiet over useful. This
+   is a fresh pick for a soft-flag (low-cost-false-accept) posture, not a
+   value Ticket 8/13 themselves chose — those tickets calibrated for
+   hard-block, which Ticket 13 ruled out entirely.
+
+**Implementation.** New `TransformersNLIClassifier`
+(`src/components/nliClassifier.ts`, `PolarityClassifier` interface) —
+`cross-encoder/nli-MiniLM2-L6-H768`, same cache/load conventions as
+`TransformersReranker`, softmax-normalized 3-way logits, `id2label`
+asserted rather than assumed (Ticket 13 found label order varies by model —
+a silently-wrong assumption would score the wrong class as "contradiction"
+with no visible failure). Two deliberate departures from
+`TransformersReranker`'s pattern, both load-bearing:
+- **No `dtype: 'q8'`.** Ticket 8/13's A/B scripts loaded this model at full
+  precision with no dtype override, and `NLI_CONTRADICTION_BAR` was
+  calibrated against those runs — a quantized variant was never measured.
+- **`env.allowRemoteModels` is always set explicitly, in both branches.**
+  `@huggingface/transformers`'s `env` is a process-wide singleton shared
+  with the reranker; the reranker's own conditional-only-false pattern
+  left this classifier inheriting a stale `false` from an earlier reranker
+  load in the same process, which blocked this model's first-ever download
+  outright (`local_files_only` error, caught live during manual smoke
+  testing before Pillar 14 ran). Fixed on this loader only — the reranker's
+  own pattern is unaffected in production since its model is already
+  cached.
+
+`NeuronMemory.classifyPolarity(premise, hypothesis)` (`src/index.ts`) wraps
+the classifier, returning the raw probability — the bar decision is the
+caller's, not baked in, so a caller can inspect the raw score independent
+of the bar. `NLI_CONTRADICTION_BAR = 0.90` exported alongside
+`NEAR_DUP_RERANK_BAR`.
+
+`src/commands/memory.ts`'s `add` handler: when `findSupersessionCandidate`
+finds a candidate (Ticket 3/6's relatedness gate already cleared,
+`--supersedes`/`--not-a-reversal` not given), `classifyPolarity` runs
+before deciding hard-block vs. `--if-novel` skip vs. plain refusal. At or
+above the bar: write proceeds, a `[neuron] possible conflict` warning
+prints to stderr naming the candidate, and the returned JSON gains a
+`possibleConflict` field (`candidateId`, `category`, `content`,
+`contradictionProbability`) — nothing persisted, this is a one-call
+response augmentation only. Below the bar: today's Ticket 6 hard-block
+behavior (including `--if-novel`) is completely unchanged. `--supersedes`
+and `--not-a-reversal` both still bypass the whole check, as before — NLI
+is never called on either path.
+
+**Live-measured (Pillar 14 / `test/e2e/antagonistic-write.test.ts`, real
+embedder + reranker + NLI, dist rebuilt):** case 1 (near-dup paraphrase)
+still hard-blocks — NLI correctly reads it as compatible-paraphrase, not
+contradiction, so the soft-flag never fires. Case 2 (numeric contradiction)
+now downgrades from Ticket 6's hard-block to a soft-flag — P(contradiction)
+= 0.996, comfortably above 0.90 — write succeeds with the conflict pointer
+instead of forcing a `--supersedes`/`--not-a-reversal` decision on two
+independently-assessable facts. `runCli`'s test helper switched from
+`execSync` to `spawnSync`: `execSync` only exposes stderr via the thrown
+error's `.stderr` on a non-zero exit, which silently discarded the
+soft-flag's real (exit-0) stderr warning — caught by the first attempt at
+this assertion failing outright, not assumed.
+
+**New unit coverage:** `src/commands/memory.conflict.test.ts` (5 tests) —
+mock reranker (always clears `NEAR_DUP_RERANK_BAR`) + mock polarity
+classifier, isolating the soft-flag decision itself: crosses the bar
+(write succeeds, pointer surfaced, correct premise/hypothesis order
+verified), does not cross the bar (Ticket 6 hard-block unchanged),
+`--not-a-reversal` never calls NLI, a soft-flagged write proceeds even with
+`--if-novel` set (conflict is a different outcome than "skip a
+supersession candidate"), and `--if-novel` still skips normally when NLI
+doesn't flag.
 
 ## Comments
 
@@ -28523,6 +28613,9 @@ _Not yet resolved._
 - 2026-08-15: Ticket 13 resolved, no-go on hard-block for all candidates
   tested. Unblocked — posture is soft-flag, deliverables updated above.
 - 2026-08-15: Tracker hygiene — added Ticket 6 (ab516584-1fc6-4522-a046-2da2397095ab) to blockedBy. This ticket's own deliverables scope the NLI check to 'Ticket 3/6's pre-filter survivors' but Ticket 6 (the widen+rerank relatedness gate replacing findSupersessionCandidate) has not landed yet — the production code still only has the single-candidate 0.97-cosine supersession gate, which is the wrong relatedness bar for this purpose (case 2 in Ticket 1's findings shows a genuine contradiction pair sitting below 0.97 cosine, i.e. invisible to that gate). Building this ticket against the current gate would not exercise the pre-filter it's specified to depend on. Re-blocked pending Ticket 6.
+- 2026-08-15: Ticket 6 resolved and unblocked this ticket. Picked up in the
+  same session; surfacing mechanism and soft-flag bar confirmed with the
+  maintainer before implementation (see Context and Answer above).
 
 ---
 id: dfa73027-7c73-4a29-b3d4-1f8c087f3a54

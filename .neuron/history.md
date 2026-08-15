@@ -3074,3 +3074,15 @@ tags:
 taskId: ab516584-1fc6-4522-a046-2da2397095ab
 ---
 Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 6 (Implement Near-Duplicate Suppression, Widen + Rerank Gate), the map's sole frontier ticket. Full design, calibration, and live-measured Pillar 14 results are on the ticket itself; see the linked learning entry for the incidental pre-existing-test fallout and its fix. Ticket 9 (Implement Conflict Detection at Write Time) is now the map's new frontier.
+
+---
+id: 41a2097a-b643-4ea8-8493-03d62ad2f090
+createdAt: 2026-08-15T23:25:53.819Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
+---
+Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 9 (Implement Conflict Detection at Write Time), the map's last frontier ticket. Two open design points confirmed with the maintainer before building; full design and measured results on the ticket itself, see the linked decisions and learning entries for detail. Every child ticket (1-13) is now resolved — the map's frontier is empty and its Destination looks reached; flagged for the maintainer to confirm closure.

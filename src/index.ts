@@ -16,7 +16,9 @@ import {
   buildCategoryCentroids,
   selectTags,
   selectCategory,
-  stripKnownTemplates
+  stripKnownTemplates,
+  PolarityClassifier,
+  TransformersNLIClassifier
 } from './components/index.js';
 import {
   MemoryKind,
@@ -104,6 +106,7 @@ export class NeuronMemory {
   private config: NeuronConfig;
   private enricher: EnrichmentModel;
   private reranker: Reranker;
+  private polarityClassifier: PolarityClassifier;
   /**
    * Computed once per process and never persisted. Each command invocation is
    * its own process, so per-process is always fresh — which matters more than
@@ -156,6 +159,7 @@ export class NeuronMemory {
       options.enricher ??
       new LocalEnrichmentModel({ timeoutMs: config.llm.enrichment.timeoutMs });
     this.reranker = options.reranker ?? new TransformersReranker();
+    this.polarityClassifier = options.polarityClassifier ?? new TransformersNLIClassifier();
     const mdAdapter = new MultiRootMdStorage(config, options.projectRoot);
 
     // Every storage mode keeps the database now: `md-only` (which set
@@ -1001,6 +1005,28 @@ export class NeuronMemory {
       }
     }
     return best;
+  }
+
+  /**
+   * Ticket 9 (neuron-2.4.2): the write-time conflict soft-flag. Scoped to a
+   * single candidate that already cleared Ticket 3/6's relatedness gate
+   * (`findSupersessionCandidate`'s own widen/rerank pre-filter) — never a
+   * full-category scan, per Ticket 4's original design and the map's own
+   * non-goals.
+   *
+   * `premise` is the existing live entry, `hypothesis` the new write — order
+   * matters (NLI is asymmetric) and matches Ticket 8's own A/B corpus
+   * direction. Returns raw P(contradiction); `NLI_CONTRADICTION_BAR` is the
+   * caller's decision, not baked in here, so a caller can log/inspect the
+   * raw score independent of the bar.
+   *
+   * Ticket 8/13 measured this signal cannot support a hard-block posture
+   * (no bar simultaneously reaches low false-silence and low false-accept
+   * against compatible-related pairs) — soft-flag only, per Ticket 13's
+   * resolution. Callers must not use this to refuse a write.
+   */
+  public async classifyPolarity(premise: string, hypothesis: string): Promise<number> {
+    return this.polarityClassifier.scoreContradiction(premise, hypothesis);
   }
 
   /**
@@ -2055,6 +2081,19 @@ export const NEAR_DUP_WIDEN_N = 10;
  * false-silence and cross-pool false-accept hit 0% simultaneously.
  */
 export const NEAR_DUP_RERANK_BAR = 3;
+
+/**
+ * Ticket 9 (neuron-2.4.2) / maintainer decision (Ticket 8's own findings
+ * doc names this as the best joint operating point in its bar sweep — 13%
+ * false-silence, 27% false-accept against compatible-related pairs; no
+ * bar in that sweep reaches low on both axes at once). Deliberately a
+ * fresh pick for a soft-flag posture, not a value Ticket 8/13 themselves
+ * chose — those tickets calibrated for hard-block, which Ticket 13 ruled
+ * out entirely. A false accept here only produces a non-blocking warning,
+ * not a refused write, so this bar can sit looser than a hard-block bar
+ * would need to.
+ */
+export const NLI_CONTRADICTION_BAR = 0.90;
 
 /**
  * Category is a non-nullable column that determines storage routing, so no
