@@ -1,0 +1,207 @@
+{
+  "generatedAt": "2026-08-15T03:27:29.406Z",
+  "model": "claude-sonnet-5",
+  "dryRun": true,
+  "taskCount": 2,
+  "repeats": 2,
+  "sessionCount": 8,
+  "totalCostUsd": 0,
+  "summary": {
+    "armStats": {
+      "card": {
+        "sessions": 4,
+        "passed": 0,
+        "failed": 4,
+        "failureRate": 1,
+        "tokens": {
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "costUsd": 0
+      },
+      "no-card": {
+        "sessions": 4,
+        "passed": 0,
+        "failed": 4,
+        "failureRate": 1,
+        "tokens": {
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "costUsd": 0
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": 0,
+    "spread": 0,
+    "noMeasuredDifference": false
+  },
+  "results": [
+    {
+      "task": "dependency-contract",
+      "arm": "card",
+      "sessionLabel": "dependency-contract-card-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "card",
+      "sessionLabel": "dependency-contract-card-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "no-card",
+      "sessionLabel": "dependency-contract-no-card-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "no-card",
+      "sessionLabel": "dependency-contract-no-card-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "card",
+      "sessionLabel": "subsystem-inventory-card-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "card",
+      "sessionLabel": "subsystem-inventory-card-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "no-card",
+      "sessionLabel": "subsystem-inventory-no-card-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "no-card",
+      "sessionLabel": "subsystem-inventory-no-card-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "dry-run",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 0,
+      "answerText": "[dry-run]",
+      "passed": false,
+      "gradeDetail": "dry-run placeholder, not a real grade"
+    }
+  ]
+}

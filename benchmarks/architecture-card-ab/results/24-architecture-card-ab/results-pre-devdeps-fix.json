@@ -1,0 +1,207 @@
+{
+  "generatedAt": "2026-08-15T03:25:57.522Z",
+  "model": "claude-sonnet-5",
+  "dryRun": false,
+  "taskCount": 2,
+  "repeats": 2,
+  "sessionCount": 8,
+  "totalCostUsd": 0.3284,
+  "summary": {
+    "armStats": {
+      "card": {
+        "sessions": 4,
+        "passed": 2,
+        "failed": 2,
+        "failureRate": 0.5,
+        "tokens": {
+          "mean": 8807,
+          "median": 5117,
+          "p95": 12016,
+          "min": 5115,
+          "max": 12981
+        },
+        "costUsd": 0.0893
+      },
+      "no-card": {
+        "sessions": 4,
+        "passed": 1,
+        "failed": 3,
+        "failureRate": 0.75,
+        "tokens": {
+          "mean": 25436,
+          "median": 15390,
+          "p95": 27427,
+          "min": 9737,
+          "max": 49190
+        },
+        "costUsd": 0.239
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": 16629,
+    "spread": 39453,
+    "noMeasuredDifference": true
+  },
+  "results": [
+    {
+      "task": "dependency-contract",
+      "arm": "card",
+      "sessionLabel": "dependency-contract-card-r0",
+      "turns": 4,
+      "wallMs": 10571,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the 6 runtime dependencies (@huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod) from package.json's dependencies field in ANSWER.md.",
+      "tokens": {
+        "input": 12284,
+        "output": 697,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 12981,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\n",
+      "passed": false,
+      "gradeDetail": "matched=6/12"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "card",
+      "sessionLabel": "dependency-contract-card-r1",
+      "turns": 4,
+      "wallMs": 8936,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the 6 runtime (production) dependencies from package.json: @huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod.",
+      "tokens": {
+        "input": 11311,
+        "output": 705,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 12016,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\n",
+      "passed": false,
+      "gradeDetail": "matched=6/12"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "no-card",
+      "sessionLabel": "dependency-contract-no-card-r0",
+      "turns": 5,
+      "wallMs": 13582,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the runtime (non-dev) npm dependencies from the project's root package.json (@kovartravis/neuron): @huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod.",
+      "tokens": {
+        "input": 14429,
+        "output": 961,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 15390,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\n",
+      "passed": false,
+      "gradeDetail": "matched=6/12"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "no-card",
+      "sessionLabel": "dependency-contract-no-card-r1",
+      "turns": 4,
+      "wallMs": 9711,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the 8 runtime npm packages (dependencies + optionalDependencies) from package.json: @huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod, better-sqlite3, onnxruntime-node.",
+      "tokens": {
+        "input": 8994,
+        "output": 743,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 9737,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\nbetter-sqlite3\nonnxruntime-node\n",
+      "passed": false,
+      "gradeDetail": "matched=6/12"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "card",
+      "sessionLabel": "subsystem-inventory-card-r0",
+      "turns": 2,
+      "wallMs": 5666,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed all 16 primary modules with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 4637,
+        "output": 478,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 5115,
+      "answerText": "- benchmarks — benchmarks\n- longmemeval — benchmarks/longmemeval\n- reranker-gate — benchmarks/reranker-gate\n- salvage-expansion — benchmarks/salvage-expansion\n- src — src\n- commands — src/commands\n- components — src/components\n- config — src/config\n- e2e — src/e2e\n- harnesses — src/harnesses\n- models — src/models\n- scanner — src/scanner\n- shared — src/shared\n- storage — src/storage\n- ui — src/ui\n- e2e — test/e2e\n",
+      "passed": true,
+      "gradeDetail": "matched=16/16"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "card",
+      "sessionLabel": "subsystem-inventory-card-r1",
+      "turns": 2,
+      "wallMs": 5756,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed all 16 primary subsystems with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 4637,
+        "output": 480,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 5117,
+      "answerText": "- benchmarks — benchmarks\n- longmemeval — benchmarks/longmemeval\n- reranker-gate — benchmarks/reranker-gate\n- salvage-expansion — benchmarks/salvage-expansion\n- src — src\n- commands — src/commands\n- components — src/components\n- config — src/config\n- e2e — src/e2e\n- harnesses — src/harnesses\n- models — src/models\n- scanner — src/scanner\n- shared — src/shared\n- storage — src/storage\n- ui — src/ui\n- e2e — test/e2e\n",
+      "passed": true,
+      "gradeDetail": "matched=16/16"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "no-card",
+      "sessionLabel": "subsystem-inventory-no-card-r0",
+      "turns": 7,
+      "wallMs": 25856,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the project's primary modules/subsystems (commands, components, config, harnesses, models, scanner, shared, storage, ui, e2e, benchmarks, docs, test) with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 47608,
+        "output": 1582,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 49190,
+      "answerText": "# Primary Modules / Subsystems\n\n- CLI entrypoint & commands — src/commands\n- Components (embedder, summarizer, enricher, generator, timeout, binary version) — src/components\n- Configuration (neuron.yaml handling, category paths, protocol block, harness capability) — src/config\n- Harness adapters (Claude Code, Codex CLI, Copilot CLI, Cursor, git-log index) — src/harnesses\n- Data models (memory, maintenance) — src/models\n- Architecture/symbol scanner (Tree-Sitter, analyzer, compressCard) — src/scanner\n- Shared utilities (project root, text matching) — src/shared\n- Storage layer (Markdown & SQLite dual storage router) — src/storage\n- UI (dashboard/html/progress rendering) — src/ui\n- End-to-end test harness — src/e2e\n- Benchmarks & benchmark suites — benchmarks\n- Documentation (design notes, ADRs, agent docs) — docs\n- Top-level test suite — test\n",
+      "passed": true,
+      "gradeDetail": "matched=12/16"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "no-card",
+      "sessionLabel": "subsystem-inventory-no-card-r1",
+      "turns": 5,
+      "wallMs": 17089,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the project's primary modules (Commands, Components, Config, Harnesses, Models, Scanner, Storage, Shared, UI, E2E) with their src/ subdirectory paths in ANSWER.md.",
+      "tokens": {
+        "input": 26269,
+        "output": 1158,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 27427,
+      "answerText": "# Primary Modules / Subsystems\n\n- Commands (CLI command implementations): src/commands\n- Components (embedding, reranking, summarization, generation): src/components\n- Config (neuron.yaml schema, harness config, scaffolding): src/config\n- Harnesses (agent/IDE integration adapters — Claude Code, Codex, Copilot, Cursor): src/harnesses\n- Models (data models for memory entries, options, maintenance): src/models\n- Scanner (Tree-Sitter based architecture scanning/analysis): src/scanner\n- Storage (dual markdown/SQLite storage router and adapters): src/storage\n- Shared (cross-cutting utilities): src/shared\n- UI (local web UI/server for browsing memory): src/ui\n- E2E (end-to-end test harness code): src/e2e\n",
+      "passed": false,
+      "gradeDetail": "matched=11/16"
+    }
+  ]
+}

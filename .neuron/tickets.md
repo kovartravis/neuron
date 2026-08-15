@@ -19371,7 +19371,9 @@ thin.
 - 45 — Give the Tickets Category Real Per-Map Queries (ticket 56d915d0-9dbe-4391-9dc7-8273dc5ffd30) — built all four: a `map` declared field (backfilled across all 195 live entries — 186 children, 9 maps — by re-deriving membership from each map's own current content, since ticket 40's own slug-to-id table was a job-local artifact); `--where` made repeatable (ANDed) plus a new `field!=value` negation form; a real `kind: map` sentinel replacing ticket 40's flagged `status: resolved` workaround; and `neuron memory get <id>`. Found and corrected a real overcount along the way: this ticket's own Context claimed "10 real wayfinder maps" — the live store has exactly **9** (`--where "kind=map"` now proves it), matching what ticket 40 itself named. `docs/agents/issue-tracker.md`'s Wayfinding operations section rewritten against the real per-map query: `--where status=unclaimed --where map=<id> --refs-satisfy blockedBy:status=resolved`. 8 new tests, `npm test` 743/743, `tsc` clean.
 
 **True frontier as of this session (tracked in the `tickets` category, not
-this file): none.** `05`, `38` remain claimed and in progress. Ticket 04 resolved
+this file): none.** `38` remains claimed and in progress. Ticket 05 resolved
+2026-08-14 (see its own Decisions-so-far entry above) — live run completed
+now that credentials and the card redesign were both in place. Ticket 04 resolved
 2026-08-14 (see its own Decisions-so-far entry above) as a bookkeeping
 close only — its real work had already shipped 2026-08-09, before the
 move to this map. Ticket
@@ -19388,7 +19390,7 @@ above) — the per-map frontier query it built is now real, not prose:
 "blockedBy:status=resolved" --json` confirms empty. The next session
 working this map should breadth-first grill it per its own long-standing
 Notes item ("Everything else `2.4.0` admits") once `38`'s cut settles, or
-pick up `05` directly if continuing its in-progress work.
+pick up `38` directly if continuing its in-progress work.
 - 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38) — fixed with a synchronous `mkdir`-based cross-process lock (`src/db.ts`'s `withSyncFileLock`, using `Atomics.wait` for a real blocking sleep since the constructor has no `await` point to yield at), mirroring `18`'s markdown lock but blocking rather than `async`. Wraps both `initialize()`'s `user_version`-gated migration chain (split out into `runMigrationChain()`) and `migrateDeclaredFields()`'s additive `ALTER TABLE ADD COLUMN` pass, which shares the identical race shape though the ticket's own Context only named the former. `:memory:` skips the lock (no cross-process audience). New fast repro (`test/e2e/init-lock.test.ts` + `workers/init-lock-worker.mjs`) needed a `START_AT` barrier to reproduce reliably — bare construction is fast enough (embedder loads lazily) that unsynchronized process-spawn jitter usually hid the race. Verified both ways via `git stash`: 12/32 failures on unfixed code with the ticket's exact predicted errors, 0/32 on fixed code across 4 repeat runs. `npm test` 721/721, `tsc` clean, Pillar 8 clean.
 
 - Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — re-audited the full live store (194 entries) rather than trusting the ticket's own "20" estimate and confirmed exactly the 7 cases already identified while chartering it. Patched each via `neuron memory update` against ground truth pulled from git history (`git show 010590f:.scratch/...`, the commit immediately before `42` deleted `.scratch/`), not a widened migration-script recognizer — the migration script has no live second caller to justify generalizing it. One entry (`#25`) needed care: only its `Priority:` line was leaked, since the `[!IMPORTANT]` callout and postmortem section after it are genuine content that legitimately precedes its real heading in the source. `npm test` 721/721, `tsc` clean, no `src/` changes.
@@ -19396,6 +19398,8 @@ pick up `05` directly if continuing its in-progress work.
 - 03 — GitHub Action: Automated npm Publish on Push to Main (ticket 78c33beb-3601-44d6-95bc-e69915576636) — closed 2026-08-13, immediately after `02`. This ticket had already built `.github/workflows/publish.yml` in full (dist-tag resolution from `package.json`'s own version, skip-if-unchanged, a two-job build-then-publish split gated by a required-reviewer `npm-publish` GitHub Environment, Trusted Publishing/OIDC auth after npm deprecated Automation tokens mid-session) and split real-install verification off into its own ticket (`36`, renumbered `02` on this map) rather than staying open on an action only the maintainer could take. With `02` now resolved — a real push proven end to end, real stable push and branch-protection-rejection left open there by maintainer decision — nothing scoped to this ticket specifically remains: the workflow is live, committed, and working as designed.
 
 - 04 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets (ticket c8dd711c-32b0-446d-a697-f91c855306bd) — resolved as a bookkeeping close only; the real work (chartered as `19` on neuron-2.3.0, migrated here 2026-08-10) already shipped 2026-08-09: SWE-bench Lite substrate, token-outcome measure, a real `injection` arm mirroring `src/harnesses/payload.ts`'s session-start hook. Live 16-session run (`--k=4 --effort=low`, $0.69): pooled 19,267→ 8,144 tokens (57.7% reduction), `matplotlib-24265`'s arms completely separated (Mann-Whitney U=0, p=0.029), `django-11019`'s 24.9% not significant, 16/16 correct in both arms. Published in `benchmarks/token-ab/README.md`/`findings.md`, committed as `0bea898`. Status corrected from stale `claimed` to `resolved`; nothing further to decide.
+
+- 05 — Architecture Card A/B: With vs Without (ticket d8096db3-3e98-4db6-a07f-dc21ebac412e) — yes, the card measurably helps, specifically for facts requiring the scanner's own module-boundary judgment. Unblocked by two things landing this session: live `ant` credentials, and confirming the index/module-card redesign (old numbering `28`/`29`/`30`) had already shipped on neuron-2.3.0. Found and fixed two staleness bugs before spending: the harness's own `OUT_DIR` dry-run-collision bug (same class already fixed in its three token-ab siblings) and a stale 14-subsystem grading list (repo now has 16). First live run ($0.33) surfaced a real grading-target bug — `dependency-contract`'s target list included 6 packages that are actually `devDependencies`, so every session in both arms was marked failed for correctly excluding them per the task's own prompt; archived as `results-pre-devdeps-fix.json` and fixed. Re-run ($0.26): 8/8 pass both arms; `subsystem-inventory` shows a clean, completely-separated 82.5% token reduction (5,112 vs 29,244) while `dependency-contract` is a wash (a single `package.json` read is cheap either way). Pooled stat says "no measured difference" — the same per-task-washout the token-ab README already documents. n=2, reported as a pilot signal, not a powered result; published in `README.md`'s "Measured, not just claimed" section.
 
 ## Not yet specified
 
@@ -20895,7 +20899,7 @@ taskId: null
 blockedBy: ""
 kind: task
 map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
-status: claimed
+status: resolved
 ---
 # 05 — Architecture Card A/B: With vs Without
 
@@ -21055,6 +21059,82 @@ more refresh once `30` lands, against whatever the index-only injection
 actually looks like.
 
 ## Comments
+
+**2026-08-14: unblocked and run live.** Both prior blockers cleared: the
+maintainer set up live `ant` credentials this session, and the card-format
+redesign this ticket's own Comments were waiting on (old numbering `28`/`29`/`30`
+— confirmed resolved on `neuron-2.3.0`'s own map, commit `6538201`) landed
+months ago. Re-captured `captured-card.txt` for real via `neuron hook
+claude-code session-start` at current HEAD: the card is now the much smaller
+index-only injection (1,772 chars vs. the old truncated 6,000-char monolith),
+containing the same header/dependency-contract/subsystem-map section this
+ticket's tasks read from.
+
+**Found and fixed two real staleness bugs before spending anything.** (1)
+`benchmarks/architecture-card-ab/run.mjs` had the identical OUT_DIR-collision
+bug already fixed in its three siblings (`token-ab/run.mjs`,
+`run-gitlog-ab.mjs`, `run-swebench-ab.mjs`) but never back-ported here — a
+dry-run validation could have silently overwritten a live result. Fixed the
+same way: `OUT_DIR` now gets a `-dry-run` suffix whenever `DRY_RUN` is set.
+(2) `tasks.mjs`'s `SUBSYSTEM_PATHS` still listed 14 subsystems; the real
+architecture now has 16 (`benchmarks/reranker-gate` and
+`benchmarks/salvage-expansion` were added since this ticket last touched the
+card). Refreshed the list and raised the pass bar from 10-of-14 to 12-of-16,
+preserving the original ~4-miss allowance.
+
+**First live run ($0.33, 8 sessions) surfaced a real grading bug, not a
+card-effect finding.** All 4 `dependency-contract` sessions failed
+identically, in both arms, at 6/12 matched — but every session had
+*correctly* excluded the 6 packages that are real `devDependencies` in
+`package.json` (`@anthropic-ai/sdk`, `@types/better-sqlite3`, `@types/node`,
+`tsx`, `typescript`, `vitest`), exactly as the task's own prompt instructs
+("its runtime dependency contract, not devDependencies"). The grading
+target (`DEPENDENCIES`) was built from the card's undifferentiated
+"Dependency Contract" section, which doesn't distinguish prod from dev —
+so a genuinely correct answer was graded as a failure. Archived the
+before-fix run (`results-pre-devdeps-fix.json`, committed alongside
+`results.json` as this ticket's own audit trail, matching `19`'s own
+precedent for a found-and-fixed grading bug) and fixed `DEPENDENCIES` to the real 6-package
+`dependencies` list, lowering the bar to 5-of-6 (same ~83% ratio as the
+original 10-of-12).
+
+**Re-ran live ($0.26, 8 sessions) — clean 8/8 pass in both arms.**
+
+| task | arm | tokens (n=2) | mean |
+| --- | --- | --- | --- |
+| `dependency-contract` | card | 7,851 / 12,138 | 9,994 |
+| `dependency-contract` | no-card | 8,078 / 9,733 | 8,906 |
+| `subsystem-inventory` | card | 5,107 / 5,117 | 5,112 |
+| `subsystem-inventory` | no-card | 22,242 / 36,246 | 29,244 |
+
+Pooled scorecard reports `no-measured-difference: true` (token diff 11,522
+vs. spread 28,168) — but per `benchmarks/token-ab/README.md`'s own documented
+caveat, a pooled statistic across two tasks with very different baselines can
+wash out a real per-task effect, and that's exactly what happened here. The
+two tasks tell opposite stories: **dependency listing is a wash** (a single
+`package.json` read gets there in 3-4 turns regardless of arm — the card
+buys nothing, and narrowly loses on this tiny sample); **module/subsystem
+inventory shows a large, completely-separated effect** (5,107/5,117 with the
+card vs. 22,242/36,246 without — zero overlap, 82.5% pooled-mean reduction),
+matching the ticket's own hypothesis that this is exactly the kind of
+structural judgment call (which directories count as a primary module) a
+plain listing can't hand you for free.
+
+**Answering the ticket's own Question directly**: yes, proactively pushing
+the architecture card measurably helps — specifically and only for the class
+of fact that requires the scanner's own module-boundary judgment, not for
+facts a single well-known file already answers. At n=2 this is a pilot
+signal, not a powered result (Scope item 4's own explicit posture), and it's
+reported as one.
+
+**Finding is favorable enough to disclose, per Scope item 6** — written into
+the top-level `README.md`'s "📊 Measured, not just claimed" section as
+"Does pushing the architecture card help, on its own?", with the full
+per-task table, the honest wash-vs-win split, the n=2 caveat, and the exact
+re-run command. Full session data (both the buggy pre-fix run and the final
+run) live under `benchmarks/architecture-card-ab/results/24-architecture-card-ab/`.
+
+`npm test` 728/728, `tsc` clean. Total spend across both live rounds: $0.59.
 
 ---
 id: 781dbfe4-448f-4b4d-ba74-33c76020d68f

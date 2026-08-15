@@ -503,6 +503,38 @@ Every session's full answer text, token breakdown, and per-gate grade is
 written to `results.json`, so you can re-grade our verdicts offline without
 spending anything — and disagree with them.
 
+### Does pushing the architecture card help, on its own?
+
+A narrower, cheaper follow-up: same discipline as the SWE-bench run above,
+isolating just the one payload the session-start hook pushes proactively —
+the architecture card — rather than the broader "is memory resident at all"
+question those numbers already answer. 2 tasks × 2 arms × 2 repeats, the
+real card text a session sees today (the index-shaped injection, not a
+stand-in), Sonnet 5 at low effort, **$0.26 total**.
+
+| Task | Without the card | With the card | Reduction |
+|---|---|---|---|
+| Module/subsystem inventory | 29,244 tokens | **5,112** | **82.5%** |
+| Dependency list | 8,906 tokens | 9,994 | -12% (noise) |
+
+8 of 8 sessions answered correctly in both arms. The two tasks tell
+different stories, and that split *is* the finding: naming this project's
+module boundaries is the scanner's own judgment call, not something a
+directory listing hands you for free, and the two arms separate completely
+— 5,107/5,117 tokens with the card versus 22,242/36,246 without, zero
+overlap. Listing npm dependencies is cheap either way (a single
+`package.json` read gets there in 3-4 turns regardless), so the card buys
+nothing there and loses narrowly on this small sample.
+
+At 2 repeats this is a pilot signal, not a powered result — reported as
+one rather than dressed up as significance. Full session-by-session data:
+[`results.json`](benchmarks/architecture-card-ab/results/24-architecture-card-ab/results.json).
+
+```bash
+node benchmarks/architecture-card-ab/run.mjs --dry-run   # free — validates fixtures + grading
+node benchmarks/architecture-card-ab/run.mjs              # the run above: ~$0.26, under a minute
+```
+
 ### The full benchmark report
 
 This section cherry-picks the highlights. Every token-economics finding —

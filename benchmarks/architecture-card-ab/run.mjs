@@ -44,10 +44,12 @@ if (TASK_FILTER && TASKS.length !== TASK_FILTER.length) {
   const missing = TASK_FILTER.filter(id => !found.has(id));
   throw new Error(`--tasks referenced unknown task id(s): ${missing.join(', ')}`);
 }
-const OUT_DIR = path.join(
-  REPO_ROOT,
-  args.find(a => a.startsWith('--out='))?.split('=')[1] ?? 'benchmarks/architecture-card-ab/results/24-architecture-card-ab'
-);
+// OUT_DIR is keyed on --dry-run too (not just --out=), the same fix already
+// applied to run-swebench-ab.mjs and its two siblings — a validation dry run
+// must never land on the same path as a live, spent, committed result.
+const OUT_NAME =
+  args.find(a => a.startsWith('--out='))?.split('=')[1] ?? 'benchmarks/architecture-card-ab/results/24-architecture-card-ab';
+const OUT_DIR = path.join(REPO_ROOT, DRY_RUN ? `${OUT_NAME}-dry-run` : OUT_NAME);
 
 const ARMS = ['card', 'no-card'];
 
