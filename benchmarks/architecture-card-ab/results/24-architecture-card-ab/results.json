@@ -1,0 +1,207 @@
+{
+  "generatedAt": "2026-08-15T03:28:10.793Z",
+  "model": "claude-sonnet-5",
+  "dryRun": false,
+  "taskCount": 2,
+  "repeats": 2,
+  "sessionCount": 8,
+  "totalCostUsd": 0.2645,
+  "summary": {
+    "armStats": {
+      "card": {
+        "sessions": 4,
+        "passed": 4,
+        "failed": 0,
+        "failureRate": 0,
+        "tokens": {
+          "mean": 7553,
+          "median": 5117,
+          "p95": 7851,
+          "min": 5107,
+          "max": 12138
+        },
+        "costUsd": 0.0792
+      },
+      "no-card": {
+        "sessions": 4,
+        "passed": 4,
+        "failed": 0,
+        "failureRate": 0,
+        "tokens": {
+          "mean": 19075,
+          "median": 9733,
+          "p95": 22242,
+          "min": 8078,
+          "max": 36246
+        },
+        "costUsd": 0.1853
+      }
+    },
+    "riskCases": [],
+    "tokenDiff": 11522,
+    "spread": 28168,
+    "noMeasuredDifference": true
+  },
+  "results": [
+    {
+      "task": "dependency-contract",
+      "arm": "card",
+      "sessionLabel": "dependency-contract-card-r0",
+      "turns": 3,
+      "wallMs": 7641,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "The runtime dependency contract (package.json \"dependencies\") lists 6 packages: @huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, and zod — written to ANSWER.md.",
+      "tokens": {
+        "input": 7305,
+        "output": 546,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7851,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\n",
+      "passed": true,
+      "gradeDetail": "matched=6/6"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "card",
+      "sessionLabel": "dependency-contract-card-r1",
+      "turns": 4,
+      "wallMs": 10381,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the 6 runtime dependencies from package.json's \"dependencies\" field (@huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod) in ANSWER.md, excluding devDependencies like @anthropic-ai/sdk, typescript, vitest, tsx, and @types packages.",
+      "tokens": {
+        "input": 11299,
+        "output": 839,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 12138,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\n",
+      "passed": true,
+      "gradeDetail": "matched=6/6"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "no-card",
+      "sessionLabel": "dependency-contract-no-card-r0",
+      "turns": 3,
+      "wallMs": 7617,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the project's runtime dependency contract (dependencies + optionalDependencies from root package.json): @huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod, better-sqlite3, onnxruntime-node.",
+      "tokens": {
+        "input": 7497,
+        "output": 581,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8078,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\nbetter-sqlite3\nonnxruntime-node\n",
+      "passed": true,
+      "gradeDetail": "matched=6/6"
+    },
+    {
+      "task": "dependency-contract",
+      "arm": "no-card",
+      "sessionLabel": "dependency-contract-no-card-r1",
+      "turns": 4,
+      "wallMs": 10024,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the project's runtime dependency contract (dependencies + optionalDependencies from package.json): @huggingface/transformers, env-paths, onnxruntime-web, web-tree-sitter, yaml, zod, better-sqlite3, onnxruntime-node — written to /ANSWER.md.",
+      "tokens": {
+        "input": 8984,
+        "output": 749,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 9733,
+      "answerText": "@huggingface/transformers\nenv-paths\nonnxruntime-web\nweb-tree-sitter\nyaml\nzod\nbetter-sqlite3\nonnxruntime-node\n",
+      "passed": true,
+      "gradeDetail": "matched=6/6"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "card",
+      "sessionLabel": "subsystem-inventory-card-r0",
+      "turns": 2,
+      "wallMs": 5696,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed all 16 primary modules with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 4631,
+        "output": 476,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 5107,
+      "answerText": "- benchmarks — benchmarks\n- longmemeval — benchmarks/longmemeval\n- reranker-gate — benchmarks/reranker-gate\n- salvage-expansion — benchmarks/salvage-expansion\n- src — src\n- commands — src/commands\n- components — src/components\n- config — src/config\n- e2e — src/e2e\n- harnesses — src/harnesses\n- models — src/models\n- scanner — src/scanner\n- shared — src/shared\n- storage — src/storage\n- ui — src/ui\n- e2e — test/e2e\n",
+      "passed": true,
+      "gradeDetail": "matched=16/16"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "card",
+      "sessionLabel": "subsystem-inventory-card-r1",
+      "turns": 2,
+      "wallMs": 5633,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed all 16 primary subsystems with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 4637,
+        "output": 480,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 5117,
+      "answerText": "- benchmarks — benchmarks\n- longmemeval — benchmarks/longmemeval\n- reranker-gate — benchmarks/reranker-gate\n- salvage-expansion — benchmarks/salvage-expansion\n- src — src\n- commands — src/commands\n- components — src/components\n- config — src/config\n- e2e — src/e2e\n- harnesses — src/harnesses\n- models — src/models\n- scanner — src/scanner\n- shared — src/shared\n- storage — src/storage\n- ui — src/ui\n- e2e — test/e2e\n",
+      "passed": true,
+      "gradeDetail": "matched=16/16"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "no-card",
+      "sessionLabel": "subsystem-inventory-no-card-r0",
+      "turns": 7,
+      "wallMs": 23195,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the project's primary modules (Commands, Components, Config, Harnesses, Models, Scanner, Shared, Storage, UI, E2E, Benchmarks, Documentation) with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 34666,
+        "output": 1580,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 36246,
+      "answerText": "# Primary Modules / Subsystems\n\n- Commands (CLI command implementations) — src/commands\n- Components (embedding, enrichment, summarization, reranking pipeline) — src/components\n- Config (neuron.yaml, harness/category/protocol-block config) — src/config\n- Harnesses (harness adapters: Claude Code, Codex, Copilot, Cursor, git-log index) — src/harnesses\n- Models (data/domain models: memory, maintenance, options) — src/models\n- Scanner (architecture/topology scanner, Tree-Sitter symbol scanner, diffing) — src/scanner\n- Shared (cross-cutting utilities) — src/shared\n- Storage (dual storage router, Markdown storage adapter, vector sync) — src/storage\n- UI (local dashboard server and HTML rendering) — src/ui\n- E2E (end-to-end test harness fixtures) — src/e2e\n- Benchmarks (measured benchmark suites) — benchmarks\n- Documentation (ADRs and design docs) — docs\n",
+      "passed": true,
+      "gradeDetail": "matched=12/16"
+    },
+    {
+      "task": "subsystem-inventory",
+      "arm": "no-card",
+      "sessionLabel": "subsystem-inventory-no-card-r1",
+      "turns": 5,
+      "wallMs": 14298,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Listed the project's primary modules/subsystems (CLI, commands, components, config, e2e, harnesses, models, scanner, shared, storage, ui, benchmarks, docs, test) with their directory paths in ANSWER.md.",
+      "tokens": {
+        "input": 21063,
+        "output": 1179,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 22242,
+      "answerText": "# Primary Modules / Subsystems\n\n- CLI entrypoint — src/cli.ts (with src/index.ts core orchestration)\n- Commands — src/commands\n- Components (embedding, enrichment, versioning helpers) — src/components\n- Config (harness/protocol/category config) — src/config\n- E2E tests — src/e2e\n- Harness adapters (Claude Code, Codex, Cursor, Copilot, git-log index) — src/harnesses\n- Models (data/domain models) — src/models\n- Scanner (architecture scan, symbol/tree-sitter scanning) — src/scanner\n- Shared utilities — src/shared\n- Storage (dual storage router, Markdown/SQLite adapters) — src/storage\n- UI (web/report UI, server) — src/ui\n- Benchmarks — benchmarks\n- Documentation (design docs, ADRs, agent docs) — docs\n- Top-level integration tests — test\n",
+      "passed": true,
+      "gradeDetail": "matched=12/16"
+    }
+  ]
+}

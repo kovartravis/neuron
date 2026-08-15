@@ -2930,3 +2930,27 @@ tags:
 taskId: null
 ---
 Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 45 (Give the Tickets Category Real Per-Map Queries), the map's sole frontier ticket. Added a map declared field to the tickets schema and backfilled all 195 live entries (186 children, 9 maps) by re-deriving ownership from each map's own current content, since ticket 40's original slug-to-id table no longer existed. Made --where repeatable (ANDed) and added field!=value negation, added a real kind: map sentinel replacing ticket 40's flagged status: resolved workaround, and implemented neuron memory get <id> as a direct single-row fetch. Corrected a real overcount found live: the ticket's own Context claimed 10 wayfinder maps; the store has exactly 9, matching ticket 40's own effort list. Rewrote docs/agents/issue-tracker.md's Wayfinding operations section against the real per-map query and updated neuron memory --help. 8 new tests added, npm test 743/743, tsc clean, neuron status --check clean (no protocol-block drift). Map's Decisions-so-far and True-frontier footer updated to match; frontier is now none until the next session breadth-first grills what else 2.4.0 admits.
+
+---
+id: 9b03a18d-d5b5-44e4-b4c5-44489a7e564b
+createdAt: 2026-08-15T03:14:28.477Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: c8dd711c-32b0-446d-a697-f91c855306bd
+---
+Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 4 (Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets), one of only three tickets this map's own True-frontier footer still listed as claimed-in-progress (04/05/38). Before touching anything, verified against git log and the live repo that this ticket's real work was already fully shipped and committed (0bea898, as 'ticket 19, neuron-2.3.0') before the 2026-08-10 map split moved it here still marked claimed — the map's own Notes bullet had already flagged this exact stale-status gap and said it 'still needs fixing.' Confirmed benchmarks/token-ab/README.md's arms table and published numbers (pooled 57.7% token reduction via the injection arm, matplotlib-24265 completely separated at p=0.029, django-11019 not significant, 16/16 correct in both arms) match the ticket's own narrated result exactly, so no further live spend or investigation was needed despite the ticket carrying an unusually long multi-session Comments log. Appended a closing Answer, set status to resolved, updated the map's Decisions-so-far and True-frontier footer, and committed .neuron/tickets.md. No src/ changes; frontier query now confirms zero unclaimed/unblocked tickets remain on this map (05 and 38 stay claimed and in progress).
+
+---
+id: cfebd233-dfe5-4006-979d-791c4f6690b0
+createdAt: 2026-08-15T03:32:08.023Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: d8096db3-3e98-4db6-a07f-dc21ebac412e
+---
+Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 5 (Architecture Card A/B: With vs Without), the last of the three previously claimed-in-progress tickets besides the rc2 cut itself. Both prior blockers were cleared this session: the maintainer supplied live ant credentials, and the card-format redesign the ticket was waiting on (old numbering 28/29/30, index+per-module-cards) turned out to already be resolved on neuron-2.3.0's own map. Found and fixed two real staleness bugs before spending anything live: the harness's own OUT_DIR dry-run-collision bug (same class already fixed in its three token-ab sibling scripts but never back-ported here) and a stale 14-subsystem grading list against the repo's real current 16. A first live run (/bin/zsh.33, 8 sessions) surfaced a genuine grading-target bug rather than a card-effect finding: the dependency-contract task's target list included 6 packages that are real devDependencies in package.json, so every session in both arms was marked failed for correctly excluding them exactly as the task's own prompt instructed. Archived that run (results-pre-devdeps-fix.json, committed for audit trail per ticket 19's own precedent), fixed the target list to the real 6-package runtime dependency set, and re-ran live (/bin/zsh.26): 8/8 passed in both arms. Found a real, cleanly-separated effect on the subsystem-inventory task (5,112 vs 29,244 mean tokens, zero overlap, 82.5% reduction) while dependency-contract stayed a wash — the pooled scorecard statistic reported no-measured-difference, the same per-task washout already documented in token-ab's own README, so reported the per-task breakdown honestly rather than trusting the pooled number. Published the finding in README.md's Measured section with the n=2 pilot caveat stated explicitly. npm test 728/728, tsc clean. Frontier query confirms only ticket 38 (cut and publish 2.4.0-rc2) remains claimed on this map.

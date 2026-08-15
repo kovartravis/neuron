@@ -10,16 +10,19 @@
  * ticket 10's own discipline.
  */
 
+// Real runtime `dependencies` only (package.json), matching the prompt's own
+// "not devDependencies" instruction. Refreshed 2026-08-14 after a live run
+// found the card's undifferentiated "Dependency Contract" section (all 12,
+// prod+dev mixed) doesn't match that instruction: every session in both arms
+// correctly excluded `@anthropic-ai/sdk`/`@types/better-sqlite3`/
+// `@types/node`/`tsx`/`typescript`/`vitest` (real devDependencies) and was
+// graded as a 6/12 failure for doing so — a grading-target bug, not a card
+// or model failure. See ticket 05's own Answer for the archived before-fix
+// run (results-pre-devdeps-fix.json).
 const DEPENDENCIES = [
-  '@anthropic-ai/sdk',
   '@huggingface/transformers',
-  '@types/better-sqlite3',
-  '@types/node',
   'env-paths',
   'onnxruntime-web',
-  'tsx',
-  'typescript',
-  'vitest',
   'web-tree-sitter',
   'yaml',
   'zod',
@@ -28,10 +31,15 @@ const DEPENDENCIES = [
 // The scanner's own module-boundary judgment call, not derivable from a
 // plain directory listing alone: e.g. `benchmarks/longmemeval` counts as its
 // own module separate from `benchmarks`, and both `src/e2e` and `test/e2e`
-// count as distinct modules sharing the name "e2e".
+// count as distinct modules sharing the name "e2e". Refreshed 2026-08-14
+// against the current captured card (16 subsystems, up from 14 when this
+// ticket last touched it) — `benchmarks/reranker-gate` and
+// `benchmarks/salvage-expansion` were added by tickets 28/29 since.
 const SUBSYSTEM_PATHS = [
   'benchmarks',
   'benchmarks/longmemeval',
+  'benchmarks/reranker-gate',
+  'benchmarks/salvage-expansion',
   'src',
   'src/commands',
   'src/components',
@@ -60,7 +68,7 @@ export const TASKS = [
       '/ANSWER.md, one package per line, then call finish_task.',
     check(answerText) {
       const matched = countMatches(answerText, DEPENDENCIES);
-      const passed = matched >= 10; // 10 of 12
+      const passed = matched >= 5; // 5 of 6, same ~83% bar as the original 10-of-12
       return { passed, detail: `matched=${matched}/${DEPENDENCIES.length}` };
     },
   },
@@ -73,7 +81,7 @@ export const TASKS = [
       'finish_task.',
     check(answerText) {
       const matched = countMatches(answerText, SUBSYSTEM_PATHS);
-      const passed = matched >= 10; // 10 of 14
+      const passed = matched >= 12; // 12 of 16, same ~4-miss allowance as the original 10-of-14 bar
       return { passed, detail: `matched=${matched}/${SUBSYSTEM_PATHS.length}` };
     },
   },

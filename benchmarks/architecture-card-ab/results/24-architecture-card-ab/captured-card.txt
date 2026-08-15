@@ -1,7 +1,7 @@
-- [decisions] # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
+- [architecture] # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 14 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 16 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
@@ -25,6 +25,8 @@ Default: `ast/2`
 @kovartravis/neuron
 ├── benchmarks (benchmarks)
 ├── longmemeval (benchmarks/longmemeval)
+├── reranker-gate (benchmarks/reranker-gate)
+├── salvage-expansion (benchmarks/salvage-expansion)
 ├── src (src)
 ├── commands (src/commands)
 ├── components (src/components)
@@ -41,17 +43,18 @@ Default: `ast/2`
 
 ## 📦 Primary Subsystems
 - **benchmarks** — `benchmarks` (3 files)
-- **longmemeval** — `benchmarks/longmemeval` (3 files)
-- **src** — `src` (11 files)
-- **commands** — `src/commands` (28 files)
-- **components** — `src/components` (10 files)
-- **config** — `src/config` (10 files)
+- **longmemeval** — `benchmarks/longmemeval` (4 files)
+- **reranker-gate** — `benchmarks/reranker-gate` (2 files)
+- **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
+- **src** — `src` (12 files)
+- **commands** — `src/commands` (29 files)
+- **components** — `src/components` (14 files)
+- **config** — `src/config` (11 files)
 - **e2e** — `src/e2e` (1 file)
-- **harnesses** — `src/harnesses` (16 files)
+- **harnesses** — `src/harnesses` (22 files)
 - **models** — `src/models` (4 files)
 - **scanner** — `src/scanner` (18 files)
-- **shared** — `src/shared` (1 file)
+- **shared** — `src/shared` (2 files)
 - **storage** — `src/storage` (13 files)
 - **ui** — `src/ui` (4 files)
-- **e2e** — `test/e2e` (9 files)
-- [decisions] Ticket 38 (neuron-2.3.0, md parser stray-dash cascading data loss) design rationale: reconcileCategory's delete-mirror step in dualStorageRouter.ts gets a non-blocking warning, not a hard tripwire, when a single reconcile pass is about to delete an unusually large fraction (>=20% of a category's rows, with a 5-row floor to avoid noise on tiny categories) of a category's vector rows. ADR 0011 Consequence 2 already settled 'no tripwire, no --force' for this delete step deliberately, reasoning that markdown is authoritative by construction and '.neuron/' is git-recoverable; ticket 38's own root cause (a one-off duplicated-content write, not a systemic formatter bug, closed at the read side by hardening the frontmatter block matcher) supplied evidence for making the class of failure LOUD, not evidence for reopening the settled 'no tripwire' ruling itself, so the two were kept orthogonal. This is deliberately a different posture than ticket 24's (neuron-2.2.0) LLM-judged-deletion false-delete disqualification, which killed model-judged content deletion outright because there was no independent trustworthy source to check against -- here the mechanism is mechanical sync against markdown, which IS the trustworthy source by ADR 0011's own design, so the fix is visibility (MASS_DELETE_WARN_FRACTION stderr warning) rather than a block. (tags: adr, md-storage, rc2)
+- **e2e** — `test/e2e` (11 files)
