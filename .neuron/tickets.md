@@ -26888,3 +26888,332 @@ maintainer choice in that instance, not because a direct push was
 technically blocked.
 
 ## Comments
+
+---
+id: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+createdAt: 2026-08-15T11:24:50.502Z
+importance: 3
+tags:
+  - planning
+  - rc2
+  - benchmark
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — neuron 2.4.1
+
+## Destination
+
+A release theme focused on **write-time quality**: gathering and enforcing
+high-quality memory at write time, closing the gap the Agent Memory Atlas
+review named directly — *"a well-formed but false `decisions` entry is not
+stopped by the field validator."*
+
+The write gate (`enforceFieldSchema`) already enforces *shape*: required
+fields, undeclared fields, enum membership. It does not, and was never
+designed to, enforce *quality*: whether an entry duplicates something
+already live, contradicts it, or shows up unsourced. The atlas review
+independently confirmed this is the honest boundary of the current
+mechanism, not an oversight — a well-scoped next target, not a reach.
+
+Everything proposed reuses infrastructure that already exists: the
+embedding pipeline behind recall, the declared-fields schema language, the
+supersession primitive, and the existing antagonistic-recall test pillar
+(`Pillar 13`) as a direct template for a write-side counterpart. No new
+storage engine, no new package, no new top-level command.
+
+## Notes
+
+- **Prepared 2026-08-15**, brought by the maintainer as an already-charted
+  document (not a `/grilling` session on this map) immediately after
+  Map — neuron 2.4.0 (ticket 0a1d6d69-54ea-42bf-bc30-6ae4522172fd)'s Destination was reached and closed. Ticket 1
+  is a diagnostic, not a fix — its findings determine how tickets 2-4 get
+  scoped, not just their order. This map has not resolved any of its own
+  tickets yet.
+- **Non-goals (stated explicitly, per standing project discipline)**:
+  - This is not a truth judgment. Consistency enforcement ≠ truth
+    enforcement. A conflict check compares a new entry against *existing
+    live memory*, not against reality. Do not reopen the `trust_state`
+    decision the atlas review explicitly praised withholding — no
+    `verified`/`disputed`/confidence score anywhere in this map.
+  - No new package, SDK, or pluggable-provider system.
+  - No hardcoded category-name logic — any mechanism here that's
+    category-scoped must be config-driven (mirrors the
+    `diffAgainstArchitecture` flag precedent from the plan-vs-drift spec).
+  - No PM-software creep (no due dates, assignees, workflow states beyond
+    live/superseded).
+  - No new embedding model or reranker — reuse whatever the read-side
+    pipeline already uses. Confirm the exact model/component name against
+    the current codebase before ticket 3/4 land — do not assume it matches
+    an older doc's reference.
+- **In scope**: a test pillar proving which "bad write" categories are
+  currently caught and which aren't (ticket 1); config-only provenance
+  enforcement, if ticket 1 shows it's already possible via declared fields
+  (ticket 2); near-duplicate suppression, extending the existing
+  content-hash dedup to embedding similarity (ticket 3); write-time
+  conflict detection against live entries in the same category, using
+  existing embedding infra (ticket 4).
+- **Out of scope**: see the Out of scope section below.
+- **Sequencing rationale**: ticket 1 goes first and is a diagnostic, not a
+  fix. It defines red cases for each candidate bad-write category, runs
+  them against the current binary, and records what already fails vs.
+  passes. That record — not a guess — decides which of tickets 2-4
+  actually need to be built and in what order. Provenance (ticket 2) is
+  checked first *within* that diagnostic because it may cost nothing: if a
+  category is already configured with a required `sourceRef`-style field,
+  the enforcement already exists and there's no ticket to write.
+- **Sequencing against current work, superseded 2026-08-15**: the
+  original document gated this map's start on `2.4.0`'s ticket 38 merging
+  and its overdue breadth-first re-grill — neither condition still applies.
+  `2.4.0` published stable to npm's `latest` dist-tag the same session this
+  map was chartered, and its map closed *without* running that re-grill (a
+  direct maintainer choice to cut now rather than re-grill first — see
+  Map — neuron 2.4.0 (ticket 0a1d6d69-54ea-42bf-bc30-6ae4522172fd)'s own close-out Notes). This map is not
+  jumping any queue; it's next.
+- **Skills to consult**: `/tdd` fits ticket 1's own shape (a new
+  antagonistic-write test pillar, directly mirroring how `Pillar 13`
+  itself was built). `/domain-modeling` if ticket 4's "likely
+  contradiction vs. similar-but-compatible" distinction needs a term
+  coined for it.
+
+## Decisions so far
+
+<!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
+
+## Not yet specified
+
+- **Vague/low-specificity content detection.** No objective, testable
+  definition exists yet — stays fog until one does, not a ticket.
+- **Whether tickets 3 and 4 share one embedding-comparison code path.**
+  Near-dup and conflict are both "high similarity to a live entry,"
+  differing only in what happens after the match — genuinely distinct
+  mechanisms, or one path with two outcomes? Not decidable until both are
+  scoped in detail.
+- **Whether conflict detection (ticket 4) needs its own antagonistic-write
+  test cases** beyond what ticket 1 already specifies, once the mechanism
+  exists to test against.
+
+## Out of scope
+
+- **Vague/low-specificity content detection** — no objective test
+  criterion exists; explicitly parked as an open question above, not ruled
+  out permanently, but not this map's work until one exists.
+- **Anything that scores or ranks entries by "truthiness"** — the
+  `trust_state` boundary this map deliberately does not cross.
+- **Retroactive re-scoring of existing live entries** — this map is about
+  the write path going forward, not a backfill/migration pass.
+
+---
+id: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
+createdAt: 2026-08-15T11:25:28.800Z
+importance: 3
+tags:
+  - adr
+  - longmemeval
+  - failure-fix
+taskId: null
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 1 — Antagonistic-Write Test Pillar (Diagnostic)
+
+## Question
+
+Which categories of "bad write" does the current write gate
+(`enforceFieldSchema`) already reject, and which pass through uncaught?
+
+## Context
+
+Diagnostic, not a fix. Mirrors the existing `Pillar 13` (antagonistic
+recall) structure, applied to the write path instead of the read path.
+Its findings decide how tickets 2-4 get scoped, not just their order —
+in particular, case 3 below may already close ticket 2 without any new
+engineering if a category's own declared-fields schema already covers it.
+
+## Candidate red cases to build and run
+
+| # | Case | Expected today | Status to confirm |
+|---|------|-----------------|--------------------|
+| 1 | Near-duplicate content (paraphrase, not exact-hash match) of a live entry | Passes through uncaught — only exact-hash dedup exists | Confirm |
+| 2 | Content that directly contradicts a live entry in the same category, no `--supersedes` given | Passes through uncaught — no conflict detection exists | Confirm |
+| 3 | Entry in a category that *should* require a source (e.g. `decisions`) written without one | May already fail correctly if the category has a required declared field — check this first, it may already be solved | Confirm |
+| 4 | Vague/low-specificity content | No objective pass/fail criterion yet | Not testable as-is — out of scope until one exists (see the map's own Not yet specified) |
+| 5 | Existing shape violations (missing required field, bad enum) | Should already fail — regression-style re-assertion so the whole "bad write" story lives in one place | Confirm (should already pass) |
+
+## Deliverables
+
+- [ ] A dated findings doc (same spirit as the 2.2.0 cycle's
+      `handoff-response.md` audit) stating, per case, whether the current
+      binary catches it
+- [ ] If case 3 already passes: note that ticket 2 closes as documentation,
+      not engineering
+- [ ] New test file mirroring `Pillar 13`'s structure, covering cases 1,
+      2, 3, and 5 for real (case 4 excluded — no criterion yet)
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: e98d9b8e-6280-421b-993a-c0dc320be2ad
+createdAt: 2026-08-15T11:25:29.240Z
+importance: 3
+tags:
+  - enrichment
+  - adr
+  - release
+taskId: null
+blockedBy: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 2 — Provenance Enforcement
+
+## Question
+
+Does a category that should require a source (e.g. `decisions`) already
+get that enforced via a required declared field, or is real engineering
+needed?
+
+## Context
+
+Only scoped as engineering work if ticket 1's case 3 shows a real gap. If
+a required `sourceRef`-style declared field already causes a correct
+refusal, this ticket becomes documentation (show users how to configure
+it) rather than code.
+
+If ticket 1 shows a gap: define what "requires a source" means precisely
+(a ticket ID? a commit hash? free text with a minimum length?) before
+writing any validation logic — this is exactly the kind of underspecified
+requirement that caused the `plans`-category hardcoding mistake in an
+earlier design pass.
+
+## Deliverables
+
+- [ ] If already solved: a docs update showing how to configure a required
+      provenance field, ticket closed as documentation
+- [ ] If a real gap: a precise definition of "requires a source" for this
+      map's purposes, then the validation logic itself
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: c0d494fb-ab8b-447d-916c-48298b701cb7
+createdAt: 2026-08-15T11:25:29.657Z
+importance: 3
+tags:
+  - adr
+  - benchmark
+  - enrichment
+taskId: null
+blockedBy: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 3 — Near-Duplicate Suppression
+
+## Question
+
+Should `neuron memory add` catch a near-duplicate (paraphrase, not
+exact-hash match) of a live entry, and if so, how?
+
+## Context
+
+Extends the existing `computeMemoryHash` exact-match dedup to an
+embedding-similarity check using the same infra already computing
+embeddings for recall. Config-level threshold, same pattern as `minScore`
+in `pullRules`.
+
+## Design questions to resolve before implementation
+
+- Threshold: reuse an existing calibrated value, or does this need its
+  own? The atlas review flagged the read-side reranker threshold of `-8`
+  as "unfitted" — don't repeat that pattern here without at least a
+  documented rationale.
+- Behavior on hit: hard refuse, or refuse-with-suggestion (surface the
+  near-duplicate's ID and require `--supersedes` or an explicit override
+  flag)?
+
+## Deliverables
+
+- [ ] Threshold decided and documented with a rationale
+- [ ] Hit behavior decided (hard refuse vs. refuse-with-suggestion)
+- [ ] Implementation, config-driven per the map's own non-goals (no
+      hardcoded category-name logic)
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: bc1fad4b-9317-4c2f-8cff-1ba8329283e9
+createdAt: 2026-08-15T11:25:30.099Z
+importance: 3
+tags:
+  - benchmark
+  - adr
+  - longmemeval
+taskId: null
+blockedBy: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 4 — Conflict Detection at Write Time
+
+## Question
+
+Should `neuron memory add` flag or refuse a new entry that directly
+contradicts a live entry in the same category?
+
+## Context
+
+The highest-risk, highest-value ticket, and the one most likely to brush
+up against the `trust_state` boundary — sequenced last, after tickets 1-3
+have established the pattern of "compare against live entries via
+embedding similarity" at smaller scale.
+
+**Guardrail to hold firm during implementation**: this checks consistency
+with existing memory, not truth. A new entry that contradicts a live entry
+gets flagged or refused with a pointer to the conflicting entry and a
+prompt to use `--supersedes` — the system is not adjudicating which one is
+correct.
+
+## Design questions to resolve before implementation
+
+- What counts as "likely contradiction" vs. "similar but compatible"?
+  High embedding similarity alone isn't enough signal — two entries can be
+  near-duplicates without conflicting, or dissimilar in wording while
+  directly conflicting in meaning.
+- Does this reuse the existing reranker (already scoring semantic
+  relatedness) rather than inventing a second scoring mechanism?
+- Refuse outright, or flag-and-require-acknowledgment? A hard refuse risks
+  blocking legitimate writes on a false positive; the write gate's
+  existing design principle ("a refused write must not be a partial
+  write") suggests refuse-clean-or-not-at-all, but this may need a softer
+  posture than schema refusal does.
+
+## Deliverables
+
+- [ ] "Likely contradiction" defined precisely enough to test
+- [ ] Scoring mechanism decided (reuse reranker vs. new)
+- [ ] Refuse vs. flag-and-acknowledge decided
+- [ ] Implementation
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
