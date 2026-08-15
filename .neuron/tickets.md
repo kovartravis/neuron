@@ -27018,6 +27018,8 @@ storage engine, no new package, no new top-level command.
 - 13 — A/B Test Alternative NLI Models for Hard-Block Viability (ticket e5aeaa6a-bc94-4b3e-b6a1-3086924b939e) — no-go across every candidate tested. Shortlisted two ANLI-trained models (`anli-base`, `anli-large`) plus one larger SNLI/MultiNLI-only control per Ticket 11's criteria; none clears the joint-low false-silence/false-accept bar. Every model, original Ticket 8 baseline included, cleanly separates contradiction from paraphrase — the entire verdict turns on compatible-related pairs, where none improves enough. Ranked by joint-worst: original Ticket 8 model (20%) < `anli-large` (27%) < `anli-base` (40%) < the larger same-data control (60%, dramatically worse — scale alone amplifies the same annotation-artifact bias rather than fixing it). ANLI training helped only when combined with other adversarial/diverse data (`anli-large`), not alone at base scale (`anli-base`). Per Ticket 11's pre-agreed branch, Ticket 9 is unblocked to build **soft-flag**, not hard-block. Findings: `docs/design/write-time-quality/nli-alt-models-ab-findings.md`.
 - 12 — Redesign Session-Conclusion Recording to Eliminate Cross-Category Duplication (ticket c29a3c30-95ba-4f63-b74e-037f9d52dce6) — shared `taskId` links a short `history` pointer to its full `decisions`/`learning` entry, replacing today's full restatement in both; write path only, no backfill of the ~219 existing null-`taskId` entries (maintainer call — backfill collides with this map's own out-of-scope non-goal); a follow-on `neuron status --check` finding for drift was explored and declined. Implementation graduated to Ticket 48 — Implement Session-Conclusion Recording Redesign (ticket 707532ee-3377-4822-9111-8f44cff06dde), which now blocks Ticket 6 alongside Ticket 10 — Ticket 6's gate is only safe from the cross-category false-positive shape once sessions actually stop producing full-restatement pairs, not merely once this design is settled. Tracker hygiene, same session: Ticket 9 — Implement Conflict Detection at Write Time was missing a real dependency in its own `blockedBy` — its deliverables assume Ticket 3/6's relatedness pre-filter exists, but Ticket 6 hasn't landed (still blocked); added ab516584-1fc6-4522-a046-2da2397095ab to Ticket 9's `blockedBy` so it stops showing as frontier-unblocked before that foundation exists.
 
+- 48 — Implement Session-Conclusion Recording Redesign (ticket 707532ee-3377-4822-9111-8f44cff06dde) — built Ticket 12's design: CLAUDE.md's `## 2. Session Conclusion` and the `neuron-memory` skill's `## 4. End of Run` both now branch on whether a `decisions`/`learning` entry was written this session — if so it gains `--task-id`, and `history` shrinks to a short pointer sharing that id instead of restating the resolution; if not, `history` keeps its full-narrative shape. Went one layer deeper than the two docs Ticket 12 named: this repo's CLAUDE.md managed block is generated, not hand-written, by `sessionEndStep()` in `src/config/protocolBlock.ts` — updated the generator too and replaced CLAUDE.md's block with its literal output (verified byte-identical) rather than a hand copy that could drift, which also fixed an unrelated pre-existing gap (the block's category list was missing `git-notes`, added by Ticket 5). `npm test` 746/746, `tsc` clean. Ticket 6 — Implement Near-Duplicate Suppression is now fully unblocked (its other two blockers, Ticket 10 and Ticket 12, were already resolved).
+
 ## Not yet specified
 
 - **Commit-to-entry knowledge-graph traversal.** Once `commitRef`/`git-notes`
@@ -30904,7 +30906,7 @@ tags:
 taskId: null
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 48 — Implement Session-Conclusion Recording Redesign (History Pointer + --task-id on Decisions/Learning)
 
@@ -30918,27 +30920,27 @@ session resolution.
 
 ## Deliverables
 
-- [ ] `decisions`/`learning` command examples in both CLAUDE.md and
+- [x] `decisions`/`learning` command examples in both CLAUDE.md and
   `neuron-memory` SKILL.md gain `--task-id <ticket-id>`, matching the
   `history` example (neither currently passes it — confirmed live: 133/133
   `learning` entries and 86/96 `decisions` entries in this repo's own store
   carry `taskId: null`, consistent with the documented command never
   including the flag, not with entries bypassing the CLI).
-- [ ] Both protocol docs' `history` step: when a `decisions`/`learning`
+- [x] Both protocol docs' `history` step: when a `decisions`/`learning`
   entry is also being written this session for the same task, the
   `history` entry shrinks to a short pointer (one or two lines: what
   happened, plus the same `--task-id`) instead of restating the resolution.
   When no `decisions`/`learning` entry exists (pure execution, nothing
   decided), `history` keeps today's full-narrative shape — there is nothing
   else to point at.
-- [ ] Wayfinder's own resolution-recording step is untouched — already
+- [x] Wayfinder's own resolution-recording step is untouched — already
   gist+link only (Decisions-so-far), not full restatement; confirmed during
   Ticket 12's grilling, not this ticket's concern.
-- [ ] No backfill: the ~219 existing null-`taskId` `decisions`/`learning`
+- [x] No backfill: the ~219 existing null-`taskId` `decisions`/`learning`
   entries and their paired full-narrative `history` entries are left as-is,
   per Ticket 12's explicit maintainer call (write path going forward only —
   retroactive backfill is this map's own stated out-of-scope).
-- [ ] No new `neuron status --check` finding, no new field-schema tier —
+- [x] No new `neuron status --check` finding, no new field-schema tier —
   explored during Ticket 12's grilling and explicitly declined by the
   maintainer as unneeded scope.
 
@@ -30959,8 +30961,40 @@ pairs Ticket 6's gate would misfire on.
 
 ## Answer
 
-_Not yet resolved._
+Edited both protocol docs exactly as Ticket 12 specified: CLAUDE.md's
+`## 2. Session Conclusion` and the `neuron-memory` skill's `## 4. End of
+Run` now branch on whether the session produced a `decisions`/`learning`
+entry. When it did, that entry is written first (now with `--task-id
+<ticket-id>`, matching `history`'s existing flag), and `history` shrinks to
+a one-or-two-line pointer sharing the same `--task-id` — the link between
+the two, not a separate id-to-id field. When nothing was decided (pure
+execution), `history` keeps its full-narrative shape unchanged.
+
+One layer deeper than the two docs Ticket 12 named: this repo's own
+CLAUDE.md managed block (between the `<!-- neuron:protocol:start/end -->`
+markers) is not hand-written — it's generated by `sessionEndStep()` in
+`src/config/protocolBlock.ts`, which was still emitting the old duplicating
+template. Hand-editing only the rendered CLAUDE.md would have left that
+generator out of sync: a future `neuron init` re-run (this repo dogfoods
+its own tool) would either silently fight the manual edit or, on an
+`--overwrite` policy, revert it — and every other project `neuron init`
+scaffolds would still get the old broken protocol. Updated
+`sessionEndStep()` to emit the new branching text, then replaced CLAUDE.md's
+managed block with the generator's literal output (verified byte-identical
+via `generateProtocolBlock` run against this repo's live `neuron.yaml`)
+rather than hand-transcribing a copy that could drift. That also picked up
+a small, pre-existing, unrelated drift for free: the block's category list
+was missing `git-notes` (added by Ticket 5, never synced into CLAUDE.md's
+header) — the generator produces the correct list from the live config, so
+regenerating fixed both issues in one pass. `neuron-memory` SKILL.md has no
+equivalent generator (it's a plain hand-maintained skill file), so it was
+edited directly.
+
+`npm test` 746/746, `tsc` clean — `protocolBlock.test.ts` doesn't hardcode
+the session-conclusion prose (it asserts headings/structure only), so no
+test edits were needed alongside the generator change.
 
 ## Comments
 
 - 2026-08-15: Created by Ticket 12's resolution.
+- 2026-08-15: Resolved. See Answer.
