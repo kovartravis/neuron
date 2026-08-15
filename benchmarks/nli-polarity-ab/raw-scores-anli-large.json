@@ -1,0 +1,829 @@
+{
+  "timestamp": "2026-08-15T20:14:13.048Z",
+  "model": "Xenova/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
+  "candidate": {
+    "id": "Xenova/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
+    "slug": "anli-large",
+    "role": "anli",
+    "trainedOn": "MultiNLI + Fever-NLI + ANLI + LingNLI + WANLI (885,242 pairs, no SNLI)",
+    "params": "~400M (deberta-v3-large)",
+    "license": "MIT"
+  },
+  "id2label": {
+    "0": "entailment",
+    "1": "neutral",
+    "2": "contradiction"
+  },
+  "results": [
+    {
+      "id": "cd-01",
+      "label": "contradiction",
+      "premise": "Query results are limited to 10 items by default.",
+      "hypothesis": "Query results are limited to 25 items by default.",
+      "logits": [
+        4.502812385559082,
+        -2.7203495502471924,
+        -1.7457362413406372
+      ],
+      "probs": [
+        0.9973443212682872,
+        0.0007275548641606281,
+        0.0019281238675521548
+      ],
+      "argmax": "contradiction",
+      "margin": 6.248548626899719
+    },
+    {
+      "id": "cd-02",
+      "label": "contradiction",
+      "premise": "The default request timeout is 30 seconds.",
+      "hypothesis": "The default request timeout is 90 seconds.",
+      "logits": [
+        5.560566425323486,
+        -3.0060412883758545,
+        -2.678368091583252
+      ],
+      "probs": [
+        0.9995456836314363,
+        0.00019027081980120214,
+        0.00026404554876264727
+      ],
+      "argmax": "contradiction",
+      "margin": 8.238934516906738
+    },
+    {
+      "id": "cd-03",
+      "label": "contradiction",
+      "premise": "Importance defaults to 3 when omitted.",
+      "hypothesis": "Importance defaults to 1 when omitted.",
+      "logits": [
+        4.929349899291992,
+        -2.9840481281280518,
+        -2.0807690620422363
+      ],
+      "probs": [
+        0.9987330964493711,
+        0.0003653459905087447,
+        0.0009015575601201168
+      ],
+      "argmax": "contradiction",
+      "margin": 7.0101189613342285
+    },
+    {
+      "id": "cd-04",
+      "label": "contradiction",
+      "premise": "Pruning removes entries below the importance ceiling after N days.",
+      "hypothesis": "Pruning never removes entries, regardless of importance.",
+      "logits": [
+        6.003788471221924,
+        -3.6651811599731445,
+        -2.7258362770080566
+      ],
+      "probs": [
+        0.9997751124975245,
+        0.00006320074025474454,
+        0.00016168676222074504
+      ],
+      "argmax": "contradiction",
+      "margin": 8.72962474822998
+    },
+    {
+      "id": "cd-05",
+      "label": "contradiction",
+      "premise": "Tests must run against a real database, not a mocked one, to catch migration bugs.",
+      "hypothesis": "Tests should mock the database so the suite runs faster.",
+      "logits": [
+        4.419958114624023,
+        -4.177115440368652,
+        -0.2025904655456543
+      ],
+      "probs": [
+        0.9900868908944731,
+        0.0001828149486839446,
+        0.009730294156842944
+      ],
+      "argmax": "contradiction",
+      "margin": 4.622548580169678
+    },
+    {
+      "id": "cd-06",
+      "label": "contradiction",
+      "premise": "The embedder uses bge-small-en-v1.5 for generating vector embeddings.",
+      "hypothesis": "The embedder uses bge-large-en-v1.5 for generating vector embeddings.",
+      "logits": [
+        3.4008731842041016,
+        -2.405190944671631,
+        -0.7327420115470886
+      ],
+      "probs": [
+        0.9813214376146239,
+        0.0029530423388633505,
+        0.015725520046512776
+      ],
+      "argmax": "contradiction",
+      "margin": 4.13361519575119
+    },
+    {
+      "id": "cd-07",
+      "label": "contradiction",
+      "premise": "The reranker returns a raw logit, not a probability.",
+      "hypothesis": "The reranker returns a normalized probability, not a raw logit.",
+      "logits": [
+        5.640172004699707,
+        -3.5276660919189453,
+        -2.1312952041625977
+      ],
+      "probs": [
+        0.9994743403743257,
+        0.0001042869947579351,
+        0.00042137263091615525
+      ],
+      "argmax": "contradiction",
+      "margin": 7.771467208862305
+    },
+    {
+      "id": "cd-08",
+      "label": "contradiction",
+      "premise": "Supersession requires cosine similarity above 0.97 to trigger.",
+      "hypothesis": "Supersession requires cosine similarity above 0.80 to trigger.",
+      "logits": [
+        2.927067279815674,
+        -1.5982459783554077,
+        -1.1582132577896118
+      ],
+      "probs": [
+        0.9730941971305714,
+        0.010539895520071275,
+        0.01636590734935733
+      ],
+      "argmax": "contradiction",
+      "margin": 4.085280537605286
+    },
+    {
+      "id": "cd-09",
+      "label": "contradiction",
+      "premise": "CLI commands are built to dist/cli.js after running the build.",
+      "hypothesis": "CLI commands are built to build/index.js after running the build.",
+      "logits": [
+        3.195840358734131,
+        -2.291170358657837,
+        -0.808096170425415
+      ],
+      "probs": [
+        0.9781061860622091,
+        0.004049557117579316,
+        0.017844256820211693
+      ],
+      "argmax": "contradiction",
+      "margin": 4.003936529159546
+    },
+    {
+      "id": "cd-10",
+      "label": "contradiction",
+      "premise": "The blockedBy field lists comma-separated ticket ids.",
+      "hypothesis": "The blockedBy field holds a single ticket id — it can never list more than one.",
+      "logits": [
+        6.163700103759766,
+        -3.5123817920684814,
+        -2.8269782066345215
+      ],
+      "probs": [
+        0.9998127025663792,
+        0.00006275519397899457,
+        0.0001245422396416022
+      ],
+      "argmax": "contradiction",
+      "margin": 8.990678310394287
+    },
+    {
+      "id": "cd-11",
+      "label": "contradiction",
+      "premise": "Frontier tickets are unclaimed, unblocked, and open.",
+      "hypothesis": "A frontier ticket can be claimed by more than one session at the same time.",
+      "logits": [
+        -1.8156275749206543,
+        -2.579643964767456,
+        3.7745895385742188
+      ],
+      "probs": [
+        0.003713888742289123,
+        0.0017298991574711024,
+        0.9945562121002398
+      ],
+      "argmax": "neutral",
+      "margin": -5.590217113494873
+    },
+    {
+      "id": "cd-12",
+      "label": "contradiction",
+      "premise": "git-notes is a new category distinct from the auto-populated git_log_index.",
+      "hypothesis": "git-notes and git_log_index are the same category under two different names.",
+      "logits": [
+        5.205732345581055,
+        -3.0090298652648926,
+        -2.2351858615875244
+      ],
+      "probs": [
+        0.9991433594107157,
+        0.0002703970243276484,
+        0.000586243564956488
+      ],
+      "argmax": "contradiction",
+      "margin": 7.440918207168579
+    },
+    {
+      "id": "cd-13",
+      "label": "contradiction",
+      "premise": "The map is an index, not a store — it never restates ticket detail.",
+      "hypothesis": "The map restates the full detail of every ticket so tickets never need to be opened.",
+      "logits": [
+        5.851836204528809,
+        -2.877547025680542,
+        -3.12979793548584
+      ],
+      "probs": [
+        0.999712623141064,
+        0.00016171570878807347,
+        0.0001256611501480274
+      ],
+      "argmax": "contradiction",
+      "margin": 8.72938323020935
+    },
+    {
+      "id": "cd-14",
+      "label": "contradiction",
+      "premise": "Declared fields are validated inside enforceFieldSchema.",
+      "hypothesis": "Declared fields are validated by the CLI argv parser, not by enforceFieldSchema.",
+      "logits": [
+        5.872709274291992,
+        -3.289564609527588,
+        -2.9612879753112793
+      ],
+      "probs": [
+        0.9997494440565962,
+        0.00010489775216443228,
+        0.00014565819123935403
+      ],
+      "argmax": "contradiction",
+      "margin": 8.833997249603271
+    },
+    {
+      "id": "cd-15",
+      "label": "contradiction",
+      "premise": "The default retry count is 3 attempts.",
+      "hypothesis": "The default retry count is 5 attempts.",
+      "logits": [
+        5.511160850524902,
+        -3.170924425125122,
+        -2.360121250152588
+      ],
+      "probs": [
+        0.9994491616785188,
+        0.00016950362147485142,
+        0.00038133470000642315
+      ],
+      "argmax": "contradiction",
+      "margin": 7.87128210067749
+    },
+    {
+      "id": "nd-01",
+      "label": "compatible-paraphrase",
+      "premise": "The default request timeout is 30 seconds.",
+      "hypothesis": "By default, requests time out after 30 seconds.",
+      "logits": [
+        -3.748518943786621,
+        4.805317401885986,
+        -1.3480781316757202
+      ],
+      "probs": [
+        0.00019235792771205221,
+        0.9976863118049034,
+        0.002121330267384542
+      ],
+      "argmax": "entailment",
+      "margin": -8.553836345672607
+    },
+    {
+      "id": "nd-02",
+      "label": "compatible-paraphrase",
+      "premise": "Query results are limited to 10 items by default.",
+      "hypothesis": "The default page size for query results is 10.",
+      "logits": [
+        -3.676964044570923,
+        4.047468185424805,
+        -0.5683899521827698
+      ],
+      "probs": [
+        0.00043737711557954054,
+        0.9897701442857423,
+        0.009792478598678139
+      ],
+      "argmax": "entailment",
+      "margin": -7.7244322299957275
+    },
+    {
+      "id": "nd-03",
+      "label": "compatible-paraphrase",
+      "premise": "We chose SQLite for local storage because it requires no separate server process.",
+      "hypothesis": "SQLite was selected as the local storage engine since it needs no standalone server.",
+      "logits": [
+        -4.423941135406494,
+        5.456670761108398,
+        -1.4745793342590332
+      ],
+      "probs": [
+        0.000051104433434168735,
+        0.9989731195639483,
+        0.0009757760026175388
+      ],
+      "argmax": "entailment",
+      "margin": -9.880611896514893
+    },
+    {
+      "id": "nd-04",
+      "label": "compatible-paraphrase",
+      "premise": "The embedder uses bge-small-en-v1.5 for generating vector embeddings.",
+      "hypothesis": "Vector embeddings are generated using the bge-small-en-v1.5 model.",
+      "logits": [
+        -3.9724788665771484,
+        4.9548139572143555,
+        -1.1145033836364746
+      ],
+      "probs": [
+        0.00013239306343355059,
+        0.9975604974070371,
+        0.0023071095295292125
+      ],
+      "argmax": "entailment",
+      "margin": -8.927292823791504
+    },
+    {
+      "id": "nd-05",
+      "label": "compatible-paraphrase",
+      "premise": "Supersession requires cosine similarity above 0.97 to trigger.",
+      "hypothesis": "The supersession gate only fires once cosine similarity exceeds 0.97.",
+      "logits": [
+        -4.547785758972168,
+        4.229833126068115,
+        -0.22161930799484253
+      ],
+      "probs": [
+        0.00015234461710292993,
+        0.9883222202427634,
+        0.011525435140133683
+      ],
+      "argmax": "entailment",
+      "margin": -8.777618885040283
+    },
+    {
+      "id": "nd-06",
+      "label": "compatible-paraphrase",
+      "premise": "Tests must run against a real database, not a mocked one, to catch migration bugs.",
+      "hypothesis": "We avoid mocking the database in tests so migration bugs aren't hidden.",
+      "logits": [
+        -4.197139739990234,
+        4.131677150726318,
+        -0.3198291063308716
+      ],
+      "probs": [
+        0.0002386174155183062,
+        0.988237555041093,
+        0.011523827543388664
+      ],
+      "argmax": "entailment",
+      "margin": -8.328816890716553
+    },
+    {
+      "id": "nd-07",
+      "label": "compatible-paraphrase",
+      "premise": "The reranker returns a raw logit, not a probability.",
+      "hypothesis": "Reranker scores are raw logits rather than probabilities.",
+      "logits": [
+        -4.353122234344482,
+        4.99089241027832,
+        -1.0769039392471313
+      ],
+      "probs": [
+        0.00008727770429401944,
+        0.9976020048600469,
+        0.0023107174356590205
+      ],
+      "argmax": "entailment",
+      "margin": -9.344014644622803
+    },
+    {
+      "id": "nd-08",
+      "label": "compatible-paraphrase",
+      "premise": "CLI commands are built to dist/cli.js after running the build.",
+      "hypothesis": "After running the build, the CLI entrypoint lives at dist/cli.js.",
+      "logits": [
+        -4.359915733337402,
+        3.884605884552002,
+        0.17827658355236053
+      ],
+      "probs": [
+        0.0002563290495052953,
+        0.9757713707216892,
+        0.02397230022880563
+      ],
+      "argmax": "entailment",
+      "margin": -8.244521617889404
+    },
+    {
+      "id": "nd-09",
+      "label": "compatible-paraphrase",
+      "premise": "Declared fields are validated inside enforceFieldSchema.",
+      "hypothesis": "enforceFieldSchema is where declared-field validation happens.",
+      "logits": [
+        -4.327287197113037,
+        5.358933925628662,
+        -1.2723084688186646
+      ],
+      "probs": [
+        0.00006204809001281608,
+        0.9986212458891154,
+        0.0013167060208717366
+      ],
+      "argmax": "entailment",
+      "margin": -9.6862211227417
+    },
+    {
+      "id": "nd-10",
+      "label": "compatible-paraphrase",
+      "premise": "The blockedBy field lists comma-separated ticket ids.",
+      "hypothesis": "Comma-separated ticket ids go in the blockedBy field.",
+      "logits": [
+        -4.154971122741699,
+        5.45780086517334,
+        -1.5633573532104492
+      ],
+      "probs": [
+        0.00006680509634184175,
+        0.9990412600109253,
+        0.0008919348927328306
+      ],
+      "argmax": "entailment",
+      "margin": -9.612771987915039
+    },
+    {
+      "id": "nd-11",
+      "label": "compatible-paraphrase",
+      "premise": "Importance defaults to 3 when omitted.",
+      "hypothesis": "If you don't pass --importance, it defaults to 3.",
+      "logits": [
+        -4.118191242218018,
+        3.301326036453247,
+        0.3634551763534546
+      ],
+      "probs": [
+        0.0005689550514906892,
+        0.9491467613499687,
+        0.05028428359854066
+      ],
+      "argmax": "entailment",
+      "margin": -7.419517278671265
+    },
+    {
+      "id": "nd-12",
+      "label": "compatible-paraphrase",
+      "premise": "Pruning removes entries below the importance ceiling after N days.",
+      "hypothesis": "After N days, pruning drops any entry under the importance ceiling.",
+      "logits": [
+        -4.464251518249512,
+        4.645115852355957,
+        -0.7142309546470642
+      ],
+      "probs": [
+        0.00011009461562219528,
+        0.9952084669394918,
+        0.004681438444886027
+      ],
+      "argmax": "entailment",
+      "margin": -9.109367370605469
+    },
+    {
+      "id": "nd-13",
+      "label": "compatible-paraphrase",
+      "premise": "The map is an index, not a store — it never restates ticket detail.",
+      "hypothesis": "Detail lives in the ticket, not the map; the map only indexes it.",
+      "logits": [
+        -3.934082508087158,
+        3.7868399620056152,
+        -0.25626611709594727
+      ],
+      "probs": [
+        0.0004356161993894487,
+        0.9823314434136254,
+        0.01723294038698519
+      ],
+      "argmax": "entailment",
+      "margin": -7.720922470092773
+    },
+    {
+      "id": "nd-14",
+      "label": "compatible-paraphrase",
+      "premise": "Frontier tickets are unclaimed, unblocked, and open.",
+      "hypothesis": "An open, unblocked, unclaimed ticket sits on the frontier.",
+      "logits": [
+        -3.6049890518188477,
+        3.1502442359924316,
+        0.38797757029533386
+      ],
+      "probs": [
+        0.0010943846559953816,
+        0.9395730172762922,
+        0.05933259806771244
+      ],
+      "argmax": "entailment",
+      "margin": -6.755233287811279
+    },
+    {
+      "id": "nd-15",
+      "label": "compatible-paraphrase",
+      "premise": "git-notes is a new category distinct from the auto-populated git_log_index.",
+      "hypothesis": "Unlike git_log_index, which is auto-populated, git-notes is a new, separate category.",
+      "logits": [
+        -3.979389190673828,
+        4.950802803039551,
+        -1.1503736972808838
+      ],
+      "probs": [
+        0.00013201939071891196,
+        0.9976330525806457,
+        0.002234928028635443
+      ],
+      "argmax": "entailment",
+      "margin": -8.930191993713379
+    },
+    {
+      "id": "rd-01",
+      "label": "compatible-related",
+      "premise": "The default request timeout is 30 seconds.",
+      "hypothesis": "The default retry count is 3 attempts.",
+      "logits": [
+        -3.054280996322632,
+        -2.242830753326416,
+        4.258322715759277
+      ],
+      "probs": [
+        0.0006656342931679038,
+        0.0014984561944003313,
+        0.9978359095124318
+      ],
+      "argmax": "neutral",
+      "margin": -7.312603712081909
+    },
+    {
+      "id": "rd-02",
+      "label": "compatible-related",
+      "premise": "Query results are limited to 10 items by default.",
+      "hypothesis": "Query results can be sorted by relevance or recency.",
+      "logits": [
+        -3.1401426792144775,
+        -3.2344138622283936,
+        5.188625812530518
+      ],
+      "probs": [
+        0.00024135791532981621,
+        0.00021964437795361628,
+        0.9995389977067165
+      ],
+      "argmax": "neutral",
+      "margin": -8.328768491744995
+    },
+    {
+      "id": "rd-03",
+      "label": "compatible-related",
+      "premise": "We chose SQLite for local storage because it requires no separate server process.",
+      "hypothesis": "We chose TypeScript for this project because of its static typing.",
+      "logits": [
+        4.443334102630615,
+        -4.19943380355835,
+        -0.21790951490402222
+      ],
+      "probs": [
+        0.9904607781192329,
+        0.00017471527345617406,
+        0.009364506607310847
+      ],
+      "argmax": "contradiction",
+      "margin": 4.6612436175346375
+    },
+    {
+      "id": "rd-04",
+      "label": "compatible-related",
+      "premise": "The embedder uses bge-small-en-v1.5 for generating vector embeddings.",
+      "hypothesis": "The reranker uses ms-marco-MiniLM-L-6-v2 for scoring candidates.",
+      "logits": [
+        0.8870590925216675,
+        -3.9317731857299805,
+        2.459639310836792
+      ],
+      "probs": [
+        0.17161069582384872,
+        0.0013859644302465118,
+        0.8270033397459048
+      ],
+      "argmax": "neutral",
+      "margin": -1.5725802183151245
+    },
+    {
+      "id": "rd-05",
+      "label": "compatible-related",
+      "premise": "Supersession requires cosine similarity above 0.97 to trigger.",
+      "hypothesis": "The reranker gate's accept threshold is -8.",
+      "logits": [
+        4.417764663696289,
+        -3.1776602268218994,
+        -1.4464657306671143
+      ],
+      "probs": [
+        0.9966691778789226,
+        0.00050107174067241,
+        0.002829750380405049
+      ],
+      "argmax": "contradiction",
+      "margin": 5.864230394363403
+    },
+    {
+      "id": "rd-06",
+      "label": "compatible-related",
+      "premise": "Tests must run against a real database, not a mocked one, to catch migration bugs.",
+      "hypothesis": "Tests must spawn the real CLI binary, not call in-process, to catch argv-parsing bugs.",
+      "logits": [
+        2.493317127227783,
+        -3.474205255508423,
+        0.9615775346755981
+      ],
+      "probs": [
+        0.8205330932325955,
+        0.0021010387388580775,
+        0.17736586802854637
+      ],
+      "argmax": "contradiction",
+      "margin": 1.531739592552185
+    },
+    {
+      "id": "rd-07",
+      "label": "compatible-related",
+      "premise": "The reranker returns a raw logit, not a probability.",
+      "hypothesis": "The embedder returns a normalized 384-dimension vector.",
+      "logits": [
+        5.227814197540283,
+        -4.057492733001709,
+        -1.4215599298477173
+      ],
+      "probs": [
+        0.9986143130894517,
+        0.00009264889069229559,
+        0.0012930380198558915
+      ],
+      "argmax": "contradiction",
+      "margin": 6.6493741273880005
+    },
+    {
+      "id": "rd-08",
+      "label": "compatible-related",
+      "premise": "CLI commands are built to dist/cli.js after running the build.",
+      "hypothesis": "Test reports are written to benchmarks/reports after a run.",
+      "logits": [
+        1.39434814453125,
+        -3.532700538635254,
+        1.636352777481079
+      ],
+      "probs": [
+        0.43839499167267354,
+        0.003177426613994658,
+        0.5584275817133318
+      ],
+      "argmax": "neutral",
+      "margin": -0.2420046329498291
+    },
+    {
+      "id": "rd-09",
+      "label": "compatible-related",
+      "premise": "Declared fields are validated inside enforceFieldSchema.",
+      "hypothesis": "Category inference happens inside enrichUpsert.",
+      "logits": [
+        1.5328340530395508,
+        -2.525437355041504,
+        0.709317684173584
+      ],
+      "probs": [
+        0.6867355915819277,
+        0.011866009116068136,
+        0.3013983993020041
+      ],
+      "argmax": "contradiction",
+      "margin": 0.8235163688659668
+    },
+    {
+      "id": "rd-10",
+      "label": "compatible-related",
+      "premise": "The blockedBy field lists comma-separated ticket ids.",
+      "hypothesis": "The map field names a child ticket's parent map id.",
+      "logits": [
+        0.8686105608940125,
+        -3.182465076446533,
+        1.7029647827148438
+      ],
+      "probs": [
+        0.30113862549607573,
+        0.005240909600807454,
+        0.6936204649031168
+      ],
+      "argmax": "neutral",
+      "margin": -0.8343542218208313
+    },
+    {
+      "id": "rd-11",
+      "label": "compatible-related",
+      "premise": "Importance defaults to 3 when omitted.",
+      "hypothesis": "Status defaults to unclaimed when omitted.",
+      "logits": [
+        0.6948127746582031,
+        -3.756430149078369,
+        2.5677649974823
+      ],
+      "probs": [
+        0.13299386809809943,
+        0.0015512485129105477,
+        0.86545488338899
+      ],
+      "argmax": "neutral",
+      "margin": -1.8729522228240967
+    },
+    {
+      "id": "rd-12",
+      "label": "compatible-related",
+      "premise": "Pruning removes entries below the importance ceiling after N days.",
+      "hypothesis": "Pruning skips entries a category marks as pinned.",
+      "logits": [
+        0.5181039571762085,
+        -3.567491292953491,
+        2.6562137603759766
+      ],
+      "probs": [
+        0.1052609383136602,
+        0.0017697656629430216,
+        0.8929692960233968
+      ],
+      "argmax": "neutral",
+      "margin": -2.138109803199768
+    },
+    {
+      "id": "rd-13",
+      "label": "compatible-related",
+      "premise": "The map is an index, not a store — it never restates ticket detail.",
+      "hypothesis": "A ticket's content is its full body — there's no separate file per ticket.",
+      "logits": [
+        1.674821376800537,
+        -1.2537107467651367,
+        -0.33359941840171814
+      ],
+      "probs": [
+        0.8419805342215863,
+        0.04502530981114431,
+        0.11299415596726954
+      ],
+      "argmax": "contradiction",
+      "margin": 2.0084207952022552
+    },
+    {
+      "id": "rd-14",
+      "label": "compatible-related",
+      "premise": "Frontier tickets are unclaimed, unblocked, and open.",
+      "hypothesis": "A blocked ticket waits on every id in blockedBy resolving first.",
+      "logits": [
+        3.2446413040161133,
+        -2.980224847793579,
+        -0.025530800223350525
+      ],
+      "probs": [
+        0.9615574381215648,
+        0.001903488298517991,
+        0.036539073579917175
+      ],
+      "argmax": "contradiction",
+      "margin": 3.270172104239464
+    },
+    {
+      "id": "rd-15",
+      "label": "compatible-related",
+      "premise": "git-notes is a new category distinct from the auto-populated git_log_index.",
+      "hypothesis": "The decisions category declares no fields block at all in this repo's neuron.yaml.",
+      "logits": [
+        3.722564458847046,
+        -3.183459997177124,
+        -0.8032770752906799
+      ],
+      "probs": [
+        0.9883109178533602,
+        0.0009900229902993266,
+        0.010699059156340462
+      ],
+      "argmax": "contradiction",
+      "margin": 4.525841534137726
+    }
+  ]
+}
