@@ -19371,7 +19371,10 @@ thin.
 - 45 — Give the Tickets Category Real Per-Map Queries (ticket 56d915d0-9dbe-4391-9dc7-8273dc5ffd30) — built all four: a `map` declared field (backfilled across all 195 live entries — 186 children, 9 maps — by re-deriving membership from each map's own current content, since ticket 40's own slug-to-id table was a job-local artifact); `--where` made repeatable (ANDed) plus a new `field!=value` negation form; a real `kind: map` sentinel replacing ticket 40's flagged `status: resolved` workaround; and `neuron memory get <id>`. Found and corrected a real overcount along the way: this ticket's own Context claimed "10 real wayfinder maps" — the live store has exactly **9** (`--where "kind=map"` now proves it), matching what ticket 40 itself named. `docs/agents/issue-tracker.md`'s Wayfinding operations section rewritten against the real per-map query: `--where status=unclaimed --where map=<id> --refs-satisfy blockedBy:status=resolved`. 8 new tests, `npm test` 743/743, `tsc` clean.
 
 **True frontier as of this session (tracked in the `tickets` category, not
-this file): none.** `04`, `05`, `38` remain claimed and in progress. Ticket
+this file): none.** `05`, `38` remain claimed and in progress. Ticket 04 resolved
+2026-08-14 (see its own Decisions-so-far entry above) as a bookkeeping
+close only — its real work had already shipped 2026-08-09, before the
+move to this map. Ticket
 43 resolved 2026-08-13 (see its own Decisions-so-far entry above); the
 header-fragment-fix ticket (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749)
 resolved immediately after (see its own Decisions-so-far entry below);
@@ -19385,12 +19388,14 @@ above) — the per-map frontier query it built is now real, not prose:
 "blockedBy:status=resolved" --json` confirms empty. The next session
 working this map should breadth-first grill it per its own long-standing
 Notes item ("Everything else `2.4.0` admits") once `38`'s cut settles, or
-pick up `04`/`05` directly if continuing their in-progress work.
+pick up `05` directly if continuing its in-progress work.
 - 44 — SQLite Schema-Migration Race When Multiple Processes Open a Fresh Database Concurrently (ticket 2fbfa9ff-1469-4b21-b781-cef371ea7d38) — fixed with a synchronous `mkdir`-based cross-process lock (`src/db.ts`'s `withSyncFileLock`, using `Atomics.wait` for a real blocking sleep since the constructor has no `await` point to yield at), mirroring `18`'s markdown lock but blocking rather than `async`. Wraps both `initialize()`'s `user_version`-gated migration chain (split out into `runMigrationChain()`) and `migrateDeclaredFields()`'s additive `ALTER TABLE ADD COLUMN` pass, which shares the identical race shape though the ticket's own Context only named the former. `:memory:` skips the lock (no cross-process audience). New fast repro (`test/e2e/init-lock.test.ts` + `workers/init-lock-worker.mjs`) needed a `START_AT` barrier to reproduce reliably — bare construction is fast enough (embedder loads lazily) that unsynchronized process-spawn jitter usually hid the race. Verified both ways via `git stash`: 12/32 failures on unfixed code with the ticket's exact predicted errors, 0/32 on fixed code across 4 repeat runs. `npm test` 721/721, `tsc` clean, Pillar 8 clean.
 
 - Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749) — re-audited the full live store (194 entries) rather than trusting the ticket's own "20" estimate and confirmed exactly the 7 cases already identified while chartering it. Patched each via `neuron memory update` against ground truth pulled from git history (`git show 010590f:.scratch/...`, the commit immediately before `42` deleted `.scratch/`), not a widened migration-script recognizer — the migration script has no live second caller to justify generalizing it. One entry (`#25`) needed care: only its `Priority:` line was leaked, since the `[!IMPORTANT]` callout and postmortem section after it are genuine content that legitimately precedes its real heading in the source. `npm test` 721/721, `tsc` clean, no `src/` changes.
 - 02 — Verify the Publish Workflow Against a Real Push (ticket f256d034-ab25-4bb8-a26b-48cd373f75e2) — closed 2026-08-13 by maintainer decision rather than fully exercised. Real runs this session (carried over from neuron-2.3.0, where this ticket was numbered `36`) found and fixed a genuine bug (`publish.yml` pinned Node 20; `node:sqlite`'s `DatabaseSync` needs ≥22.13), then confirmed a real `-rcN` push all the way through: `build-and-test` green, `publish` runs, version lands under the `rc` dist-tag on the live registry, matching git tag pushed. Auth model changed mid-verification from an `NPM_TOKEN` secret to Trusted Publishing (OIDC), since npm is retiring Classic/Automation tokens registry-wide by January 2027 — confirmed live via a real published run with no token anywhere in the workflow. Left open and accepted as-is: a real stable (`MAJOR.MINOR.PATCH`) push under the `latest` tag, and a genuine non-exempt direct push actually being rejected by branch protection — both would require deliberately provoking an event rather than verifying one as a side effect of routine work, so the maintainer closed the ticket rather than force either.
 - 03 — GitHub Action: Automated npm Publish on Push to Main (ticket 78c33beb-3601-44d6-95bc-e69915576636) — closed 2026-08-13, immediately after `02`. This ticket had already built `.github/workflows/publish.yml` in full (dist-tag resolution from `package.json`'s own version, skip-if-unchanged, a two-job build-then-publish split gated by a required-reviewer `npm-publish` GitHub Environment, Trusted Publishing/OIDC auth after npm deprecated Automation tokens mid-session) and split real-install verification off into its own ticket (`36`, renumbered `02` on this map) rather than staying open on an action only the maintainer could take. With `02` now resolved — a real push proven end to end, real stable push and branch-protection-rejection left open there by maintainer decision — nothing scoped to this ticket specifically remains: the workflow is live, committed, and working as designed.
+
+- 04 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets (ticket c8dd711c-32b0-446d-a697-f91c855306bd) — resolved as a bookkeeping close only; the real work (chartered as `19` on neuron-2.3.0, migrated here 2026-08-10) already shipped 2026-08-09: SWE-bench Lite substrate, token-outcome measure, a real `injection` arm mirroring `src/harnesses/payload.ts`'s session-start hook. Live 16-session run (`--k=4 --effort=low`, $0.69): pooled 19,267→ 8,144 tokens (57.7% reduction), `matplotlib-24265`'s arms completely separated (Mann-Whitney U=0, p=0.029), `django-11019`'s 24.9% not significant, 16/16 correct in both arms. Published in `benchmarks/token-ab/README.md`/`findings.md`, committed as `0bea898`. Status corrected from stale `claimed` to `resolved`; nothing further to decide.
 
 ## Not yet specified
 
@@ -20181,7 +20186,7 @@ taskId: null
 blockedBy: ""
 kind: task
 map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
-status: claimed
+status: resolved
 ---
 # 04 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets
 
@@ -20863,6 +20868,20 @@ neuron-as-injection.
 
 `npm test` 580/580. Both arms dry-run validated. No additional spend this
 round; ticket total remains **$2.35 of the $5 cap**.
+
+## Answer
+
+Closing stale bookkeeping only — the map's own Notes (2026-08-10) already flagged this: "harness built and live-piloted — favorable, adequately powered result already shipped to `README.md`; its own Status/Answer bookkeeping was left stale by a later session and still needs fixing." Verified against the live repo before writing this: `benchmarks/token-ab/README.md`'s arms table, quick-start command, and published numbers match this ticket's own Comments log exactly, and the work is committed as `0bea898` ("ticket 19, neuron-2.3.0" — this ticket's own prior numbering before the 2026-08-10 move to this map). Nothing further to do or decide.
+
+**Scope item 1 — supplement, not replace.** This SWE-bench-substrate, token-outcome A/B became the new primary instrument; tickets 10/18's real-repo dogfood run stays the secondary "does it hold up on a messy project" check (see Comments for the full 8-part decision trail).
+
+**Final measured result** (`--k=4 --effort=low --arms=injection,control`, 16 sessions, $0.69): pooled 19,267 → 8,144 tokens, a **57.7% reduction**; `matplotlib-24265`'s arms completely separate (Mann-Whitney U=0, p=0.029); `django-11019`'s 24.9% doesn't reach significance at this sample size; **16/16 correct in both arms**, so the saving isn't bought with worse answers. Published in `benchmarks/token-ab/README.md` and `benchmarks/token-ab/results/19-synthetic-fixture-counterfactual-ab/findings.md`.
+
+**Deliverables**: items 1, 3, 5 satisfied literally; item 2 (synthetic-repo generator) satisfied in substance via the SWE-bench pivot (Scope item 2's own decision) rather than a hand-authored fixture — same "answer structurally absent" property for less build cost; item 4 (`fixtures.mjs` parametrized) satisfied via `swebench-fixtures.mjs`'s shared reuse of `session.mjs`/`report.mjs`/`grading.mjs`/`MEMORY_NOTE` rather than one literal shared function, as already noted above.
+
+**Open thread not carried further here**: the `memory` (discovery-only) arm's own comparison against `injection` was aborted after 4 sessions once the maintainer redirected focus to `injection` (the shipped mechanism); partial data sits at `partial-discovery-arm-low/results-partial.md`. Not chartered as a new ticket — revisit only if a future session needs the discovery-vs-injection gap quantified rather than described qualitatively, as it already is in `README.md`'s arms table.
+
+Status corrected from stale `claimed` to `resolved`. Budget spent: $2.35 of the $5 cap; remainder unneeded.
 
 ---
 id: d8096db3-3e98-4db6-a07f-dc21ebac412e
