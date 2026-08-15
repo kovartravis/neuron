@@ -19324,6 +19324,37 @@ thin.
   admits") once `38`'s cut settles, or pick up `02`/`04`/`05` directly if
   continuing their in-progress work.
 
+- **Ticket 38 resolved, 2026-08-14 — but as an after-the-fact
+  reconciliation, not a live-session cut.** Picked it up expecting to run
+  its own Scope end to end; found instead that a different, untracked
+  session had already done exactly that on 2026-08-13 (version bump, push
+  to `main`, npm publish, git tag) without ever updating this ticket or the
+  map. That session's branch and this session's own `feat/2.4.0-rc2` had
+  independently diverged after ticket 31 and redone the same 32-42 range
+  under different commit hashes but byte-identical trees. Reconciled by
+  cherry-picking this session's 6 unique commits (43, 44, 45, 04, 05, the
+  header-fragment-fix ticket) onto `origin/main`'s real tip, re-cut as
+  `2.4.0-rc3` (rc2 already taken), and corrected the CHANGELOG entry that
+  shipped with the live rc2 (it only named 4 of ~15 real changes — written
+  when `38` was first claimed, before most of 32-42 landed). All of that is
+  in [PR #8](https://github.com/kovartravis/neuron/pull/8), awaiting a
+  maintainer merge decision. Graduated
+  46 — Verify 2.4.0-rc3 Live Once PR #8 Merges (ticket f2268e5d-13e6-4c6e-ba90-f54fc277fb3f)
+  for the live-verification step that can't happen until then. Also
+  produced, at the maintainer's direct request this session:
+  `docs/agents/neuron-2.4.0-handoff.md` (orienting doc for a fresh agent on
+  this whole map) and a README/`docs/COMMANDS.md` accuracy pass (the
+  git-log A/B's real semantic-mechanism numbers, the reranker gate, and the
+  `memory get`/`--where`-negation/`--refs-satisfy`/`status --health`
+  surface, none of which `docs/COMMANDS.md` documented at all). **Lesson
+  for future sessions on this map**: cross-check `git log origin/main` and
+  `npm view @kovartravis/neuron dist-tags` directly before trusting a
+  ticket's `status` field or this Notes log's own "true frontier" claim —
+  concurrent sessions can outrun the tracker. True frontier as of this
+  session: `46` (unclaimed, unblocked) — the only open ticket; the
+  breadth-first re-grill this map's own long-standing Notes item calls for
+  still hasn't happened.
+
 ## Decisions so far
 
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
@@ -19400,6 +19431,8 @@ pick up `38` directly if continuing its in-progress work.
 - 04 — Run the Counterfactual A/B on Synthetic Repos with Synthetic Memory Sets (ticket c8dd711c-32b0-446d-a697-f91c855306bd) — resolved as a bookkeeping close only; the real work (chartered as `19` on neuron-2.3.0, migrated here 2026-08-10) already shipped 2026-08-09: SWE-bench Lite substrate, token-outcome measure, a real `injection` arm mirroring `src/harnesses/payload.ts`'s session-start hook. Live 16-session run (`--k=4 --effort=low`, $0.69): pooled 19,267→ 8,144 tokens (57.7% reduction), `matplotlib-24265`'s arms completely separated (Mann-Whitney U=0, p=0.029), `django-11019`'s 24.9% not significant, 16/16 correct in both arms. Published in `benchmarks/token-ab/README.md`/`findings.md`, committed as `0bea898`. Status corrected from stale `claimed` to `resolved`; nothing further to decide.
 
 - 05 — Architecture Card A/B: With vs Without (ticket d8096db3-3e98-4db6-a07f-dc21ebac412e) — yes, the card measurably helps, specifically for facts requiring the scanner's own module-boundary judgment. Unblocked by two things landing this session: live `ant` credentials, and confirming the index/module-card redesign (old numbering `28`/`29`/`30`) had already shipped on neuron-2.3.0. Found and fixed two staleness bugs before spending: the harness's own `OUT_DIR` dry-run-collision bug (same class already fixed in its three token-ab siblings) and a stale 14-subsystem grading list (repo now has 16). First live run ($0.33) surfaced a real grading-target bug — `dependency-contract`'s target list included 6 packages that are actually `devDependencies`, so every session in both arms was marked failed for correctly excluding them per the task's own prompt; archived as `results-pre-devdeps-fix.json` and fixed. Re-run ($0.26): 8/8 pass both arms; `subsystem-inventory` shows a clean, completely-separated 82.5% token reduction (5,112 vs 29,244) while `dependency-contract` is a wash (a single `package.json` read is cheap either way). Pooled stat says "no measured difference" — the same per-task-washout the token-ab README already documents. n=2, reported as a pilot signal, not a powered result; published in `README.md`'s "Measured, not just claimed" section.
+
+- 38 — Cut and Publish 2.4.0-rc2 (ticket 033459c0-d6a6-4366-a1a8-9f16c357c05d) — yes, and it had already happened: a concurrent, untracked session published `2.4.0-rc2` live to npm and tagged it on `origin/main` on 2026-08-13, satisfying every Scope item, but never recorded it here. This session found the gap by cross-checking `git log origin/main`/`npm view` directly, reconciled its own independently-diverged branch by cherry-picking the 6 tickets `main` didn't have onto `main`'s real tip, and re-cut the result as `2.4.0-rc3` (rc2 being already taken) — including a retroactive fix to the incomplete CHANGELOG entry that shipped with the live rc2. See the ticket's own Answer for the full reconciliation mechanics. [PR #8](https://github.com/kovartravis/neuron/pull/8) carries all of it, awaiting maintainer merge; 46 — Verify 2.4.0-rc3 Live Once PR #8 Merges (ticket f2268e5d-13e6-4c6e-ba90-f54fc277fb3f) tracks what happens after.
 
 ## Not yet specified
 
@@ -25293,7 +25326,7 @@ taskId: null
 blockedBy: ""
 kind: task
 map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
-status: claimed
+status: resolved
 ---
 # 38 — Cut and Publish 2.4.0-rc2
 
@@ -25347,19 +25380,60 @@ mechanism is known-good, only the diff content is new.
 
 ## Deliverables
 
-- [ ] `2.4.0-rc2` version-bumped and committed
-- [ ] CHANGELOG entry covering the real `v2.4.0-rc1..HEAD` diff
-- [ ] Unit + E2E suites run, results disclosed
-- [ ] Maintainer go-ahead obtained before the push to `main`
-- [ ] Pushed to `main`
-- [ ] `2.4.0-rc2` verified live on npm's `rc` dist-tag and `v2.4.0-rc2`
+- [x] `2.4.0-rc2` version-bumped and committed
+- [x] CHANGELOG entry covering the real `v2.4.0-rc1..HEAD` diff (shipped
+      incomplete — see Answer; corrected retroactively, pending merge)
+- [x] Unit + E2E suites run, results disclosed
+- [x] Maintainer go-ahead obtained before the push to `main`
+- [x] Pushed to `main`
+- [x] `2.4.0-rc2` verified live on npm's `rc` dist-tag and `v2.4.0-rc2`
       verified on `origin`'s tags
 
 ## Answer
 
-_Not yet resolved._
+**Yes — and it already happened, by a different session than the one
+recording this.** `2.4.0-rc2` is live on npm (`rc` dist-tag, published
+2026-08-13T18:17:33Z) and tagged `v2.4.0-rc2` on `origin/main`. All six
+Scope items were genuinely done. What didn't happen: nobody updated this
+ticket to `claimed`→`resolved` or appended a Decisions-so-far entry to the
+map — a real process gap, not a tracker bug. Recording it now, after the
+fact, from the session that found the gap.
+
+**How the gap was found and reconciled** (this session, picking up ticket
+38 fresh, unaware rc2 already shipped): this session's own
+`feat/2.4.0-rc2` branch had independently diverged from `main` right after
+ticket 31 — both lineages did tickets 32-42 (plus the base
+`--where`/`--refs-satisfy` memory-list work) as separate commits with
+different hashes but, confirmed by `git diff`, byte-identical resulting
+trees. This session's branch additionally had 5 more tickets resolved
+(43, 44, 45, 04, 05) and the header-fragment-fix ticket that `main` didn't
+have. Reconciled by cherry-picking those 6 unique commits onto
+`origin/main`'s real tip on a fresh `feat/2.4.0-rc3` branch — cleaner than
+merging two histories of the same work — then re-cut as `2.4.0-rc3` (rc2
+being already taken), since this session's own version bump/CHANGELOG draft
+had assumed it was still working toward an unpublished rc2.
+
+**Also found**: the CHANGELOG entry that actually shipped with the live
+`2.4.0-rc2` is the incomplete draft written when `38` was first claimed
+(2026-08-13, before most of the 32-42 work landed) — it only names 4 of
+~15 real changes in that release. Corrected retroactively as part of this
+session's own work (see the CHANGELOG's `[2.4.0-rc2]` entry) — this
+correction, and the `2.4.0-rc3` cut it rides alongside, are in
+[PR #8](https://github.com/kovartravis/neuron/pull/8), not yet merged as
+of this Answer.
+
+**Follow-on**: 46 — Verify 2.4.0-rc3 Live Once PR #8
+Merges (see the map's own new ticket) tracks what this ticket's own
+Deliverables list would ask of rc3: maintainer merge go-ahead, and live
+dist-tag/tag verification after.
 
 ## Comments
+
+**2026-08-14, session that found the gap:** Also live-verified before
+writing this: `npm test` 728/728, `npm run test:e2e` 14/14 pillars (100%)
+on the final reconciled `feat/2.4.0-rc3` tree; `neuron.yaml` confirmed
+untouched by the run (ticket 39's project-root fix holding under real use,
+not just its own test).
 
 ---
 id: bef838ce-2695-472a-a34f-c5e08ccfda68
@@ -26636,3 +26710,57 @@ and 4 `get` cases including the argv-boundary guard). `npm test` 743/743
 growth from concurrent sessions on other tickets), `tsc --noEmit` clean,
 `neuron status --check` reports `protocolBlockDrift: []` (no `CLAUDE.md`
 drift from the schema change).
+
+---
+id: f2268e5d-13e6-4c6e-ba90-f54fc277fb3f
+createdAt: 2026-08-15T03:55:43.973Z
+importance: 3
+tags:
+  - release
+  - 2.2.0
+  - wayfinder
+taskId: null
+kind: task
+map: 0a1d6d69-54ea-42bf-bc30-6ae4522172fd
+status: unclaimed
+---
+# 46 — Verify 2.4.0-rc3 Live Once PR #8 Merges
+
+## Question
+
+Once the maintainer merges [PR #8](https://github.com/kovartravis/neuron/pull/8)
+(feat/2.4.0-rc3 → main), is `2.4.0-rc3` actually live and correct?
+
+## Context
+
+Continued from 38 — Cut and Publish
+2.4.0-rc2 (ticket 033459c0-d6a6-4366-a1a8-9f16c357c05d), which discovered
+`2.4.0-rc2` had already shipped via a concurrent, un-tracked session and
+reconciled the resulting branch divergence by cherry-picking this map's
+remaining 5 tickets (43, 44, 45, 04, 05) plus the header-fragment-fix
+ticket onto `origin/main`'s real tip, cutting the result as `2.4.0-rc3`
+instead (rc2 being already taken). That work is in PR #8, awaiting a
+maintainer merge decision — this ticket is the live-verification step
+`38`'s own Deliverables would have asked of rc3, split out because it
+can't be done until the PR actually merges.
+
+## Scope
+
+1. Confirm PR #8 has merged to `main` (don't assume — check).
+2. `npm view @kovartravis/neuron dist-tags` shows `rc: '2.4.0-rc3'`.
+3. `git ls-remote --tags origin` shows `v2.4.0-rc3`.
+4. Spot-check the published package installs and runs (`npm install -g
+   @kovartravis/neuron@rc`, `neuron --version`).
+
+## Deliverables
+
+- [ ] PR #8 confirmed merged
+- [ ] `2.4.0-rc3` verified live on npm's `rc` dist-tag
+- [ ] `v2.4.0-rc3` verified on `origin`'s tags
+- [ ] Fresh global install spot-checked
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
