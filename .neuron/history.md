@@ -2954,3 +2954,39 @@ tags:
 taskId: d8096db3-3e98-4db6-a07f-dc21ebac412e
 ---
 Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 5 (Architecture Card A/B: With vs Without), the last of the three previously claimed-in-progress tickets besides the rc2 cut itself. Both prior blockers were cleared this session: the maintainer supplied live ant credentials, and the card-format redesign the ticket was waiting on (old numbering 28/29/30, index+per-module-cards) turned out to already be resolved on neuron-2.3.0's own map. Found and fixed two real staleness bugs before spending anything live: the harness's own OUT_DIR dry-run-collision bug (same class already fixed in its three token-ab sibling scripts but never back-ported here) and a stale 14-subsystem grading list against the repo's real current 16. A first live run (/bin/zsh.33, 8 sessions) surfaced a genuine grading-target bug rather than a card-effect finding: the dependency-contract task's target list included 6 packages that are real devDependencies in package.json, so every session in both arms was marked failed for correctly excluding them exactly as the task's own prompt instructed. Archived that run (results-pre-devdeps-fix.json, committed for audit trail per ticket 19's own precedent), fixed the target list to the real 6-package runtime dependency set, and re-ran live (/bin/zsh.26): 8/8 passed in both arms. Found a real, cleanly-separated effect on the subsystem-inventory task (5,112 vs 29,244 mean tokens, zero overlap, 82.5% reduction) while dependency-contract stayed a wash — the pooled scorecard statistic reported no-measured-difference, the same per-task washout already documented in token-ab's own README, so reported the per-task breakdown honestly rather than trusting the pooled number. Published the finding in README.md's Measured section with the n=2 pilot caveat stated explicitly. npm test 728/728, tsc clean. Frontier query confirms only ticket 38 (cut and publish 2.4.0-rc2) remains claimed on this map.
+
+---
+id: 7b7b1d62-a0c5-40ba-a0e1-df960ae5f2b2
+createdAt: 2026-08-15T12:07:19.293Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Wayfinder pickup on Map — neuron 2.4.1: claimed and resolved ticket 1 (Antagonistic-Write Test Pillar, Diagnostic), the map's only frontier ticket. Built resident Pillar 14 (test/e2e/antagonistic-write.test.ts) measuring which "bad write" categories the current write gate catches: near-duplicate paraphrase and same-shape numeric contradiction both pass the CLI's 0.97-cosine supersession gate uncaught; missing provenance on the real decisions category (no fields: block) also passes uncaught, ruling out ticket 2 closing as documentation-only; shape violations are already caught. Findings doc at docs/design/write-time-quality/antagonistic-write-findings.md. Separately, found and resolved a standalone (non-map) ticket live during that session: the pre-command hook had no ledger dedup (confirmed via a comment in hook.ts itself) and its injected additionalContext had no self-identifying framing, which led this same session (and a subagent it spawned) to mistake the project's own legitimate recall for prompt injection before the maintainer corrected it. Fixed both: pre-command now shares pre-prompt/session-start's dedupe ledger (id-only, not their char budget, via a new recordPreCommandInjection) and every injection carries a stable RECALL_PROVENANCE_PREFIX applied once at the shared emit() choke point. Cut and published v2.4.1 straight to stable (maintainer's explicit choice, no rc) directly to main (branch-protection bypass, maintainer's explicit choice) — shipping only these two items, not tickets 2-4. Renamed the in-flight map from neuron-2.4.1 to neuron-2.4.2 in place (same Destination/Notes/tickets 2-4, only the version label moved) since the number it was named after already shipped without them. npm test 735/735, tsc clean, scan --check clean (re-baselined), status --check clean.
+
+---
+id: ba1ed845-1890-472f-bd6e-1fa55cc1c9a9
+createdAt: 2026-08-15T12:28:35.499Z
+importance: 3
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+---
+Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved ticket 2 (Provenance Enforcement), the map's first frontier ticket after ticket 1's diagnostic. Grilled the maintainer through six decisions: (1) 'requires a source' splits into free text (already works via existing required:string) vs a new commitRef field type for commit-linked provenance specifically; (2) rejected a general custom-code verifier field as a pluggable-provider surface the map's own non-goals explicitly rule out, decided on a small closed set of built-in field types instead; (3) a knowledge-graph traversal idea (commit -> linked entry, agent hops the edge) surfaced mid-grill and was deliberately parked as fog on the map rather than folded into this ticket, since the codebase states outright it has no graph/relationship primitive and the question isn't sharp yet; (4) ruled out dogfooding commitRef onto this repo's own decisions/learning categories -- it collides with the project's own session-time decision-recording convention, since a decisions entry is often written before its resolving commit exists; (5) resolved that collision by designing a new git-notes category instead, durable commentary attached to an already-existing commit, distinct from the auto-populated read-only git_log_index; (6) maintainer chose to record the design and defer implementation rather than build it live (unlike ticket 1's design-and-ship-in-one-pass precedent). Graduated the deferred implementation as ticket 5 (Implement commitRef Field Type & git-notes Category), unblocked, with the full settled design copied into its body so a future session implements rather than re-litigates. Map's Decisions-so-far and Not yet specified updated to match. Frontier is now tickets 3, 4, and 5, all unclaimed and unblocked.
+
+---
+id: 9b4974d7-f712-4a0f-8294-7217f941494f
+createdAt: 2026-08-15T12:33:56.611Z
+importance: 3
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+---
+Chartered Map -- neuron 2.4.3, spun out of Map -- neuron 2.4.2's ticket 2 grilling session. The maintainer raised two concerns that don't fit 2.4.2's write-gate destination and directly collide with its own Out of scope ('retroactive re-scoring... not a backfill/migration pass'): agents not voluntarily writing memories often enough, and this repo's own store needing a cleanup pass. Rather than fold either into 2.4.2, chartered a new map: Destination is closing the loop on store quality via the two axes a write-time gate can't fix -- writes that never happen, and writes that predate any gate. Grounded both items in the actual codebase before ticketing: found the read side already has an active nudge-plus-instrument pair (ticket 06's per-turn discovery hint, ticket 07's hintFollowLog.ts) that the write side has no equivalent of -- no Stop/SessionEnd hook registered, compliance enforced only by passive CLAUDE.md prose -- so ticket 1 (Write-Side Compliance Nudge & Instrumentation, kind grilling) is scoped to mirror that exact pattern. Also found neuron doctor doesn't exist and was rejected twice (ADR 0013 ticket 13, ticket 20/2.4.0) in favor of neuron status --health/--repair, so ticket 2 (Memory Store Cleanup Pass, kind task) is scoped to use that real surface rather than a command that isn't real. Both tickets are independent, unblocked, and unclaimed. No tickets resolved this session on the new map -- charting is its own session per wayfinder discipline.

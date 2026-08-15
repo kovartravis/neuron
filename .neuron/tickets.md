@@ -26901,7 +26901,7 @@ taskId: null
 kind: map
 status: unclaimed
 ---
-# Map — neuron 2.4.1
+# Map — neuron 2.4.2
 
 ## Destination
 
@@ -26931,6 +26931,17 @@ storage engine, no new package, no new top-level command.
   is a diagnostic, not a fix — its findings determine how tickets 2-4 get
   scoped, not just their order. This map has not resolved any of its own
   tickets yet.
+- **Renamed 2.4.1 → 2.4.2, 2026-08-15, same effort continued.** Ticket 1
+  (the diagnostic) resolved clean, and a second, unrelated hook-hygiene
+  ticket surfaced live during that session and was resolved alongside it
+  (see that ticket's own standalone entry, not a child of this map). The
+  maintainer chose to cut and publish v2.4.1 with just those two small,
+  already-done items rather than hold the release open for tickets 2-4 —
+  which are real engineering (ticket 1's own findings ruled out ticket 2
+  closing as documentation-only) and were never going to fit the same
+  release. This map's own Destination, Notes, and remaining tickets
+  (2-4) are unchanged — only the version label wrapping them moved,
+  because the number it was named after already shipped without them.
 - **Non-goals (stated explicitly, per standing project discipline)**:
   - This is not a truth judgment. Consistency enforcement ≠ truth
     enforcement. A conflict check compares a new entry against *existing
@@ -26982,8 +26993,23 @@ storage engine, no new package, no new top-level command.
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
 
 - 1 — Antagonistic-Write Test Pillar (Diagnostic) (ticket 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de) — measured all four testable cases (case 4 excluded, no criterion yet) against the real write gate: near-duplicate paraphrase (case 1) and a same-shape numeric contradiction (case 2) both pass uncaught — the CLI's supersession gate (0.97 cosine) doesn't reach either; missing provenance on `decisions` (case 3) also passes uncaught and is **not** already solved as the map's sequencing rationale hoped — this repo's own `decisions` category declares no `fields:` block, so ticket 2 is real work, not documentation; shape violations (case 5) are already caught, as expected. New resident `Pillar 14: Antagonistic Write & Quality Gate` (`test/e2e/antagonistic-write.test.ts`) plus a dated findings doc (`docs/design/write-time-quality/antagonistic-write-findings.md`) with scoping notes for tickets 3-4. `npm test` 728/728, `tsc` clean.
+- 2 — Provenance Enforcement (ticket e98d9b8e-6280-421b-993a-c0dc320be2ad) — real engineering, confirmed by ticket 1. Two field types, not one: free text already works today via existing `type: string, required: true` (no new code); a new `commitRef` type is needed for commit-linked provenance specifically, validating a value resolves to a real commit via a git existence check (reusing `src/harnesses/gitLog.ts`'s shell-out pattern). A general custom-code verifier field was explicitly rejected — it's a pluggable-provider surface this map's own non-goals rule out; decided instead on a small, closed set of built-in field types. Not dogfooded onto this repo's `decisions`/`learning` (collides with same-session decision-recording); instead a new `git-notes` category (commentary attached to an already-existing commit, distinct from the auto-populated `git_log_index`) gives `commitRef` a real live consumer. Implementation graduated to Ticket 5 — Implement `commitRef` Field Type & `git-notes` Category (ticket 7c785243-17da-44e2-af28-3436a0e92520) rather than built in this session.
 
 ## Not yet specified
+
+- **Commit-to-entry knowledge-graph traversal.** Once `commitRef`/`git-notes`
+  exist (ticket 5), a commit could carry a real, traversable edge to the
+  entries that cite it — the agent hopping from a git-log result to its
+  linked `git-notes`/learning entry, and back. Genuinely valuable, raised
+  during ticket 2's grilling, and deliberately parked rather than ticketed:
+  the codebase currently states outright it has no graph/relationship
+  primitive at all (`docs/agents/issue-tracker.md`), and "the basics of a
+  knowledge graph" is a much bigger, still-unsharpened question than a
+  single reverse lookup — does the edge stay commit-only, or does every
+  relationship (e.g. `blockedBy`) eventually become traversable the same
+  way? Not decidable until that's scoped, and not this map's destination
+  (write-time quality, not read-time traversal) — likely its own future
+  effort rather than a ticket here.
 
 - **Vague/low-specificity content detection.** No objective, testable
   definition exists yet — stays fog until one does, not a ticket.
@@ -27111,7 +27137,7 @@ taskId: null
 blockedBy: 0a5895e6-e5cd-4aea-90c0-7f4bdfc4d7de
 kind: task
 map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
-status: unclaimed
+status: resolved
 ---
 # 2 — Provenance Enforcement
 
@@ -27143,7 +27169,61 @@ earlier design pass.
 
 ## Answer
 
-_Not yet resolved._
+Real engineering, not documentation — confirmed by ticket 1: this repo's
+`decisions` category declares no `fields:` block, so `enforceFieldSchema`
+has nothing to check (findings doc §2.3).
+
+**"Requires a source" now covers two distinct field types, not one:**
+
+1. **Free text** — already works today via the existing `type: string,
+   required: true` mechanism, no new code: a category declares a required
+   string field (e.g. `source`), and `enforceFieldSchema` already
+   hard-errors on a missing value.
+2. **`commitRef`** (new) — a field type that validates the value resolves
+   to a real commit in this repo's git history (a git existence check,
+   e.g. `git cat-file -e <value>` / `git rev-parse --verify`, reusing the
+   `execFileSync` shell-out pattern already established in
+   `src/harnesses/gitLog.ts`, not a second git-shelling mechanism).
+   Presence-only free text was ruled adequate for "cite something," but
+   the maintainer wants commit-linked provenance specifically —
+   resolvable, not just present.
+
+**Explicitly rejected: a general custom-code verifier field** (project-
+authored validation logic per field). This would be a pluggable-provider
+surface and directly contradicts this map's own stated non-goal ("No new
+package, SDK, or pluggable-provider system") — it also opens a
+code-execution-on-write security question that a small, closed set of
+built-in validator types avoids entirely. Decided instead: a closed set of
+built-in field types, extended by the project over time (starting with
+`commitRef`), never arbitrary project-authored code.
+
+**Dogfooding**: not applied to this repo's existing `decisions`/`learning`
+categories. Doing so collides with this project's own session-time
+decision-recording convention — a `decisions` entry is often written
+before the commit that resolves it exists, so a required `commitRef`
+there would be unsatisfiable at write time. Instead, a **new category,
+`git-notes`**, gives the mechanism a real, live consumer without that
+collision: durable commentary *attached to* an already-existing commit
+(why an approach was later reversed, a regression traced back to it,
+context that didn't belong in the commit message itself) — written in a
+later session, once the commit already exists, not the session that makes
+it. Distinct from the existing `git_log_index`, which is an auto-
+populated, read-only mirror of commit messages themselves. Schema:
+`git-notes.fields.commitRef: { type: commitRef, required: true }`.
+
+**Parked as fog, not folded into this ticket**: a knowledge-graph
+traversal capability (commit → linked `git-notes`/learning entries, agent
+follows the edge) — genuinely valuable but out of scope for a
+write-time-quality map, and the codebase currently states outright it has
+no graph/relationship primitive at all (`docs/agents/issue-tracker.md`);
+this would be the first real one. Recorded in the map's "Not yet
+specified," not ticketed.
+
+**Implementation deferred** to a follow-up ticket (graduated: Ticket 5 —
+Implement `commitRef` Field Type & `git-notes` Category) — the maintainer
+chose to record the design and stop here rather than build it in this
+session, unlike ticket 1's precedent of designing and shipping in one
+pass.
 
 ## Comments
 
@@ -27366,5 +27446,316 @@ after `context-reset` rolls the epoch; no cross-session dedup leakage; the
 sessionless branch still degrades toward repetition; the preamble is
 present on `pre-command`'s own output and identical across all three
 lifecycle points.
+
+## Comments
+
+---
+id: 7c785243-17da-44e2-af28-3436a0e92520
+createdAt: 2026-08-15T12:27:45.555Z
+importance: 4
+tags:
+  - release
+  - 2.2.0
+  - git
+taskId: null
+kind: task
+map: 94bf37ad-fb5d-4e2c-8865-3fe1782cefd4
+status: unclaimed
+---
+# 5 — Implement `commitRef` Field Type & `git-notes` Category
+
+## Question
+
+Build what ticket 2 (Provenance Enforcement) designed: a new `commitRef`
+declared-field type that validates a write-time value resolves to a real
+commit in this repo's git history, plus a new `git-notes` category that
+uses it.
+
+## Context
+
+Graduated from ticket 2's resolution (Map — neuron 2.4.2, "Provenance
+Enforcement"). The design is settled; this ticket is pure implementation,
+test-first (`/tdd` fits, mirrors ticket 1's own shape — design and build
+in one pass, just split across two sessions here since the maintainer
+chose to record the design and stop rather than implement live).
+
+## Design (settled by ticket 2 — implement as specified, do not re-litigate)
+
+- New declared-field type `commitRef`, added alongside the existing
+  `string`/`enum` types (touches the field-def schema/validation in
+  `src/config/neuronYaml.ts` and the enforcement path in `src/index.ts`'s
+  `enforceFieldSchema`).
+- Validates existence via a git shell-out (e.g. `git cat-file -e <value>`
+  or `git rev-parse --verify <value>^{commit}`), reusing the
+  `execFileSync` pattern already established in `src/harnesses/gitLog.ts`
+  rather than inventing a second git-shelling mechanism.
+- Must handle: valid full SHA, valid abbreviated SHA, a nonexistent hash
+  (hard refuse — same "a refused write must not be a partial write"
+  posture the rest of `enforceFieldSchema` already follows), and the
+  not-a-git-repo case (a clear error, not a silent pass).
+- New `git-notes` category declared in this repo's own `neuron.yaml`:
+  `fields.commitRef: { type: commitRef, required: true }`. Purpose:
+  durable commentary attached to an already-existing commit — why an
+  approach was later reversed, a regression traced back to it, context
+  that didn't belong in the commit message itself — distinct from the
+  existing `git_log_index`, which is an auto-populated, read-only mirror
+  of commit messages.
+
+**Explicitly out of scope for this ticket** (ruled by ticket 2, do not
+re-open here):
+- Dogfooding `commitRef`/required provenance onto the existing
+  `decisions`/`learning` categories — collides with this project's
+  own same-session decision-recording convention.
+- Any traversal/graph capability linking commits to `git-notes` entries —
+  parked as fog on the map ("Not yet specified"), not this ticket's job.
+- A general custom-code verifier field — rejected outright by ticket 2 as
+  a pluggable-provider surface the map's non-goals rule out.
+
+## Deliverables
+
+- [ ] `commitRef` field type implemented and validated at write time
+- [ ] Tests: valid full SHA, valid abbreviated SHA, invalid/nonexistent
+      hash, non-git-repo case
+- [ ] `git-notes` category declared in this repo's own `neuron.yaml` with
+      required `commitRef`
+- [ ] Docs updated to name the new field type and category, per this
+      project's own documentation discipline (`docs/agents/issue-
+      tracker.md` and/or wherever declared-field types are documented for
+      `neuron.yaml` authors)
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+createdAt: 2026-08-15T12:33:10.390Z
+importance: 3
+tags:
+  - planning
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — neuron 2.4.3
+
+## Destination
+
+Close the loop on whether this store actually contains good memory, on the
+two axes Map — neuron 2.4.2 deliberately doesn't touch: **getting more
+high-quality entries written in the first place** (the agent voluntarily
+using `neuron memory add` when the CLAUDE.md protocol calls for it, not
+just when it happens to remember to), and **cleaning up what's already
+accumulated** in this repo's own live store.
+
+2.4.2 is about the write *gate* — validating the quality of an entry as it
+gets written. This map is about the two things a gate can't fix: writes
+that never happen at all, and writes that already happened before any gate
+existed.
+
+## Notes
+
+- **Prepared 2026-08-15**, spun out mid-session from Map — neuron 2.4.2's
+  ticket 2 (Provenance Enforcement) grilling. The maintainer raised two
+  concerns that don't fit that map's write-gate destination and directly
+  collide with its own stated Out of scope ("Retroactive re-scoring of
+  existing live entries... not a backfill/migration pass") — rather than
+  fold them in, they're chartered here as their own effort.
+- **Non-goals**:
+  - Not re-litigating the write-gate/validation mechanism itself — that's
+    Map — neuron 2.4.2's job. This map assumes whatever it ships and
+    builds around it, not instead of it.
+  - `neuron doctor` does not exist and isn't being revived under that
+    name — it was rejected twice already (ADR 0013 / ticket 13, and
+    ticket 20 / neuron-2.4.0) in favor of folding health/repair signals
+    into `neuron status`. Any cleanup work here uses the existing
+    `neuron status --health`/`--repair` surface, not a new command.
+  - No autonomous/unattended deletion. Cleanup is reviewed before
+    anything is pruned or repaired — matches this project's standing
+    discipline around destructive actions.
+- **What already exists, relevant to ticket 1**: the read side has an
+  active mechanism for exactly this shape of problem — ticket 06
+  (neuron-2.4.0) built a per-turn discovery hint nudging
+  `neuron memory query` when relevant recall was left on the table, and
+  ticket 07 built `hintFollowLog.ts`, instrumentation measuring whether
+  the hint actually gets followed. The write side has no equivalent: no
+  `Stop`/`SessionEnd` hook is registered in this repo's own
+  `.claude/settings.json`, and nothing measures whether
+  `neuron memory add` gets called when the protocol calls for it.
+  Enforcement today is 100% passive prose (the CLAUDE.md protocol block).
+- **What already exists, relevant to ticket 2**: `neuron status --health`
+  reports store-health signals (duplicates, importance distribution,
+  superseded count); `--repair` acts on what `--health` finds. Both
+  already shipped (ticket 13/ADR 0013, ticket 20/neuron-2.4.0) — this map
+  is about *using* them on this repo's own store, not building anything
+  new for ticket 2 specifically, unless the review turns up a real gap.
+- **Skills to consult**: ticket 1 is squarely `/grilling` territory (same
+  shape as Map — neuron 2.4.2's own ticket 2 resolution) — trigger,
+  measurement, and dogfood-vs-ship-generally are all maintainer calls, not
+  facts to look up. `/tdd` fits once ticket 1's design is settled and
+  implementation is graduated, mirroring how ticket 06/07 were built.
+
+## Decisions so far
+
+<!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
+
+## Not yet specified
+
+- **Should the write-compliance mechanism (ticket 1) ship to every
+  project `neuron init` touches, or stay dogfood-only on this repo** —
+  the way ticket 06/07's own `hintFollowLog.ts` explicitly is ("not part
+  of what `neuron init` installs for a user's project")? Not decidable
+  until ticket 1 itself defines what the mechanism actually is.
+- **Whether this repo's cleanup pass (ticket 2) surfaces a recurring
+  policy** (e.g. a periodic health check) rather than a one-time pass —
+  stays fog until the one-time pass actually runs and shows whether
+  staleness reaccumulates fast enough to matter.
+
+## Out of scope
+
+- **The write-gate/validation mechanism itself** — Map — neuron 2.4.2's
+  job, not this map's. See that map's own Destination and tickets.
+
+---
+id: de4f45be-34e0-45df-9a50-f72d0bdc5905
+createdAt: 2026-08-15T12:33:39.488Z
+importance: 4
+tags:
+  - rc2
+  - 2.2.0
+  - wayfinder
+taskId: null
+kind: grilling
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: unclaimed
+---
+# 1 — Write-Side Compliance Nudge & Instrumentation
+
+## Question
+
+Should neuron add an active mechanism that nudges the agent to record
+memories when the CLAUDE.md protocol calls for it — mirroring ticket 06's
+read-side discovery hint and ticket 07's hint-follow-log instrumentation
+(both neuron-2.4.0) — and if so, what does "nudge" and "measure" mean on
+the write side specifically?
+
+## Context
+
+Today, write-side compliance is enforced entirely by passive prose: the
+CLAUDE.md protocol block tells every session to log history/decisions/
+learnings before finishing, but nothing active reminds the agent, and
+nothing measures whether it actually happens. No `Stop`/`SessionEnd` hook
+is currently registered in this repo's own `.claude/settings.json`.
+
+The read side already solved the analogous problem for recall: ticket 06
+fires a per-turn hint (`neuron memory query ...`) only when relevant
+matches were left on the table, and ticket 07's `hintFollowLog.ts` records
+both `fired` and `query-run` events so compliance is a measured fact, not
+a guess. This ticket is about building the write-side counterpart of that
+pair, not inventing a new pattern from scratch.
+
+## Design questions to resolve before implementation
+
+- What event should trigger the nudge? Session end is the obvious
+  candidate (matches "before finishing" in the CLAUDE.md protocol), but
+  there's no `Stop`/`SessionEnd` hook registered today — is adding one in
+  scope for this ticket, or does it depend on harness support that
+  doesn't exist yet for every adapter (`claudeCode.ts`, `codex.ts`,
+  `cursor.ts`, `copilot.ts`)?
+- What counts as "compliance"? A literal `neuron memory add` call, or
+  satisfying the protocol block's intent some other way? Ticket 06/07's
+  own measurement (`hintFollowLog.ts`) only needed to match one command
+  shape (`neuron memory query`) — the write side has several distinct
+  commands (`memory add` across `learning`/`history`/`decisions`/
+  `tickets`), so "did compliance happen" is a broader question than
+  ticket 07's own.
+- Dogfood-only on this repo, or shipped generally via `neuron init`? See
+  the map's own "Not yet specified" — `hintFollowLog.ts` was deliberately
+  kept dogfood-only ("not part of what `neuron init` installs for a
+  user's project"). Does the same reasoning apply here, or is write-side
+  compliance valuable enough to every project that it should ship by
+  default?
+- What does the nudge actually say, and where does it fit in an already
+  budget-constrained injection surface (`hook.ts`'s per-turn/per-session
+  char budget, the same one ticket 06's hint competes for)?
+
+## Deliverables
+
+- [ ] Trigger event decided
+- [ ] Definition of "compliance" decided and made measurable
+- [ ] Dogfood-only vs. ship-generally decided
+- [ ] Nudge content and injection surface decided
+- [ ] Implementation (mirrors ticket 06/07: a hook-side nudge, plus an
+      instrument recording whether it was followed)
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+---
+id: eb84d876-7222-4b4c-85da-2c48f59e0e96
+createdAt: 2026-08-15T12:33:39.985Z
+importance: 4
+tags:
+  - 2.4.0
+  - rc2
+  - planning
+taskId: null
+kind: task
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: unclaimed
+---
+# 2 — Memory Store Cleanup Pass (This Repo)
+
+## Question
+
+Using the existing `neuron status --health` (and `--repair` where
+appropriate) surface, comb through this repo's own live memory store and
+decide what to fix, dedupe, or prune.
+
+## Context
+
+Not `neuron doctor` — that name was considered and rejected twice already
+(ADR 0013 / ticket 13, and ticket 20 / neuron-2.4.0) in favor of folding
+store-health signals (duplicates, importance distribution, superseded
+count) into `neuron status --health`, with `--repair` acting on what it
+finds. Both already exist; this ticket is about running them against this
+repo's real store and making judgment calls on what they surface, not
+building new tooling — unless the review turns up a real gap `--health`/
+`--repair` don't already cover.
+
+This is a retroactive, one-time pass over already-live entries — exactly
+what Map — neuron 2.4.2's own Out of scope rules out for that map, which
+is why it's chartered here instead.
+
+## Design questions to resolve before implementation
+
+- Run `neuron status --health` first and review its findings live with
+  the maintainer before anything is repaired or pruned — no autonomous
+  deletion, per this map's own non-goals.
+- Does `--repair` alone cover what's found, or does anything need a
+  manual `--supersedes` resolution (per ADR 0015's supersession design)
+  the automated repair path can't make on its own?
+- Scope: this repo's store only, or does a finding here motivate a
+  broader default (e.g. a recommended prune/health cadence documented for
+  every project)? Likely the latter is its own ticket if it comes up —
+  don't presuppose it here.
+
+## Deliverables
+
+- [ ] `neuron status --health` run and findings reviewed with the
+      maintainer
+- [ ] Each finding triaged: repair, supersede, prune, or leave as-is,
+      with rationale
+- [ ] Actions applied
+- [ ] `neuron status --health` re-run to confirm the store is clean
+
+## Answer
+
+_Not yet resolved._
 
 ## Comments

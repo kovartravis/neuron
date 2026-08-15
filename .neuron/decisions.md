@@ -1270,3 +1270,15 @@ tags:
 taskId: null
 ---
 CLI dependency-graph filtering for `neuron memory list` is generic, not wayfinder-specific: `--where <field>=<value>` and `--refs-satisfy <field>:<subfield>=<value>` are two composable, schema-agnostic filters (any category, any declared field name, any enum value), not a bespoke `--frontier` flag hardcoded to this repo's own `status`/`blockedBy`/`unclaimed`/`resolved` vocabulary. The wayfinder frontier (docs/agents/issue-tracker.md) is just one example composition of the two generic flags. Reasoning: a memory-store CLI used across many projects with different declared-field schemas (ADR 0013) should not bake one project's own tracker vocabulary into a built-in flag — that couples the general-purpose tool to a single use case and would need a new hardcoded flag for every future dependency-graph-shaped category (deploys/dependsOn, reviews/waitingOn, etc). Verified genericity with a real second schema (deploys/state/dependsOn) in the test suite, not just asserted.
+
+---
+id: 6b2b462c-9229-42ea-82fd-a22914ee4222
+createdAt: 2026-08-15T12:28:44.200Z
+importance: 4
+tags:
+  - release
+  - 2.2.0
+  - adr
+taskId: null
+---
+Provenance enforcement in neuron's write gate (Map -- neuron 2.4.2, ticket 2) will use a small, closed set of built-in declared-field types -- starting with a new commitRef type that validates a value resolves to a real commit via git -- rather than a pluggable field-verifier mechanism where projects supply their own validation code. Rationale: a custom-code verifier is a pluggable-provider surface, which this map's own non-goals explicitly rule out ('No new package, SDK, or pluggable-provider system'), and it would open a code-execution-on-write security question that a closed, named set of validator types avoids entirely. This repo's own decisions/learning categories will NOT get required commitRef/source fields as part of this work -- a decisions entry is routinely written before the commit that resolves it exists (this project's own session-time recording convention), so a required commitRef there would be unsatisfiable at write time. Instead a new git-notes category (required commitRef, durable commentary attached to an already-existing commit) is the mechanism's real live consumer, distinct from the auto-populated read-only git_log_index.
