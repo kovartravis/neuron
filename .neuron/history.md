@@ -2918,3 +2918,15 @@ tags:
 taskId: wayfinder-header-fragment-fix
 ---
 Wayfinder pickup on the neuron-2.4.0 map: claimed and resolved the only frontier ticket, Fix Leaked Header-Field Fragments in 20 Tickets Migrated by Ticket 40 (ticket 703220a7-fb0f-4ef0-9465-c21bb96d5749). Re-audited the full live tickets store (194 entries) rather than trusting the ticket's own '20' title figure, confirmed exactly the 7 previously-identified cases (neuron-2.2.0#06/22/23/24/25/27, architecture-scans-2.1.0#06), and patched each via neuron memory update against ground truth pulled from git history (git show 010590f:.scratch/<effort>/issues/<file>.md, the commit immediately before ticket 42 deleted .scratch/). Chose a one-off content patch over widening the migration script's header-field recognizer since that script has no live second caller. One entry (#25) needed care: only its Priority: line was leaked -- the [!IMPORTANT] callout and postmortem section after it are genuine content that legitimately precedes its real heading in the original source, so a naive strip-to-first-heading approach would have deleted real content. Verified update is a partial patch (existing status/kind/blockedBy survive an update call that omits those flags) before relying on it. npm test 721/721, tsc clean, no src/ changes. Updated the map's Notes, Decisions-so-far, and frontier summary: this map now has zero unclaimed-and-unblocked tickets -- 02/04/05 remain claimed and in progress, 38 is claimed with its rc2 cut unmerged, 03 stays blocked on 02. Next session should either continue 02/04/05's in-progress work or breadth-first grill the map's long-standing 'Everything else 2.4.0 admits' fog item.
+
+---
+id: 22bd591b-c1a3-4252-99d4-a43bb669666d
+createdAt: 2026-08-15T02:20:48.863Z
+importance: 4
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: null
+---
+Wayfinder pickup on the neuron-2.4.0 map: resolved ticket 45 (Give the Tickets Category Real Per-Map Queries), the map's sole frontier ticket. Added a map declared field to the tickets schema and backfilled all 195 live entries (186 children, 9 maps) by re-deriving ownership from each map's own current content, since ticket 40's original slug-to-id table no longer existed. Made --where repeatable (ANDed) and added field!=value negation, added a real kind: map sentinel replacing ticket 40's flagged status: resolved workaround, and implemented neuron memory get <id> as a direct single-row fetch. Corrected a real overcount found live: the ticket's own Context claimed 10 wayfinder maps; the store has exactly 9, matching ticket 40's own effort list. Rewrote docs/agents/issue-tracker.md's Wayfinding operations section against the real per-map query and updated neuron memory --help. 8 new tests added, npm test 743/743, tsc clean, neuron status --check clean (no protocol-block drift). Map's Decisions-so-far and True-frontier footer updated to match; frontier is now none until the next session breadth-first grills what else 2.4.0 admits.

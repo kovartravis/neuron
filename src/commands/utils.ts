@@ -112,8 +112,14 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     includeSuperseded?: boolean;
     /** `memory add` ticket 19: non-interactive resolution of the supersession gate for scheduled/cron writers — skip the write (not an error) when a candidate is found, rather than hard-blocking for a human. */
     ifNovel?: boolean;
-    /** `memory list "<field>=<value>"` — keep entries whose declared field equals value. Schema-agnostic: any category, any field. */
-    where?: string;
+    /**
+     * `memory list --where <field>=<value>` — keep entries whose declared field
+     * equals value. Schema-agnostic: any category, any field. Repeatable
+     * (ticket 45): each occurrence ANDs onto the rest, so `--where a=1 --where
+     * b=2` keeps only entries matching both — previously a second `--where`
+     * silently discarded the first (`args[++i]` last-flag-wins).
+     */
+    where?: string[];
     /** `memory list "<field>:<subfield>=<value>"` — keep entries where every comma-separated id in `field` names another same-category entry with `subfield === value`. */
     refsSatisfy?: string;
   };
@@ -151,7 +157,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let notAReversal: boolean | undefined;
   let includeSuperseded: boolean | undefined;
   let ifNovel: boolean | undefined;
-  let where: string | undefined;
+  const where: string[] = [];
   let refsSatisfy: string | undefined;
   const fields: Record<string, string> = {};
   const fieldFlagIndex = new Map(declaredFields.map(f => [f.flag, f.key]));
@@ -270,7 +276,10 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     } else if (arg === '--if-novel') {
       ifNovel = true;
     } else if (arg === '--where') {
-      where = args[++i];
+      const val = args[++i];
+      if (val !== undefined) {
+        where.push(val);
+      }
     } else if (arg === '--refs-satisfy') {
       refsSatisfy = args[++i];
     } else if (arg.startsWith('-') && arg.length > 1) {
@@ -353,7 +362,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       notAReversal,
       includeSuperseded,
       ifNovel,
-      where,
+      where: where.length > 0 ? where : undefined,
       refsSatisfy,
     }
   };
@@ -540,6 +549,7 @@ Subcommands:
   add "<content>"                Add a new memory entry
   query "<text>"                 Query memories using semantic search
   list                           List recent memory entries
+  get <id>                       Fetch a single memory entry by ID
   delete <id>                    Delete a memory entry by ID
   update <id> "<content>"        Update a memory entry in-place
   consolidate                    Summarize consolidated history logs
@@ -548,7 +558,10 @@ Subcommands:
 Options:
   --category <name>              Specify the category (required for delete, update;
                                  on add it is inferred when omitted, from the
-                                 categories already in the store)
+                                 categories already in the store; on get it is
+                                 optional — ids are unique store-wide, so this
+                                 only asserts the caller's own assumption: a
+                                 mismatch reads as not-found)
   --categories <a,b,...>         Filter by multiple categories (query, list)
   --tags <tag1,tag2,...>         Specify tags (inferred from the store's
                                  vocabulary when omitted)
@@ -585,20 +598,24 @@ Options:
                                  silent). Mutually exclusive with
                                  --supersedes and --not-a-reversal.
   --where <field>=<value>         (list) Keep entries whose declared field
-                                 equals value exactly. Schema-agnostic: any
-                                 category, any declared field.
+  --where <field>!=<value>        equals (or, with !=, does not equal) value
+                                 exactly. Schema-agnostic: any category, any
+                                 declared field. Repeatable — each occurrence
+                                 ANDs onto the rest, e.g. --where status=open
+                                 --where map=<id> --where kind!=map keeps only
+                                 entries matching all three.
   --refs-satisfy                  (list) Keep entries where every comma-
     <field>:<sub>=<value>         separated id in <field> names another entry
                                  in the same category with <sub> === <value>.
                                  A dangling id (no matching entry) fails the
                                  check. Requires exactly one --category. Combine
-                                 with --where to express "what's actionable"
-                                 for any dependency-graph-shaped category, e.g.
-                                 a ticket tracker's frontier: --where
-                                 status=open --refs-satisfy
-                                 blockedBy:status=done. --limit caps the
-                                 filtered result, not the internal fetch used
-                                 to compute it.`;
+                                 with --where (repeated as needed) to express
+                                 "what's actionable" for any dependency-graph-
+                                 shaped category, e.g. a per-map wayfinder
+                                 frontier: --where status=unclaimed --where
+                                 map=<id> --refs-satisfy blockedBy:status=
+                                 resolved. --limit caps the filtered result,
+                                 not the internal fetch used to compute it.`;
 
 /**
  * `MEMORY_HELP` plus a per-category listing of this project's declared

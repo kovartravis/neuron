@@ -409,7 +409,12 @@ describe('CLI Command: memory', () => {
           '        type: enum',
           '        values: [unclaimed, claimed, resolved]',
           '        default: unclaimed',
+          '      kind:',
+          '        type: enum',
+          '        values: [task, map]',
           '      blockedBy:',
+          '        type: string',
+          '      map:',
           '        type: string',
           '  deploys:',
           '    fields:',
@@ -591,6 +596,185 @@ describe('CLI Command: memory', () => {
       expect(ids).toContain(stillMigrating.id); // 'queued' with no dependency at all — ready
       expect(ids).not.toContain(stillWaiting.id); // depends on stillMigrating, which is still 'queued'
       expect(ids).not.toContain(migration.id); // state is 'done', not 'queued'
+    });
+
+    /**
+     * Ticket 45: `--where` used to accept exactly one clause (`args[++i]`,
+     * last-flag-wins), so a per-map frontier query (`status=X` AND `map=Y`)
+     * had no way to compose in one `list` call. Repeated `--where` now ANDs.
+     */
+    describe('compound --where (ticket 45)', () => {
+      const addTicketWithMap = (content: string, status: string, map: string, blockedBy?: string): { id: string } =>
+        JSON.parse(
+          execSync(
+            `node ${cliPath()} memory add "${content}" --category tickets --status ${status} --map ${map}` +
+              (blockedBy ? ` --blocked-by "${blockedBy}"` : ''),
+            { env: envFor(), cwd: projectDir }
+          ).toString()
+        );
+
+      it('ANDs two --where occurrences instead of the second silently winning', () => {
+        const mapA = 'map-a-11111111-1111-1111-1111-111111111111';
+        const mapB = 'map-b-22222222-2222-2222-2222-222222222222';
+        const inA = addTicketWithMap('Ticket on map A', 'unclaimed', mapA);
+        const inB = addTicketWithMap('Ticket on map B', 'unclaimed', mapB);
+
+        const scopedToA = JSON.parse(
+          execSync(
+            `node ${cliPath()} memory list --category tickets --where "status=unclaimed" --where "map=${mapA}"`,
+            { env: envFor(), cwd: projectDir }
+          ).toString()
+        );
+        const ids = scopedToA.map((e: any) => e.id);
+        expect(ids).toContain(inA.id);
+        expect(ids).not.toContain(inB.id);
+      });
+
+      it('composes a real per-map frontier: status=unclaimed AND map=<id> AND blockedBy satisfied', () => {
+        const thisMap = 'map-c-33333333-3333-3333-3333-333333333333';
+        const otherMap = 'map-d-44444444-4444-4444-4444-444444444444';
+        const blocker = addTicketWithMap('Blocker', 'unclaimed', thisMap);
+        const blocked = addTicketWithMap('Blocked', 'unclaimed', thisMap, blocker.id);
+        const readyOnThisMap = addTicketWithMap('Ready', 'unclaimed', thisMap);
+        const readyOnOtherMap = addTicketWithMap('Ready elsewhere', 'unclaimed', otherMap);
+        const claimedOnThisMap = addTicketWithMap('Claimed', 'claimed', thisMap);
+
+        const perMapFrontier = (): any[] =>
+          JSON.parse(
+            execSync(
+              `node ${cliPath()} memory list --category tickets --where "status=unclaimed" --where "map=${thisMap}" --refs-satisfy "blockedBy:status=resolved"`,
+              { env: envFor(), cwd: projectDir }
+            ).toString()
+          );
+
+        let ids = perMapFrontier().map((e: any) => e.id);
+        expect(ids).toContain(blocker.id);
+        expect(ids).toContain(readyOnThisMap.id);
+        expect(ids).not.toContain(blocked.id); // blocker unresolved
+        expect(ids).not.toContain(readyOnOtherMap.id); // wrong map
+        expect(ids).not.toContain(claimedOnThisMap.id); // not unclaimed
+
+        execSync(`node ${cliPath()} memory update ${blocker.id} "Blocker" --category tickets --status resolved`, {
+          env: envFor(),
+          cwd: projectDir,
+        });
+        ids = perMapFrontier().map((e: any) => e.id);
+        expect(ids).toContain(blocked.id); // blocker now resolved
+      });
+
+      it('supports field!=value negation, e.g. excluding map entries from a global frontier', () => {
+        const map1 = addTicketWithMap('placeholder', 'unclaimed', 'irrelevant'); // real child, kind unset
+        execSync(
+          `node ${cliPath()} memory add "A real map" --category tickets --kind map`,
+          { env: envFor(), cwd: projectDir }
+        );
+
+        const out = JSON.parse(
+          execSync(`node ${cliPath()} memory list --category tickets --where "kind!=map"`, {
+            env: envFor(),
+            cwd: projectDir,
+          }).toString()
+        );
+        const ids = out.map((e: any) => e.id);
+        expect(ids).toContain(map1.id);
+        expect(out.every((e: any) => e.fields.kind !== 'map')).toBe(true);
+      });
+    });
+  });
+
+  /**
+   * Ticket 45: single-entry fetch by id — the escape hatch that used to mean
+   * pulling the whole category via `list --json` and filtering client-side.
+   */
+  describe('memory get', () => {
+    const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    let projectDir: string;
+
+    beforeEach(() => {
+      projectDir = path.join(tempDbDir, `proj-get-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(projectDir, { recursive: true });
+      fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
+    });
+
+    const envFor = () => ({
+      ...process.env,
+      NEURON_DB_PATH: tempDbPath,
+      NEURON_MOCK_EMBEDDER: 'true',
+    });
+
+    it('round-trips a known id, matching the equivalent list --json entry exactly', () => {
+      const added = JSON.parse(
+        execSync(`node ${cliPath()} memory add "A real entry" --category learning --importance 4`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+
+      const got = JSON.parse(
+        execSync(`node ${cliPath()} memory get ${added.id}`, { env: envFor(), cwd: projectDir }).toString()
+      );
+      const listed = JSON.parse(
+        execSync(`node ${cliPath()} memory list --category learning --limit 100`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      ).find((e: any) => e.id === added.id);
+
+      expect(got).toEqual(listed);
+      expect(got.content).toBe('A real entry');
+    });
+
+    it('reports not_found for an id that does not exist', () => {
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory get some-nonexistent-id`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+      expect(out).toEqual({ status: 'not_found', id: 'some-nonexistent-id' });
+    });
+
+    it('reports not_found when --category does not match the entry, without requiring --category to match', () => {
+      const added = JSON.parse(
+        execSync(`node ${cliPath()} memory add "content" --category history`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+
+      // No --category at all: found regardless.
+      const gotNoCategory = JSON.parse(
+        execSync(`node ${cliPath()} memory get ${added.id}`, { env: envFor(), cwd: projectDir }).toString()
+      );
+      expect(gotNoCategory.id).toBe(added.id);
+
+      // Wrong --category: not_found, even though the id is real.
+      const gotWrongCategory = JSON.parse(
+        execSync(`node ${cliPath()} memory get ${added.id} --category learning`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+      expect(gotWrongCategory).toEqual({ status: 'not_found', id: added.id });
+
+      // Right --category: found.
+      const gotRightCategory = JSON.parse(
+        execSync(`node ${cliPath()} memory get ${added.id} --category history`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+      expect(gotRightCategory.id).toBe(added.id);
+    });
+
+    it('refuses an unquoted extra argument the same way delete does', () => {
+      expect(() => {
+        execSync(`node ${cliPath()} memory get some-id extra-word`, {
+          env: envFor(),
+          cwd: projectDir,
+          stdio: 'pipe',
+        });
+      }).toThrow(/expects a single id argument.*got 2 bare arguments/s);
     });
   });
 });
