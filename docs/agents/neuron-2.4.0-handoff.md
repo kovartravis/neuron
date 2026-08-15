@@ -46,8 +46,9 @@ re-ran the full suite clean before opening a PR.
 
 **Current live state**:
 - npm `rc` dist-tag: `2.4.0-rc2` (real, published 2026-08-13). This
-  session's `feat/2.4.0-rc3` branch bumps to `2.4.0-rc3` and is in PR,
-  not yet merged/published as of this doc.
+  session's `feat/2.4.0-rc3` branch bumps to `2.4.0-rc3` and is in
+  [PR #8](https://github.com/kovartravis/neuron/pull/8), not yet
+  merged/published as of this doc.
 - `main` has ticket work through 42 plus the `--where`/`--refs-satisfy`
   memory-list generalization. It does **not** yet have tickets 43, 44, 45,
   04, 05, or the header-fragment-fix — those land with this session's PR.
