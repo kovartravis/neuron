@@ -63,7 +63,11 @@
     "postinstall": "node -e \"if (process.platform === 'android') { try { require('child_process').execSync('termux-fix-shebang dist/cli.js 2>/dev/null || true'); } catch(e){} }\"",
     "start": "node ./dist/cli.js",
     "bench:swebench-ab:discovery": "node benchmarks/token-ab/run-swebench-ab.mjs --arms=memory,control",
-    "bench:hint-follow": "node benchmarks/hint-follow/analyze.mjs"
+    "bench:hint-follow": "node benchmarks/hint-follow/analyze.mjs",
+    "bench:write-compliance-ab": "node benchmarks/write-compliance-ab/run.mjs",
+    "bench:write-compliance-ab:dry-run": "node benchmarks/write-compliance-ab/run.mjs --dry-run",
+    "bench:write-compliance-ab:hard": "node benchmarks/write-compliance-ab/run-hard.mjs",
+    "bench:write-compliance-ab:hard:dry-run": "node benchmarks/write-compliance-ab/run-hard.mjs --dry-run"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",

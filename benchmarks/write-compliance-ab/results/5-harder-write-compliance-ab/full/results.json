@@ -1,0 +1,837 @@
+{
+  "generatedAt": "2026-08-16T04:07:44.942Z",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "arms": [
+    "control",
+    "nudge",
+    "explicit-instruction"
+  ],
+  "dryRun": false,
+  "taskCount": 2,
+  "repeats": 5,
+  "sessionCount": 30,
+  "sessionsSkippedByCap": 0,
+  "hardCapUsd": 2,
+  "totalCostUsd": 1.5616,
+  "summary": {
+    "armStats": {
+      "control": {
+        "sessions": 10,
+        "complied": 2,
+        "complianceRate": 0.2,
+        "taskSolved": 10,
+        "taskSolveRate": 1,
+        "costUsd": 0.2802
+      },
+      "nudge": {
+        "sessions": 10,
+        "complied": 10,
+        "complianceRate": 1,
+        "taskSolved": 10,
+        "taskSolveRate": 1,
+        "costUsd": 0.8215
+      },
+      "explicit-instruction": {
+        "sessions": 10,
+        "complied": 10,
+        "complianceRate": 1,
+        "taskSolved": 10,
+        "taskSolveRate": 1,
+        "costUsd": 0.4599
+      }
+    },
+    "margins": {
+      "nudge": 0.8,
+      "explicit-instruction": 0.8
+    }
+  },
+  "results": [
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r0",
+      "turns": 3,
+      "wallMs": 8914,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in average() in stats.mjs, added a new sum() function, verified lint-check passes with no console.log, and added CHANGELOG.md summarizing the change.",
+      "tokens": {
+        "input": 7872,
+        "output": 643,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8515,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r0-SJuOHJ/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r0-SJuOHJ/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed the off-by-one loop bug in average and added a new sum function to stats.mjs.\nEOF\n"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "stats-multi-step-nudge-r0",
+      "turns": 5,
+      "wallMs": 17621,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a sum() function to stats.mjs, confirmed test-average.mjs, test-sum.mjs, and lint-check.mjs all pass, created CHANGELOG.md, and recorded the fix/decision in the neuron memory store.",
+      "tokens": {
+        "input": 15695,
+        "output": 1355,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 17050,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r0-vEajld/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r0-vEajld/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs\nnode test-sum.mjs\nnode lint-check.mjs\necho \"- Fixed the off-by-one loop bug in average() and added a new sum() function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r0-vEajld/repo && neuron memory add --category learning \"Fix for average() off-by-one bug in stats.mjs: loop used 'i < nums.length - 1' which skipped the last element, causing incorrect sums/averages in test-average.mjs. Root cause was an incorrect loop bound. Fix: change loop condition to 'i < nums.length' so all elements are summed before dividing by nums.length.\" --importance 4\nneuron memory add --category decisions \"Added sum(nums) to stats.mjs using the same iterative accumulation pattern as average() for consistency; empty array returns 0 naturally since total starts at 0.\" --task-id stats-fix-1\nneuron memory add --category learning \"lint-check.mjs fails stats.mjs if it contains console.log; avoid adding debug logging to stats.mjs, use test files' console.log for pass/fail reporting instead.\" --task-id stats-fix-1 --importance 4\nneuron memory add --category history \"Fixed average() bug, added sum() to stats.mjs, verified lint-check and both tests pass, and wrote CHANGELOG.md.\" --task-id stats-fix-1\n"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "stats-multi-step-explicit-instruction-r0",
+      "turns": 5,
+      "wallMs": 15415,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a sum() function, confirmed test-average.mjs, test-sum.mjs, and lint-check.mjs all pass, and wrote CHANGELOG.md.",
+      "tokens": {
+        "input": 15535,
+        "output": 1316,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16851,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r0-58wkuT/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r0-58wkuT/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one loop bug in average and added a new sum function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r0-58wkuT/repo && neuron memory add --category learning \"Fix for failing average test in stats.mjs: the for-loop condition used 'i < nums.length - 1', causing the last element to be excluded from the sum and producing an incorrect average. Root cause was an off-by-one error in the loop bound. Fixed by changing the condition to 'i < nums.length' so all elements are summed before dividing by nums.length.\" --importance 4",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r0-58wkuT/repo && neuron memory add --category decisions \"Decided to fix average() off-by-one loop bound and add a new sum() helper in stats.mjs, keeping console.log-free for lint-check.mjs compliance.\" --task-id stats-fix-1 && neuron memory add --category learning \"Fix for failing average test: loop bound 'i < nums.length - 1' skipped last element; changed to 'i < nums.length'. Also added sum(nums) reducer for test-sum.mjs, avoiding console.log to keep lint-check.mjs passing.\" --task-id stats-fix-1 && neuron memory add --category history \"Fixed stats.mjs average bug, added sum(), verified tests and lint pass, wrote CHANGELOG.md.\" --task-id stats-fix-1"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "control",
+      "sessionLabel": "text-multi-step-control-r0",
+      "turns": 3,
+      "wallMs": 8100,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase bug in text.mjs to capitalize all words, added wordCount function, verified lint passes with no console.log, and added CHANGELOG.md.",
+      "tokens": {
+        "input": 7965,
+        "output": 651,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8616,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r0-RR29Fs/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r0-RR29Fs/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs\nnode test-wordcount.mjs\nnode lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed titleCase to capitalize every word and added a new wordCount function to count whitespace-separated words.\nEOF\n"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "text-multi-step-nudge-r0",
+      "turns": 18,
+      "wallMs": 68043,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize all words, added a wordCount function, confirmed all tests and lint-check pass, wrote CHANGELOG.md, and recorded decisions/learning/history memory entries for the fix.",
+      "tokens": {
+        "input": 102480,
+        "output": 4880,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 107360,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  if (!str.trim()) return 0;\n  return str.trim().split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && echo \"- Fixed titleCase to capitalize every word and added a wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category decisions \"Fixed titleCase bug in text.mjs (was only capitalizing first word, index 0, instead of every word) by mapping capitalization over all words instead of conditioning on index. Added wordCount(str) which trims and splits on whitespace regex, returning 0 for empty/whitespace-only strings. Chose regex split(/\\\\s+/) over naive split(' ') to correctly handle multiple spaces.\" --task-id text-mjs-fixes\nneuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word (i===0 check) instead of every word in the string. Root cause was an incorrect conditional in the .map callback that only applied capitalization at index 0. Resolution: change map callback to (w) => w.length ? w[0].toUpperCase() + w.slice(1) : w, applying capitalization to all words unconditionally.\" --task-id text-mjs-fixes --importance 4\nneuron memory add --category history \"Fixed titleCase bug, added wordCount function, verified lint-check passes, and wrote CHANGELOG.md summarizing the changes.\" --task-id text-mjs-fixes",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory list --task-id text-mjs-fixes 2>&1 | head -50",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory list --category learning --task-id text-mjs-fixes 2>&1; neuron memory list --category history --task-id text-mjs-fixes 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word (i===0 check) instead of every word in the string. Root cause was an incorrect conditional in the .map callback that only applied capitalization at index 0. Resolution: change map callback to (w) => w.length ? w[0].toUpperCase() + w.slice(1) : w, applying capitalization to all words unconditionally.\" --task-id text-mjs-fixes --importance 4\nneuron memory add --category history \"Fixed titleCase bug, added wordCount function, verified lint-check passes, and wrote CHANGELOG.md summarizing the changes.\" --task-id text-mjs-fixes\nneuron memory list --task-id text-mjs-fixes 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory list --category learning 2>&1 | tail -5\necho \"---\"\nneuron memory list --category history 2>&1 | tail -5",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && cat neuron.yaml 2>&1; neuron memory add --category learning \"test entry\" 2>&1; neuron memory list --category learning 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && find .neuron -type f | xargs grep -l \"titleCase test failure\" 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word instead of every word. Root cause was a conditional in the .map callback that applied capitalization only at index 0. Resolution: change the map callback to (w) => w.length ? w[0].toUpperCase() + w.slice(1) : w so every word is capitalized.\" --task-id text-mjs-fixes --importance 4\nneuron memory add --category history \"Fixed titleCase bug and added wordCount function in text.mjs; lint-check and all tests pass; CHANGELOG.md added.\" --task-id text-mjs-fixes\nneuron memory list --category learning 2>&1\nneuron memory list --category history 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && find .neuron -type f -newer CHANGELOG.md -exec echo {} \\; -exec cat {} \\;",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category learning \"Short test 2\" --task-id abc123 -v 2>&1\nsleep 1\ncat .neuron/learning.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category learning \"Short test 2\" --task-id abc123 2>&1\nsleep 2\ncat .neuron/learning.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word instead of every word. Root cause was a conditional in the .map callback that applied capitalization only at index 0. Resolution: change the map callback to (w) => w.length ? w[0].toUpperCase() + w.slice(1) : w so every word is capitalized.\" --task-id text-mjs-fixes --importance 4 2>&1\nsleep 2\ncat .neuron/learning.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r0-lX0U0n/repo && neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word instead of every word. Root cause was a conditional in the .map callback that applied capitalization only at index 0. Resolution: change the map callback to (w) => w.length ? w[0].toUpperCase() + w.slice(1) : w so every word is capitalized.\" --task-id text-mjs-fixes --importance 4 --not-a-reversal 2>&1\nsleep 1\nneuron memory add --category history \"Fixed titleCase bug and added wordCount function in text.mjs; lint-check and all tests pass; CHANGELOG.md added.\" --task-id text-mjs-fixes --not-a-reversal 2>&1\nsleep 1\nneuron memory list --category learning --task-id text-mjs-fixes 2>&1\nneuron memory list --category history --task-id text-mjs-fixes 2>&1"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "text-multi-step-explicit-instruction-r0",
+      "turns": 5,
+      "wallMs": 14035,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase bug in text.mjs (was only capitalizing first word), added wordCount function, confirmed lint-check passes with no console.log, and created CHANGELOG.md summarizing the change.",
+      "tokens": {
+        "input": 14514,
+        "output": 1132,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 15646,
+      "bashCommands": [
+        "cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r0-BxIUOR/repo/text.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r0-BxIUOR/repo && cat test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r0-BxIUOR/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs; node test-wordcount.mjs; node lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r0-BxIUOR/repo && cat > CHANGELOG.md << 'EOF'\n- Fixed titleCase to capitalize every word (not just the first) and added a new wordCount function that counts whitespace-separated words.\nEOF\ncat CHANGELOG.md\n\nneuron memory add --category learning \"Fix for titleCase test failure in text.mjs: symptom was that only the first word got capitalized, so 'a b c' produced 'A b c' instead of 'A B C'. Root cause: the .map callback only applied toUpperCase when index i===0, leaving other words unchanged. Resolution: changed the map to capitalize every non-empty word unconditionally, e.g. w.length ? w[0].toUpperCase() + w.slice(1) : w, which made test-titlecase.mjs pass.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r1",
+      "turns": 4,
+      "wallMs": 13173,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in average() in stats.mjs, added a working sum() function, confirmed lint-check.mjs passes with no console.log, and created CHANGELOG.md summarizing the changes; all tests pass.",
+      "tokens": {
+        "input": 11444,
+        "output": 1059,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 12503,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r1-CuV5wS/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r1-CuV5wS/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  return nums.reduce((acc, n) => acc + n, 0);\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one loop bug in average() and added a new sum() function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r1-CuV5wS/repo && neuron memory add --category learning \"Fix for failing test-average.mjs in stats.mjs: average() summed nums[i] for i < nums.length - 1, an off-by-one bug excluding the last element, causing incorrect averages. Root cause was the loop condition 'i < nums.length - 1' instead of 'i < nums.length'. Fix: change loop bound to nums.length so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) sum += nums[i];'. Also added a sum(nums) function using reduce, defaulting to 0 for empty arrays, without adding any console.log (to keep lint-check.mjs passing).\" --importance 4\nneuron memory add --category history \"Fixed off-by-one bug in average() in stats.mjs, added sum() function, verified lint-check.mjs passes, and wrote CHANGELOG.md summarizing the change.\" --task-id stats-fix-1\n"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "stats-multi-step-nudge-r1",
+      "turns": 6,
+      "wallMs": 19791,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a sum() function to stats.mjs, verified test-average.mjs, test-sum.mjs, and lint-check.mjs all pass, created CHANGELOG.md, and recorded the fix in the memory store.",
+      "tokens": {
+        "input": 19398,
+        "output": 1578,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 20976,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r1-iebEho/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r1-iebEho/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  return nums.reduce((acc, n) => acc + n, 0);\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed the off-by-one loop bug in `average` and added a new `sum` function to stats.mjs.\nEOF\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r1-iebEho/repo && neuron memory add --category learning \"Fix for failing test-average.mjs in stats.mjs: the average() function used a loop condition 'i < nums.length - 1', causing it to skip the last array element and produce an incorrect sum/average. Root cause was an off-by-one error in the for-loop bound. Fix: change the loop condition to 'i < nums.length' so all elements are included, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'. Also added a new sum(nums) function using reduce, and ensured no console.log statements remained in stats.mjs to satisfy lint-check.mjs.\" --importance 4\nneuron memory add --category decisions \"Chose to fix average()'s off-by-one loop bound and implement sum() via Array.reduce for conciseness and correctness, keeping stats.mjs free of debug console.log statements to satisfy lint-check.mjs.\" --task-id stats-fix-001\nneuron memory add --category learning \"Fix for off-by-one bug in average() in stats.mjs: loop used 'i < nums.length - 1' skipping last element; changed to 'i < nums.length'. Added sum(nums) using reduce; removed any console.log to pass lint-check.mjs.\" --task-id stats-fix-001 --importance 4\nneuron memory add --category history \"Fixed average() bug, added sum(), verified all tests and lint pass, wrote CHANGELOG.md.\" --task-id stats-fix-001\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r1-iebEho/repo && neuron memory add --category history \"Fixed average() bug, added sum(), verified all tests and lint pass, wrote CHANGELOG.md.\" --task-id stats-fix-001"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "stats-multi-step-explicit-instruction-r1",
+      "turns": 5,
+      "wallMs": 14758,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in average(), added a passing sum() function, verified lint-check passes with no console.log, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 15467,
+        "output": 1173,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16640,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r1-pJYs2W/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r1-pJYs2W/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one bug in average and added a new sum function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r1-pJYs2W/repo && neuron memory add --category learning \"Fix for failing test-average.mjs: average() looped 'i < nums.length - 1', excluding the last element from the sum and producing wrong averages. Root cause was an off-by-one error in the for-loop bound. Fix: change loop condition to 'i < nums.length' so all elements are summed before dividing by nums.length. Also added a sum(nums) function reusing the same full-length loop pattern, and confirmed no console.log statements remained in stats.mjs so lint-check.mjs passes.\" --importance 4",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r1-pJYs2W/repo && neuron memory add --category history \"Fixed off-by-one bug in average(), added sum() to stats.mjs, verified lint-check passes, and wrote CHANGELOG.md.\" --task-id stats-fix-1"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "control",
+      "sessionLabel": "text-multi-step-control-r1",
+      "turns": 3,
+      "wallMs": 8086,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase to capitalize all words, added wordCount function, confirmed lint passes, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 8048,
+        "output": 656,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8704,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r1-oEzLhK/repo && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r1-oEzLhK/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  return str.trim() === '' ? 0 : str.trim().split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word and added wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "text-multi-step-nudge-r1",
+      "turns": 6,
+      "wallMs": 20026,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first), added a wordCount function, verified no console.log remains, created CHANGELOG.md, and recorded the fix/decision/history in the neuron memory store.",
+      "tokens": {
+        "input": 19755,
+        "output": 1557,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 21312,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r1-PwRTJz/repo && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r1-PwRTJz/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  return trimmed === '' ? 0 : trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word and added a wordCount function.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r1-PwRTJz/repo && neuron memory add --category learning \"Fix for failing test-titlecase.mjs: titleCase in text.mjs only capitalized the first word of the string instead of every word. Root cause was the map callback only applying .toUpperCase() when index===0. Resolution: change the map to capitalize every non-empty word: w.length ? w[0].toUpperCase() + w.slice(1) : w. Also added wordCount(str) using trim() + split(/\\\\s+/) with empty-string guard returning 0, and confirmed no console.log statements remained in text.mjs to satisfy lint-check.mjs.\" --importance 4 --task-id text-mjs-titlecase-wordcount\nneuron memory add --category decisions \"Chose to implement wordCount by trimming the string and splitting on /\\\\s+/, returning 0 for empty/whitespace-only strings, to correctly handle multiple spaces and leading/trailing whitespace without extra dependencies.\" --task-id text-mjs-titlecase-wordcount\nneuron memory add --category history \"Fixed titleCase bug in text.mjs, added wordCount function, passed lint-check, and wrote CHANGELOG.md.\" --task-id text-mjs-titlecase-wordcount\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r1-PwRTJz/repo && neuron memory add --category history \"Fixed titleCase bug in text.mjs, added wordCount function, passed lint-check, and wrote CHANGELOG.md.\" --task-id text-mjs-titlecase-wordcount"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "text-multi-step-explicit-instruction-r1",
+      "turns": 4,
+      "wallMs": 15199,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase to capitalize every word (not just the first), added a passing wordCount function, verified lint-check passes with no console.log, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 11797,
+        "output": 1064,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 12861,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r1-ALw6wM/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r1-ALw6wM/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r1-ALw6wM/repo && echo \"- Fixed titleCase to capitalize every word instead of only the first, and added a new wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md\n\nneuron memory add --category learning \"Fix for failing test-titlecase.mjs: titleCase only capitalized the first word in the string because the map callback used index === 0 to gate capitalization. Root cause was the conditional check on index i instead of applying capitalization to every word. Resolution: change map((w, i) => i === 0 ? ... : w) to map((w) => w.length ? w[0].toUpperCase() + w.slice(1) : w) so every word is capitalized, guarding against empty strings from repeated spaces. Also added wordCount(str) using str.trim().split(/\\\\s+/).length with an empty check to return 0 for blank input.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r2",
+      "turns": 3,
+      "wallMs": 9629,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in average(), added a passing sum() function, verified lint-check passes with no console.log, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 8385,
+        "output": 894,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 9279,
+      "bashCommands": [
+        "cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r2-YNK2dF/repo/stats.mjs; echo ---; cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r2-YNK2dF/repo/test-average.mjs; echo ---; cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r2-YNK2dF/repo/test-sum.mjs; echo ---; cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r2-YNK2dF/repo/lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r2-YNK2dF/repo\ncat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs\nnode test-sum.mjs\nnode lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed the average function's off-by-one loop bug and added a new sum function to stats.mjs.\nEOF\n"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "stats-multi-step-nudge-r2",
+      "turns": 6,
+      "wallMs": 17100,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in average() in stats.mjs, added a sum() function, confirmed lint-check passes with no console.log, created CHANGELOG.md, and recorded the fix in the neuron memory store.",
+      "tokens": {
+        "input": 18831,
+        "output": 1305,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 20136,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r2-j1O6CA/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r2-j1O6CA/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed the average function's off-by-one loop bug and added a new sum function to stats.mjs.\nEOF\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r2-j1O6CA/repo && neuron memory add --category learning \"Fix for failing test-average.mjs: average() in stats.mjs looped 'i < nums.length - 1', skipping the last element and producing an incorrect sum/average. Root cause was an off-by-one error in the for-loop bound. Fix: change the loop condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'. Also added a sum(nums) function using the same correct full-length loop pattern, and verified stats.mjs has no console.log so lint-check.mjs passes.\" --importance 4\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r2-j1O6CA/repo && neuron memory add --category history \"Fixed off-by-one bug in average(), added sum() function, and verified lint-check.mjs passes; wrote CHANGELOG.md.\" --task-id stats-fix-2\n"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "stats-multi-step-explicit-instruction-r2",
+      "turns": 10,
+      "wallMs": 24815,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a passing sum() function to stats.mjs, confirmed lint-check.mjs passes (no console.log), created CHANGELOG.md, and recorded the fix in the neuron memory store.",
+      "tokens": {
+        "input": 35941,
+        "output": 2016,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 37957,
+      "bashCommands": [
+        "cd repo 2>/dev/null; cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs 2>&1 | head -200",
+        "cd repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs; echo \"---\"; node test-sum.mjs; echo \"---\"; node lint-check.mjs",
+        "cd repo && node test-average.mjs; echo \"exit: $?\"; node test-sum.mjs; echo \"exit: $?\"; node lint-check.mjs; echo \"exit: $?\"\ncat > CHANGELOG.md << 'EOF'\n- Fixed the off-by-one loop bug in average() and added a new sum() function to stats.mjs.\nEOF\ncat CHANGELOG.md",
+        "cd repo && node --version; node test-average.mjs 2>&1; echo EXIT=$?",
+        "cd repo && cat -A stats.mjs | head -20",
+        "cd repo && ls -la stats.mjs; pwd; cat stats.mjs",
+        "cd \"/var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r2-39DPPv/repo\" && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\ncat stats.mjs\nnode test-average.mjs; echo EXIT=$?\nnode test-sum.mjs; echo EXIT=$?\nnode lint-check.mjs; echo EXIT=$?\n",
+        "cd \"/var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r2-39DPPv/repo\" && cat CHANGELOG.md\nneuron memory add --category learning \"Fix for average() off-by-one bug in stats.mjs: test-average.mjs failed with 2 !== 4 because the loop condition was 'i < nums.length - 1', skipping the last element of the array. Root cause: incorrect loop bound excluded the final array element from the sum. Fix: change loop condition to 'i < nums.length' so all elements are summed before dividing by nums.length. Also added a sum(nums) function using the same correct full-length loop pattern, and verified no console.log statements remained in stats.mjs so lint-check.mjs passes.\" --importance 4",
+        "cd \"/var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r2-39DPPv/repo\" && neuron memory add --category history \"Fixed off-by-one bug in average() and added sum() to stats.mjs; all tests and lint pass; CHANGELOG.md updated.\" --task-id stats-fix-1"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "control",
+      "sessionLabel": "text-multi-step-control-r2",
+      "turns": 7,
+      "wallMs": 21058,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the titleCase bug in text.mjs (now capitalizes every word), added a wordCount function, confirmed lint-check and both tests pass, and created CHANGELOG.md summarizing the change.",
+      "tokens": {
+        "input": 23407,
+        "output": 1691,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 25098,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r2-ZK7R8V/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r2-ZK7R8V/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  return str.trim() === '' ? 0 : str.trim().split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r2-ZK7R8V/repo && echo \"- Fixed titleCase to capitalize every word instead of just the first, and added a new wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r2-ZK7R8V/repo && neuron memory add --category learning \"Fix for titleCase test failure: titleCase only capitalized the first word of the string because the map callback only applied toUpperCase when index===0. Root cause was the conditional (i===0 ? ... : w) which left non-first words unchanged. Fix: apply capitalization to every word: w.length ? w[0].toUpperCase()+w.slice(1) : w. Also added wordCount(str) using str.trim().split(/\\\\s+/).length, returning 0 for empty/whitespace-only strings.\" --importance 4",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r2-ZK7R8V/repo && neuron memory add --category decisions \"Chose to fix titleCase to capitalize every word (not just first) to match expected title-case semantics per test assertions; implemented wordCount using trim+split on whitespace regex for simplicity and to correctly handle empty string edge case.\" --task-id text-mjs-fix\nneuron memory add --category learning \"Fix for titleCase test failure: only first word was capitalized due to conditional (i===0 ? ... : w). Fixed by capitalizing every word: w.length ? w[0].toUpperCase()+w.slice(1) : w. Added wordCount(str) via str.trim().split(/\\\\s+/).length (0 for empty).\" --importance 4 --task-id text-mjs-fix\nneuron memory add --category history \"Fixed titleCase bug, added wordCount function, verified lint-check passes, and created CHANGELOG.md.\" --task-id text-mjs-fix",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r2-ZK7R8V/repo && node test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs && cat CHANGELOG.md"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "text-multi-step-nudge-r2",
+      "turns": 5,
+      "wallMs": 17027,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase, added wordCount, verified lint passes, created CHANGELOG.md, and recorded the fix/decision/history entries in the memory store.",
+      "tokens": {
+        "input": 15626,
+        "output": 1398,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 17024,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r2-wrvobQ/repo && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r2-wrvobQ/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  return str.trim() === '' ? 0 : str.trim().split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs; node test-wordcount.mjs; node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word and added wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r2-wrvobQ/repo\nneuron memory add --category learning \"Fix for failing test-titlecase.mjs in text.mjs: titleCase only capitalized the first word of the string instead of every word, because the map callback only applied toUpperCase when index===0. Root cause: incorrect conditional gating capitalization to index 0 only. Resolution: changed map callback to capitalize every non-empty word: str.split(' ').map(w => w.length ? w[0].toUpperCase()+w.slice(1) : w).join(' '). Edge case: empty-string words (e.g. from double spaces) are left unchanged to avoid errors on w[0].\" --importance 4\nneuron memory add --category decisions \"Added wordCount(str) to text.mjs alongside fixing titleCase; wordCount trims the string and splits on /\\s+/, returning 0 for empty/whitespace-only strings, to satisfy test-wordcount.mjs without adding console.log debug statements (kept lint-check.mjs passing).\" --task-id text-mjs-fixes\nneuron memory add --category learning \"Rule: when adding new functions to text.mjs, avoid console.log debug statements since lint-check.mjs fails the build if any console.log call exists in text.mjs; verify with 'node lint-check.mjs' after edits.\" --task-id text-mjs-fixes\nneuron memory add --category history \"Fixed titleCase bug, added wordCount, verified lint-check passes, and wrote CHANGELOG.md documenting the change to text.mjs.\" --task-id text-mjs-fixes\n"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "text-multi-step-explicit-instruction-r2",
+      "turns": 5,
+      "wallMs": 15945,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase bug in text.mjs, added wordCount function, confirmed lint-check passes, wrote CHANGELOG.md, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 15804,
+        "output": 1287,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 17091,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r2-TGTqiL/repo && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r2-TGTqiL/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs; node test-wordcount.mjs; node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word and added a wordCount function.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r2-TGTqiL/repo && neuron memory add --category learning \"Fix for test-titlecase.mjs failure: titleCase in text.mjs only capitalized the first word of the string (index i===0 check in map), so 'a b c' produced 'A b c' instead of 'A B C'. Root cause was the conditional only applying capitalization on the first array element. Fix: remove the index check and capitalize every non-empty word: w.length ? w[0].toUpperCase() + w.slice(1) : w. Edge case: guard against empty-string words (e.g. from double spaces) to avoid calling toUpperCase on undefined.\" --importance 4",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r2-TGTqiL/repo && neuron memory add --category decisions \"Chose to fix titleCase by capitalizing every word rather than special-casing index 0, and implemented wordCount using trim + split on whitespace regex to correctly return 0 for empty strings.\" --task-id text-mjs-fix && neuron memory add --category history \"Fixed titleCase bug, added wordCount, verified lint-check passes, and wrote CHANGELOG.md.\" --task-id text-mjs-fix"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r3",
+      "turns": 3,
+      "wallMs": 8371,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a sum() function to stats.mjs, confirmed lint-check passes with no console.log, and wrote CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 7862,
+        "output": 643,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8505,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r3-YgcOxf/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r3-YgcOxf/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed the average function's loop bound and added a new sum function to stats.mjs.\nEOF\n"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "stats-multi-step-nudge-r3",
+      "turns": 11,
+      "wallMs": 33716,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a passing sum() function, confirmed lint-check.mjs passes with no console.log calls, created CHANGELOG.md, and recorded the fix in the neuron memory store (learning + history entries).",
+      "tokens": {
+        "input": 45797,
+        "output": 2624,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 48421,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one loop bug in average and added a new sum function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory add --category learning \"Fix for average() off-by-one bug in stats.mjs: the loop condition was 'i < nums.length - 1', excluding the last element from the sum and giving wrong averages. Root cause was an incorrect loop bound. Fix: change condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) sum += nums[i];'. Also added a matching sum(nums) function using the same correct loop pattern, and ensured no console.log statements remain in stats.mjs so lint-check.mjs passes.\" --importance 4\nneuron memory add --category history \"Fixed average() off-by-one bug, added sum() function, verified lint passes, and wrote CHANGELOG.md in stats.mjs task.\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory add --category history \"Fixed average() off-by-one bug, added sum() function, verified lint passes, and wrote CHANGELOG.md in stats.mjs task.\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory list --category learning 2>&1 | tail -20; echo \"---\"; neuron memory list --category history 2>&1 | tail -20",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory add --category history \"Fixed average() off-by-one bug, added sum() function, verified lint passes, and wrote CHANGELOG.md in stats.mjs task.\" --task-id 6113f337-10c6-4bd5-8ffc-9d28c89f5a58\necho \"---\"\nneuron memory list --category history 2>&1 | tail -20",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory add --category history \"Fixed average() off-by-one bug, added sum() function, verified lint passes, and wrote CHANGELOG.md in stats.mjs task.\" --task-id stats-fix-2026; echo \"exit:$?\"\nneuron memory list --category history",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory add --category history \"Fixed average() off-by-one bug, added sum() function, verified lint passes, and wrote CHANGELOG.md in stats.mjs task.\" 2>&1; echo \"exit:$?\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r3-cdYr7M/repo && neuron memory add --category history \"Fixed average() off-by-one bug, added sum() function, verified lint passes, and wrote CHANGELOG.md in stats.mjs task.\" --task-id 6113f337-10c6-4bd5-8ffc-9d28c89f5a58 --not-a-reversal\necho \"exit:$?\"\nneuron memory list --category history"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "stats-multi-step-explicit-instruction-r3",
+      "turns": 5,
+      "wallMs": 14042,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a passing sum() function to stats.mjs, confirmed lint-check.mjs passes (no console.log left), and created CHANGELOG.md summarizing the change.",
+      "tokens": {
+        "input": 15305,
+        "output": 1046,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16351,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r3-iCvrX4/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r3-iCvrX4/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs; node test-sum.mjs; node lint-check.mjs\necho \"- Fixed average() off-by-one loop bug and added a new sum() function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "neuron memory add --category learning \"Fix for failing test-average.mjs: average() used 'i < nums.length - 1' in its summation loop, causing it to skip the last element and return incorrect averages (e.g. average([2,4,6]) returned 3 instead of 4). Root cause was an off-by-one error in the for-loop condition. Fix: change the loop condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'. Also added a new sum(nums) function using the same correct loop pattern to satisfy test-sum.mjs.\" --importance 4",
+        "neuron memory add --category history \"Fixed off-by-one bug in average(), added sum() to stats.mjs, verified lint-check passes, and wrote CHANGELOG.md summarizing the change.\" --task-id stats-fix-1"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "control",
+      "sessionLabel": "text-multi-step-control-r3",
+      "turns": 3,
+      "wallMs": 8856,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase bug in text.mjs (now capitalizes every word), added wordCount function, verified lint-check passes, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 8008,
+        "output": 655,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8663,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r3-Bb7KMU/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r3-Bb7KMU/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word and added a wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "text-multi-step-nudge-r3",
+      "turns": 5,
+      "wallMs": 15007,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase bug in text.mjs (now capitalizes every word), added wordCount function, verified lint-check passes with no console.log, created CHANGELOG.md, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 15387,
+        "output": 1228,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16615,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r3-X0LttT/repo && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r3-X0LttT/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  return trimmed.length === 0 ? 0 : trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs\nnode test-wordcount.mjs\nnode lint-check.mjs\necho \"- Fixed titleCase to capitalize every word (not just the first) and added a wordCount function.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r3-X0LttT/repo && \\\nneuron memory add --category learning \"Fix for failing test-titlecase.mjs: titleCase in text.mjs only capitalized the first word of the string instead of every word. Root cause was the map callback using an index check (i === 0) to decide whether to capitalize, rather than applying capitalization to each word. Resolution: change the map to capitalize every non-empty word unconditionally, e.g. .map(w => w.length ? w[0].toUpperCase() + w.slice(1) : w). Also added a wordCount(str) function that trims the string and splits on /\\\\s+/, returning 0 for empty/whitespace-only strings, and verified no console.log statements remained so lint-check.mjs passes.\" --importance 4\nneuron memory add --category history \"Fixed titleCase bug, added wordCount function, and created CHANGELOG.md; all tests and lint-check now pass.\" --task-id text-mjs-fix"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "text-multi-step-explicit-instruction-r3",
+      "turns": 4,
+      "wallMs": 14933,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase to capitalize every word, added wordCount function, verified lint-check passes, and created CHANGELOG.md; recorded decisions/learning/history memory entries.",
+      "tokens": {
+        "input": 12088,
+        "output": 1152,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 13240,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r3-5VIuz2/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r3-5VIuz2/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word instead of only the first, and added a wordCount function.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r3-5VIuz2/repo && neuron memory add --category decisions \"Decided to fix titleCase by capitalizing every word (not just the first) via mapping over each word, and to add wordCount as a separate exported function using trim+split on whitespace regex to handle empty-string edge case (returns 0).\" --task-id text-mjs-fix && neuron memory add --category learning \"Fix for test-titlecase.mjs failing: titleCase only capitalized the first word (map callback only capitalized when i===0) instead of every word. Root cause was the index check `i === 0 ? ... : w` which left all non-first words unmodified. Resolution: change map to `(w) => w.length ? w[0].toUpperCase() + w.slice(1) : w` so every word is capitalized regardless of position. Edge case: preserve empty strings (from consecutive spaces) unchanged rather than erroring on w[0].\" --importance 4 --task-id text-mjs-fix && neuron memory add --category history \"Fixed titleCase bug in text.mjs, added wordCount function, verified lint-check passes, and wrote CHANGELOG.md.\" --task-id text-mjs-fix"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r4",
+      "turns": 3,
+      "wallMs": 7800,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a new sum() function to stats.mjs, verified no console.log statements remain (lint passes), and created CHANGELOG.md summarizing the changes; all tests pass.",
+      "tokens": {
+        "input": 7851,
+        "output": 634,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8485,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r4-GTh863/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-control-r4-GTh863/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the average function's off-by-one loop bug and added a new sum function.\" > CHANGELOG.md\ncat CHANGELOG.md"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "stats-multi-step-nudge-r4",
+      "turns": 5,
+      "wallMs": 16003,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a sum() function to stats.mjs, confirmed lint-check passes, created CHANGELOG.md, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 15135,
+        "output": 1207,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16342,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r4-YLzMTL/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r4-YLzMTL/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one loop bug in average() and added a new sum() function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-nudge-r4-YLzMTL/repo && \\\nneuron memory add --category learning \"Fix for failing test-average.mjs: average() in stats.mjs looped with 'i < nums.length - 1', skipping the last element and undercounting the sum, so averages were wrong for arrays with more than one element. Root cause was an off-by-one error in the for-loop condition. Resolution: change the loop condition to 'i < nums.length' so all elements are summed before dividing by nums.length. Also added a new sum(nums) function reusing the same correct full-array loop pattern, and verified stats.mjs contains no console.log calls to keep lint-check.mjs passing.\" --importance 4\nneuron memory add --category history \"Fixed off-by-one bug in average(), added sum() function, and passing CHANGELOG.md entry to stats.mjs; all tests (test-average.mjs, test-sum.mjs, lint-check.mjs) now pass.\" --task-id stats-fix-sum-add\n"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "stats-multi-step-explicit-instruction-r4",
+      "turns": 5,
+      "wallMs": 14932,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a passing sum() function to stats.mjs, verified lint-check.mjs passes with no console.log calls, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 15354,
+        "output": 1117,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16471,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r4-IF044q/repo && cat stats.mjs && echo --- && cat test-average.mjs && echo --- && cat test-sum.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-stats-multi-step-explicit-instruction-r4-IF044q/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed off-by-one loop bug in average() and added a new sum() function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "neuron memory add --category learning \"Fix for failing average() test in stats.mjs: the loop condition 'i < nums.length - 1' skipped the last element of the array, causing average() to return an undercounted sum divided by the full length. Root cause was an off-by-one error in the for-loop bound. Fixed by changing the condition to 'i < nums.length' so all elements are summed correctly, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'.\" --importance 4",
+        "neuron memory add --category decisions \"Fixed off-by-one bug in average() and added sum() function to stats.mjs; kept implementation free of console.log per lint-check.mjs requirement.\" --task-id stats-fix-1\nneuron memory add --category history \"Fixed average() bug, added sum() to stats.mjs, confirmed lint-check passes, and wrote CHANGELOG.md.\" --task-id stats-fix-1"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "control",
+      "sessionLabel": "text-multi-step-control-r4",
+      "turns": 3,
+      "wallMs": 8601,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase to capitalize all words (not just the first), added a wordCount function, verified no console.log calls remain in text.mjs (lint passes), and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 8136,
+        "output": 699,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8835,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r4-Z63cMB/repo && ls && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs 2>/dev/null && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-control-r4-Z63cMB/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed titleCase to capitalize every word and added a wordCount function to count whitespace-separated words.\nEOF\n"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": false
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "nudge",
+      "sessionLabel": "text-multi-step-nudge-r4",
+      "turns": 11,
+      "wallMs": 29495,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word, added a wordCount function, verified test-titlecase.mjs, test-wordcount.mjs, and lint-check.mjs all pass, created CHANGELOG.md, and recorded the fix in neuron memory (learning + history entries).",
+      "tokens": {
+        "input": 45404,
+        "output": 2312,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 47716,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && cat text.mjs test-titlecase.mjs test-wordcount.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs && node test-wordcount.mjs && node lint-check.mjs\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && echo \"- Fixed titleCase to capitalize every word instead of only the first, and added a wordCount function to count whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && neuron memory add --category learning \"Fix for titleCase test failure in text.mjs: titleCase only capitalized the first word of the string instead of every word. Root cause was the map callback checking (i === 0) instead of capitalizing all words. Resolution: map((w) => w.length ? w[0].toUpperCase() + w.slice(1) : w) applied to every word, and added wordCount(str) using trim + split(/\\\\s+/) with empty-string special case returning 0.\" --importance 4\nneuron memory add --category history \"Fixed titleCase bug in text.mjs, added wordCount function, verified lint-check passes, and created CHANGELOG.md summarizing the changes.\" --task-id text-mjs-fixes\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && neuron memory search \"titleCase\" --category learning 2>&1 | head -20\nneuron memory search \"text.mjs\" --category history 2>&1 | head -20",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && neuron memory --help 2>&1 | head -30",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && neuron memory list --categories learning,history 2>&1 | head -30",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && neuron memory list --categories history 2>&1 | head -30",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-nudge-r4-Z2zYs0/repo && neuron memory add --category history \"Fixed titleCase bug in text.mjs (see linked learning entry for details), added wordCount function, verified lint-check passes, and created CHANGELOG.md.\" --task-id text-mjs-fixes\nneuron memory list --categories history 2>&1"
+      ],
+      "nudgeDelivered": true,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "text-multi-step",
+      "arm": "explicit-instruction",
+      "sessionLabel": "text-multi-step-explicit-instruction-r4",
+      "turns": 5,
+      "wallMs": 14088,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the titleCase capitalization bug, added a passing wordCount function, verified lint-check passes with no console.log calls, and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 15788,
+        "output": 1171,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16959,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r4-SLvW3F/repo && cat text.mjs && echo --- && cat test-titlecase.mjs && echo --- && cat test-wordcount.mjs && echo --- && cat lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r4-SLvW3F/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\n\nexport function wordCount(str) {\n  const trimmed = str.trim();\n  if (trimmed === '') return 0;\n  return trimmed.split(/\\s+/).length;\n}\nEOF\nnode test-titlecase.mjs; node test-wordcount.mjs; node lint-check.mjs\necho \"- Fixed titleCase to capitalize every word (not just the first) and added a wordCount function that counts whitespace-separated words.\" > CHANGELOG.md\ncat CHANGELOG.md",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r4-SLvW3F/repo && neuron memory add --category learning \"Fix for test-titlecase.mjs failure: titleCase only capitalized the first word (index i===0 check) instead of every word in the string, so 'a b c' returned 'A b c' instead of 'A B C'. Root cause was the map callback's conditional logic restricting capitalization to index 0. Fix: change map to (w) => w.length ? w[0].toUpperCase() + w.slice(1) : w, applying capitalization to every word unconditionally.\" --importance 4",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-hard-text-multi-step-explicit-instruction-r4-SLvW3F/repo && neuron memory add --category history \"Fixed titleCase bug in text.mjs, added wordCount function, verified lint-check passes, and created CHANGELOG.md.\" --task-id text-mjs-fix"
+      ],
+      "nudgeDelivered": false,
+      "taskPassed": true,
+      "memoryAddCalled": true
+    }
+  ]
+}

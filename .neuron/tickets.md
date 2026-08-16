@@ -27800,14 +27800,11 @@ existed.
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
 
 - [Ticket 1 — Write-Side Compliance Nudge & Instrumentation](de4f45be-34e0-45df-9a50-f72d0bdc5905) — don't commit to a trigger mechanism yet; test first via a 3-arm real-agent A/B (control/nudge/explicit-instruction, reusing `token-ab`'s pattern), deterministic tool-call grading, go/no-go decision rule. Build/run spawned as [Ticket 4](623be167-6f64-4616-8328-d42d29ac3952).
+- [Ticket 4 — Build & Run the Write-Side Compliance Nudge A/B](623be167-6f64-4616-8328-d42d29ac3952) — ran it: 24 live sessions, all three arms hit 100% compliance and 100% task-solve, zero margin. **No-go on building a trigger mechanism**, per the decision rule — but it's a ceiling effect (control's task was maximally easy), not proof the real-world gap doesn't exist. See the ticket's Answer and [`docs/design/write-compliance/nudge-ab-findings.md`](../../docs/design/write-compliance/nudge-ab-findings.md), Part 1, for the full caveat.
+- [Ticket 5 — Harder Write-Compliance Follow-Up A/B (Ceiling-Effect Retest)](e38c5a30-2ef0-4f15-81b1-cf160498188f) — reran it harder (full real CLAUDE.md, multi-step sessions with real competing work, $2 budget): control collapsed to 20% compliance while nudge and explicit-instruction both held 100% — an 80-point margin. **Reverses Ticket 4's no-go to a clean go.** Also surfaced an unplanned finding: Map 2.4.2's own duplicate-detection gate creates real retry friction when an agent's §1 and §2 entries read as near-duplicates of each other. Routes to [Ticket 6 — Design the Write-Side Compliance Trigger Mechanism](ae0e3d5d-8564-471e-a2ed-73e54480c7e0). See Part 2 of the same findings doc.
 
 ## Not yet specified
 
-- **Should the write-compliance mechanism ship to every project `neuron
-  init` touches, or stay dogfood-only on this repo** — the way ticket
-  06/07's own `hintFollowLog.ts` explicitly is ("not part of what `neuron
-  init` installs for a user's project")? Not decidable until the
-  mechanism itself is designed — still fog, not yet a ticket.
 - **Whether this repo's broader cleanup work surfaces a recurring policy**
   (e.g. a periodic health check) rather than a one-time pass — stays fog
   until a one-time pass actually runs and shows whether staleness
@@ -31235,7 +31232,7 @@ tags:
 taskId: null
 kind: research
 map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
-status: unclaimed
+status: resolved
 ---
 # 4 — Build & Run the Write-Side Compliance Nudge A/B
 
@@ -31289,11 +31286,219 @@ behavior? Report a go/no-go on building a real trigger mechanism.
 
 ## Deliverables
 
-- [ ] Nudge/explicit-instruction wording finalized
-- [ ] Harness built (reusing `session.mjs`)
-- [ ] A/B run against chosen SWE-bench fixture(s), real results captured
-- [ ] Go/no-go verdict recorded per the decision rule
-- [ ] Findings doc + raw results linked as assets
+- [x] Nudge/explicit-instruction wording finalized
+- [x] Harness built (adapted from `session.mjs` — see Comments for why not a verbatim reuse)
+- [x] A/B run — real results captured (24 live Sonnet 5 sessions, $0.9106 total)
+- [x] Go/no-go verdict recorded per the decision rule
+- [x] Findings doc + raw results linked as assets
+
+## Answer
+
+**No-go on building a dedicated trigger mechanism (`Stop` hook or
+`LifecyclePoint` extension), on the strength of this evidence — with a real
+caveat that keeps the underlying concern open.**
+
+All three arms hit 100% compliance (24/24 sessions called a real `neuron
+memory add`, verified against a live wrapped CLI, not simulated) and 100%
+task-solve rate. Margin over control: nudge = 0pts, explicit-instruction =
+0pts. Per the decision rule ("no-go if all three land close together"),
+identical numbers across all three arms is the cleanest possible no-go —
+there's no signal to build a mechanism against.
+
+**But this is a ceiling effect, not proof the write-compliance gap this map
+worries about doesn't exist.** control's task was maximally easy: the §1
+protocol text was the *only* content in the system prompt, the fixture was
+a single small file with one obvious bug, and sessions ran 4-13 turns. A
+real session buries that same protocol text inside CLAUDE.md's full content
+among many competing instructions, spans far more turns, and the
+failure-fix moment can be many turns removed from wherever the model's
+attention is by the time the session ends — none of which this harness
+models. Read the result as "passive prose works when it's the only thing
+being asked," not "passive prose works in general."
+
+Two honest paths forward — this ticket does not choose between them, it's a
+maintainer call:
+1. Accept the no-go and close this thread; treat passive prose as
+   sufficient until real dogfood evidence says otherwise.
+2. Design a harder follow-up harness (longer/noisier session, full real
+   CLAUDE.md content, competing instructions) before trusting a no-go —
+   real new design work, not a rerun of this one.
+
+Full findings, setup, and per-session data:
+[`docs/design/write-compliance/nudge-ab-findings.md`](../../docs/design/write-compliance/nudge-ab-findings.md).
+
+**Design decisions made here (not fixed by ticket 1):**
+- Nudge text: a one-time simulated session-end reminder injected right
+  after the *first* `finish_task` call, intercepting it so the agent gets
+  one more turn before really ending — verified firing in all 8 nudge-arm
+  sessions (`nudgeDelivered: true`).
+- Explicit-instruction text: appended directly to the system prompt as an
+  imperative ("you MUST call `neuron memory add`... This is not optional").
+- Sample size: k=4 repeats x 2 tasks x 3 arms = 24 sessions, `--cap=3`
+  (actual spend $0.91).
+- Location: `benchmarks/write-compliance-ab/` for the harness (its own
+  directory, not folded into `token-ab/`) and
+  `docs/design/write-compliance/` for the findings doc (not
+  `write-time-quality/` — this isn't an NLI/dedup question in that sense).
+
+## Deviation from ticket 1's Design
+
+Ticket 1 named `benchmarks/token-ab/swebench-fixtures.mjs`'s existing tasks
+as the scenario source. Checked first: both live tasks there
+(`matplotlib-24265`, `django-11019`) are diagnose-and-describe questions —
+the agent investigates and writes prose to `ANSWER.md`, but no command ever
+actually fails and gets fixed. CLAUDE.md §1's trigger condition ("a failing
+command/build/test gets fixed") never fires on them, so reusing them
+verbatim would have tested nothing. Running the real SWE-bench test suites
+to get a genuine fail→pass loop was considered and rejected: none of those
+instances' Python dependency sets are pinned anywhere in this harness, so a
+live run would need a working, network-fetched environment per task — slow
+and orthogonal to what this ticket measures. Built two small, self-contained,
+dependency-free Node fixtures instead (`tasks.mjs`), each a genuine
+fail→pass loop graded by a real exit code — same reuse-before-build spirit,
+smaller grain.
+
+## Comments
+
+- 2026-08-15: Spawned by ticket 1's resolution.
+- 2026-08-16: Resolved. Harness: `benchmarks/write-compliance-ab/`
+  (`run.mjs`, `session.mjs`, `fixtures.mjs`, `tasks.mjs`, `grading.mjs`,
+  `README.md`). Findings:
+  `docs/design/write-compliance/nudge-ab-findings.md`. Raw results (the real
+  24-session run, the evidentiary basis for the verdict above):
+  `benchmarks/write-compliance-ab/results/4-write-compliance-nudge-ab/full/results.json`.
+  `npm test` (757 passed) and `tsc` clean.
+- 2026-08-16: **Correction.** The n=1 pilot smoke-test JSON this comment
+  originally cited as "kept for provenance" no longer exists — ticket 5's
+  own hard-mode calibration pilot wrote to the same unnamespaced
+  `results/pilot/results.json` path and overwrote it, then a cleanup step
+  deleted that directory. Fixed at the source: both `run.mjs` and
+  `run-hard.mjs` now write under ticket-numbered subdirectories
+  (`results/4-write-compliance-nudge-ab/`, `results/5-harder-write-compliance-ab/`)
+  so this can't recur. No loss to the verdict itself — the pilot was a
+  smoke test, not evidence; the full run's data (the actual basis for the
+  Answer above) was untouched and is intact at the path named above. The
+  pilot's own scorecard (for the record, not re-verifiable): 3 sessions
+  (1 per arm), all 3 complied, $0.172 total.
+
+---
+id: e38c5a30-2ef0-4f15-81b1-cf160498188f
+createdAt: 2026-08-16T03:53:53.705Z
+importance: 3
+tags:
+  - longmemeval
+  - benchmark
+  - adr
+taskId: null
+kind: research
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: resolved
+---
+# 5 — Harder Write-Compliance Follow-Up A/B (Ceiling-Effect Retest)
+
+## Question
+
+Ticket 4's A/B found a clean ceiling effect (100% compliance in all three arms) rather than a real no-signal result: control's task was maximally easy (the §1 protocol snippet as the only system-prompt content, one obvious bug, a 4-13 turn session). Design and run a harder version of the same A/B — full real CLAUDE.md content, a longer/noisier multi-step session with real competing work, more turns between the fix and session end — to see whether the no-go verdict survives a fairer test. Budget: $2 hard cap.
+
+## Design (extends ticket 4's, not a fresh pass)
+
+- Same three arms (control/nudge/explicit-instruction), same grading (grading.mjs, unchanged), same harness family (benchmarks/write-compliance-ab/), same model/session-loop machinery (session.mjs), reused not rebuilt.
+- **What changes**: the system note is the full real CLAUDE.md Memory Store Protocol block (§1 Failure-Fix Recording + §2 Session Conclusion + Metadata flags), not just the §1 excerpt — so the failure-fix trigger now competes with real neighboring content, including a second, easily-confused instruction (§2) about writing memory at session end. Tasks become multi-step: a real early failure-fix moment, followed by genuine unrelated follow-on work (a new function to implement against an existing test, a lint-style check, a changelog line) that pushes session length and turn-distance from the fix up substantially before finish_task.
+
+## Deliverables
+
+- [x] Harder task(s) built (multi-step, full-CLAUDE.md system note) — `tasksHard.mjs`, `fixtures.mjs`'s hard-mode additions
+- [x] Cost calibrated via a small live pilot before sizing the full run
+- [x] A/B run within the $2 cap, real results captured ($1.5616, 30 sessions)
+- [x] Verdict recorded: does ticket 4's no-go survive this harder test?
+- [x] Findings appended to docs/design/write-compliance/nudge-ab-findings.md (Part 2) + raw results linked as assets
+
+## Answer
+
+**No — ticket 4's no-go does not survive a fairer test. This reverses to a clean go.**
+
+`control` compliance collapsed from ticket 4's 100% to **20% (2/10)** once
+the fix was one step of a real multi-step session with the full CLAUDE.md
+protocol block (not just the §1 excerpt) competing for attention. `nudge`
+and `explicit-instruction` both held **100% (10/10)** — an **80-point
+margin** for both, task-solve rate 100% in every arm, balanced across both
+tasks (1/5 each for control, not concentrated in one scenario). Cost
+$1.5616 of the $2 cap; nothing skipped.
+
+Per ticket 1's own decision rule ("go if nudge and/or explicit-instruction
+show a clear compliance-rate margin over control"), this is as clean a go
+as the rule can produce. **Recommendation: build the trigger mechanism.**
+Spawned as [Ticket 6 — Design the Write-Side Compliance Trigger
+Mechanism](ae0e3d5d-8564-471e-a2ed-73e54480c7e0), per ticket 1's own routing
+for a go outcome.
+
+**Unplanned finding, not part of the verdict but worth carrying forward:**
+nearly every `nudge`/`explicit-instruction` session's `neuron memory add`
+attempt tripped Map — neuron 2.4.2's own duplicate/supersede-detection gate
+— the agent's own §1 `learning` entry reading as near-duplicate to its own
+§2 `decisions`/`history` follow-up (cosine ≈0.77–0.96). Every session
+recovered, but this cost real turns/tokens (3 of 10 `nudge` sessions ran
+11-18 turns resolving it) — flagged for Ticket 6 to consider, not addressed
+here.
+
+Full setup, per-session breakdown, and the reasoning behind why this design
+(not just a rerun) broke the ceiling effect:
+[`docs/design/write-compliance/nudge-ab-findings.md`](../../docs/design/write-compliance/nudge-ab-findings.md),
+Part 2.
+
+## Process note
+
+A path collision during this ticket's own calibration pilot (`--out=pilot`
+reused across `run.mjs` and `run-hard.mjs`) overwrote and then deleted
+ticket 4's original pilot smoke-test JSON. Fixed at the source: both
+scripts now write under ticket-numbered subdirectories
+(`results/4-write-compliance-nudge-ab/`, `results/5-harder-write-compliance-ab/`)
+so this can't recur. No effect on either ticket's verdict — see ticket 4's
+own Comments for the correction.
+
+## Comments
+
+- 2026-08-16: Graduated from the map's own fog item ("Whether to trust this no-go or design a harder follow-up A/B first"), at the maintainer's direct request.
+- 2026-08-16: Resolved. Harness: `benchmarks/write-compliance-ab/run-hard.mjs`
+  (+ `tasksHard.mjs`, `fixtures.mjs` hard-mode additions, `session.mjs`
+  generalized for configurable turn/wall-clock caps — everything else
+  reused from ticket 4 unchanged). Findings: Part 2 of
+  `docs/design/write-compliance/nudge-ab-findings.md`. Raw results:
+  `benchmarks/write-compliance-ab/results/5-harder-write-compliance-ab/full/results.json`.
+  `npm test` (757 passed) and `tsc` clean.
+
+---
+id: ae0e3d5d-8564-471e-a2ed-73e54480c7e0
+createdAt: 2026-08-16T04:11:01.765Z
+importance: 3
+tags:
+  - rc2
+  - longmemeval
+  - 2.2.0
+taskId: null
+kind: grilling
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: unclaimed
+---
+# 6 — Design the Write-Side Compliance Trigger Mechanism
+
+## Question
+
+Ticket 5's hard-mode A/B reversed ticket 4's no-go: under realistic conditions (full CLAUDE.md content, a multi-step session with real competing work), `control` compliance collapsed to 20% while `nudge` and `explicit-instruction` both held 100% — an 80-point margin. Per ticket 1's own decision rule, this is a go. Design the real trigger mechanism: hand-wired dogfood-only `Stop` hook, or a full `LifecyclePoint` extension (the way ticket 06/07's read-side discovery hint and `hintFollowLog.ts` were built)?
+
+## Context
+
+- Ticket 5's own Recommendation (docs/design/write-compliance/nudge-ab-findings.md, Part 2) frames the two arms tested as two different real designs, not just two conditions: `nudge` (session-end reminder) is higher-fidelity to an actual `Stop` hook but costs an extra turn and inherited real friction from Map 2.4.2's write-time duplicate-detection gate (agents' own §1 + §2 entries reading as near-duplicates of each other, costing retries in ~30% of nudge sessions). `explicit-instruction` (system-prompt requirement) was cheaper and equally effective in this run but has no session-end `LifecyclePoint` analog today — it's a weaker test of what a real trigger needs to be, since it isn't tied to session end at all.
+- This map's own Notes name `/tdd` as the fit "once that design is settled and implementation is graduated," mirroring how ticket 06/07 were built — same precedent this ticket should follow once the design question above is resolved.
+- Should ship dogfood-only on this repo, or to every project `neuron init` touches? Flagged as fog on the map ("Should a write-compliance mechanism ship to every project...") — resolve here now that a mechanism is actually being designed, not still moot.
+- The gate-friction finding (ticket 5) may itself deserve a design response (e.g. should §2's session-conclusion write skip the supersede-gate check when it's a deliberate companion entry to a just-written §1 fix?) — worth raising during this ticket's own grilling, not presupposed here.
+
+## Deliverables
+
+- [ ] Trigger mechanism chosen (hand-wired Stop hook vs. LifecyclePoint extension) with rationale
+- [ ] Ship scope decided (dogfood-only vs. neuron init default)
+- [ ] Gate-friction finding addressed or explicitly deferred with rationale
+- [ ] Implementation plan handed to /tdd
 
 ## Answer
 
@@ -31301,4 +31506,4 @@ _Not yet resolved._
 
 ## Comments
 
-- 2026-08-15: Spawned by ticket 1's resolution.
+- 2026-08-16: Spawned by ticket 5's go verdict, per ticket 1's own routing for a go outcome.
