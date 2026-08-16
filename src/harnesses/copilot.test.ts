@@ -42,7 +42,7 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
     expect(adapter.detect(wiredDir)).toBe(true);
   });
 
-  it('reports best-effort fidelity: only session-start injects, and even it has undocumented failure/payload behaviour', () => {
+  it('reports best-effort fidelity: session-start and pre-stop inject, pre-prompt/context-reset/pre-command do not', () => {
     const capability = adapter.capability();
     expect(capability['session-start'].injects).toBe(true);
     expect(capability['session-start'].failurePosture).toBe('unknown');
@@ -50,16 +50,18 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
     expect(capability['pre-prompt'].injects).toBe(false);
     expect(capability['context-reset'].injects).toBe(false);
     expect(capability['pre-command'].injects).toBe(false);
+    expect(capability['pre-stop'].injects).toBe(true);
     expect(deriveFidelity(capability)).toBe('best-effort');
   });
 
-  it('installs a hook for session-start only, leaving pre-prompt, context-reset, and pre-command untouched', async () => {
+  it('installs hooks for session-start and pre-stop, leaving pre-prompt and context-reset untouched', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
     expect(result.points).toEqual({
       'session-start': 'written',
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'written',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
@@ -67,6 +69,9 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
     // Flat array per event — no matcher-group wrapping, unlike Claude Code/Codex.
     expect(file.hooks.sessionStart).toEqual([
       { type: 'command', command: 'neuron hook copilot session-start', timeoutSec: 20 },
+    ]);
+    expect(file.hooks.agentStop).toEqual([
+      { type: 'command', command: 'neuron hook copilot pre-stop', timeoutSec: 20 },
     ]);
     expect(file.hooks.userPromptSubmitted).toBeUndefined();
     expect(file.hooks.PreCompact).toBeUndefined();
@@ -80,10 +85,12 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.hooks.sessionStart.length).toBe(1);
+    expect(file.hooks.agentStop.length).toBe(1);
   });
 
   it('never touches a user\'s own pre-existing hooks in the same file, including other events', async () => {
@@ -174,11 +181,12 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
 
     const result = await adapter.uninstall(projectDir);
     expect(result.removed).toHaveLength(1);
-    expect(result.removed[0].removedCount).toBe(1);
+    expect(result.removed[0].removedCount).toBe(2);
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.version).toBe(1);
     expect(file.hooks.sessionStart).toEqual([{ type: 'command', command: 'echo hi', timeoutSec: 10 }]);
+    expect(file.hooks.agentStop).toBeUndefined();
   });
 
   it('uninstall on a project with no hooks installed is a safe no-op', async () => {
@@ -199,6 +207,7 @@ describe('CopilotAdapter (src/harnesses/copilot.ts)', () => {
     // Never wired, so never registered — even after a real install.
     expect(afterInstall['pre-prompt'].registered).toBe(false);
     expect(afterInstall['context-reset'].registered).toBe(false);
+    expect(afterInstall['pre-stop'].registered).toBe(true);
 
     const { recordFired } = await import('./hookState.js');
     recordFired(projectDir, adapter.id, 'session-start');

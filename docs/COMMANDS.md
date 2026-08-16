@@ -15,10 +15,12 @@ every harness present (`CLAUDE.md`/`.claude/`, `AGENTS.md`, `.codex/`,
 specifically, not a bare `.github/` dir, since that's created for CI/issue
 templates unrelated to Copilot use just as often as for it (ticket 31,
 neuron-2.4.0); writing `AGENTS.md` if none exist), installs
-deterministic recall hooks (`session-start`/`pre-prompt`/`context-reset`) and
-a `pre-command` hook for every harness with an adapter (Claude Code, Codex
+deterministic recall hooks (`session-start`/`pre-prompt`/`context-reset`), a
+`pre-command` hook for every harness with an adapter (Claude Code, Codex
 CLI — `pre-command` is a fourth, independent lifecycle point, ticket 22/23),
-writes the capability-aware memory-store instructions block into each
+and a `pre-stop` write-compliance nudge hook (ticket 6, neuron-2.4.3) on
+every harness — see "Write-side compliance by harness" below — writes the
+capability-aware memory-store instructions block into each
 detected harness's instructions file (the Recall and Command Execution steps
 are each dropped independently, per whichever of the two hook groups that
 harness has wired), pre-downloads the local ONNX models with a progress bar,
@@ -79,25 +81,56 @@ degraded rather than failing the whole bootstrap.
 (`protocol.written`), derived from each harness's actual `verify()` result,
 not inferred from a config file existing.
 
+### Write-side compliance by harness (ticket 6, neuron-2.4.3)
+
+Recall (above) is read-side: it doesn't make an agent write to the store in
+the first place. `pre-stop` is the write-side counterpart — it fires when
+the agent is about to end a turn, and, once per session (deduplicated via
+its own session-scoped state, independent of the recall ledger's epoch),
+forces one more turn carrying a reminder if nothing looks recorded yet.
+Named `pre-stop`, not `session-end`: every harness's literal session-teardown
+event (`SessionEnd`/`sessionEnd`) is fire-and-forget and can never reach the
+model — verified directly during this ticket's implementation, not assumed.
+`pre-stop` maps instead to each harness's real per-turn stop-and-escalate
+event:
+
+| Harness | Event | Mechanism | Verified via |
+|---|---|---|---|
+| Claude Code | `Stop` | `hookSpecificOutput.decision:"escalate"` forces the continuation; `additionalContext` is what the model actually sees | **Empirically** — a live headless-session probe run from this repo's own Claude Code session, not documentation alone |
+| OpenAI Codex CLI | `Stop` | `decision:"block"` + `additionalContext`/`reason`, hedged (see below) | Documentation only |
+| GitHub Copilot CLI | `agentStop` | `decision:"block"` + `reason` becomes the next turn's prompt; no `additionalContext` field | Documentation only |
+| Cursor | `stop` | `followup_message`, auto-submitted as the next user message | Documentation only |
+
+Codex's exact field shape carries a known gap: three separate documentation
+fetches of Claude Code's own `Stop` contract returned three different
+answers before the empirical probe settled it, and no equivalent probe was
+run against Codex (no local install available). Rather than guess, neuron
+emits every candidate field together (`decision`, `reason`,
+`additionalContext`) — harmless if a field goes unrecognized, the same
+fail-open posture every other point here already has.
+
 ---
 
 ## `neuron hook <harness> <point>`
 
 The entrypoint `neuron init` wires into a harness's own hook configuration —
-not typically run by hand. `<harness>` is `claude-code` or `codex`; `<point>`
-is `session-start` (seeds the architecture blueprint card once), `pre-prompt`
-(queries the store with the submitted prompt and injects results, plus a
-gated search of an indexed commit-history table — see the README's "Your git
-history is a searchable resident source too"), `context-reset` (clears the
-per-session dedup ledger on compaction), or `pre-command` (fires on every
-`Bash` tool call — a non-`Bash` call is a silent no-op — and runs the same
-gated `onExec` lookup `neuron exec` performs, injecting a hit as
-`additionalContext` instead of printing to `stderr`; ticket 22/23, 2.4.0).
-Reads a harness-shaped JSON payload from stdin, writes
-`{"hookSpecificOutput": ...}` to stdout on a hit, and **always exits `0`** —
-a malformed payload, a query error, a timeout, or an unreachable store all
-degrade to printing nothing rather than blocking the harness's prompt or
-tool call.
+not typically run by hand. `<harness>` is `claude-code`, `codex`, `copilot`,
+or `cursor`; `<point>` is `session-start` (seeds the architecture blueprint
+card once), `pre-prompt` (queries the store with the submitted prompt and
+injects results, plus a gated search of an indexed commit-history table —
+see the README's "Your git history is a searchable resident source too"),
+`context-reset` (clears the per-session dedup ledger on compaction),
+`pre-command` (fires on every `Bash` tool call — a non-`Bash` call is a
+silent no-op — and runs the same gated `onExec` lookup `neuron exec`
+performs, injecting a hit as `additionalContext` instead of printing to
+`stderr`; ticket 22/23, 2.4.0), or `pre-stop` (fires when the agent is about
+to end its turn; forces one more turn with a write-compliance reminder, once
+per session — see "Write-side compliance by harness" above; ticket 6,
+neuron-2.4.3). Reads a harness-shaped JSON payload from stdin, writes a
+harness-appropriate JSON payload to stdout on a hit, and **always exits
+`0`** — a malformed payload, a query error, a timeout, or an unreachable
+store all degrade to printing nothing (or, on `pre-stop`, allowing the stop
+through) rather than blocking the harness's prompt, tool call, or turn.
 
 ---
 
@@ -212,11 +245,24 @@ Multi-category memory operations.
 | `--days <n>` | `prune` only: cutoff age in days (default `30`) |
 | `--task-id <id>` | Link an entry to a ticket or spec |
 | `--limit <n>` | Max results — caps what `list`/`query` return, not the internal scan used to compute filtered results |
-| `--if-novel` | `add` only: on a supersession-gate hit, skip the write (exit `0`) instead of erroring — for cron/scheduled writers that can't answer an interactive prompt. The skip is never silent: reason + candidate id on `stderr`, `{"skipped": true, ...}` on stdout in place of the written entry. Mutually exclusive with `--supersedes`/`--not-a-reversal` |
 | `--where <field>=<value>` | `list` only: keep entries whose declared field equals `value` (`field!=value` negates). Repeatable — each occurrence ANDs onto the rest. Schema-agnostic: any category, any declared field, not specific to any one project's vocabulary |
 | `--refs-satisfy <field>:<sub>=<value>` | `list` only: keep entries where every comma-separated id in `field` names a same-category entry whose own `sub` field equals `value`. A dangling id (no matching entry) fails the predicate rather than silently passing. Requires exactly one `--category`, since ids are resolved within it |
+| `--include-superseded` | `query`/`list` only: include rows hard-excluded by default because a later entry supersedes them. Superseded rows are never deleted |
 
 `query` and `list` span every category by default.
+
+### Resolving the write-time supersession gate (ADR 0015, ticket 6)
+
+`add` hard-blocks a write whose content looks like a near-duplicate of an
+existing entry, naming the candidate id. One of four flags resolves it —
+they are mutually exclusive with each other:
+
+| Flag | Meaning |
+|---|---|
+| `--supersedes <id>` | This write is a genuine reversal/update of `<id>`: marks `<id>` as superseded by the new entry (`supersededBy`/`supersededAt`), which then hard-excludes it from ordinary `query`/`list`. `<id>` is validated to exist before anything is written |
+| `--not-a-reversal` | Explicit override confirming this write is *not* a reversal of the candidate — skips the gate without marking anything superseded |
+| `--if-novel` | Non-interactive resolution for cron/scheduled writers that cannot answer the gate by hand: on a hit, skip the write (exit `0`, not an error). Never silent — reason + candidate id on `stderr`, `{"skipped": true, ...}` on stdout in place of the written entry |
+| `--companion-of <id>` | Exempts this write from the gate **only** against the named `<id>` — for a deliberate companion write (e.g. a session-conclusion pointer that intentionally restates a fix just written under a different category), not a blanket bypass. If the gate's real near-dup candidate is a *different* entry than `<id>`, the gate still fires normally. `<id>` is validated to exist, same as `--supersedes` |
 
 ```bash
 neuron memory query "auth flow" --categories learning,decisions

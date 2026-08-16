@@ -27,6 +27,7 @@ export const COPILOT_HARNESS_ID = 'copilot';
  */
 const EVENT_NAME: Partial<Record<LifecyclePoint, string>> = {
   'session-start': 'sessionStart',
+  'pre-stop': 'agentStop',
 };
 
 /**
@@ -99,6 +100,17 @@ function capability(): CapabilityMap {
       timeoutMs: 'unknown',
       caveats: [
         'A structural ceiling, not an undocumented gap (ticket 12, neuron-2.4.0): preToolUse only returns permissionDecision/permissionDecisionReason/modifiedArgs (confirmed via direct fetch of docs.github.com/en/copilot/reference/hooks-reference) — additionalContext is documented as specific to postToolUse/notification, not preToolUse, so there is no context-carrying field to inject here at all. Never wired by neuron init, permanently, the same as pre-prompt above. The CLAUDE.md/AGENTS.md-instructed `neuron exec` step stays as this harness\'s only path to the same lookup.',
+      ],
+    },
+    'pre-stop': {
+      injects: true,
+      payloadCapChars: 'unknown',
+      failurePosture: 'unknown',
+      timeoutMs: 30000,
+      caveats: [
+        'agentStop ("the main agent finishes a turn") supports decision:"block" + reason, which forces another agent turn using reason as the prompt — real, functional support, distinct from sessionEnd above which is fire-and-forget. It does not support additionalContext, so the reminder must ride in reason rather than as model context.',
+        'Doc-sourced only (docs.github.com/en/copilot/reference/hooks-reference), not verified against a real Copilot CLI installation — payload cap and failure/timeout behaviour are undocumented, same gap as session-start.',
+        'A runaway safeguard is documented: after 8 consecutive block continuations, the CLI overrides the hook and ends the turn anyway — neuron\'s own per-session ledger dedup (see hook.ts) means this is never reached in practice (one nudge, then always allow).',
       ],
     },
   };
@@ -222,6 +234,7 @@ export class CopilotAdapter implements HarnessAdapter {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

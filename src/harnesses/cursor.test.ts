@@ -27,7 +27,7 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
     expect(adapter.detect(path.join(tempRoot, 'no-such-dir'))).toBe(false);
   });
 
-  it('reports best-effort fidelity: session-start injects with a known fail-open posture but unknown payload cap/timeout', () => {
+  it('reports best-effort fidelity: session-start and pre-stop inject, with unknown payload cap/timeout', () => {
     const capability = adapter.capability();
     expect(capability['session-start'].injects).toBe(true);
     expect(capability['session-start'].failurePosture).toBe('fail-open');
@@ -36,16 +36,18 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
     expect(capability['pre-prompt'].injects).toBe(false);
     expect(capability['context-reset'].injects).toBe(false);
     expect(capability['pre-command'].injects).toBe(false);
+    expect(capability['pre-stop'].injects).toBe(true);
     expect(deriveFidelity(capability)).toBe('best-effort');
   });
 
-  it('installs hooks for session-start and context-reset, leaving pre-prompt and pre-command untouched', async () => {
+  it('installs hooks for session-start, context-reset, and pre-stop, leaving pre-prompt and pre-command untouched', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
     expect(result.points).toEqual({
       'session-start': 'written',
       'pre-prompt': 'unchanged',
       'context-reset': 'written',
       'pre-command': 'unchanged',
+      'pre-stop': 'written',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
@@ -60,6 +62,9 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
     expect(file.hooks.preCompact).toEqual([
       { type: 'command', command: 'neuron hook cursor context-reset', timeout: 5 },
     ]);
+    expect(file.hooks.stop).toEqual([
+      { type: 'command', command: 'neuron hook cursor pre-stop', timeout: 10 },
+    ]);
     expect(file.hooks.beforeSubmitPrompt).toBeUndefined();
   });
 
@@ -71,11 +76,13 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.hooks.sessionStart.length).toBe(1);
     expect(file.hooks.preCompact.length).toBe(1);
+    expect(file.hooks.stop.length).toBe(1);
   });
 
   it('never touches a user\'s own pre-existing hooks or version field, including other events', async () => {
@@ -166,12 +173,13 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
 
     const result = await adapter.uninstall(projectDir);
     expect(result.removed).toHaveLength(1);
-    expect(result.removed[0].removedCount).toBe(2); // session-start + context-reset
+    expect(result.removed[0].removedCount).toBe(3); // session-start + context-reset + pre-stop
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.version).toBe(1);
     expect(file.hooks.sessionStart).toEqual([{ type: 'command', command: 'echo hi', timeout: 10 }]);
     expect(file.hooks.preCompact).toBeUndefined();
+    expect(file.hooks.stop).toBeUndefined();
   });
 
   it('uninstall on a project with no hooks installed is a safe no-op', async () => {
@@ -192,6 +200,7 @@ describe('CursorAdapter (src/harnesses/cursor.ts)', () => {
     expect(afterInstall['context-reset'].registered).toBe(true);
     // Never wired, so never registered — even after a real install.
     expect(afterInstall['pre-prompt'].registered).toBe(false);
+    expect(afterInstall['pre-stop'].registered).toBe(true);
 
     const { recordFired } = await import('./hookState.js');
     recordFired(projectDir, adapter.id, 'session-start');

@@ -197,6 +197,15 @@ export async function handleMemoryCommand(
     // never persisted (the map's own non-goals rule out a new workflow-state
     // field), just an inline warning on this one CLI call.
     let conflictFlag: { candidateId: string; category: string; content: string; contradictionProbability: number } | null = null;
+    // Ticket 6 (neuron-2.4.3): validated up front, same as --supersedes,
+    // so a bad --companion-of id fails clean before any write happens.
+    if (options.companionOf) {
+      const companionTarget = await memory.findById(options.companionOf);
+      if (!companionTarget) {
+        console.error(`Error: --companion-of target "${options.companionOf}" not found`);
+        process.exit(1);
+      }
+    }
     if (options.supersedes) {
       supersedesTarget = await memory.findById(options.supersedes);
       if (!supersedesTarget) {
@@ -205,7 +214,12 @@ export async function handleMemoryCommand(
       }
     } else if (!options.notAReversal) {
       const candidate = await memory.findSupersessionCandidate(content);
-      if (candidate) {
+      // Ticket 6 (neuron-2.4.3): a deliberate, named exemption — only skips
+      // the gate when the candidate the gate itself found IS the declared
+      // companion, never a blanket bypass for any candidate.
+      if (candidate && options.companionOf && candidate.id === options.companionOf) {
+        // Falls through to the plain write below: no supersede, no flag.
+      } else if (candidate) {
         // Ticket 9 (neuron-2.4.2): before treating this as a possible
         // restatement/reversal, ask whether it actually looks like a
         // contradiction instead — Ticket 8/13 found the NLI signal can't

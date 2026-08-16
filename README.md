@@ -121,6 +121,24 @@ wires a `pre-command` hook that fires automatically on every shell tool
 call, surfacing a relevant hit as context instead of requiring the agent to
 remember to ask. Purely informational — it never blocks the command.
 
+### Write-side compliance gets a nudge, not just a reminder
+
+Recall solves reading memory back; it doesn't make an agent write to it in
+the first place. An A/B test measured that gap directly: under realistic
+multi-step conditions, an agent with no nudge recorded a fix only 20% of the
+time it should have. `neuron init` wires a `pre-stop` hook that fires when
+the agent is about to end its turn, and — once per session — forces one more
+turn with a reminder if nothing has been recorded yet:
+
+| Harness | Mechanism |
+|---|---|
+| **Claude Code** | `Stop` — forces a continuation, empirically verified |
+| **OpenAI Codex CLI** | `Stop` — forces a continuation, per documentation |
+| **GitHub Copilot CLI** | `agentStop` — forces a continuation, per documentation |
+| **Cursor** | `stop`'s `followup_message` — auto-submits a continuation, per documentation |
+
+Full fidelity details are in [`docs/COMMANDS.md`](docs/COMMANDS.md).
+
 ## 📁 What it looks like in your repo
 
 ```

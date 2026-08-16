@@ -20,9 +20,19 @@ categories:
       - design
   architecture: {}
 
-  tickets:
-    description: Wayfinder maps and tickets (issue tracker) — ADR 0018
-    fields:
+  # Ticket 9 (neuron-2.4.3): split from a single `tickets` category into
+  # three by temporal status, executing the design Ticket 3 settled via
+  # /grilling. Same declared fields on all three (a child ticket's `map`
+  # value must resolve regardless of which of the three it or its parent
+  # lives in). Archive trigger is whole-map-on-close, not per-ticket —
+  # see docs/agents/issue-tracker.md's "Wayfinding operations" section.
+  tickets-present:
+    description: >-
+      Wayfinder maps actively being worked (sequenced), and their open and
+      resolved children — issue tracker (ADR 0018), present tier
+      (Ticket 9, neuron-2.4.3).
+    storage: md
+    fields: &ticketsFields
       status:
         type: enum
         values: [unclaimed, claimed, resolved]
@@ -45,6 +55,21 @@ categories:
       # constraint the write path enforces.
       map:
         type: string
+
+  tickets-past:
+    description: >-
+      Wayfinder maps that have closed, and every resolved ticket under
+      them — issue tracker (ADR 0018), past tier (Ticket 9, neuron-2.4.3).
+    storage: vector
+    fields: *ticketsFields
+
+  tickets-future:
+    description: >-
+      Wayfinder maps chartered/parked but explicitly "not yet sequenced",
+      and their children — issue tracker (ADR 0018), future tier
+      (Ticket 9, neuron-2.4.3).
+    storage: vector
+    fields: *ticketsFields
 
   git-notes:
     description: >-

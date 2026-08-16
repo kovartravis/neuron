@@ -1652,3 +1652,15 @@ tags:
 taskId: null
 ---
 Fix for prompt-injection misidentification of neuron's own recall: the pre-command hook (src/commands/hook.ts) had no ledger dedup — unlike pre-prompt/session-start, which already dedup injected ids via harnesses/ledger.ts — and its injected additionalContext carried no self-identifying framing. Root cause confirmed live during neuron-2.4.1 ticket 1 (Antagonistic-Write Test Pillar): the session itself, plus a subagent it spawned, mistook the project's own legitimate recall injection for a prompt-injection attempt before the maintainer corrected it. Fixed by giving pre-command its own dedup call (recordPreCommandInjection, harnesses/ledger.ts, id-only tracking — not pre-prompt/session-start's char-budget tracking) and by prefixing every injection with a stable RECALL_PROVENANCE_PREFIX applied once at the shared emit() choke point in hook.ts (~line 195-199), so any harness or agent reading the injected text can identify it as neuron's own recall rather than external content. Distinct from ADR 0014's separate ticket-12 decision to give pre-command a real PreToolUse-driven hook (Claude Code/Codex CLI only) — that's about wiring, this is about the dedup/provenance-framing gap on top of it.
+
+---
+id: 59c84e83-602e-4106-9c1c-676ef3b262d3
+createdAt: 2026-08-16T19:04:54.172Z
+importance: 4
+tags:
+  - enrichment
+  - adr
+  - llm
+taskId: null
+---
+Fix for a category-move gap in NeuronMemory.transactVector's upsert path (src/index.ts): the 'exists' check for op:'upsert' looks up an id store-wide (SELECT 1 FROM memories WHERE id = ? AND project_id = ?, no category filter), so upserting an existing id under a NEW category hits the UPDATE branch, not INSERT — and the UPDATE branch's column list never includes category, so the row silently stays under its old category while every other field updates. Found while designing neuron-2.4.3 ticket 9's tickets-category split migration, before it ran against the live store (caught by reasoning about the code, not by a live failure). No shipped caller hits this today: the CLI's update requires --category to already match the existing row (mismatched category is treated as not_found, not a wrong-category update), so the gap is only reachable by code that does a same-id cross-category upsert directly, which nothing in the codebase currently does. Workaround for any future category-move script: delete the row from its old category first, then upsert into the new one — the second write then hits the INSERT branch, which does set category correctly. Documented as the required pattern in docs/agents/issue-tracker.md's new Archiving section, not filed as its own bug ticket since no live code path is exposed.

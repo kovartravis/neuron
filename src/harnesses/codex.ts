@@ -27,6 +27,7 @@ const EVENT_NAME: Record<LifecyclePoint, string> = {
   'pre-prompt': 'UserPromptSubmit',
   'context-reset': 'PreCompact',
   'pre-command': 'PreToolUse',
+  'pre-stop': 'Stop',
 };
 
 /**
@@ -40,6 +41,7 @@ const HOOK_TIMEOUT_SECONDS: Record<LifecyclePoint, number> = {
   'pre-prompt': 10,
   'context-reset': 5,
   'pre-command': 10,
+  'pre-stop': 10,
 };
 
 /**
@@ -102,6 +104,17 @@ function capability(): CapabilityMap {
         'Sourced from a direct fetch of learn.chatgpt.com/docs/hooks during ticket 22 (neuron-2.4.0), not assumed from pre-prompt\'s own record. `tool_name`/`tool_input.command` fields are confirmed identical to Claude Code\'s for a Bash call — same conversion caveat as session-start/pre-prompt applies to the 7,500-char figure (documented as ~2,500 tokens via additionalContextLimit, not a directly quoted character count).',
         'A PreToolUse hook that errors is marked failed and reported, but the tool call proceeds regardless (confirmed fail-open, same posture as every other point here) — a supported denial still requires an explicit permissionDecision, which neuron never sets.',
         'Fires for every tool call, not just Bash — the hook handler no-ops for non-Bash tool calls rather than relying on the matcher to filter them, same as Claude Code.',
+      ],
+    },
+    'pre-stop': {
+      injects: true,
+      payloadCapChars: 7500,
+      failurePosture: 'fail-open',
+      timeoutMs: 600000,
+      caveats: [
+        'Reverses this adapter\'s own earlier ticket-6 (neuron-2.4.3) conclusion: an initial pass checked only the SessionEnd event (fire-and-forget, closed openai/codex#20374 not_planned) and wrongly recorded no pre-stop-equivalent hook existed at all. Codex documents a separate, real Stop event that can block/continue and carries hookSpecificOutput.additionalContext — the same shape Claude Code\'s Stop uses.',
+        'Doc-sourced only (learn.chatgpt.com/docs/hooks), not verified against a real Codex CLI installation the way Claude Code\'s Stop shape was (this ticket had no local Codex install to test against) — same token-to-character conversion caveat as session-start/pre-prompt/pre-command applies to the 7,500-char figure.',
+        'Docs describe both a decision:"block"+reason path and an additionalContext-without-blocking path; neuron emits both decision and additionalContext together so the continuation fires and the reminder text has the best chance of reaching the model regardless of which field Codex actually reads.',
       ],
     },
   };
@@ -227,6 +240,7 @@ export class CodexAdapter implements HarnessAdapter {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

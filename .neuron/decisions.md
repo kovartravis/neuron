@@ -1364,6 +1364,8 @@ tags:
   - 2.2.0
   - wayfinder
 taskId: ae0e3d5d-8564-471e-a2ed-73e54480c7e0
+supersededBy: 05759e7b-d3ee-4bbe-ba18-8cea0a628288
+supersededAt: 2026-08-16T17:43:17.767Z
 ---
 Map — neuron 2.4.3, Ticket 6 (Design the Write-Side Compliance Trigger Mechanism): committed to a full LifecyclePoint extension (new session-end point, real support on Claude Code/Copilot, honest unsupported on Codex/Cursor) shipped generally via neuron init, not a hand-wired dogfood-only Stop hook — Ticket 5's A/B already proved the mechanism moves compliance from 20% to 100%, so the reason Ticket 1 gave for deferring real-hook engineering no longer applies. Scope grew mid-session at the maintainer's explicit request into a generic declarative injection layer (neuron.yaml entries declaring lifecycle point + category + --where filter + char budget, executed generically by hook.ts) specifically so Ticket 7 (Previous-Session WIP Handoff) becomes a pure-config change with zero new code once this ships; Ticket 7 is now blocked on Ticket 6. The gate-friction Ticket 5 surfaced (agents' own §1/§2 entries tripping a write-time gate) was root-caused during grilling to Map 2.4.2's near-duplicate/supersession gate (NEAR_DUP_RERANK_BAR) specifically, not its separate contradiction/reversal gate (P(contradiction)>=0.90) which an initial framing had mistakenly targeted, and deferred to a new Ticket 8, which retests that bar against real content rather than trusting its synthetic-corpus calibration (already known via Map 2.4.2 Ticket 10 not to transfer to real content).
 
@@ -1378,3 +1380,41 @@ tags:
 taskId: null
 ---
 Release automation (publish.yml, neuron-2.3.0 ticket 21) changed what the actual irreversible release trigger is: the workflow fires on every push to main, derives the npm dist-tag from package.json's version itself (bare X.Y.Z to 'latest', X.Y.Z-rcN to 'rc'), skips if that exact version is already published, and only creates/pushes the git tag after a real 'npm publish' succeeds. Confirmed live 2026-08-12 (neuron-2.4.0 ticket 37, 2.4.0-rc1): the rc dist-tag path worked exactly as designed, and the already-published no-op guard correctly skipped re-publishing on two follow-up doc-only pushes to main. This means merging a release branch to main is now the actual irreversible step, not a separate manual 'npm publish' run afterward — any future release-cut ticket needs its maintainer go-ahead checkpoint placed before the push to main, not after a manual tag as older tickets assumed. Also confirmed live the same session: main carries an active GitHub branch ruleset ('Protect', id 20346327) requiring a PR with 1 approval plus code-owner review, CodeQL, and code_quality gates (current_user_can_bypass is 'always' for the repo owner, but the maintainer chose a real PR for the actual release-triggering merge rather than bypassing). The npm-publish GitHub Environment itself has no protection rules, so the branch ruleset on main is the only checkpoint before the real publish fires, not a second one after it.
+
+---
+id: 05759e7b-d3ee-4bbe-ba18-8cea0a628288
+createdAt: 2026-08-16T17:43:17.717Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: ae0e3d5d-8564-471e-a2ed-73e54480c7e0
+supersededBy: f2bc6c9d-f1de-4dd7-9518-466028f1f340
+supersededAt: 2026-08-16T19:33:33.334Z
+---
+Map — neuron 2.4.3, Ticket 6 (Design the Write-Side Compliance Trigger Mechanism), resolved via live /grilling: full LifecyclePoint extension, new session-end point, shipped generally via neuron init (not a dogfood-only Stop hook) — Ticket 5's A/B already proved the mechanism moves compliance 20%->100%, so Ticket 1's reason for deferring real-hook engineering no longer applies. Per-harness capability verified against each harness's own current docs, not assumed from stale in-repo comments: Claude Code (SessionEnd), Copilot CLI (sessionEnd, already documented unused in copilot.ts), and Cursor (sessionEnd, confirmed via docs) all get real support; Codex CLI confirmed to have none (GitHub issue openai/codex#20374 requesting it was closed not_planned, i.e. explicitly declined, not merely unbuilt) and gets an explicit-instruction prose fallback instead. Gate-friction Ticket 5 surfaced (agents' own §1/§2 entries tripping Map 2.4.2's near-dup/supersession gate) is fixed as part of this ticket's own implementation plan, not deferred: new --companion-of <id> flag on neuron memory add, explicit opt-in only (no time-based magic), matching the existing --supersedes/--not-a-reversal/--if-novel shape. Command-flag docs split out of README's growing reference section into a new docs/commands.md. OpenCode harness support (no adapter exists anywhere in this codebase) spun off as its own ticket rather than folded in, since it's full new-harness scoping unrelated to wiring one more point onto harnesses neuron already supports. Supersedes an earlier decisions entry (270115a5) from an interrupted prior session that reached a different, never-actioned draft design (a generic declarative neuron.yaml injection layer, gate-friction deferred rather than fixed) and left a stray, premature map bullet alongside it — neither that ticket 6 close nor the Ticket 7/8 it referenced were ever actually created; this entry reflects what was actually decided and closed.
+
+---
+id: 1c92c2a4-99c3-4ac7-a756-98b11c636f1c
+createdAt: 2026-08-16T19:04:44.530Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: neuron-2.4.3-ticket-9
+---
+Ticket 9 (neuron-2.4.3, Map — neuron 2.4.3) split this repo's own wayfinder issue tracker from a single tickets category into three by temporal status: tickets-present (storage: md, maps actively being worked and every child under them, open or resolved), tickets-past (storage: vector, closed maps and their children, archived whole-map-on-close not per-ticket), tickets-future (storage: vector, maps chartered/parked but explicitly 'not yet sequenced'). Design was settled by Ticket 3 via /grilling; this ticket was pure execution — no src/ code changes were needed since per-category storage mode override was already a live, generic mechanism, so the work was neuron.yaml + a one-off migration script + docs, not a build. Migrated all 259 existing entries (58 present / 198 past / 3 future) via a script driving NeuronMemory.open(process.cwd()).transact() directly, mirroring ticket 40's precedent; ran it live only after confirming the plan with the maintainer, since it's a bulk delete-and-recreate across the whole category. docs/agents/issue-tracker.md rewritten for the three-tier model; the wayfinder skill itself needed no change, since it was already tracker-agnostic by design.
+
+---
+id: f2bc6c9d-f1de-4dd7-9518-466028f1f340
+createdAt: 2026-08-16T19:33:33.283Z
+importance: 4
+tags:
+  - 2.2.0
+  - wayfinder
+  - rc2
+taskId: ae0e3d5d-8564-471e-a2ed-73e54480c7e0
+---
+Map — neuron 2.4.3, Ticket 6 (Design the Write-Side Compliance Trigger Mechanism), resolved via live /grilling, then corrected mid-/tdd (2026-08-16). Supersedes 05759e7b, whose 'session-end' framing was the ticket's first, pre-correction design and went stale the moment implementation disproved it. Corrected design: the new LifecyclePoint is named pre-stop, not session-end, and maps to each harness's real per-turn stop-and-escalate event (Stop / agentStop / stop) rather than a fire-and-forget SessionEnd-family event -- verified empirically that SessionEnd-family events never reach the model and can't force another turn on any of the four harnesses. Claude Code's exact Stop field shape (decision:"escalate" + additionalContext) was confirmed empirically via a live headless-session probe run from this repo's own Claude Code session, not sourced from docs. Codex CLI turns out to have real Stop support too (doc-sourced): the original 'no hook exists, needs an explicit-instruction prose fallback' conclusion had checked the wrong event name entirely, so the Codex fallback is dropped as unneeded -- all four harnesses (Claude Code, Copilot CLI, Cursor, Codex CLI) now get real pre-stop support, none get a prose-instruction substitute. Shipped generally via neuron init, not a dogfood-only hook. Nudge blocks once per session via new session-scoped ledger.ts state (deliberately not epoch-scoped), mirroring Ticket 5's proven design. Gate-friction Ticket 5 surfaced (agents' own multi-section entries tripping Map 2.4.2's near-dup/supersession gate) fixed as part of this ticket's implementation, not deferred: new --companion-of <id> flag on neuron memory add, explicit opt-in, matching the existing --supersedes/--not-a-reversal/--if-novel shape. Command-flag docs split out of README into docs/COMMANDS.md, which also documents the full gate-resolution flag family together for the first time. OpenCode harness support spun off as its own ticket rather than folded in. Built via full red-to-green /tdd across all 9 implementation-plan steps: npm test 792/792 across 71 files, tsc --noEmit clean.

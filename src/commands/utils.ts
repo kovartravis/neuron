@@ -112,6 +112,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     includeSuperseded?: boolean;
     /** `memory add` ticket 19: non-interactive resolution of the supersession gate for scheduled/cron writers — skip the write (not an error) when a candidate is found, rather than hard-blocking for a human. */
     ifNovel?: boolean;
+    /** `memory add` ticket 6 (neuron-2.4.3): skips the near-dup/supersession gate check against this one named id — a deliberate companion entry (e.g. a §2 session-conclusion pointer to a just-written §1 fix), not a blanket bypass. Mutually exclusive with --supersedes/--not-a-reversal. */
+    companionOf?: string;
     /**
      * `memory list --where <field>=<value>` — keep entries whose declared field
      * equals value. Schema-agnostic: any category, any field. Repeatable
@@ -157,6 +159,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
   let notAReversal: boolean | undefined;
   let includeSuperseded: boolean | undefined;
   let ifNovel: boolean | undefined;
+  let companionOf: string | undefined;
   const where: string[] = [];
   let refsSatisfy: string | undefined;
   const fields: Record<string, string> = {};
@@ -275,6 +278,8 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       includeSuperseded = true;
     } else if (arg === '--if-novel') {
       ifNovel = true;
+    } else if (arg === '--companion-of') {
+      companionOf = args[++i];
     } else if (arg === '--where') {
       const val = args[++i];
       if (val !== undefined) {
@@ -326,6 +331,18 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
     process.exit(1);
   }
 
+  if (companionOf && (supersedes || notAReversal)) {
+    console.error('Error: --companion-of is mutually exclusive with --supersedes and --not-a-reversal');
+    console.error('  --companion-of names one specific entry to exempt from the gate; the other two flags resolve the gate a different way.');
+    process.exit(1);
+  }
+
+  if (companionOf && ifNovel) {
+    console.error('Error: --companion-of is mutually exclusive with --if-novel');
+    console.error('  --companion-of names one specific entry to exempt from the gate; --if-novel resolves the gate a different way.');
+    process.exit(1);
+  }
+
   return {
     positionals,
     options: {
@@ -362,6 +379,7 @@ export function parseFlags(args: string[], declaredFields: DeclaredFieldFlag[] =
       notAReversal,
       includeSuperseded,
       ifNovel,
+      companionOf,
       where: where.length > 0 ? where : undefined,
       refsSatisfy,
     }
@@ -596,7 +614,18 @@ Options:
                                  no entry added, printed to stderr and noted
                                  in the JSON result so the skip is never
                                  silent). Mutually exclusive with
-                                 --supersedes and --not-a-reversal.
+                                 --supersedes, --not-a-reversal, and
+                                 --companion-of.
+  --companion-of <id>             (add) Exempts this write from the gate only
+                                 against the named id — e.g. a session-
+                                 conclusion pointer that deliberately restates
+                                 a fix just written under a different
+                                 category. Not a blanket bypass: if the real
+                                 near-dup candidate is a DIFFERENT entry, the
+                                 gate still fires normally. <id> is validated
+                                 to exist, same as --supersedes. Mutually
+                                 exclusive with --supersedes,
+                                 --not-a-reversal, and --if-novel.
   --where <field>=<value>         (list) Keep entries whose declared field
   --where <field>!=<value>        equals (or, with !=, does not equal) value
                                  exactly. Schema-agnostic: any category, any
