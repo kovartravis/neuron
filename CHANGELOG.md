@@ -2,6 +2,47 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.3] - 2026-08-16
+
+**The write gate now catches near-duplicate paraphrases and flags real
+contradictions, not just malformed entries.** `enforceFieldSchema` already
+enforced *shape*; this release closes the *quality* gap the antagonistic-write
+pillar measured in 2.4.1. Near-duplicate detection (`--supersedes` /
+`--not-a-reversal` / `--if-novel`) is rebuilt as a widen-by-cosine →
+strip-known-template → rerank pipeline, replacing the old single-candidate
+0.97-cosine check that a genuine paraphrase could slip under. A same-category
+write that likely *contradicts* a live entry (measured via a local NLI
+cross-encoder) now soft-flags with a `possibleConflict` pointer instead of
+silently landing — A/B-tested against several alternative NLI models first;
+none cleared the bar for a harder, refusing hard-block, so this ships as
+soft-flag. A new `commitRef` field type plus a `git-notes` category let a
+memory entry cite a real commit, validated against the repo at write time. A
+new `--companion-of <id>` flag exempts a deliberate companion write from the
+near-dup gate against one named entry. Session-conclusion recording no longer
+duplicates a full `decisions`/`learning` entry into `history` — `history`
+now carries a short pointer sharing the same `taskId`.
+
+**Agents are now nudged to record what they decided, not just what they
+did.** A live A/B test found close to zero natural compliance with this
+project's own write-side memory protocol once a session has real competing
+work (control collapsed to 20%) — a nudge or explicit instruction both held
+100%. A new `pre-stop` lifecycle point, backed by each harness's real
+per-turn stop-and-escalate hook (`Stop`/`agentStop`/`stop` — not a
+fire-and-forget session-end event), ships this generally via `neuron init`
+on every supported harness, not as a dogfood-only mechanism.
+
+**Tracker hygiene.** The `history` category is retired — real usage was 238
+entries deep (list's default limit had been hiding most of it), and every
+special-cased reference to it in the type system, CLI, and UI is now a
+generic, config-driven `--category` instead. This repo's own issue tracker
+now splits tickets into `tickets-present` / `tickets-past` / `tickets-future`
+by temporal status, so an actively-sequenced map's working set no longer
+shares a single ever-growing file with hundreds of closed tickets from prior
+releases. A same-id `upsert` into a different category now actually moves
+the row instead of silently leaving it stranded under its old category.
+
+npm test 778/778, tsc clean.
+
 ## [2.4.1] - 2026-08-15
 
 **The `pre-command` hook no longer repeats itself, and every hook injection

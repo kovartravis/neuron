@@ -1002,6 +1002,37 @@ describe('NeuronMemory BGE query instruction prefix', () => {
   });
 });
 
+describe('Ticket 15: transactVector upsert moves a row across categories instead of stranding it', () => {
+  const mockEmbedder = { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) };
+
+  it('moves an existing id to the new category on a same-id upsert, leaving exactly one row', async () => {
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector',
+      projectName: 'test-project',
+      embedder: mockEmbedder,
+    });
+
+    const [created] = await memory.transact([{ op: 'upsert', category: 'learning', content: 'Moving row' }]);
+    expect(created.status).toBe('created');
+
+    const [moved] = await memory.transact([{ op: 'upsert', id: created.id, category: 'history', content: 'Moving row' }]);
+    expect(moved.status).toBe('updated');
+    expect(moved.id).toBe(created.id);
+
+    const db = memory.getDb();
+    const rows = db.prepare('SELECT id, category FROM memories WHERE id = ?').all(created.id) as Array<{ id: string; category: string }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].category).toBe('history');
+
+    expect(await memory.query({ category: 'learning' })).toHaveLength(0);
+    expect(await memory.query({ category: 'history' })).toHaveLength(1);
+
+    memory.close();
+  });
+});
+
 describe('Ticket 39: category auto-declare never escapes an isolated projectRoot', () => {
   const mockEmbedder = { embed: async () => new Float32Array(384), embedQuery: async () => new Float32Array(384) };
 
