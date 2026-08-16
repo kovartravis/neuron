@@ -1342,3 +1342,15 @@ tags:
 taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
 ---
 Map — neuron 2.4.2, Ticket 9 (Implement Conflict Detection at Write Time), resolved 2026-08-15: two design points its own text flagged as undecided were confirmed with the maintainer before building, rather than assumed. (1) Soft-flag surfacing mechanism is an inline, non-persisted CLI warning (stderr + a possibleConflict field on that one call's JSON response) — a persisted flag state was the alternative and was rejected because it would reopen the map's own "no PM-software creep, no workflow states beyond live/superseded" non-goal by needing a new declared field. (2) The soft-flag confidence bar is P(contradiction) >= 0.90, adopted directly from Ticket 8's own findings doc, which already names this as the best joint false-silence/false-accept operating point in its bar sweep (13%/27%) — a fresh pick for a soft-flag (non-blocking) posture, not a value Ticket 8/13 themselves chose, since those tickets calibrated for a hard-block posture Ticket 13 then ruled out entirely. A stricter bar (0.98) was offered and declined as favoring quiet warnings over useful ones.
+
+---
+id: 3625104e-4cad-4194-be1a-e65cb47423d9
+createdAt: 2026-08-16T03:20:43.878Z
+importance: 4
+tags:
+  - rc2
+  - 2.2.0
+  - wayfinder
+taskId: de4f45be-34e0-45df-9a50-f72d0bdc5905
+---
+Map — neuron 2.4.3, Ticket 1 (Write-Side Compliance Nudge & Instrumentation), resolved: don't commit to a Stop-hook trigger mechanism yet — test whether an active nudge actually changes agent write-compliance behavior first, via a 3-arm real-agent A/B (control / simulated session-end nudge / explicit-instruction) reusing benchmarks/token-ab's live-session pattern (same agent, same SWE-bench task, run twice, deterministic tool-call grading) rather than the offline-corpus-scoring pattern the NLI model A/Bs used — that pattern doesn't fit a live-behavior question. Go/no-go rule: build the real trigger (and only then decide hand-wired dogfood-only Stop hook vs. full LifecyclePoint extension across all 4 harness adapters) if nudge/explicit-instruction clearly beat control; no-go if all three land close together. Compliance is graded deterministically — a real neuron memory add tool call in the transcript, mirroring hintFollowLog.ts's recordToolUse pattern-match, never an LLM judge. Build/run of the harness itself spawned as a new ticket (kind: research), not done in this grilling session, mirroring how ticket 11 spawned ticket 13 in Map — neuron 2.4.2.
