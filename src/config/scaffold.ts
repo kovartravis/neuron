@@ -56,10 +56,6 @@ categories:
     description: Agent conventions, rules, and failure fixes
     tags: [rule, convention, failure-fix]
 
-  history:
-    description: Action history log and completed task summary
-    tags: [task, history]
-
   decisions:
     description: Architectural Decision Records (ADRs) & design choices
     tags: [adr, architecture, design]

@@ -6,7 +6,6 @@ import {
   handleExecCommand,
   handleStatusCommand,
   handleLearnCommand,
-  handleHistoryCommand,
   handleMemoryCommand,
   handleUiCommand,
   handleSyncCommand,
@@ -72,10 +71,6 @@ async function main() {
 
     if (mainCommand === 'learn') {
       return await handleLearnCommand(args, memory, projectName);
-    }
-
-    if (mainCommand === 'history') {
-      return await handleHistoryCommand(args, memory, projectName);
     }
 
     if (mainCommand === 'sync') {

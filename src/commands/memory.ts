@@ -172,7 +172,7 @@ export async function handleMemoryCommand(
   // `--category` is optional on `add` only — write-side enrichment infers it,
   // or the write fails naming the cause. It stays required for `delete` and
   // `update`, where it selects an existing entry and inference is meaningless.
-  if (!category && ['delete', 'update'].includes(subCommand)) {
+  if (!category && ['delete', 'update', 'consolidate', 'prune'].includes(subCommand)) {
     console.error(`Error: --category is required for 'memory ${subCommand}'`);
     process.exit(1);
   }
@@ -366,7 +366,7 @@ export async function handleMemoryCommand(
     ]);
     console.log(JSON.stringify(res[0]));
   } else if (subCommand === 'consolidate') {
-    const report = memory.maintain({ consolidate: true });
+    const report = memory.maintain({ category, consolidate: true });
     console.log(
       JSON.stringify({
         entries: report.consolidated?.entries || [],
@@ -377,6 +377,7 @@ export async function handleMemoryCommand(
     );
   } else if (subCommand === 'prune') {
     const report = memory.maintain({
+      category,
       pruneHistoryBeforeDays: options.days ?? 30,
       maxPruneImportance: options.importance ?? 3,
     });

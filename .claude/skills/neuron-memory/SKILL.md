@@ -1,6 +1,6 @@
 ---
 name: neuron-memory
-description: Manage agent session context by interviewing the user, configuring neuron.yaml, loading learnings, recording history, and pruning obsolete entries from the memory store.
+description: Manage agent session context by interviewing the user, configuring neuron.yaml, loading learnings and decisions, and pruning obsolete entries from the memory store.
 ---
 
 # Neuron Memory Store Management
@@ -9,7 +9,7 @@ This skill guides how agents configure and interact with `@kovartravis/neuron` t
 
 > [!CRITICAL]
 > **USER INTERACTION & EXPLANATION MANDATE**
-> Before taking ANY action or executing any memory operation (including querying memory, modifying `neuron.yaml` or `AGENTS.md`, writing learnings/history/decisions, running sync commands, or pruning entries), the agent **MUST ALWAYS**:
+> Before taking ANY action or executing any memory operation (including querying memory, modifying `neuron.yaml` or `AGENTS.md`, writing learnings/decisions, running sync commands, or pruning entries), the agent **MUST ALWAYS**:
 > 1. **Ask the User**: Ask the user what they want to do or confirm their explicit intent and options.
 > 2. **Explain First**: Clearly explain the exact action, CLI command, or file modification it plans to perform before executing it.
 
@@ -44,7 +44,7 @@ When asked to set up memory for a project or configure memory settings:
 
 1. **Ask & Explain First (Interview Protocol)**:
    Before taking any action or writing configuration files, explain to the user what setup steps will be performed, and ask how they would like memory configured for their project:
-   - **Default Categories**: `learning` (rules, conventions, failure fixes) and `history` (action logs & completed tasks).
+   - **Default Categories**: `learning` (rules, conventions, failure fixes).
    - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
    - **Storage Mode**: Ask whether memory should live as markdown files with SQLite kept as a derived index (`md` — the default, and what `init` wrote) or in the SQLite vector database only with no `.md` files (`vector`). Either can be overridden per category — see "Per-category storage" below — so routing e.g. a high-volume category to `vector` while everything else stays `md` doesn't need a special top-level mode; the override is always live. `md-only`, `dual`, `vector-only`, and `split` are all pre-2.3.0 spellings: `md-only` and `dual` now mean `md`, `vector-only` now means `vector`, and `split` (which used to be the only way to make a per-category override take effect) also now means `md` — all four still parse and warn on `stderr`. Do not write any of them into a new config.
      - Under `md`, the `.md` files are the **record of truth**: they are reconciled into the index on every command, and an entry deleted from a `.md` file is deleted from the index. That is the point of the mode, but say it out loud before recommending it — it means hand-editing those files is a supported operation *and* a destructive one.
@@ -68,9 +68,6 @@ When asked to set up memory for a project or configure memory settings:
        tags:
          - rule
          - convention
-
-     history:
-       description: Action history log and completed task summary
 
      # Custom categories requested by user:
      architecture:
@@ -103,13 +100,13 @@ When asked to set up memory for a project or configure memory settings:
        - commandPattern: "^(git|gh|npm) "
          categories:
            - learning
-           - history
+           - decisions
          limit: 8
    ```
 
 3. **Configure & Align `AGENTS.md` / Instruction Files (Mandatory)**:
    Always write or update `AGENTS.md` (or `CLAUDE.md`, `CURSOR.md`) immediately after creating or updating `neuron.yaml`. Ensure `AGENTS.md` explicitly documents:
-   - All declared categories from `neuron.yaml` (e.g., `learning`, `history`, `architecture`).
+   - All declared categories from `neuron.yaml` (e.g., `learning`, `decisions`, `architecture`).
    - Architectural scan settings (e.g., `Architecture scan settings: enabled: true, category: architecture, depth: 3`).
    - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
    - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
@@ -335,8 +332,9 @@ Whenever a command execution, test run, or tool invocation fails:
 ## 4. End of Run (Memory Recording)
 
 Before finishing your turn and ending the session, check whether this session
-produced a `decisions`/`learning` entry (steps 2-3) — that determines what
-`history` (step 1) looks like, so resolve it in that order.
+produced a `decisions`/`learning` entry — that is what makes the session
+worth recording at all. There is no separate action-log category by
+default; if nothing was decided, there is nothing else to write.
 
 1. **Record New Learnings**: If you established new rules, resolved
    configurations, or fixed a failure, record it as a detailed multi-sentence
@@ -350,39 +348,33 @@ produced a `decisions`/`learning` entry (steps 2-3) — that determines what
    ```bash
    neuron memory add --category decisions "<decision, rationale, and alternatives considered>" --task-id <id>
    ```
-3. **Log Action History**: Record what happened, sized to whether step 1 or 2
-   already captured the resolution in detail:
-   - **A `decisions`/`learning` entry was written above**: shrink `history`
-     to a short pointer — what happened, in a line or two — sharing the same
-     `--task-id`. The shared id is the link between the two entries, not a
-     separate id-to-id field, and `history` should not restate what the
-     other entry already said in full:
-     ```bash
-     neuron memory add --category history "<one or two lines: what happened>" --task-id <id>
-     ```
-   - **Nothing was decided this session** (pure execution — nothing to
-     record in `decisions`/`learning`): `history` keeps the full-narrative
-     shape, since there's nothing else to point at:
-     ```bash
-     neuron memory add --category history "<summary of what was built or fixed>" [--task-id <id>]
-     ```
    - **`--tags`**: leave it to inference (§0a) — pass it explicitly only to
      mint a genuinely new tag, which is a deliberate act, not the default.
    - **`--task-id`**: Link the entry to the ticket or issue being resolved.
      Use the ticket/issue number (e.g., `01-db-schema-postgres` for local
      issues, or `#42` for GitHub/GitLab). Do NOT use process/task IDs like
      `task-144`.
-4. **Refresh the Blueprint** if the session changed the codebase structure — see Section 8.
+3. **Refresh the Blueprint** if the session changed the codebase structure — see Section 8.
 
-> **Note**: `neuron learn` and `neuron history` still work as aliases but are
-> deprecated as of 2.1.0 and print a warning to `stderr`. Prefer
-> `neuron memory --category <name>`.
+> [!NOTE]
+> **A project that keeps its own append-only action-log category** (any
+> name — nothing ships one by default) should shrink that category's entry
+> to a short pointer sharing the same `--task-id` whenever step 1 or 2 above
+> already wrote the detail, rather than restating it in full. That is a
+> project-specific convention to ask about during setup (§0), not a
+> built-in behavior.
+
+> **Note**: `neuron learn` still works as an alias but is deprecated as of
+> 2.1.0 and prints a warning to `stderr`. Prefer
+> `neuron memory --category learning`. `neuron history` and the `history`
+> category it defaulted to are gone, not merely deprecated — nothing ships
+> it as a default, alias, or hardcoded assumption anymore.
 
 ## 5. Markdown File Storage & Sync (`storage.mode: md`, or a category's `storage: md` override)
 
 Under `md` (the default, whether set at the top level or via a per-category override), memory entries are stored as category-based Markdown files inside the `storage.path` directory (default: `.neuron/`), and those files are the **record of truth** — SQLite is a derived index reconciled from them on every command, not a second copy:
 
-- **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/history.md`, `.neuron/decisions.md`.
+- **File Layout**: One `.md` file per category: `.neuron/learning.md`, `.neuron/decisions.md`.
 - **Entry Format**: Each entry is a YAML frontmatter block followed by body text:
   ```markdown
   ---
@@ -431,42 +423,41 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
      ```bash
      neuron memory delete <id> --category learning
      ```
-2. **Prune Old History** — read this before running it:
+2. **Prune Old Entries from One Category** — read this before running it:
 
    > [!WARNING]
-   > **`neuron memory prune` deletes far more than "low-importance" entries, and
-   > there is no undo.**
+   > **`neuron memory prune --category <name>` deletes far more than
+   > "low-importance" entries, and there is no undo.**
    >
-   > The defaults are `--days 30` and `--importance 3`, and the importance
-   > comparison is **inclusive** (`importance <= 3`). Every entry written
-   > *without* an explicit `--importance` is stored at the default of **3**, so
-   > a bare `neuron memory prune` deletes **every history entry older than 30
-   > days that was not explicitly marked 4 or 5**.
-   >
-   > In practice that is almost the whole category. On the reference store,
-   > 158 of 160 history entries match the default prune — not the handful the
-   > phrase "low-importance" suggests.
+   > `--category` is required — prune always targets exactly one category,
+   > never the whole store. The defaults are `--days 30` and `--importance 3`,
+   > and the importance comparison is **inclusive** (`importance <= 3`). Every
+   > entry written *without* an explicit `--importance` is stored at the
+   > default of **3**, so a bare prune deletes **every entry in that category
+   > older than 30 days that was not explicitly marked 4 or 5** — in practice,
+   > almost the whole category for one that's never rated its entries
+   > explicitly, not the handful the phrase "low-importance" suggests.
 
    **Always preview before deleting.** There is no `--dry-run` for `prune`, so
    count the matches first:
 
    ```bash
-   # How many entries would a default prune remove?
-   neuron memory list --category history --limit 1000
+   # How many entries in <category> would a default prune remove?
+   neuron memory list --category <category> --limit 1000
    ```
 
    Then prune deliberately, passing the threshold you actually mean:
 
    ```bash
-   neuron memory prune --days 30 --importance 1   # only entries marked 1
-   neuron memory prune --days 90 --importance 2   # older, still conservative
-   neuron memory prune                            # DANGER: --importance 3, i.e. nearly everything
+   neuron memory prune --category <category> --days 30 --importance 1   # only entries marked 1
+   neuron memory prune --category <category> --days 90 --importance 2   # older, still conservative
+   neuron memory prune --category <category>                           # DANGER: --importance 3, i.e. nearly everything
    ```
 
    Because importance defaults to `3` on write, importance is only a useful
-   prune filter if entries are **explicitly** rated as they are created. If your
-   entries were written without `--importance`, treat `prune` as "delete all
-   history older than N days" and decide on that basis.
+   prune filter if entries are **explicitly** rated as they are created. If a
+   category's entries were written without `--importance`, treat `prune` as
+   "delete all of this category older than N days" and decide on that basis.
 
 3. **Sync After Prune** (if any category resolves to `md` storage):
    - After pruning entries from the vector DB, run `neuron sync` to keep Markdown files consistent:

@@ -1628,3 +1628,27 @@ tags:
 taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
 ---
 Fix for a "local_files_only=true or env.allowRemoteModels=false" error when adding a second @huggingface/transformers model loader (Ticket 9, neuron-2.4.2): a new TransformersNLIClassifier failed to download its model on first use even though it was never cached, despite no local-only flag being set anywhere in its own code. Root cause: @huggingface/transformers's env object is a process-wide singleton shared by every model loader in the process; TransformersReranker's loader only ever sets env.allowRemoteModels = false conditionally (when its own model is already cached) and never sets it back to true otherwise, so a reranker load earlier in the same CLI invocation left allowRemoteModels pinned false for every loader that ran after it, including one whose own model genuinely wasn't cached yet. Fixed by having the new loader set env.allowRemoteModels explicitly in both branches: env.allowRemoteModels = !fs.existsSync(onnxPath), so its behavior never depends on what an earlier loader in the same process did. A related but separate bug found in the same debugging pass: the new loader requested { dtype: 'q8' } and checked for onnx/model_quantized.onnx, but the model had only ever been cached at full precision (onnx/model.onnx, no dtype override) by the A/B scripts that calibrated the bar this code gates on — fixed by dropping the dtype override to match exactly what was calibrated, not just what happened to load successfully.
+
+---
+id: 8817be64-b169-4e6b-a6a3-d08d0cdd85d6
+createdAt: 2026-08-16T12:43:47.799Z
+importance: 4
+tags:
+  - exec
+  - failure-fix
+  - publish
+taskId: null
+---
+Fix needed for a still-open build trap: a bare 'npm run build' (package.json's build script, just tsc) does not chmod +x dist/cli.js — only 'prepublishOnly' does ('npm run build && chmod +x dist/cli.js'). Discovered live during neuron-2.4.0 ticket 43 when an 'rm -rf dist' rebuild during measurement silently broke the globally-linked 'neuron' CLI (permission denied, not a build error) because the iteration loop used 'npm run build' directly, not 'npm run prepublishOnly' or 'npm link' after a full clean rebuild. Still true as of 2026-08-16 (build script unchanged) — after any clean/full rebuild of dist/, either run 'chmod +x dist/cli.js' explicitly or reinstall/relink before trusting the global 'neuron' binary.
+
+---
+id: 1fea5e9c-b4aa-4a0e-98c7-083ca4b70a17
+createdAt: 2026-08-16T12:43:48.472Z
+importance: 4
+tags:
+  - rc2
+  - adr
+  - failure-fix
+taskId: null
+---
+Fix for prompt-injection misidentification of neuron's own recall: the pre-command hook (src/commands/hook.ts) had no ledger dedup — unlike pre-prompt/session-start, which already dedup injected ids via harnesses/ledger.ts — and its injected additionalContext carried no self-identifying framing. Root cause confirmed live during neuron-2.4.1 ticket 1 (Antagonistic-Write Test Pillar): the session itself, plus a subagent it spawned, mistook the project's own legitimate recall injection for a prompt-injection attempt before the maintainer corrected it. Fixed by giving pre-command its own dedup call (recordPreCommandInjection, harnesses/ledger.ts, id-only tracking — not pre-prompt/session-start's char-budget tracking) and by prefixing every injection with a stable RECALL_PROVENANCE_PREFIX applied once at the shared emit() choke point in hook.ts (~line 195-199), so any harness or agent reading the injected text can identify it as neuron's own recall rather than external content. Distinct from ADR 0014's separate ticket-12 decision to give pre-command a real PreToolUse-driven hook (Claude Code/Codex CLI only) — that's about wiring, this is about the dedup/provenance-framing gap on top of it.

@@ -5,7 +5,7 @@ export function generateDashboardHtml(): string {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Neuron Memory Dashboard</title>
-  <meta name="description" content="Neuron local agent memory dashboard — browse learnings, history, and custom categories." />
+  <meta name="description" content="Neuron local agent memory dashboard — browse learnings and custom categories." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -342,7 +342,7 @@ export function generateDashboardHtml(): string {
   }
 
   function renderEntry(item, showScore) {
-    const catBadge = '<span class="cat-badge">' + esc(item.category || item.kind || 'memory') + '</span>';
+    const catBadge = '<span class="cat-badge">' + esc(item.category || 'memory') + '</span>';
     return '<div class="entry">' +
       '<div class="entry-content">' + esc(item.content) + '</div>' +
       '<div class="entry-meta">' +

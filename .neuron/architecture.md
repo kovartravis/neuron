@@ -64,7 +64,7 @@ Default: `ast/2`
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
 - **src** — `src` (13 files)
-- **commands** — `src/commands` (30 files)
+- **commands** — `src/commands` (28 files)
 - **components** — `src/components` (17 files)
 - **config** — `src/config` (11 files)
 - **e2e** — `src/e2e` (1 file)
@@ -163,8 +163,6 @@ Primary commands module containing core application capabilities.
 - **`src/commands/exec.ts`** (Exports: `handleExecCommand`): Function handleExecCommand (Methods: handleExecCommand(), indexOf(), slice(), error()).
 - **`src/commands/feedback.test.ts`**: Methods: describe(), join(), it(), buildGitHubIssueUrl().
 - **`src/commands/feedback.ts`** (Exports: `buildGitHubIssueUrl, handleFeedbackCommand`): Function buildGitHubIssueUrl (Methods: buildGitHubIssueUrl(), URLSearchParams(), set(), toString()).
-- **`src/commands/history.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
-- **`src/commands/history.ts`** (Exports: `handleHistoryCommand`): Function handleHistoryCommand (Methods: handleHistoryCommand(), error(), exit(), log()).
 - **`src/commands/hook.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
 - **`src/commands/hook.ts`** (Exports: `handleHookCommand`): Extracts the exact suggested command from a `buildDiscoveryHint` line — everything after `run: `.
 - **`src/commands/index.ts`**: No exported symbols detected.
@@ -321,8 +319,8 @@ Primary models module containing core application capabilities.
 
 **Key Components & Export Contracts:**
 - **`src/models/index.ts`**: No exported symbols detected.
-- **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): No exported symbols detected.
-- **`src/models/memory.ts`** (Exports: `MemoryKind, MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome, DuplicateGroupEntry, DuplicateGroup, StoreHealth, DuplicateMergeOutcome, StoreHealthRepairReport`): @deprecated Use plain `string` for category names instead.
+- **`src/models/maintenance.ts`** (Exports: `MaintenancePolicy, MaintenanceReport`): Category `pruneHistoryBeforeDays`/`consolidate` operate on. Required whenever either is set.
+- **`src/models/memory.ts`** (Exports: `MemoryQuery, Memory, MemoryMutation, MutationResult, FieldComplianceViolation, FieldRepairOutcome, DuplicateGroupEntry, DuplicateGroup, StoreHealth, DuplicateMergeOutcome, StoreHealthRepairReport`): Filter by a single category.
 - **`src/models/options.ts`** (Exports: `NeuronMemoryOptions`): Injected write-side enricher. Tests supply a stub so the transaction seam can be exercised without loading a 500M-parameter model; production leaves it unset and gets `LocalEnrichmentModel`.
 
 ---

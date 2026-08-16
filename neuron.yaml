@@ -12,12 +12,6 @@ categories:
       - convention
       - failure-fix
 
-  history:
-    description: Action history log and completed task summary
-    tags:
-      - task
-      - history
-
   decisions:
     description: Architectural Decision Records (ADRs) & design choices
     tags:
@@ -85,6 +79,5 @@ pullRules:
     - commandPattern: "^(npm test|git commit)"
       categories:
         - learning
-        - history
         - decisions
       limit: 5

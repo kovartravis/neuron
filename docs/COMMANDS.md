@@ -43,7 +43,7 @@ managed region that differs from what this run would write is asked about,
 never silently replaced.
 
 The generated `neuron.yaml` sets `storage.mode: md` and declares `learning`,
-`history`, `decisions` and `architecture`. An **existing** config — including one
+`decisions` and `architecture`. An **existing** config — including one
 in an ancestor directory that already governs this project — is never touched,
 rewritten or merged into; `init` is re-run routinely to refresh skills, models
 and grammars, and anything it edits it would edit again over your changes. The
@@ -200,15 +200,16 @@ Multi-category memory operations.
 | `list` | List entries |
 | `update` | Update an entry. `--category` required |
 | `delete` | Delete an entry. `--category` required |
-| `consolidate` | Summarize history entries logged since the last consolidation |
-| `prune` | Remove obsolete or redundant entries |
+| `consolidate` | Summarize `--category`'s entries logged since the last consolidation |
+| `prune` | Delete old entries from `--category` (DESTRUCTIVE, no undo) |
 
 | Flag | Description |
 |---|---|
-| `--category <name>` | Single category — required for `add`, `update`, `delete`. Optional on `get`, where it turns a category mismatch into a `not_found` result instead of ignoring the flag (ids are unique store-wide) |
+| `--category <name>` | Single category — required for `add`, `update`, `delete`, `consolidate`, `prune`. Optional on `get`, where it turns a category mismatch into a `not_found` result instead of ignoring the flag (ids are unique store-wide) |
 | `--categories a,b` | Restrict `query`/`list` to specific categories |
 | `--tags a,b` | Attach or filter by tags |
-| `--importance <1-5>` | Entry importance. Never inferred — an omitted value stores `3`, which is also the default `prune` ceiling |
+| `--importance <1-5>` | Entry importance. Never inferred — an omitted value stores `3`, which is also `prune`'s default ceiling (inclusive) |
+| `--days <n>` | `prune` only: cutoff age in days (default `30`) |
 | `--task-id <id>` | Link an entry to a ticket or spec |
 | `--limit <n>` | Max results — caps what `list`/`query` return, not the internal scan used to compute filtered results |
 | `--if-novel` | `add` only: on a supersession-gate hit, skip the write (exit `0`) instead of erroring — for cron/scheduled writers that can't answer an interactive prompt. The skip is never silent: reason + candidate id on `stderr`, `{"skipped": true, ...}` on stdout in place of the written entry. Mutually exclusive with `--supersedes`/`--not-a-reversal` |
@@ -340,9 +341,15 @@ Generates pre-filled GitHub issue links.
 
 ## Deprecated
 
-`neuron learn …` and `neuron history …` are thin aliases that delegate to
-`neuron memory --category learning|history` and warn on `stderr`. Removed in
+`neuron learn …` is a thin alias that delegates to
+`neuron memory --category learning` and warns on `stderr`. Removed in
 3.0.0.
+
+`neuron history …` and the `history` category it defaulted to are gone as of
+this release, not just deprecated — a still-live category named `history` on
+an existing project keeps working exactly like any other user-declared
+category, but nothing ships it as a default, alias, or hardcoded assumption
+anymore.
 
 ---
 
@@ -370,10 +377,6 @@ categories:
     description: Agent conventions, rules, and failure fixes
     tags: [rule, convention, failure-fix]
 
-  history:
-    description: Action history log and completed task summary
-    tags: [task, history]
-
   decisions:
     description: Architectural Decision Records (ADRs) & design choices
     tags: [adr, architecture]
@@ -397,7 +400,7 @@ pullRules:
       categories: [learning]
       limit: 8
     - commandPattern: "^(git|npm|gh) "
-      categories: [learning, history]
+      categories: [learning, decisions]
       limit: 5
 
 relevance:

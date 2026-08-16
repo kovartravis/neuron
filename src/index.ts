@@ -21,7 +21,6 @@ import {
   TransformersNLIClassifier
 } from './components/index.js';
 import {
-  MemoryKind,
   MemoryQuery,
   Memory,
   MemoryMutation,
@@ -72,11 +71,10 @@ export interface GitLogHit {
 const GIT_LOG_LAST_INDEXED_SHA_KEY = 'git_log_last_indexed_sha';
 
 /**
- * Resolve a `category` from a mutation/query, supporting the deprecated `kind` field.
- * Maps 'learning' → 'learning', 'history' → 'history', or passes through custom category names.
+ * Resolve a `category` from a mutation, defaulting to `learning` when omitted.
  */
-function resolveCategory(m: { category?: string; kind?: string }): string {
-  return m.category ?? m.kind ?? 'learning';
+function resolveCategory(m: { category?: string }): string {
+  return m.category ?? 'learning';
 }
 
 /**
@@ -787,9 +785,6 @@ export class NeuronMemory {
       categoryFilter = q.categories;
     } else if (q.category) {
       categoryFilter = [q.category];
-    } else if (q.kind) {
-      // Backward compat: kind → category
-      categoryFilter = [q.kind === 'learning' ? 'learning' : 'history'];
     }
     // If no filter, query all categories
 
@@ -866,7 +861,6 @@ export class NeuronMemory {
         results.push({
           id: row.id,
           category: row.category,
-          kind: row.category, // backward compat
           content: row.content,
           score,
           similarity,
@@ -900,7 +894,6 @@ export class NeuronMemory {
         results.push({
           id: row.id,
           category: row.category,
-          kind: row.category, // backward compat
           content: row.content,
           tags: JSON.parse(row.tags),
           importance: row.importance,
@@ -934,7 +927,6 @@ export class NeuronMemory {
     return {
       id: row.id,
       category: row.category,
-      kind: row.category,
       content: row.content,
       tags: JSON.parse(row.tags),
       importance: row.importance,
@@ -1546,7 +1538,7 @@ export class NeuronMemory {
     const cfg = this.config.llm.enrichment;
     const strict = this.config.strict;
     const now = new Date().toISOString();
-    const explicitCategory = m.category ?? m.kind;
+    const explicitCategory = m.category;
 
     // Enrichment off entirely: category is still mandatory, and nothing is
     // pending, so the write must not enter the backlog.
@@ -1647,7 +1639,6 @@ export class NeuronMemory {
     return {
       ...m,
       category,
-      kind: undefined,
       tags,
       enrichedAt: now,
     };
@@ -1856,29 +1847,30 @@ export class NeuronMemory {
         const watermarkRowidRow = getWatermarkRowid.get() as { value: string } | undefined;
         const lastRowid = watermarkRowidRow ? parseInt(watermarkRowidRow.value, 10) : 0;
 
+        if (!policy.category) throw new Error("maintain: 'category' is required when 'consolidate' is set");
+
         const stmt = this.db.prepare(`
           SELECT rowid, id, category, content, tags, task_id, created_at
           FROM memories
-          WHERE project_id = ? AND category = 'history' AND rowid > ?
+          WHERE project_id = ? AND category = ? AND rowid > ?
           ORDER BY rowid ASC
         `);
-        const rows = stmt.all(this.projectId, lastRowid) as any[];
+        const rows = stmt.all(this.projectId, policy.category, lastRowid) as any[];
 
         const consolidatedAt = new Date().toISOString();
-        
+
         if (rows.length > 0) {
           const maxRowid = rows[rows.length - 1].rowid;
           const updateWatermarkRowid = this.db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('last_consolidated_rowid', ?)");
           updateWatermarkRowid.run(maxRowid.toString());
         }
-        
+
         const updateWatermarkAt = this.db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('last_consolidated_at', ?)");
         updateWatermarkAt.run(consolidatedAt);
 
         const entries: Memory[] = rows.map(row => ({
           id: row.id,
-          category: 'history',
-          kind: 'history',
+          category: row.category,
           content: row.content,
           tags: JSON.parse(row.tags),
           taskId: row.task_id,
@@ -1889,6 +1881,8 @@ export class NeuronMemory {
       }
 
       if (policy.pruneHistoryBeforeDays !== undefined) {
+        if (!policy.category) throw new Error("maintain: 'category' is required when 'pruneHistoryBeforeDays' is set");
+
         const days = policy.pruneHistoryBeforeDays;
         const maxImportance = policy.maxPruneImportance ?? 3;
 
@@ -1899,12 +1893,12 @@ export class NeuronMemory {
         const stmt = this.db.prepare(`
           DELETE FROM memories
           WHERE project_id = ?
-            AND category = 'history'
+            AND category = ?
             AND created_at < ?
             AND importance <= ?
         `);
 
-        const info = stmt.run(this.projectId, cutoffStr, maxImportance);
+        const info = stmt.run(this.projectId, policy.category, cutoffStr, maxImportance);
         report.prunedCount = info.changes;
       }
     })();
@@ -1914,21 +1908,15 @@ export class NeuronMemory {
 
   public getStatus(): any {
     let totalCount = 0;
-    let learnCount = 0;
-    let historyCount = 0;
+    let categoryCounts: Record<string, number> = {};
     let categories: string[] = [];
 
     if (this.db) {
       const totalRow = this.db.prepare('SELECT COUNT(*) as count FROM memories WHERE project_id = ?').get(this.projectId) as { count: number };
       totalCount = totalRow ? totalRow.count : 0;
 
-      const learnRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'learning'").get(this.projectId) as { count: number };
-      learnCount = learnRow ? learnRow.count : 0;
-
-      const historyRow = this.db.prepare("SELECT COUNT(*) as count FROM memories WHERE project_id = ? AND category = 'history'").get(this.projectId) as { count: number };
-      historyCount = historyRow ? historyRow.count : 0;
-
-      const categoryRows = this.db.prepare('SELECT DISTINCT category FROM memories WHERE project_id = ?').all(this.projectId) as any[];
+      const categoryRows = this.db.prepare('SELECT category, COUNT(*) as count FROM memories WHERE project_id = ? GROUP BY category').all(this.projectId) as { category: string; count: number }[];
+      categoryCounts = Object.fromEntries(categoryRows.map(r => [r.category, r.count]));
       categories = categoryRows.map(r => r.category);
     }
 
@@ -1946,8 +1934,7 @@ export class NeuronMemory {
       model: modelReady,
       modelName: 'Xenova/bge-small-en-v1.5',
       totalCount,
-      learnCount,
-      historyCount,
+      categoryCounts,
       categories,
       storage: {
         mode: this.config.storage.mode,
@@ -2000,38 +1987,6 @@ export class NeuronMemory {
     return { id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName };
   }
 
-  public async addHistory(content: string, options: { taskId?: string; tags?: string[]; importance?: number } = {}): Promise<any> {
-    const res = await this.transact([{ op: 'upsert', category: 'history', content, tags: options.tags, taskId: options.taskId, importance: options.importance }]);
-    return res[0];
-  }
-  public async queryHistory(query: string, options: { limit?: number } = {}): Promise<any> {
-    const results = await this.query({ text: query, categories: ['history'], limit: options.limit });
-    return { results, project: this.projectName, query };
-  }
-  public listHistory(options: { limit?: number } = {}): any[] {
-    const limit = options.limit ?? 20;
-    const stmt = this.db.prepare(`SELECT id, content, tags, task_id, created_at FROM memories WHERE project_id = ? AND category = 'history' ORDER BY rowid DESC LIMIT ?`);
-    return (stmt.all(this.projectId, limit) as any[]).map(row => ({
-      id: row.id, content: row.content, tags: JSON.parse(row.tags), taskId: row.task_id, createdAt: row.created_at
-    }));
-  }
-  public deleteHistory(id: string): any {
-    const info = this.db.prepare(`DELETE FROM memories WHERE id = ? AND project_id = ?`).run(id, this.projectId);
-    return { id, status: info.changes > 0 ? 'deleted' : 'not_found', project: this.projectName };
-  }
-  public consolidateHistory(): any {
-    const report = this.maintain({ consolidate: true });
-    return {
-      entries: report.consolidated?.entries || [],
-      consolidatedAt: report.consolidated?.consolidatedAt,
-      previousCursor: report.consolidated?.previousCursor,
-      project: this.projectName
-    };
-  }
-  public pruneHistory(options: { days?: number; maxImportance?: number } = {}): any {
-    const report = this.maintain({ pruneHistoryBeforeDays: options.days ?? 30, maxPruneImportance: options.maxImportance ?? 3 });
-    return { deletedCount: report.prunedCount ?? 0 };
-  }
 }
 
 function dotProduct(a: Float32Array, b: Float32Array): number {

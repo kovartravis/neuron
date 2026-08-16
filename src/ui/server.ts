@@ -37,7 +37,7 @@ export async function startUiServer(options: UiServerOptions): Promise<UiServer>
       }
 
       const dbCategories: string[] = Array.isArray(status.categories) ? status.categories : [];
-      const allCategoryNames = Array.from(new Set(['learning', 'history', ...Object.keys(configCategories), ...dbCategories]));
+      const allCategoryNames = Array.from(new Set(['learning', ...Object.keys(configCategories), ...dbCategories]));
 
       const dbInstance = (memory as any).db;
       const projectId = (memory as any).projectId;
@@ -69,14 +69,13 @@ export async function startUiServer(options: UiServerOptions): Promise<UiServer>
       return;
     }
 
-    if (req.method === 'GET' && (url.pathname === '/api/memories' || url.pathname === '/api/learnings' || url.pathname === '/api/history')) {
+    if (req.method === 'GET' && (url.pathname === '/api/memories' || url.pathname === '/api/learnings')) {
       const q = url.searchParams.get('q') ?? undefined;
       const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
       let category = url.searchParams.get('category') ?? undefined;
 
       if (!category) {
         if (url.pathname === '/api/learnings') category = 'learning';
-        else if (url.pathname === '/api/history') category = 'history';
       }
 
       (async () => {

@@ -55,7 +55,7 @@ export class DualStorageRouter {
     await this.reconcile(this.mdCategories());
     const results: MutationResult[] = [];
     for (const m of mutations) {
-      const cat = m.category ?? m.kind ?? 'learning';
+      const cat = m.category ?? 'learning';
       if (this.resolveCategoryStorage(cat) === 'vector') {
         results.push(...(await this.vectorDb.transact([m])));
       } else {
@@ -76,7 +76,7 @@ export class DualStorageRouter {
    * record of truth (markdown) already landed.
    */
   private async transactMdMutation(m: MemoryMutation): Promise<MutationResult[]> {
-    const category = m.category ?? m.kind ?? 'learning';
+    const category = m.category ?? 'learning';
     try {
       if (m.op === 'upsert') {
         const mdEntry = await this.mdAdapter.writeEntry(category, {

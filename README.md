@@ -126,7 +126,6 @@ remember to ask. Purely informational — it never blocks the command.
 ```
 .neuron/
   learning.md      # conventions, rules, failure fixes
-  history.md       # action history log
   decisions.md     # architectural decision records
 ```
 
@@ -154,7 +153,6 @@ silently guessed at.
 
 **This isn't a toy example.** Neuron dogfoods itself: this repository's own
 [`.neuron/learning.md`](.neuron/learning.md),
-[`.neuron/history.md`](.neuron/history.md),
 [`.neuron/decisions.md`](.neuron/decisions.md), and
 [`.neuron/architecture.md`](.neuron/architecture.md) are the real store this
 project's own agent sessions read from and write to on every release. Open
@@ -184,10 +182,6 @@ categories:
   learning:
     description: Agent conventions, rules, and failure fixes
     tags: [rule, convention, failure-fix]
-
-  history:
-    description: Action history log and completed task summary
-    tags: [task, history]
 
   decisions:
     description: Architectural Decision Records (ADRs) & design choices
@@ -249,7 +243,7 @@ this repo.
 ### Per-category storage mode
 
 Set `storage` on a category to override the top-level `storage.mode` just
-for it — keep `history` in reviewable markdown while routing a high-volume
+for it — keep `learning` in reviewable markdown while routing a high-volume
 category straight to SQLite:
 
 ```yaml

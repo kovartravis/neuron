@@ -37,7 +37,6 @@ describe('Neuron CLI Core & Flag Options', () => {
     expect(emptyStdout).toContain('init');
     expect(emptyStdout).toContain('status');
     expect(emptyStdout).toContain('learn');
-    expect(emptyStdout).toContain('history');
 
     const helpStdout = execSync(`node ${cliPath} --help`, { env, cwd: projectDir }).toString();
     expect(helpStdout).toContain('Usage: neuron');
@@ -46,7 +45,7 @@ describe('Neuron CLI Core & Flag Options', () => {
     expect(shortHelpStdout).toContain('Usage: neuron');
   });
 
-  it('should support adding learnings and history with custom importance, tolerating the deprecated --scope flag', () => {
+  it('should support adding learnings and other categories with custom importance, tolerating the deprecated --scope flag', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
@@ -58,7 +57,7 @@ describe('Neuron CLI Core & Flag Options', () => {
     expect(addLearnRes.status).toBe('created');
 
     const addHistStdout = execSync(
-      `node ${cliPath} history add "Crucial pipeline update" --importance 4 --scope global --tags CI`,
+      `node ${cliPath} memory add "Crucial pipeline update" --category history --importance 4 --scope global --tags CI`,
       { env, cwd: projectDir }
     ).toString();
     const addHistRes = JSON.parse(addHistStdout);
@@ -86,7 +85,7 @@ describe('Neuron CLI Core & Flag Options', () => {
     }).toThrow(/--importance must be an integer between 1 and 5/);
 
     expect(() => {
-      execSync(`node ${cliPath} history add "Invalid history" --importance abc`, { env, cwd: projectDir, stdio: 'pipe' });
+      execSync(`node ${cliPath} memory add "Invalid entry" --category history --importance abc`, { env, cwd: projectDir, stdio: 'pipe' });
     }).toThrow(/--importance must be an integer between 1 and 5/);
   });
 
@@ -115,10 +114,10 @@ describe('Neuron CLI Core & Flag Options', () => {
     // so a genuinely unrelated second entry (e.g. "Beta deployment finished")
     // would be excluded regardless of --scopes, which is not what this test
     // is checking.
-    execSync(`node ${cliPath} history add "Alpha pipeline complete" --scope alpha`, { env, cwd: projectDir });
-    execSync(`node ${cliPath} history add "Beta pipeline finished" --scope beta`, { env, cwd: projectDir });
+    execSync(`node ${cliPath} memory add "Alpha pipeline complete" --category history --scope alpha`, { env, cwd: projectDir });
+    execSync(`node ${cliPath} memory add "Beta pipeline finished" --category history --scope beta`, { env, cwd: projectDir });
 
-    const histGammaStdout = execSync(`node ${cliPath} history query "pipeline" --scopes gamma`, { env, cwd: projectDir }).toString();
+    const histGammaStdout = execSync(`node ${cliPath} memory query "pipeline" --category history --scopes gamma`, { env, cwd: projectDir }).toString();
     const histGammaRes = JSON.parse(histGammaStdout);
     expect(histGammaRes.results).toHaveLength(2);
   });

@@ -58,7 +58,7 @@ export class MdStorageAdapter implements MdStorage {
   /**
    * Auto-scaffolds missing storage directory and category files.
    */
-  async ensureScaffolded(categories: string[] = ['learning', 'history', 'decisions']): Promise<void> {
+  async ensureScaffolded(categories: string[] = ['learning', 'decisions']): Promise<void> {
     if (!fs.existsSync(this.storagePath)) {
       fs.mkdirSync(this.storagePath, { recursive: true });
     }
@@ -113,7 +113,7 @@ export class MdStorageAdapter implements MdStorage {
           .filter(f => f.endsWith('.md') && !f.includes('.tmp.'))
           .map(f => path.basename(f, '.md'));
       } else {
-        catsToRead = ['learning', 'history', 'decisions'];
+        catsToRead = ['learning', 'decisions'];
       }
     }
 
@@ -160,7 +160,6 @@ export class MdStorageAdapter implements MdStorage {
       const fullMemory: Memory = {
         id: memoryId,
         category,
-        kind: category,
         content: entry.content || '',
         tags: Array.isArray(entry.tags) ? entry.tags : [],
         importance: entry.importance !== undefined ? entry.importance : 3,
@@ -204,7 +203,6 @@ export class MdStorageAdapter implements MdStorage {
         ...entry,
         id: current.id,
         category,
-        kind: category,
         content: entry.content !== undefined ? entry.content : current.content,
         tags: entry.tags !== undefined ? entry.tags : current.tags,
         importance: entry.importance !== undefined ? entry.importance : current.importance,
@@ -498,8 +496,7 @@ export class MdStorageAdapter implements MdStorage {
         memories.push({
           id: mintedId,
           category,
-          kind: category,
-          content: cleanContent,
+            content: cleanContent,
           tags: [],
           importance: 3,
           createdAt: new Date().toISOString(),
@@ -618,7 +615,6 @@ export class MdStorageAdapter implements MdStorage {
       memories.push({
         id,
         category,
-        kind: category,
         content: bodyStr,
         tags,
         importance,

@@ -673,7 +673,6 @@ Just some content, no frontmatter at all.
       expect(readBack[0]).toEqual({
         id: 'roundtrip-1',
         category: 'learning',
-        kind: 'learning',
         content: '## A fully specified entry\n\nWith a real body.',
         tags: ['alpha', 'beta'],
         importance: 4,
@@ -723,7 +722,6 @@ Just some content, no frontmatter at all.
       expect(readBack[0]).toEqual({
         id: 'hand-edit-1',
         category: 'learning',
-        kind: 'learning',
         content: '## Edited body\n\nA human rewrote this paragraph entirely.',
         tags: ['alpha', 'beta'],
         importance: 5,

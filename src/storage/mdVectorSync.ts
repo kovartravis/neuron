@@ -86,7 +86,7 @@ export async function syncMdWithVector(
   const configuredCategories = Object.keys(config?.categories || {});
   const categories = options?.categories && options.categories.length > 0
     ? options.categories
-    : (configuredCategories.length > 0 ? configuredCategories : ['learning', 'history', 'decisions']);
+    : (configuredCategories.length > 0 ? configuredCategories : ['learning', 'decisions']);
 
   const result: SyncResult = {
     syncedToVector: 0,

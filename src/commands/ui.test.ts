@@ -39,8 +39,7 @@ describe('neuron ui: HTTP server', () => {
     const body = await res.json() as any;
     expect(body.project).toBe('my-project');
     expect(body.db).toBe('ready');
-    expect(typeof body.learnCount).toBe('number');
-    expect(typeof body.historyCount).toBe('number');
+    expect(typeof body.categoryCounts).toBe('object');
   });
 
   // --- S2b: GET /api/learnings ---
@@ -60,24 +59,6 @@ describe('neuron ui: HTTP server', () => {
     // List mode orders newest-first (ticket 31), so the second-added learning leads.
     expect(body.results[0].content).toBe('Use dotProduct for BGE similarity');
     expect(body.results[0].tags).toEqual(['embeddings']);
-  });
-
-  // --- S2c: GET /api/history ---
-
-  it('GET /api/history returns seeded history entries as a results array', async () => {
-    const memory = NeuronMemory.inMemory('ui-test');
-    await memory.addHistory('Implemented hybrid RRF search', { tags: ['search'], taskId: 'ticket-03' });
-    server = await startUiServer({ memory, port: 0 });
-
-    const res = await fetch(`http://localhost:${server.port}/api/history`);
-
-    expect(res.status).toBe(200);
-    const body = await res.json() as any;
-    expect(Array.isArray(body.results)).toBe(true);
-    expect(body.results).toHaveLength(1);
-    expect(body.results[0].content).toBe('Implemented hybrid RRF search');
-    expect(body.results[0].tags).toEqual(['search']);
-    expect(body.results[0].taskId).toBe('ticket-03');
   });
 
   // --- S2d: GET /api/categories and GET /api/memories ---
