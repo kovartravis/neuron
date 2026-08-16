@@ -1,0 +1,700 @@
+{
+  "generatedAt": "2026-08-16T03:47:15.723Z",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "arms": [
+    "control",
+    "nudge",
+    "explicit-instruction"
+  ],
+  "dryRun": false,
+  "taskCount": 2,
+  "repeats": 4,
+  "sessionCount": 24,
+  "sessionsSkippedByCap": 0,
+  "hardCapUsd": 3,
+  "totalCostUsd": 0.9106,
+  "summary": {
+    "armStats": {
+      "control": {
+        "sessions": 8,
+        "complied": 8,
+        "complianceRate": 1,
+        "taskSolved": 8,
+        "taskSolveRate": 1,
+        "costUsd": 0.2546
+      },
+      "nudge": {
+        "sessions": 8,
+        "complied": 8,
+        "complianceRate": 1,
+        "taskSolved": 8,
+        "taskSolveRate": 1,
+        "costUsd": 0.3542
+      },
+      "explicit-instruction": {
+        "sessions": 8,
+        "complied": 8,
+        "complianceRate": 1,
+        "taskSolved": 8,
+        "taskSolveRate": 1,
+        "costUsd": 0.3018
+      }
+    },
+    "margins": {
+      "nudge": 0,
+      "explicit-instruction": 0
+    }
+  },
+  "results": [
+    {
+      "task": "average-off-by-one",
+      "arm": "control",
+      "sessionLabel": "average-off-by-one-control-r0",
+      "turns": 8,
+      "wallMs": 18018,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one bug in stats.mjs's average() loop condition so it sums all elements, making node test.mjs pass.",
+      "tokens": {
+        "input": 17176,
+        "output": 1495,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 18671,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && sed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && node test.mjs; echo \"exit:$?\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && node test.mjs 2>&1; echo \"exit:$?\"; cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r0-JAnfYq/repo && neuron memory add --category learning \"Fix for average() test failure in stats.mjs: test.mjs failed with 'Expected values to be strictly equal: 2 !== 4'. Root cause was an off-by-one bug in the for-loop condition 'i < nums.length - 1', which skipped the last element when summing. Fixed by changing the loop condition to 'i < nums.length' so all elements are included in the sum before dividing by nums.length.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "control",
+      "sessionLabel": "average-off-by-one-control-r1",
+      "turns": 6,
+      "wallMs": 14293,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one bug in stats.mjs's average() function (loop bound corrected from nums.length-1 to nums.length), verified node test.mjs now passes, and recorded the fix in memory.",
+      "tokens": {
+        "input": 11727,
+        "output": 1186,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 12913,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r1-iD6W3R/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r1-iD6W3R/repo && sed -i 's/nums.length - 1/nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r1-iD6W3R/repo && cat stats.mjs; node test.mjs; echo \"exit:$?\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r1-iD6W3R/repo && perl -pi -e 's/nums\\.length - 1/nums.length/' stats.mjs && cat stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r1-iD6W3R/repo && neuron memory add --category learning \"Fix for FAIL in test.mjs average(): loop condition 'i < nums.length - 1' caused the last array element to be skipped, producing an off-by-one sum. Root cause: incorrect loop bound in average() in stats.mjs. Resolution: change loop condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) sum += nums[i];'. Edge case: single-element arrays previously summed to 0/1 instead of the element's value.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "control",
+      "sessionLabel": "average-off-by-one-control-r2",
+      "turns": 7,
+      "wallMs": 15424,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed an off-by-one error in stats.mjs's average() loop (changed `i < nums.length - 1` to `i < nums.length`), making `node test.mjs` pass.",
+      "tokens": {
+        "input": 14120,
+        "output": 1290,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 15410,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r2-ajCVni/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r2-ajCVni/repo && sed -i 's/nums.length - 1/nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r2-ajCVni/repo && node test.mjs; echo \"exit: $?\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r2-ajCVni/repo && cat stats.mjs && node --version",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r2-ajCVni/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs; echo \"exit: $?\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r2-ajCVni/repo && neuron memory add --category learning \"Fix for average() test failure in stats.mjs: the for-loop used 'i < nums.length - 1' causing the last element to be excluded from the sum, so average([2,4,6]) returned 3 instead of 4. Root cause was an off-by-one error in the loop bound. Fixed by changing the condition to 'i < nums.length' so all elements are summed. Edge case: single-element arrays like [10] still worked before/after since sum/length happened to coincide differently, but multi-element arrays revealed the bug.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "control",
+      "sessionLabel": "average-off-by-one-control-r3",
+      "turns": 7,
+      "wallMs": 14369,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one loop bound in average() in stats.mjs (changed nums.length-1 to nums.length), and node test.mjs now passes.",
+      "tokens": {
+        "input": 13979,
+        "output": 1132,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 15111,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r3-n4th4T/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r3-n4th4T/repo && sed -i 's/nums.length - 1/nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r3-n4th4T/repo && node test.mjs; echo exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r3-n4th4T/repo && cat stats.mjs && node test.mjs 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-control-r3-n4th4T/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for off-by-one in average(): loop 'for (i=0; i<nums.length-1; i++)' excluded last array element, causing wrong sum. Root cause: incorrect loop bound (nums.length-1 instead of nums.length). Fix: change condition to i < nums.length so all elements are summed. Verified with node test.mjs -> PASS.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "nudge",
+      "sessionLabel": "average-off-by-one-nudge-r0",
+      "turns": 8,
+      "wallMs": 16234,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed an off-by-one bug in stats.mjs's average() loop (changed `i < nums.length - 1` to `i < nums.length`), making all tests in test.mjs pass, and logged the fix via neuron memory add.",
+      "tokens": {
+        "input": 17041,
+        "output": 1328,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 18369,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r0-xuoLl5/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r0-xuoLl5/repo && sed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r0-xuoLl5/repo && node test.mjs; echo \"exit:$?\"",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r0-xuoLl5/repo && node test.mjs 2>&1; cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r0-xuoLl5/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for average() off-by-one bug: test.mjs failed with '2 !== 4' etc. Root cause: stats.mjs loop used 'i < nums.length - 1', skipping the last element in the sum. Fix: change loop condition to 'i < nums.length' so all elements are summed before dividing. Edge case: single-element arrays previously returned 0 instead of the value itself.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "nudge",
+      "sessionLabel": "average-off-by-one-nudge-r1",
+      "turns": 10,
+      "wallMs": 20739,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in stats.mjs's average() loop (changed `i < nums.length - 1` to `i < nums.length`), confirmed `node test.mjs` now passes, and recorded the fix in the neuron memory store.",
+      "tokens": {
+        "input": 23185,
+        "output": 1668,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 24853,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && sed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && node test.mjs; echo exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && node test.mjs 2>&1; cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && cat -A stats.mjs | grep length",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && sed -n '1,10p' stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r1-msPjDz/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for average() off-by-one in stats.mjs: test.mjs failed with '2 !== 4' assertion errors. Root cause was the summation loop condition 'i < nums.length - 1' which skipped the last array element. Resolution: change loop condition to 'i < nums.length' so all elements are summed before dividing by nums.length. Edge case: single-element arrays worked by luck since 0 iterations vs correct still needed fix for correctness with any length > 1.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "nudge",
+      "sessionLabel": "average-off-by-one-nudge-r2",
+      "turns": 13,
+      "wallMs": 29274,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bound in stats.mjs's average() function (changed `i < nums.length - 1` to `i < nums.length`), verified `node test.mjs` now prints PASS, and recorded the fix in the memory store.",
+      "tokens": {
+        "input": 34585,
+        "output": 2324,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 36909,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && sed -i 's/nums.length - 1/nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && node test.mjs; echo exit=$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && cat stats.mjs && node test.mjs 2>&1",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && sed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs && cat stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && node test.mjs 2>&1; echo exit=$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && cat -A stats.mjs | head -20",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && ls -la stats.mjs; wc -l stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r2-psZAxF/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for average() off-by-one bug in stats.mjs: test.mjs failed because average([2,4,6]) returned 2 instead of 4. Root cause: the for-loop condition was 'i < nums.length - 1', which skipped the last array element in the sum, so the numerator was wrong while dividing by the full length. Resolution: change loop condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'. Edge case: with a single-element array the bug caused sum to stay 0 while length was 1, giving average 0 instead of the value itself.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "nudge",
+      "sessionLabel": "average-off-by-one-nudge-r3",
+      "turns": 7,
+      "wallMs": 15583,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed an off-by-one bug in stats.mjs's average() loop (was `i < nums.length - 1`, changed to `i < nums.length`), making `node test.mjs` pass, and recorded the fix in memory.",
+      "tokens": {
+        "input": 14767,
+        "output": 1275,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16042,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r3-Y2Vnkk/repo && cat stats.mjs && echo ---- && cat test.mjs && echo ---- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r3-Y2Vnkk/repo && sed -i 's/nums.length - 1/nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r3-Y2Vnkk/repo && node test.mjs; echo exit:$?; cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r3-Y2Vnkk/repo && perl -pi -e 's/nums\\.length - 1/nums.length/' stats.mjs && cat stats.mjs && node test.mjs; echo exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-nudge-r3-Y2Vnkk/repo && neuron memory add --category learning \"Fix for 'average' test failure in stats.mjs: test.mjs asserted average([2,4,6])==4 etc. but got wrong values. Root cause: off-by-one bug in loop condition 'i < nums.length - 1' skipped the last array element when summing. Resolution: change loop condition to 'i < nums.length' so all elements are summed before dividing by nums.length.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "explicit-instruction",
+      "sessionLabel": "average-off-by-one-explicit-instruction-r0",
+      "turns": 8,
+      "wallMs": 17666,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one loop bug in stats.mjs's average() function (loop condition changed from `i < nums.length - 1` to `i < nums.length`), making `node test.mjs` pass.",
+      "tokens": {
+        "input": 17951,
+        "output": 1502,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 19453,
+      "bashCommands": [
+        "cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo/stats.mjs; echo ---; cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo/test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo\nsed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo\nnode test.mjs; echo exit=$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo\nnode test.mjs 2>&1; echo exit=$?\ncat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo\ncat -A stats.mjs | head -3",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r0-TrWVDy/repo\ncat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for off-by-one loop bug in average(): stats.mjs summed only nums.length-1 elements due to loop condition 'i < nums.length - 1', causing incorrect averages. Root cause was an off-by-one error excluding the last array element from the sum. Fix: change loop condition to 'i < nums.length' so all elements are included, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'. Edge case: single-element arrays previously returned 0 instead of the element's value.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "explicit-instruction",
+      "sessionLabel": "average-off-by-one-explicit-instruction-r1",
+      "turns": 7,
+      "wallMs": 15207,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in stats.mjs's average() loop (changed `i < nums.length - 1` to `i < nums.length`), and confirmed `node test.mjs` now passes.",
+      "tokens": {
+        "input": 14713,
+        "output": 1251,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 15964,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r1-TO6cmG/repo && cat stats.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r1-TO6cmG/repo && sed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r1-TO6cmG/repo && node test.mjs; echo exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r1-TO6cmG/repo && node test.mjs 2>&1; echo exit:$?\ncat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r1-TO6cmG/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for off-by-one loop bug in average(): stats.mjs's for loop used 'i < nums.length - 1' which skipped the last array element, causing average([2,4,6]) to return 2 instead of 4. Root cause was an incorrect loop bound excluding the final index. Fix: change condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "explicit-instruction",
+      "sessionLabel": "average-off-by-one-explicit-instruction-r2",
+      "turns": 7,
+      "wallMs": 16129,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one loop bound in stats.mjs average() (changed 'nums.length - 1' to 'nums.length'), making node test.mjs pass, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 15219,
+        "output": 1290,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 16509,
+      "bashCommands": [
+        "cd repo 2>/dev/null; cat stats.mjs; echo ---; cat test.mjs",
+        "cd repo 2>/dev/null || cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r2-fYOZ6Y/repo\nsed -i 's/nums.length - 1/nums.length/' stats.mjs\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r2-fYOZ6Y/repo && node test.mjs; cat stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r2-fYOZ6Y/repo\npwd\nls\nsed -i 's/nums\\.length - 1/nums.length/' stats.mjs\ncat stats.mjs\nnode test.mjs\necho exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-average-off-by-one-explicit-instruction-r2-fYOZ6Y/repo\npython3 -c \"\nimport re\ns=open('stats.mjs').read()\ns2=s.replace('nums.length - 1','nums.length')\nopen('stats.mjs','w').write(s2)\n\"\ncat stats.mjs\nnode test.mjs\necho exit:$?",
+        "neuron memory add --category learning \"Fix for failing test.mjs in stats.mjs average(): loop condition 'i < nums.length - 1' skipped the last array element, causing incorrect sums/averages (e.g. average([2,4,6]) returned 2 instead of 4). Root cause was an off-by-one error in the for-loop bound. Fix: change loop condition to 'i < nums.length' so all elements are summed, e.g. 'for (let i = 0; i < nums.length; i++) { sum += nums[i]; }'.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "average-off-by-one",
+      "arm": "explicit-instruction",
+      "sessionLabel": "average-off-by-one-explicit-instruction-r3",
+      "turns": 10,
+      "wallMs": 20026,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bound in stats.mjs's average() (changed `i < nums.length - 1` to `i < nums.length`), making `node test.mjs` pass, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 22736,
+        "output": 1290,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 24026,
+      "bashCommands": [
+        "cd repo 2>/dev/null; cat stats.mjs; echo ---; cat test.mjs; echo ---; node test.mjs",
+        "cd repo 2>/dev/null; pwd; sed -i 's/i < nums.length - 1/i < nums.length/' stats.mjs; node test.mjs",
+        "cd repo; node test.mjs; echo \"exit:$?\"",
+        "cd repo; node test.mjs 2>&1; echo done",
+        "cd repo; cat stats.mjs",
+        "cd repo; sed -i 's/nums.length - 1/nums.length/' stats.mjs; cat stats.mjs; node test.mjs",
+        "cd repo; grep -n \"length\" stats.mjs; xxd stats.mjs | head -5",
+        "cd repo; cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\nEOF\ncat stats.mjs\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for 'node test.mjs' FAIL in average(): the loop condition 'i < nums.length - 1' skipped the last element, causing an off-by-one sum error. Root cause was an incorrect loop bound in stats.mjs's average function. Fix: change the for loop to 'for (let i = 0; i < nums.length; i++)' so all elements are summed before dividing by nums.length. Edge case: single-element arrays still worked by luck since 10/1=10, but multi-element arrays failed.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "control",
+      "sessionLabel": "titlecase-first-word-only-control-r0",
+      "turns": 4,
+      "wallMs": 9484,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first) so node test.mjs passes.",
+      "tokens": {
+        "input": 7035,
+        "output": 798,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7833,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r0-W4NOu6/repo && cat text.mjs; echo ---; cat test.mjs; echo ---; node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r0-W4NOu6/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r0-W4NOu6/repo && neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word of the string instead of every word, causing 'a b c' -> 'A b c' instead of 'A B C'. Root cause: the .map callback used a ternary checking index===0 to decide whether to capitalize. Fix: capitalize every word by removing the index check: w.length ? w[0].toUpperCase() + w.slice(1) : w. Edge case: guard against empty strings from multiple spaces to avoid w[0] being undefined.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "control",
+      "sessionLabel": "titlecase-first-word-only-control-r1",
+      "turns": 5,
+      "wallMs": 11111,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed text.mjs's titleCase function to capitalize every word instead of only the first, making node test.mjs pass.",
+      "tokens": {
+        "input": 9000,
+        "output": 797,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 9797,
+      "bashCommands": [
+        "cd repo 2>/dev/null; cat text.mjs; echo ---; cat test.mjs; echo ---; node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r1-mdDjiB/repo && cat text.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r1-mdDjiB/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word of a string (using index check i===0), but test.mjs expected every word to be title-cased (e.g. 'a b c' -> 'A B C'). Root cause was the map callback conditionally uppercasing only index 0. Resolution: removed the index check and uppercase the first letter of every word: str.split(' ').map(w => w.length ? w[0].toUpperCase() + w.slice(1) : w).join(' ').\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "control",
+      "sessionLabel": "titlecase-first-word-only-control-r2",
+      "turns": 4,
+      "wallMs": 8658,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first), making node test.mjs pass.",
+      "tokens": {
+        "input": 6950,
+        "output": 711,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7661,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r2-kTFyGO/repo && cat text.mjs && echo ---- && cat test.mjs && echo ---- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r2-kTFyGO/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word (i===0 check) instead of every word, so 'a b c' returned 'A b c' not 'A B C'. Root cause: map callback only applied toUpperCase conditionally on index 0. Fix: apply w[0].toUpperCase()+w.slice(1) to every word unconditionally (guard against empty string): .map(w => w.length ? w[0].toUpperCase()+w.slice(1) : w).\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "control",
+      "sessionLabel": "titlecase-first-word-only-control-r3",
+      "turns": 4,
+      "wallMs": 9473,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed text.mjs's titleCase function to capitalize every word (not just the first) so that node test.mjs now passes.",
+      "tokens": {
+        "input": 6855,
+        "output": 678,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7533,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r3-ngEtWa/repo && cat text.mjs test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-control-r3-ngEtWa/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word (index 0) via a conditional in map, but test.mjs expected every word capitalized. Root cause: incorrect conditional logic i===0 restricting capitalization to first word only. Fix: remove the index check and capitalize every word: str.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ').\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "nudge",
+      "sessionLabel": "titlecase-first-word-only-nudge-r0",
+      "turns": 5,
+      "wallMs": 10188,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first), making node test.mjs pass, and logged the fix to memory store.",
+      "tokens": {
+        "input": 9151,
+        "output": 772,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 9923,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r0-3wSpIg/repo && cat text.mjs test.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r0-3wSpIg/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for titleCase test failure: text.mjs only capitalized the first word (index 0) instead of every word, causing 'a b c' to fail matching 'A B C'. Root cause was the ternary '(i === 0 ? ... : w)' skipping capitalization for non-first words. Resolution: remove the index check and always capitalize each word: w[0].toUpperCase() + w.slice(1) applied via .map() to all words.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "nudge",
+      "sessionLabel": "titlecase-first-word-only-nudge-r1",
+      "turns": 5,
+      "wallMs": 12953,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed text.mjs's titleCase function to capitalize every word (not just the first) by removing the index-based conditional, making `node test.mjs` pass, and recorded the fix in the memory store.",
+      "tokens": {
+        "input": 9543,
+        "output": 919,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 10462,
+      "bashCommands": [
+        "cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r1-0dlXE8/repo/text.mjs; echo ---; cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r1-0dlXE8/repo/test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r1-0dlXE8/repo\ncat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for titleCase test failure in text.mjs: test expected every word capitalized ('A B C') but original code only capitalized the first word (index===0 check). Root cause: map callback used index to gate capitalization instead of applying to all words. Resolution: change map to capitalize every word regardless of index, e.g. .map(w => w.length ? w[0].toUpperCase()+w.slice(1) : w). Edge case: guard against empty-string words (multiple spaces) to avoid crashing on w[0] being undefined.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "nudge",
+      "sessionLabel": "titlecase-first-word-only-nudge-r2",
+      "turns": 5,
+      "wallMs": 10396,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first) by removing the index-based conditional, making node test.mjs pass, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 9259,
+        "output": 824,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 10083,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r2-iGu5B3/repo && cat text.mjs && echo ---- && cat test.mjs && echo ---- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r2-iGu5B3/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for titleCase test failure in text.mjs: test expected all words capitalized ('a b c' -> 'A B C') but implementation only capitalized the first word (i===0 condition). Root cause: map callback had a conditional that skipped capitalization for non-first words. Resolution: removed the index check so every word is capitalized: .map((w) => w[0].toUpperCase() + w.slice(1)).\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "nudge",
+      "sessionLabel": "titlecase-first-word-only-nudge-r3",
+      "turns": 5,
+      "wallMs": 11414,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first) so node test.mjs passes; recorded the fix in memory store.",
+      "tokens": {
+        "input": 9468,
+        "output": 915,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 10383,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r3-YyiZhM/repo && cat text.mjs && echo ---- && cat test.mjs && echo ---- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r3-YyiZhM/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-nudge-r3-YyiZhM/repo && neuron memory add --category learning \"Fix for titleCase test failure in text.mjs: only the first word was being capitalized due to map's (w,i) => i===0 check. Root cause: the map callback applied toUpperCase only when index===0, leaving other words lowercase. Fix: apply w[0].toUpperCase()+w.slice(1) to every word regardless of index, e.g. .map(w => w.length ? w[0].toUpperCase()+w.slice(1) : w). Edge case: guard against empty string words to avoid w[0] being undefined.\" --importance 4"
+      ],
+      "nudgeDelivered": true,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "explicit-instruction",
+      "sessionLabel": "titlecase-first-word-only-explicit-instruction-r0",
+      "turns": 4,
+      "wallMs": 9680,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first) so node test.mjs now passes, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 7316,
+        "output": 776,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8092,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r0-ZBO4M0/repo && cat text.mjs && echo --- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r0-ZBO4M0/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "neuron memory add --category learning \"Fix for FAIL in test.mjs titleCase test: titleCase('a b c') expected 'A B C' but text.mjs only capitalized the first word (i===0 check) leaving other words lowercase. Root cause: map callback conditionally capitalized only index 0. Resolution: remove the index check so every word is capitalized, e.g. str.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '). Edge case: empty strings/words would throw on w[0] undefined, not covered by current tests.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "explicit-instruction",
+      "sessionLabel": "titlecase-first-word-only-explicit-instruction-r1",
+      "turns": 6,
+      "wallMs": 15454,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed titleCase in text.mjs to capitalize every word (not just the first) so node test.mjs now passes, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 12494,
+        "output": 1253,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 13747,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r1-0kJk4h/repo && cat text.mjs && echo ---- && cat test.mjs && echo ---- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r1-0kJk4h/repo && sed -i 's/i === 0 ? w\\[0\\].toUpperCase() + w.slice(1) : w/w[0].toUpperCase() + w.slice(1)/' text.mjs && cat text.mjs && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r1-0kJk4h/repo && cat text.mjs; node test.mjs; echo exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r1-0kJk4h/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs; echo exit:$?",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r1-0kJk4h/repo && neuron memory add --category learning \"Fix for failing test.mjs (titleCase): symptom was that titleCase('a b c') returned 'A b c' instead of 'A B C'. Root cause: the .map callback only capitalized the word at index 0 (i === 0 ? ... : w), leaving subsequent words unchanged. Fix: remove the index check and capitalize every word: .map((w) => w[0].toUpperCase() + w.slice(1)).join(' '). Edge case: empty strings in the split array would throw on w[0].toUpperCase(); not hit by current tests but worth guarding with w ? ... : w if empty segments are possible.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "explicit-instruction",
+      "sessionLabel": "titlecase-first-word-only-explicit-instruction-r2",
+      "turns": 4,
+      "wallMs": 10142,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the titleCase function in text.mjs to capitalize every word (not just the first) so node test.mjs now passes, and recorded the fix in neuron memory.",
+      "tokens": {
+        "input": 7337,
+        "output": 860,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8197,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r2-MvVeNN/repo && cat text.mjs; echo ---; cat test.mjs; echo ---; node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r2-MvVeNN/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r2-MvVeNN/repo && neuron memory add --category learning \"Fix for titleCase test failure in text.mjs: test expected all words capitalized (e.g. 'a b c' -> 'A B C') but titleCase() only capitalized the first word (index 0) of the split array. Root cause was the map callback's ternary condition '(i === 0 ? ... : w)' which skipped capitalizing non-first words. Fix: remove the index check and always capitalize each word: str.split(' ').map((w) => w[0].toUpperCase() + w.slice(1)).join(' '). Edge case: empty strings or words would throw on w[0].toUpperCase() if w is empty, so ensure input has no empty tokens.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    },
+    {
+      "task": "titlecase-first-word-only",
+      "arm": "explicit-instruction",
+      "sessionLabel": "titlecase-first-word-only-explicit-instruction-r3",
+      "turns": 4,
+      "wallMs": 11212,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed text.mjs's titleCase function to capitalize every word (not just the first), which made node test.mjs pass, and recorded the fix in memory.",
+      "tokens": {
+        "input": 7469,
+        "output": 914,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8383,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r3-zhQrSk/repo && cat text.mjs && echo ---- && cat test.mjs && echo --- && node test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r3-zhQrSk/repo && cat > text.mjs << 'EOF'\nexport function titleCase(str) {\n  return str\n    .split(' ')\n    .map((w) => w[0].toUpperCase() + w.slice(1))\n    .join(' ');\n}\nEOF\nnode test.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-write-compliance-ab-titlecase-first-word-only-explicit-instruction-r3-zhQrSk/repo && neuron memory add --category learning \"Fix for failing test.mjs in titleCase util: symptom was assert.equal(titleCase('a b c'), 'A B C') failing since text.mjs only capitalized the first word (i===0 check) of the split array. Root cause was the map callback only uppercasing index 0 instead of every word. Resolution: change map to capitalize every word: str.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '); verified via node test.mjs printing PASS. Edge case: empty strings or words would throw on w[0] access, so guard for empty tokens if input may contain multiple spaces.\" --importance 4"
+      ],
+      "nudgeDelivered": false,
+      "testPassed": true,
+      "memoryAddCalled": true
+    }
+  ]
+}
