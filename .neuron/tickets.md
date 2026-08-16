@@ -27802,6 +27802,8 @@ existed.
 - [Ticket 1 — Write-Side Compliance Nudge & Instrumentation](de4f45be-34e0-45df-9a50-f72d0bdc5905) — don't commit to a trigger mechanism yet; test first via a 3-arm real-agent A/B (control/nudge/explicit-instruction, reusing `token-ab`'s pattern), deterministic tool-call grading, go/no-go decision rule. Build/run spawned as [Ticket 4](623be167-6f64-4616-8328-d42d29ac3952).
 - [Ticket 4 — Build & Run the Write-Side Compliance Nudge A/B](623be167-6f64-4616-8328-d42d29ac3952) — ran it: 24 live sessions, all three arms hit 100% compliance and 100% task-solve, zero margin. **No-go on building a trigger mechanism**, per the decision rule — but it's a ceiling effect (control's task was maximally easy), not proof the real-world gap doesn't exist. See the ticket's Answer and [`docs/design/write-compliance/nudge-ab-findings.md`](../../docs/design/write-compliance/nudge-ab-findings.md), Part 1, for the full caveat.
 - [Ticket 5 — Harder Write-Compliance Follow-Up A/B (Ceiling-Effect Retest)](e38c5a30-2ef0-4f15-81b1-cf160498188f) — reran it harder (full real CLAUDE.md, multi-step sessions with real competing work, $2 budget): control collapsed to 20% compliance while nudge and explicit-instruction both held 100% — an 80-point margin. **Reverses Ticket 4's no-go to a clean go.** Also surfaced an unplanned finding: Map 2.4.2's own duplicate-detection gate creates real retry friction when an agent's §1 and §2 entries read as near-duplicates of each other. Routes to [Ticket 6 — Design the Write-Side Compliance Trigger Mechanism](ae0e3d5d-8564-471e-a2ed-73e54480c7e0). See Part 2 of the same findings doc.
+- [Ticket 6 — Design the Write-Side Compliance Trigger Mechanism](ae0e3d5d-8564-471e-a2ed-73e54480c7e0) — full `LifecyclePoint` extension (real `session-end` point on Claude Code/Copilot, honest unsupported on Codex/Cursor), shipped generally via `neuron init`, not dogfood-only. Scope grew mid-grilling at the maintainer's request into a **generic declarative injection layer** (`neuron.yaml` entries: lifecycle point + category + `--where` filter + char budget, executed generically by `hook.ts`) so [Ticket 7](db6c8d8a-8bf5-4603-9f2d-16d106c58145) becomes pure config, no new code — Ticket 7 now blocked on this. Gate-friction (§1/§2 near-duplicate retries) root-caused to Map 2.4.2's near-dup/supersession gate specifically, not its contradiction gate, and deferred to [Ticket 8 — Retest the Near-Duplicate Gate's Reranker Bar Against Real Content](67b56bd1-7d1b-4f10-b807-388b8c930ccd). Implementation plan handed to `/tdd`, not built this session.
+- [Ticket 1 — Remove the `history` Category (Superseded)](7fed4f53-3251-4b7a-94a0-3d344fb9a59a) — retired `history`: real entry count was 238, not the 20 first seen (`list`'s default limit hid the rest); reviewed via ticket-answer redundancy + an incidental-finding sweep, migrated 3 genuine orphans forward (2 `learning`, 1 `decisions`), deleted the rest. No non-wayfinder fallback category. Scope grew twice with the maintainer's sign-off: `history` was also baked into the type system/CLI/UI (`MemoryKind`, `neuron history` alias, `/api/history`) and `neuron memory prune`/`consolidate` were hardcoded to `category = 'history'` in raw SQL — both fully removed/generalized (`prune`/`consolidate` now take a required `--category`), not left as dogfood-only patches. `npm test` 771/771, `tsc`/`status --check`/`scan --check` clean.
 
 ## Not yet specified
 
@@ -28199,7 +28201,7 @@ tags:
 taskId: null
 kind: task
 map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
-status: unclaimed
+status: resolved
 ---
 # 1 — Remove the `history` Category (Superseded)
 
@@ -28251,18 +28253,138 @@ ticket beyond an optional `--task-id`.
 
 ## Deliverables
 
-- [ ] Fate of the 20 existing `history` entries decided
-- [ ] Fate of non-wayfinder session summaries decided (if `history` had
+- [x] Fate of the 20 existing `history` entries decided
+- [x] Fate of non-wayfinder session summaries decided (if `history` had
       a use beyond wayfinder work)
-- [ ] `neuron.yaml`, `CLAUDE.md`, `AGENTS.md`, and `pullRules.onExec`
+- [x] `neuron.yaml`, `CLAUDE.md`, `AGENTS.md`, and `pullRules.onExec`
       updated in lockstep
-- [ ] Implementation
+- [x] Implementation
 
 ## Answer
 
-_Not yet resolved._
+**Scale correction found mid-session**: the "20 entries" this ticket's own
+Context named was wrong — `neuron memory list --category history` silently
+caps at a default limit. The real count was 238, dating back to
+2026-07-11 (this repo's first commit). Flagged to the maintainer directly
+since reviewing 238 individually collides with this map's own "no
+retroactive migration pass" non-goal and Ticket 12's own precedent
+(declined an equivalent backfill for the same reason) — maintainer chose to
+run the same triage method at the corrected scale rather than downgrade
+to a frozen-archive treatment.
+
+**Disposition of the 238 entries**: reviewed via two passes — (1) a
+structural argument that every "resolved wayfinder ticket" narrative
+already has its full detail preserved on that ticket's own `Answer` in the
+`tickets` category (verified spot-checks against tickets 3, 4, 5, 7, 13,
+14, 18, 22, 30, 31, 34, 36, 39, 40, 42, 43, 44, 45), so those are safe to
+drop with nothing lost; (2) a signal-phrase sweep for incidental/standalone
+findings not tied to a ticket's main scope ("found and fixed", "separately
+found", "not chartered", etc.) across all 234 non-pointer entries, manually
+reviewed. Two genuine orphans surfaced and were migrated forward as new
+`learning` entries before deletion: the `npm run build` not chmod +x'ing
+`dist/cli.js` trap (still real, unfixed), and the pre-command hook's
+missing dedup ledger / `RECALL_PROVENANCE_PREFIX` fix (neuron-2.4.1 ticket
+1). A third orphan — the `publish.yml`/branch-ruleset release-automation
+finding — was only preserved in the operator's own private cross-session
+memory, not this project's store; migrated forward as a `decisions` entry.
+Everything else (pure git-log-equivalent release/commit narration, an
+abandoned early PersonaMem/Gemini benchmark line superseded by the current
+LongMemEval harness, ~17 near-identical duplicate entries from a stuck
+benchmark loop, Q&A-style session logs) was confirmed redundant or
+ephemeral and dropped. All 238 entries (plus one `supersededBy`-marked row
+invisible to `list`'s default exclusion) were deleted via `neuron memory
+delete`; `.neuron/history.md` removed.
+
+**Non-wayfinder fallback**: none. Maintainer's call — wayfinder is the only
+path for a completed-work summary now; a session with nothing decided has
+nothing else to log.
+
+**Removal style**: clean cut, no deprecation warning — this project's own
+dogfood config, not a published feature other projects depend on.
+
+**Scope grew twice, both confirmed with the maintainer before proceeding**:
+
+1. `history` turned out to be more than a config entry — it was baked into
+   the type system (`MemoryKind`, deprecated `kind` field on
+   `Memory`/`MemoryQuery`/`MemoryMutation`), the CLI (`neuron history`
+   deprecated alias), the UI (`/api/history` route), and hardcoded default
+   category arrays across `src/storage/*.ts`/`src/config/*.ts`. Maintainer
+   chose full removal of this generic backward-compat surface, not just
+   this repo's own config.
+2. `neuron memory prune`/`consolidate` were discovered to be hardcoded to
+   `category = 'history'` in raw SQL (`src/index.ts`'s `maintain()`) — not
+   a generic per-category tool despite the CLI surface implying one. This
+   predates ADR 0013's user-declared categories and would have made both
+   commands permanently inert for this repo once `history` was gone (and
+   were already inert for any project that never had a `history`
+   category). Maintainer chose to generalize now rather than defer: added
+   a required `--category` flag to both, threaded through
+   `MaintenancePolicy`/`maintain()`'s SQL.
+
+**Implementation** (commit-sized summary; see the diff for detail):
+- `neuron.yaml`: dropped `categories.history` and its `pullRules.onExec`
+  reference.
+- `src/config/protocolBlock.ts`: `sessionEndStep()` was hardcoding
+  `history`-pointer instructions into every generated `CLAUDE.md`
+  regardless of whether a project declares the category — the real bug
+  this ticket's Deliverables undersold. Made it config-driven
+  (`'history' in config.categories`), with a generic decisions/learning-only
+  fallback when absent. `CLAUDE.md` regenerated via the real generator
+  (`neuron init --overwrite-hooks`), not hand-edited, matching this repo's
+  own standing precedent against hand-drifted protocol blocks.
+- `src/index.ts`/`src/models/`: `maintain()`'s consolidate/prune SQL
+  parameterized on `policy.category` (required, hard-errors if unset);
+  removed `MemoryKind`, the deprecated `kind` field from
+  `Memory`/`MemoryQuery`/`MemoryMutation`, the `kind`→`category`
+  backward-compat branches, and the whole "DEPRECATED METHODS...TO KEEP
+  TESTS HAPPY TEMPORARILY" `history`-specific wrapper block
+  (`addHistory`/`queryHistory`/`listHistory`/`deleteHistory`/
+  `consolidateHistory`/`pruneHistory` — all dead code, never called outside
+  their own tests; the `learning`-specific siblings are untouched, out of
+  this ticket's scope). `getStatus()`'s hardcoded `learnCount`/
+  `historyCount` fields replaced with a generic `categoryCounts: Record<string, number>`
+  (same bug class, same fix shape).
+- `src/cli.ts`/`src/commands/`: removed `neuron history` (the file, its
+  CLI wiring, its help text); `neuron learn` is untouched (learning isn't
+  retired). `src/commands/memory.ts`: `--category` now required for
+  `consolidate`/`prune` too.
+- `src/storage/*.ts`, `src/config/{neuronYaml,scaffold}.ts`,
+  `src/commands/sync.ts`, `src/ui/server.ts`: dropped `history` from every
+  hardcoded default/fallback category array (`neuron init`'s scaffolded
+  `neuron.yaml`, the Zod schema default, storage-adapter scaffold
+  defaults) and removed the `/api/history` UI route (matching the CLI
+  alias removal).
+- Docs: `README.md`, `CONTEXT.md`, `docs/COMMANDS.md`, and the packaged
+  `.claude/skills/neuron-memory/SKILL.md` (this repo's own copy *is* the
+  shipped template — one edit covers both) updated to stop documenting
+  `history` as a default/example and to document the new `--category`
+  requirement on `prune`/`consolidate`. `docs/design/*` and `docs/adr/*`
+  deliberately left untouched — frozen historical record, several
+  explicitly self-declared "read as history, not instructions."
+  `AGENTS.md` doesn't exist in this repo (Claude-only harness), so that
+  Deliverable item is moot here.
+- Tests: deleted `src/commands/history.test.ts` (tested the removed CLI
+  command wholesale); updated ~20 assertions across `cli.test.ts`,
+  `index.test.ts`, `commands/ui.test.ts`, `config/neuronYaml.test.ts`,
+  `config/scaffold.test.ts`, `storage/mdStorageAdapter.test.ts` that
+  exercised removed surface (`addHistory` et al., `kind` field,
+  `learnCount`/`historyCount`, default-category-list assertions); added
+  new coverage for `--category` requiring itself on `prune`/`consolidate`
+  and for `--category` actually scoping deletion/consolidation to one
+  category without touching another (`src/commands/memory.test.ts`).
+
+**Verification**: `npm test` 771/771, `tsc --noEmit` clean (note: excludes
+`*.test.ts` per this repo's own tsconfig), `neuron status --check` clean
+(`protocolBlockDrift: []`), `neuron scan --check`/`--diff` clean after a
+full re-scan (module removal and export-contract changes correctly
+reflected in the blueprint card).
 
 ## Comments
+
+- Resolved directly (kind `task` — this map's Notes carry execution, no
+  grilling needed beyond three scope check-ins with the maintainer:
+  the corrected 238-entry scale, the generalize-prune-now call, and the
+  full-CLI/API-removal call).
 
 ---
 id: 4615099c-aebf-4088-ac18-52b55677e61a

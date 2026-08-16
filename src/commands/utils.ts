@@ -423,7 +423,6 @@ Commands:
   ui                   Launch the local web dashboard for browsing and querying memories
   feedback [message]   Generate GitHub issue URL with pre-filled feedback parameters
   learn <subcommand>   [Deprecated] Manage learnings (use 'neuron memory --category learning')
-  history <subcommand> [Deprecated] Manage action history (use 'neuron memory --category history')
 
 Options:
   -h, --help           Show this help information
@@ -552,16 +551,16 @@ Subcommands:
   get <id>                       Fetch a single memory entry by ID
   delete <id>                    Delete a memory entry by ID
   update <id> "<content>"        Update a memory entry in-place
-  consolidate                    Summarize consolidated history logs
-  prune                          Delete old history logs (DESTRUCTIVE, no undo)
+  consolidate                    Summarize an append-only category's entries since the last cursor
+  prune                          Delete old entries from one category (DESTRUCTIVE, no undo)
 
 Options:
-  --category <name>              Specify the category (required for delete, update;
-                                 on add it is inferred when omitted, from the
-                                 categories already in the store; on get it is
-                                 optional — ids are unique store-wide, so this
-                                 only asserts the caller's own assumption: a
-                                 mismatch reads as not-found)
+  --category <name>              Specify the category (required for delete, update,
+                                 consolidate, prune; on add it is inferred when
+                                 omitted, from the categories already in the
+                                 store; on get it is optional — ids are unique
+                                 store-wide, so this only asserts the caller's
+                                 own assumption: a mismatch reads as not-found)
   --categories <a,b,...>         Filter by multiple categories (query, list)
   --tags <tag1,tag2,...>         Specify tags (inferred from the store's
                                  vocabulary when omitted)
@@ -574,8 +573,9 @@ Options:
   --days <number>                Cutoff age in days for pruning (prune, default: 30)
   --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
                                  Entries written without --importance default
-                                 to 3, so a bare prune deletes nearly all
-                                 history older than --days. There is no undo.
+                                 to 3, so a bare prune deletes nearly all of
+                                 --category's entries older than --days. There
+                                 is no undo.
   --limit <number>               Limit returned results
   --supersedes <id>              (add) Mark <id> as superseded by this new
                                  entry. Also required to resolve the write-time
@@ -662,28 +662,4 @@ Options:
   --importance <1-5>             Set importance rating (add, update)
   --scope <scope>                [Deprecated, no effect] scope was removed in v2.2.0
   --scopes <scope1,scope2,...>   [Deprecated, no effect] scope was removed in v2.2.0
-  --limit <number>               Limit the number of returned results (query, list)`;
-
-export const HISTORY_HELP = `Usage: neuron history <subcommand> [arguments] [flags]
-[Deprecated: Use 'neuron memory <subcommand> --category history' instead]
-
-Subcommands:
-  add "<content>"                Log a new action to history
-  query "<text>"                 Query history logs using semantic search
-  list                           List recent history logs
-  delete <id>                    Delete a history log by ID
-  consolidate                    Summarize consolidated history since last cursor
-  prune                          Delete old history logs (DESTRUCTIVE, no undo)
-
-Options:
-  --task-id <id>                 Associate a task ID with the log (add)
-  --tags <tag1,tag2,...>         Specify tags for the log (add)
-  --importance <1-5>             Set importance rating (add)
-  --scope <scope>                [Deprecated, no effect] scope was removed in v2.2.0
-  --scopes <scope1,scope2,...>   [Deprecated, no effect] scope was removed in v2.2.0
-  --days <number>                Cutoff age in days for pruning (prune, default: 30)
-  --importance <1-5>             Prune ceiling, INCLUSIVE (prune, default: 3).
-                                 Entries written without --importance default
-                                 to 3, so a bare prune deletes nearly all
-                                 history older than --days. There is no undo.
   --limit <number>               Limit the number of returned results (query, list)`;

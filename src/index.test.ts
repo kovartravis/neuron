@@ -224,7 +224,7 @@ describe('NeuronMemory DB Migrations', () => {
     expect(list2[0].content).toBe('Learning 2');
   });
 
-  it('should support history operations and cursor-based consolidation', async () => {
+  it('should support generic category operations and cursor-based consolidation', async () => {
     const mockEmbedder = {
       embed: async () => new Float32Array(384),
       embedQuery: async () => new Float32Array(384)
@@ -240,42 +240,43 @@ describe('NeuronMemory DB Migrations', () => {
       embedder: mockEmbedder
     });
 
-    // Add history entries
-    const res1 = await memory.addHistory('History 1', { tags: ['tag1'], taskId: 'task-123' });
-    const res2 = await memory.addHistory('History 2', { tags: ['tag2'] });
+    // Add entries to a project-declared 'history' category (an ordinary
+    // category — nothing special-cases the name any more).
+    const [res1] = await memory.transact([{ op: 'upsert', category: 'history', content: 'History 1', tags: ['tag1'], taskId: 'task-123' }]);
+    await memory.transact([{ op: 'upsert', category: 'history', content: 'History 2', tags: ['tag2'] }]);
 
     expect(res1.status).toBe('created');
     expect(res1.id).toBeDefined();
 
-    // List history (newest first)
-    const list = memory.listHistory();
+    // List the category (newest first)
+    const list = await memory.query({ category: 'history' });
     expect(list).toHaveLength(2);
     expect(list[0].content).toBe('History 2'); // newest
     expect(list[1].content).toBe('History 1');
 
     // First consolidation: should retrieve both entries
-    const c1 = memory.consolidateHistory();
-    expect(c1.entries).toHaveLength(2);
-    expect(c1.previousCursor).toBeNull();
-    expect(c1.consolidatedAt).toBeDefined();
-    expect(new Date(c1.consolidatedAt).getTime()).not.toBeNaN();
+    const c1 = memory.maintain({ category: 'history', consolidate: true });
+    expect(c1.consolidated?.entries).toHaveLength(2);
+    expect(c1.consolidated?.previousCursor).toBeNull();
+    expect(c1.consolidated?.consolidatedAt).toBeDefined();
+    expect(new Date(c1.consolidated!.consolidatedAt).getTime()).not.toBeNaN();
     expect(c1.project).toBe('test-project');
 
-    // Add another history entry
-    const res3 = await memory.addHistory('History 3');
+    // Add another entry
+    await memory.transact([{ op: 'upsert', category: 'history', content: 'History 3' }]);
 
     // Second consolidation: should only retrieve History 3
-    const c2 = memory.consolidateHistory();
-    expect(c2.entries).toHaveLength(1);
-    expect(c2.entries[0].content).toBe('History 3');
-    expect(c2.previousCursor).toBe(c1.consolidatedAt);
+    const c2 = memory.maintain({ category: 'history', consolidate: true });
+    expect(c2.consolidated?.entries).toHaveLength(1);
+    expect(c2.consolidated?.entries[0].content).toBe('History 3');
+    expect(c2.consolidated?.previousCursor).toBe(c1.consolidated?.consolidatedAt);
 
-    // Delete history entry
-    const delRes = memory.deleteHistory(res1.id);
+    // Delete an entry
+    const [delRes] = await memory.transact([{ op: 'delete', category: 'history', id: res1.id }]);
     expect(delRes.status).toBe('deleted');
     expect(delRes.id).toBe(res1.id);
 
-    const listAfterDelete = memory.listHistory();
+    const listAfterDelete = await memory.query({ category: 'history' });
     expect(listAfterDelete).toHaveLength(2); // History 2 and History 3 remain
     expect(listAfterDelete.map(h => h.content)).not.toContain('History 1');
 
@@ -284,11 +285,11 @@ describe('NeuronMemory DB Migrations', () => {
     expect(status.projectRoot).toBe('/test/project');
     expect(status.db).toBe('ready');
     expect(status.modelName).toBe('Xenova/bge-small-en-v1.5');
-    expect(status.learnCount).toBe(0);
-    expect(status.historyCount).toBe(2);
+    expect(status.categoryCounts.learning ?? 0).toBe(0);
+    expect(status.categoryCounts.history).toBe(2);
   });
 
-  it('should store importance for learnings and history, defaulting to 3 when omitted', async () => {
+  it('should store importance for learnings and other categories, defaulting to 3 when omitted', async () => {
     const mockEmbedder = {
       embed: async () => new Float32Array(384),
       embedQuery: async () => new Float32Array(384)
@@ -304,9 +305,9 @@ describe('NeuronMemory DB Migrations', () => {
       embedder: mockEmbedder
     });
 
-    // 1. Add learning and history with explicit importance
+    // 1. Add learning and a history-category entry with explicit importance
     const learning1 = await memory.addLearning('Learning with custom importance', ['tag'], { importance: 5 });
-    const history1 = await memory.addHistory('History with custom importance', { importance: 2 });
+    const [history1] = await memory.transact([{ op: 'upsert', category: 'history', content: 'History with custom importance', importance: 2 }]);
 
     // Verify values in DB
     const db = memory.getDb();
@@ -316,9 +317,9 @@ describe('NeuronMemory DB Migrations', () => {
     const h1 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(history1.id) as { importance: number };
     expect(h1.importance).toBe(2);
 
-    // 2. Add learning and history without explicit importance (should default)
+    // 2. Add learning and a history-category entry without explicit importance (should default)
     const learning2 = await memory.addLearning('Default learning', ['tag']);
-    const history2 = await memory.addHistory('Default history');
+    const [history2] = await memory.transact([{ op: 'upsert', category: 'history', content: 'Default history' }]);
 
     const l2 = db.prepare('SELECT importance FROM memories WHERE id = ?').get(learning2.id) as { importance: number };
     expect(l2.importance).toBe(3);
@@ -390,7 +391,7 @@ describe('NeuronMemory DB Migrations', () => {
     expect(results[2].content).toBe('itemB content'); // sim 0.8, importance 5 — lowest similarity, still last
   });
 
-  it('should support pruning history based on age and importance criteria', async () => {
+  it('should support pruning one category based on age and importance criteria', async () => {
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
@@ -400,16 +401,16 @@ describe('NeuronMemory DB Migrations', () => {
       projectName: 'test-project'
     });
 
-    // 1. Add test history entries
-    const h1 = await memory.addHistory('Old importance 1', { importance: 1 });
-    const h2 = await memory.addHistory('Old importance 2', { importance: 2 });
-    const h3 = await memory.addHistory('Old importance 3 (default)', { importance: 3 });
-    const h4 = await memory.addHistory('Old importance 4 (high importance)', { importance: 4 });
-    const h5 = await memory.addHistory('New importance 1', { importance: 1 });
+    // 1. Add test entries to a 'history' category (an ordinary category)
+    const [h1] = await memory.transact([{ op: 'upsert', category: 'history', content: 'Old importance 1', importance: 1 }]);
+    const [h2] = await memory.transact([{ op: 'upsert', category: 'history', content: 'Old importance 2', importance: 2 }]);
+    const [h3] = await memory.transact([{ op: 'upsert', category: 'history', content: 'Old importance 3 (default)', importance: 3 }]);
+    const [h4] = await memory.transact([{ op: 'upsert', category: 'history', content: 'Old importance 4 (high importance)', importance: 4 }]);
+    const [h5] = await memory.transact([{ op: 'upsert', category: 'history', content: 'New importance 1', importance: 1 }]);
 
     // 2. Manipulate dates in SQLite
     const db = memory.getDb();
-    
+
     // Set old entries to 40 days ago
     const oldDate = new Date();
     oldDate.setDate(oldDate.getDate() - 40);
@@ -419,21 +420,21 @@ describe('NeuronMemory DB Migrations', () => {
       .run(oldDateStr, h1.id, h2.id, h3.id, h4.id);
 
     // 3. Run prune with default parameters (days=30, maxImportance=3)
-    const pruneRes1 = memory.pruneHistory();
-    expect(pruneRes1.deletedCount).toBe(3); // h1, h2, h3 pruned; h4 (imp 4) & h5 (new) retained
+    const pruneRes1 = memory.maintain({ category: 'history', pruneHistoryBeforeDays: 30 });
+    expect(pruneRes1.prunedCount).toBe(3); // h1, h2, h3 pruned; h4 (imp 4) & h5 (new) retained
 
     // Check remaining entries
-    const list1 = memory.listHistory({ limit: 10 });
+    const list1 = await memory.query({ category: 'history', limit: 10 });
     expect(list1).toHaveLength(2);
     const remainingIds1 = list1.map(h => h.id);
     expect(remainingIds1).toContain(h4.id);
     expect(remainingIds1).toContain(h5.id);
 
     // 4. Run prune with custom parameters: days=10, maxImportance=4
-    const pruneRes2 = memory.pruneHistory({ days: 10, maxImportance: 4 });
-    expect(pruneRes2.deletedCount).toBe(1);
+    const pruneRes2 = memory.maintain({ category: 'history', pruneHistoryBeforeDays: 10, maxPruneImportance: 4 });
+    expect(pruneRes2.prunedCount).toBe(1);
 
-    const list2 = memory.listHistory({ limit: 10 });
+    const list2 = await memory.query({ category: 'history', limit: 10 });
     expect(list2).toHaveLength(1);
     expect(list2[0].id).toBe(h5.id);
   });
@@ -760,13 +761,13 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     // no longer moves it: this is the regression test for the removed term.
     await memory.addLearning('always pin sqlite version for stable builds', ['sqlite'], { importance: 5 });
 
-    const results = await memory.query({ text: 'sqlite', kind: 'learning' });
+    const results = await memory.query({ text: 'sqlite', category: 'learning' });
 
     expect(results[0].importance).toBe(1);
     expect(results[1].importance).toBe(5);
   });
 
-  it('should merge learnings and history results into a single ranked list when no kind filter is applied', async () => {
+  it('should merge results from multiple categories into a single ranked list when no category filter is applied', async () => {
     const keywordVec = new Float32Array(384);
     keywordVec[4] = 1.0;
 
@@ -795,14 +796,14 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     });
 
     await memory.addLearning('configure webpack for production bundling', ['webpack'], { importance: 3 });
-    await memory.addHistory('ran webpack build successfully', { tags: ['webpack'], importance: 3 });
+    await memory.transact([{ op: 'upsert', category: 'history', content: 'ran webpack build successfully', tags: ['webpack'], importance: 3 }]);
 
-    // No kind filter → both learnings and history are searched
+    // No category filter → both categories are searched
     const results = await memory.query({ text: 'webpack bundler' });
 
-    const kinds = results.map(r => r.kind);
-    expect(kinds).toContain('learning');
-    expect(kinds).toContain('history');
+    const categories = results.map(r => r.category);
+    expect(categories).toContain('learning');
+    expect(categories).toContain('history');
   });
 
   it('should order list mode (no text query) newest-first, not oldest-first (ticket 31)', async () => {
@@ -815,9 +816,9 @@ describe('NeuronMemory hybrid search (RRF)', () => {
       projectName: 'test-project'
     });
 
-    await memory.addHistory('first entry recorded', { importance: 3 });
-    await memory.addHistory('second entry recorded', { importance: 3 });
-    await memory.addHistory('third entry recorded', { importance: 3 });
+    await memory.transact([{ op: 'upsert', category: 'history', content: 'first entry recorded', importance: 3 }]);
+    await memory.transact([{ op: 'upsert', category: 'history', content: 'second entry recorded', importance: 3 }]);
+    await memory.transact([{ op: 'upsert', category: 'history', content: 'third entry recorded', importance: 3 }]);
 
     const results = await memory.query({ categories: ['history'] });
 
@@ -839,7 +840,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
     });
 
     for (let i = 0; i < 8; i++) {
-      await memory.addHistory(`entry number ${i}`, { importance: 3 });
+      await memory.transact([{ op: 'upsert', category: 'history', content: `entry number ${i}`, importance: 3 }]);
     }
 
     // List mode: no --limit, an inventory of 5 is close to useless.
@@ -856,7 +857,7 @@ describe('NeuronMemory hybrid search (RRF)', () => {
       embedder: mockEmbedder
     });
     for (let i = 0; i < 8; i++) {
-      await rankedMemory.addHistory(`entry number ${i}`, { importance: 3 });
+      await rankedMemory.transact([{ op: 'upsert', category: 'history', content: `entry number ${i}`, importance: 3 }]);
     }
     const ranked = await rankedMemory.query({ text: 'entry', categories: ['history'] });
     expect(ranked).toHaveLength(5);

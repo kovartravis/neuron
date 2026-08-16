@@ -122,7 +122,7 @@ describe('CLI Command: memory', () => {
       db.close();
     });
 
-    it('still requires --category for delete and update', () => {
+    it('still requires --category for delete, update, consolidate, and prune', () => {
       const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
       expect(() => {
@@ -135,6 +135,14 @@ describe('CLI Command: memory', () => {
           cwd: projectDir,
           stdio: 'pipe',
         });
+      }).toThrow(/--category is required/);
+
+      expect(() => {
+        execSync(`node ${cliPath} memory consolidate`, { env, cwd: projectDir, stdio: 'pipe' });
+      }).toThrow(/--category is required/);
+
+      expect(() => {
+        execSync(`node ${cliPath} memory prune`, { env, cwd: projectDir, stdio: 'pipe' });
       }).toThrow(/--category is required/);
     });
 
@@ -382,6 +390,74 @@ describe('CLI Command: memory', () => {
       const row = db.prepare('SELECT content FROM memories WHERE id = ?').get(entry.id) as any;
       db.close();
       expect(row.content).toBe('updated content');
+    });
+  });
+
+  describe('prune / consolidate --category scoping', () => {
+    const cliPath = () => path.join(process.cwd(), 'dist/cli.js');
+    let projectDir: string;
+
+    beforeEach(() => {
+      projectDir = path.join(tempDbDir, `proj-prune-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      fs.mkdirSync(projectDir, { recursive: true });
+      fs.writeFileSync(path.join(projectDir, 'package.json'), '{}');
+    });
+
+    const envFor = () => ({
+      ...process.env,
+      NEURON_DB_PATH: tempDbPath,
+      NEURON_MOCK_EMBEDDER: 'true',
+    });
+    const addEntry = (content: string, category: string): { id: string } =>
+      JSON.parse(
+        execSync(`node ${cliPath()} memory add "${content}" --category ${category} --not-a-reversal`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+
+    it('prune only deletes entries in the named category, leaving other categories untouched', () => {
+      const oldHistory = addEntry('an old history entry', 'history');
+      const oldLearning = addEntry('an old learning entry', 'learning');
+
+      const db = openDatabase(tempDbPath);
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 40);
+      db.prepare('UPDATE memories SET created_at = ? WHERE id IN (?, ?)').run(
+        oldDate.toISOString(),
+        oldHistory.id,
+        oldLearning.id
+      );
+      db.close();
+
+      const pruneOut = JSON.parse(
+        execSync(`node ${cliPath()} memory prune --category history --days 30`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+      expect(pruneOut.deletedCount).toBe(1);
+
+      const dbAfter = openDatabase(tempDbPath);
+      const historyRow = dbAfter.prepare('SELECT id FROM memories WHERE id = ?').get(oldHistory.id);
+      const learningRow = dbAfter.prepare('SELECT id FROM memories WHERE id = ?').get(oldLearning.id);
+      dbAfter.close();
+      expect(historyRow).toBeUndefined();
+      expect(learningRow).toBeDefined();
+    });
+
+    it('consolidate only returns entries from the named category', () => {
+      addEntry('a decisions entry', 'decisions');
+      addEntry('a learning entry', 'learning');
+
+      const out = JSON.parse(
+        execSync(`node ${cliPath()} memory consolidate --category learning`, {
+          env: envFor(),
+          cwd: projectDir,
+        }).toString()
+      );
+      expect(out.entries).toHaveLength(1);
+      expect(out.entries[0].category).toBe('learning');
     });
   });
 

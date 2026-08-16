@@ -18,11 +18,11 @@ The generator behind the `## Memory Store Protocol` region `neuron init` writes 
 
 ### neuron-memory
 
-The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) that codifies how agents load memory store context at startup, record action history and new learnings at shutdown, and prune obsolete/redundant memories during periodic maintenance.
+The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) that codifies how agents load memory store context at startup, record new decisions and learnings at shutdown, and prune obsolete/redundant memories during periodic maintenance.
 
 ### task-id
 
-The identifier used to link logged history entries back to specification artifacts or requirements (e.g. ticket numbers like `01-db-schema-postgres` or issue references like `#42`). It should not refer to transient execution task/process IDs.
+The identifier used to link logged memory entries back to specification artifacts or requirements (e.g. ticket numbers like `01-db-schema-postgres` or issue references like `#42`). It should not refer to transient execution task/process IDs.
 
 ### pre-command lookup (`neuron exec` / `pre-command` hook)
 
@@ -61,7 +61,7 @@ The rank aggregation algorithm that merges ordered results from semantic and key
 
 ### FTS (Full-Text Search) index
 
-The SQLite FTS5 virtual table (`learnings_fts` or `history_fts`) linked as an external content table to index the `content` and `tags` columns.
+The SQLite FTS5 virtual table (`memories_fts`, the unified index since migration v5 — `learnings_fts`/`history_fts` were its pre-unification predecessors) linked as an external content table to index the `content` and `tags` columns.
 
 ### dynamic category UI
 
@@ -73,7 +73,7 @@ The REST API endpoint (`/api/memories`) accepting a `category` parameter to list
 
 ### Category-Based Markdown File
 
-The markdown file layout where memories under a category are formatted and stored together inside a dedicated category file (e.g. `.neuron/learning.md`, `.neuron/history.md`).
+The markdown file layout where memories under a category are formatted and stored together inside a dedicated category file (e.g. `.neuron/learning.md`, `.neuron/decisions.md`).
 
 ### Markdown Storage Adapter (`MdStorageAdapter`)
 

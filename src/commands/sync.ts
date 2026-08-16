@@ -35,7 +35,7 @@ export async function handleSyncCommand(args: string[], memory: NeuronMemory, ov
 
   const categories = category
     ? [category]
-    : Object.keys(config.categories || { learning: {}, history: {}, decisions: {} });
+    : Object.keys(config.categories || { learning: {}, decisions: {} });
 
   const isTTY = process.stdout.isTTY;
   if (isTTY) {
@@ -84,7 +84,7 @@ export function scaffoldNeuronDirectory(projectDir: string, config?: NeuronConfi
     ...DEFAULT_CONFIG,
     ...config,
     storage: config?.storage ?? DEFAULT_CONFIG.storage,
-    categories: config?.categories ?? { learning: {}, history: {}, decisions: {} },
+    categories: config?.categories ?? { learning: {}, decisions: {} },
   };
   const roots = resolveAllCategoryRoots(effectiveConfig, projectDir);
   const scaffolded: string[] = [];

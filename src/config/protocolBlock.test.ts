@@ -77,6 +77,16 @@ describe('generateProtocolBlock', () => {
     expect(block).toContain('`decisions`');
   });
 
+  it('drops the history-pointer branch and the history example command when history is not declared', () => {
+    const withoutHistory = config({ categories: { learning: { description: 'rules' }, decisions: { description: 'adrs' } } });
+    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: withoutHistory });
+    expect(block).not.toContain('`history`');
+    expect(block).not.toContain('shrink `history`');
+    expect(block).toContain('neuron memory add --category decisions');
+    expect(block).toContain('neuron memory add --category learning');
+    expect(block).toContain("If nothing was decided — pure execution — there's nothing else to log.");
+  });
+
   it('reports scan settings only when scanning is enabled', () => {
     const enabled = generateProtocolBlock({
       fidelity: 'deterministic',

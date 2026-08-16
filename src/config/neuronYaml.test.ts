@@ -48,7 +48,7 @@ describe('neuron.yaml Config Loader & Zod Parser', () => {
     expect(config.storage.path).toBeUndefined();
     expect(resolveCategoryPath(config, 'learning', emptyDir)).toBe(path.join(emptyDir, '.neuron'));
     expect(config.categories.learning).toBeDefined();
-    expect(config.categories.history).toBeDefined();
+    expect(config.categories.decisions).toBeDefined();
     expect(config.pullRules.default?.categories).toEqual(['learning']);
   });
 

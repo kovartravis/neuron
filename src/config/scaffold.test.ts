@@ -36,7 +36,6 @@ describe('neuron.yaml scaffolding (ticket 31)', () => {
     expect(Object.keys(config.categories).sort()).toEqual([
       'architecture',
       'decisions',
-      'history',
       'learning',
     ]);
   });

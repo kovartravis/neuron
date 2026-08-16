@@ -1354,3 +1354,27 @@ tags:
 taskId: de4f45be-34e0-45df-9a50-f72d0bdc5905
 ---
 Map — neuron 2.4.3, Ticket 1 (Write-Side Compliance Nudge & Instrumentation), resolved: don't commit to a Stop-hook trigger mechanism yet — test whether an active nudge actually changes agent write-compliance behavior first, via a 3-arm real-agent A/B (control / simulated session-end nudge / explicit-instruction) reusing benchmarks/token-ab's live-session pattern (same agent, same SWE-bench task, run twice, deterministic tool-call grading) rather than the offline-corpus-scoring pattern the NLI model A/Bs used — that pattern doesn't fit a live-behavior question. Go/no-go rule: build the real trigger (and only then decide hand-wired dogfood-only Stop hook vs. full LifecyclePoint extension across all 4 harness adapters) if nudge/explicit-instruction clearly beat control; no-go if all three land close together. Compliance is graded deterministically — a real neuron memory add tool call in the transcript, mirroring hintFollowLog.ts's recordToolUse pattern-match, never an LLM judge. Build/run of the harness itself spawned as a new ticket (kind: research), not done in this grilling session, mirroring how ticket 11 spawned ticket 13 in Map — neuron 2.4.2.
+
+---
+id: 270115a5-5c57-46b8-b17c-dfca70e74a8f
+createdAt: 2026-08-16T12:32:48.298Z
+importance: 4
+tags:
+  - rc2
+  - 2.2.0
+  - wayfinder
+taskId: ae0e3d5d-8564-471e-a2ed-73e54480c7e0
+---
+Map — neuron 2.4.3, Ticket 6 (Design the Write-Side Compliance Trigger Mechanism): committed to a full LifecyclePoint extension (new session-end point, real support on Claude Code/Copilot, honest unsupported on Codex/Cursor) shipped generally via neuron init, not a hand-wired dogfood-only Stop hook — Ticket 5's A/B already proved the mechanism moves compliance from 20% to 100%, so the reason Ticket 1 gave for deferring real-hook engineering no longer applies. Scope grew mid-session at the maintainer's explicit request into a generic declarative injection layer (neuron.yaml entries declaring lifecycle point + category + --where filter + char budget, executed generically by hook.ts) specifically so Ticket 7 (Previous-Session WIP Handoff) becomes a pure-config change with zero new code once this ships; Ticket 7 is now blocked on Ticket 6. The gate-friction Ticket 5 surfaced (agents' own §1/§2 entries tripping a write-time gate) was root-caused during grilling to Map 2.4.2's near-duplicate/supersession gate (NEAR_DUP_RERANK_BAR) specifically, not its separate contradiction/reversal gate (P(contradiction)>=0.90) which an initial framing had mistakenly targeted, and deferred to a new Ticket 8, which retests that bar against real content rather than trusting its synthetic-corpus calibration (already known via Map 2.4.2 Ticket 10 not to transfer to real content).
+
+---
+id: 108fc8a0-2b4a-4bff-a816-63cfce0afd60
+createdAt: 2026-08-16T12:56:45.049Z
+importance: 4
+tags:
+  - npm
+  - release
+  - git
+taskId: null
+---
+Release automation (publish.yml, neuron-2.3.0 ticket 21) changed what the actual irreversible release trigger is: the workflow fires on every push to main, derives the npm dist-tag from package.json's version itself (bare X.Y.Z to 'latest', X.Y.Z-rcN to 'rc'), skips if that exact version is already published, and only creates/pushes the git tag after a real 'npm publish' succeeds. Confirmed live 2026-08-12 (neuron-2.4.0 ticket 37, 2.4.0-rc1): the rc dist-tag path worked exactly as designed, and the already-published no-op guard correctly skipped re-publishing on two follow-up doc-only pushes to main. This means merging a release branch to main is now the actual irreversible step, not a separate manual 'npm publish' run afterward — any future release-cut ticket needs its maintainer go-ahead checkpoint placed before the push to main, not after a manual tag as older tickets assumed. Also confirmed live the same session: main carries an active GitHub branch ruleset ('Protect', id 20346327) requiring a PR with 1 approval plus code-owner review, CodeQL, and code_quality gates (current_user_can_bypass is 'always' for the repo owner, but the maintainer chose a real PR for the actual release-triggering merge rather than bypassing). The npm-publish GitHub Environment itself has no protection rules, so the branch ruleset on main is the only checkpoint before the real publish fires, not a second one after it.

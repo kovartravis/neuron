@@ -73,7 +73,7 @@ export class MultiRootMdStorage implements MdStorage {
     return this.adapterFor(category).getFilePath(category);
   }
 
-  async ensureScaffolded(categories: string[] = ['learning', 'history', 'decisions']): Promise<void> {
+  async ensureScaffolded(categories: string[] = ['learning', 'decisions']): Promise<void> {
     for (const category of categories) {
       await this.adapterFor(category).ensureScaffolded([category]);
     }

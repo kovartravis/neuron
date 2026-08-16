@@ -451,7 +451,6 @@ export const NeuronConfigSchema = z.object({
   storage: StorageConfigSchema.default({ mode: 'md' }),
   categories: z.record(z.string(), CategoryConfigSchema).default({
     learning: { description: 'Agent conventions, rules, and failure fixes' },
-    history: { description: 'Action history log and completed task summary' },
     decisions: { description: 'Architectural Decision Records (ADRs) & design choices' },
     architecture: { description: 'Architectural blueprints & structure cards' },
   }),

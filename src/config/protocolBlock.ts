@@ -105,32 +105,47 @@ function failureFixStep(n: number): string {
   ].join('\n');
 }
 
-function sessionEndStep(n: number): string {
-  return [
-    `## ${n}. Session Conclusion`,
-    '',
-    'Before finishing, check whether this session produced a ' +
-      '`decisions`/`learning` entry:',
-    '',
-    '- **It did** — write that entry first, then shrink `history` to a short ' +
-      'pointer (what happened, in a line or two) instead of restating the ' +
-      'resolution. Both share the same `--task-id`, which is the link ' +
-      'between them — not a separate id-to-id field:',
-    '  ```bash',
-    '  # ADRs / design choices, or a new rule/failure-fix:',
-    '  neuron memory add --category decisions "<rationale and details>" --task-id <ticket-id>',
-    '  neuron memory add --category learning "<rule or fix, 3-4 sentences>" --task-id <ticket-id>',
-    '  # then a pointer, not a restatement:',
-    '  neuron memory add --category history "<one or two lines: what happened>" --task-id <ticket-id>',
-    '  ```',
-    "- **It didn't** (pure execution, nothing decided) — `history` keeps " +
-      "today's full-narrative shape; there's nothing else to point at:",
-    '  ```bash',
-    '  neuron memory add --category history "<summary of work completed>" --task-id <ticket-id>',
-    '  ```',
-    '',
-    scanRefreshSection(),
-  ].join('\n');
+function sessionEndStep(n: number, config: NeuronConfig): string {
+  const hasHistory = 'history' in config.categories;
+  const lines = [`## ${n}. Session Conclusion`, ''];
+  if (hasHistory) {
+    lines.push(
+      'Before finishing, check whether this session produced a ' +
+        '`decisions`/`learning` entry:',
+      '',
+      '- **It did** — write that entry first, then shrink `history` to a short ' +
+        'pointer (what happened, in a line or two) instead of restating the ' +
+        'resolution. Both share the same `--task-id`, which is the link ' +
+        'between them — not a separate id-to-id field:',
+      '  ```bash',
+      '  # ADRs / design choices, or a new rule/failure-fix:',
+      '  neuron memory add --category decisions "<rationale and details>" --task-id <ticket-id>',
+      '  neuron memory add --category learning "<rule or fix, 3-4 sentences>" --task-id <ticket-id>',
+      '  # then a pointer, not a restatement:',
+      '  neuron memory add --category history "<one or two lines: what happened>" --task-id <ticket-id>',
+      '  ```',
+      "- **It didn't** (pure execution, nothing decided) — `history` keeps " +
+        "today's full-narrative shape; there's nothing else to point at:",
+      '  ```bash',
+      '  neuron memory add --category history "<summary of work completed>" --task-id <ticket-id>',
+      '  ```',
+      ''
+    );
+  } else {
+    lines.push(
+      'Before finishing, write a `decisions`/`learning` entry if this session ' +
+        'made an architectural choice, or fixed something reusable:',
+      '```bash',
+      '# ADRs / design choices, or a new rule/failure-fix:',
+      'neuron memory add --category decisions "<rationale and details>" --task-id <ticket-id>',
+      'neuron memory add --category learning "<rule or fix, 3-4 sentences>" --task-id <ticket-id>',
+      '```',
+      "If nothing was decided — pure execution — there's nothing else to log.",
+      ''
+    );
+  }
+  lines.push(scanRefreshSection());
+  return lines.join('\n');
 }
 
 export interface ProtocolBlockOptions {
@@ -158,7 +173,7 @@ export function generateProtocolBlock(options: ProtocolBlockOptions): string {
   let n = steps.length + 1;
   if (execFidelity !== 'deterministic') steps.push(execStep(n++));
   steps.push(failureFixStep(n++));
-  steps.push(sessionEndStep(n++));
+  steps.push(sessionEndStep(n++, config));
 
   const body = [headerSection(config), ...steps, metadataFlagsSection()].join('\n\n');
 
