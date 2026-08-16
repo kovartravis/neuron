@@ -27799,6 +27799,8 @@ existed.
 
 <!-- one line per resolved ticket: enough to judge relevance, then open the ticket for detail -->
 
+- [Ticket 1 — Write-Side Compliance Nudge & Instrumentation](de4f45be-34e0-45df-9a50-f72d0bdc5905) — don't commit to a trigger mechanism yet; test first via a 3-arm real-agent A/B (control/nudge/explicit-instruction, reusing `token-ab`'s pattern), deterministic tool-call grading, go/no-go decision rule. Build/run spawned as [Ticket 4](623be167-6f64-4616-8328-d42d29ac3952).
+
 ## Not yet specified
 
 - **Should the write-compliance mechanism ship to every project `neuron
@@ -27827,7 +27829,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
-status: claimed
+status: resolved
 ---
 # 1 — Write-Side Compliance Nudge & Instrumentation
 
@@ -27881,18 +27883,84 @@ pair, not inventing a new pattern from scratch.
 
 ## Deliverables
 
-- [ ] Trigger event decided
-- [ ] Definition of "compliance" decided and made measurable
-- [ ] Dogfood-only vs. ship-generally decided
-- [ ] Nudge content and injection surface decided
-- [ ] Implementation (mirrors ticket 06/07: a hook-side nudge, plus an
-      instrument recording whether it was followed)
+- [x] Trigger event — **not decided directly; routed through an A/B test
+      first** (see Answer). Fact established while grilling: `LifecyclePoint`
+      (`src/harnesses/types.ts:28`) is a closed 4-value union
+      (`session-start`/`pre-prompt`/`context-reset`/`pre-command`) with no
+      stop/session-end point in any of the four harness adapters today —
+      so "wire a Stop hook" is a real structural change, not a config
+      tweak, and not worth committing to before we know nudging works at
+      all.
+- [x] Definition of "compliance," made measurable — **decided**: a
+      deterministic tool-call pattern match for a real `neuron memory add`
+      invocation in the session transcript, mirroring
+      `hintFollowLog.ts`'s quote-aware, separator-anchored
+      `recordToolUse` approach. No LLM judge.
+- [ ] Dogfood-only vs. ship-generally — **deferred**, moot unless the A/B
+      returns a go.
+- [ ] Nudge content and injection surface — **deferred** to the execution
+      ticket (exact wording is a build detail, not decided here); the
+      *category* of nudge to test (session-end-style reminder) is decided.
+- [ ] Implementation — **deferred**; this ticket does not build the
+      mechanism. See Answer.
 
 ## Answer
 
-_Not yet resolved._
+**Don't commit to the trigger/mechanism yet — test whether nudging
+changes agent behavior first**, using neuron's own established real-agent
+A/B pattern (`benchmarks/token-ab`: same agent, same task, run twice,
+graded deterministically — "nothing here asks a model to score a model"),
+not the offline-corpus-scoring pattern the NLI model A/Bs (tickets 7/8/13)
+used. That pattern doesn't fit here: this is a question about live agent
+behavior under different context conditions, not about a classifier's
+separation quality on a fixed corpus.
+
+**A/B design, decided this session:**
+
+- **Three arms**: `control` (today's behavior — passive CLAUDE.md protocol
+  text only, no active reminder) / `nudge` (a simulated session-end-style
+  reminder injected into context, standing in for a real `Stop` hook that
+  doesn't exist yet — the harness simulates it the same way `token-ab`'s
+  `injection` arm simulates `session-start` payload rendering without a
+  live hook) / `explicit-instruction` (system prompt states directly "you
+  must call `neuron memory add` before finishing" — isolates whether a
+  dedicated triggered event matters at all versus just stating the rule
+  more forcefully, since a live `Stop` hook is real engineering work this
+  ticket doesn't want to pay for before knowing it moves the needle).
+- **Scenario**: reuse existing SWE-bench task fixtures already wired in
+  `benchmarks/token-ab/swebench-fixtures.mjs` — a real failure-fix trigger
+  per CLAUDE.md §1, zero new fixture-building work.
+- **Grading**: deterministic tool-call pattern match for a real `neuron
+  memory add` invocation (same approach as `hintFollowLog.ts`'s
+  `recordToolUse` — anchored at a real command position, quote-aware, not
+  a bare substring test). No LLM judge, matching this project's standing
+  `token-ab` rule.
+- **Decision rule**: go (build the real trigger mechanism) if `nudge`
+  and/or `explicit-instruction` show a clear compliance-rate margin over
+  `control`; no-go if all three land close together — meaning the agent's
+  behavior doesn't move regardless of nudging, so a hook wouldn't help.
+  Exact numeric bar left to emerge from the data (same approach ticket 13
+  used), not fixed in advance.
+- **Not decided here** (deferred to the execution ticket, or to a further
+  ticket after its result): exact nudge wording, sample size/budget,
+  dogfood-only-vs-`neuron init` (moot unless go), and the original
+  trigger-architecture question this ticket opened with (hand-wired
+  dogfood-only `Stop` hook vs. full `LifecyclePoint` extension across all
+  four harness adapters) — that becomes the next decision *after* a go
+  result, not now.
+
+**This ticket's own scope is the design, not the build** — mirrors how
+ticket 11 decided "test before deciding" and spawned ticket 13 to actually
+run the A/B. A new `kind: research` child ticket is spawned to build the
+harness (reusing `benchmarks/token-ab/session.mjs`'s manual tool-use loop)
+and run it.
 
 ## Comments
+
+- 2026-08-15: Resolved via `/grilling`. Spawns a new child ticket to build
+  and run the designed A/B; that ticket's result determines whether this
+  map's trigger-architecture question (Stop hook: hand-wired dogfood-only
+  vs. full `LifecyclePoint` extension) becomes live.
 
 ---
 id: eb84d876-7222-4b4c-85da-2c48f59e0e96
@@ -31155,3 +31223,82 @@ test edits were needed alongside the generator change.
 
 - 2026-08-15: Created by Ticket 12's resolution.
 - 2026-08-15: Resolved. See Answer.
+
+---
+id: 623be167-6f64-4616-8328-d42d29ac3952
+createdAt: 2026-08-16T03:19:57.966Z
+importance: 3
+tags:
+  - rc2
+  - setup
+  - adr
+taskId: null
+kind: research
+map: 5768f1c7-0f3c-46e3-90db-c11e4c5df748
+status: unclaimed
+---
+# 4 — Build & Run the Write-Side Compliance Nudge A/B
+
+## Question
+
+Build and run the A/B test designed in ticket "1 — Write-Side Compliance
+Nudge & Instrumentation" (Map — neuron 2.4.3): does an active nudge
+actually change whether an agent calls `neuron memory add` when the
+CLAUDE.md protocol calls for it, versus today's passive-prose-only
+behavior? Report a go/no-go on building a real trigger mechanism.
+
+## Design (decided by ticket 1 — build to this spec, not a fresh design pass)
+
+- **Three arms**: `control` (today's behavior — passive CLAUDE.md protocol
+  text only) / `nudge` (a simulated session-end-style reminder injected
+  into context, standing in for a real `Stop` hook that doesn't exist in
+  `LifecyclePoint` yet — simulate it in the harness the same way
+  `token-ab`'s `injection` arm simulates `session-start` payload
+  rendering without a live hook) / `explicit-instruction` (system prompt
+  states directly that `neuron memory add` must be called before
+  finishing).
+- **Scenario**: reuse existing SWE-bench task fixtures already wired in
+  `benchmarks/token-ab/swebench-fixtures.mjs` — pick 1-2 that produce a
+  clean failure-fix moment per CLAUDE.md §1.
+- **Harness**: reuse `benchmarks/token-ab/session.mjs`'s manual tool-use
+  loop (same pattern as `run-swebench-ab.mjs`), not a new agent-running
+  mechanism.
+- **Grading**: deterministic tool-call pattern match for a real `neuron
+  memory add` invocation in the transcript — mirror `hintFollowLog.ts`'s
+  `recordToolUse` approach (anchored at a real command position,
+  quote-aware, not a bare substring test). No LLM judge.
+- **Decision rule**: go (build the real trigger mechanism — routes to a
+  new ticket deciding hand-wired dogfood-only `Stop` hook vs. full
+  `LifecyclePoint` extension) if `nudge` and/or `explicit-instruction`
+  show a clear compliance-rate margin over `control`; no-go if all three
+  land close together. Exact numeric bar left to emerge from the data
+  (same approach ticket 13 used for its joint-low bar), not fixed in
+  advance.
+
+## Not decided by ticket 1 — resolve here
+
+- Exact nudge wording for the `nudge` and `explicit-instruction` arms.
+- Sample size/repeats per arm and budget cap (mirror `token-ab`'s
+  `--k`/`--cap` flags and existing run conventions).
+- Where the harness script and findings doc land: convention from
+  tickets 7/8/11/13 is `benchmarks/<name>-ab/` for the script and
+  `docs/design/write-time-quality/` for the dated findings writeup —
+  confirm this fits or pick a more apt location (this isn't an NLI/
+  write-time-quality question in the same sense; may warrant its own
+  `benchmarks/write-compliance-ab/` directory instead).
+
+## Deliverables
+
+- [ ] Nudge/explicit-instruction wording finalized
+- [ ] Harness built (reusing `session.mjs`)
+- [ ] A/B run against chosen SWE-bench fixture(s), real results captured
+- [ ] Go/no-go verdict recorded per the decision rule
+- [ ] Findings doc + raw results linked as assets
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-15: Spawned by ticket 1's resolution.

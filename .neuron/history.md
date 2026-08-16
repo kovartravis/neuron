@@ -3086,3 +3086,15 @@ tags:
 taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
 ---
 Wayfinder pickup on Map — neuron 2.4.2: claimed and resolved Ticket 9 (Implement Conflict Detection at Write Time), the map's last frontier ticket. Two open design points confirmed with the maintainer before building; full design and measured results on the ticket itself, see the linked decisions and learning entries for detail. Every child ticket (1-13) is now resolved — the map's frontier is empty and its Destination looks reached; flagged for the maintainer to confirm closure.
+
+---
+id: f8f425b1-2898-43fe-9ce5-c77545402627
+createdAt: 2026-08-16T03:20:50.244Z
+importance: 3
+tags:
+  - wayfinder
+  - 2.2.0
+  - rc2
+taskId: de4f45be-34e0-45df-9a50-f72d0bdc5905
+---
+Cut feat/2.4.3-rc1 from feat/2.4.2-rc1 (Map — neuron 2.4.3's map/tickets live there, not yet on main) and resolved Ticket 1 via /grilling; see decisions entry for the design. Spawned Ticket 4 to build/run the A/B.
