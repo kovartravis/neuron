@@ -31,6 +31,7 @@ export const CURSOR_HARNESS_ID = 'cursor';
 const EVENT_NAME: Partial<Record<LifecyclePoint, string>> = {
   'session-start': 'sessionStart',
   'context-reset': 'preCompact',
+  'pre-stop': 'stop',
 };
 
 /**
@@ -42,6 +43,7 @@ const EVENT_NAME: Partial<Record<LifecyclePoint, string>> = {
 const HOOK_TIMEOUT_SECONDS: Partial<Record<LifecyclePoint, number>> = {
   'session-start': 20,
   'context-reset': 5,
+  'pre-stop': 10,
 };
 
 /**
@@ -109,6 +111,17 @@ function capability(): CapabilityMap {
       timeoutMs: 'unknown',
       caveats: [
         'A structural ceiling, not an undocumented gap (ticket 12, neuron-2.4.0): beforeShellExecution is documented as permission/gating-only ({permission, user_message, agent_message}, confirmed via direct fetch of cursor.com/docs/agent/hooks) — no context-carrying field at all, unlike Claude Code/Codex\'s PreToolUse. Never wired by neuron init, permanently, the same as pre-prompt above. The CLAUDE.md/AGENTS.md-instructed `neuron exec` step stays as this harness\'s only path to the same lookup.',
+      ],
+    },
+    'pre-stop': {
+      injects: true,
+      payloadCapChars: 'unknown',
+      failurePosture: 'unknown',
+      timeoutMs: 'unknown',
+      caveats: [
+        'stop ("when the agent loop ends") supports an optional followup_message field: when non-empty, Cursor automatically submits it as the next user message, restarting agent iteration — real, functional support, distinct from sessionEnd above which is fire-and-forget ("logged but not used"). This is a different response shape from sessionStart/preCompact\'s flat additional_context — hook.ts branches on point, not just harness id, to emit it.',
+        'A configurable per-script continuation limit is documented (default 5 turns) — neuron\'s own per-session ledger dedup (see hook.ts) means this is never reached in practice (one nudge, then always allow).',
+        'Doc-sourced only (cursor.com/docs/hooks), not verified against a real Cursor installation — same standing gap as session-start above (ticket 22, neuron-2.3.0, closed won\'t-do, no maintainer access to Cursor).',
       ],
     },
   };
@@ -225,6 +238,7 @@ export class CursorAdapter implements HarnessAdapter {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

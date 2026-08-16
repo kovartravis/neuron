@@ -27,22 +27,24 @@ describe('ClaudeCodeAdapter (src/harnesses/claudeCode.ts)', () => {
     expect(adapter.detect(path.join(tempRoot, 'no-such-dir'))).toBe(false);
   });
 
-  it('reports deterministic fidelity for session-start, pre-prompt, and pre-command', () => {
+  it('reports deterministic fidelity for session-start, pre-prompt, pre-command, and pre-stop', () => {
     const capability = adapter.capability();
     expect(capability['session-start'].injects).toBe(true);
     expect(capability['pre-prompt'].injects).toBe(true);
     expect(capability['context-reset'].injects).toBe(false);
     expect(capability['pre-command'].injects).toBe(true);
+    expect(capability['pre-stop'].injects).toBe(true);
     expect(deriveFidelity(capability)).toBe('deterministic');
   });
 
-  it('installs hooks for all four lifecycle points into a fresh settings.json', async () => {
+  it('installs hooks for all five lifecycle points into a fresh settings.json', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
     expect(result.points).toEqual({
       'session-start': 'written',
       'pre-prompt': 'written',
       'context-reset': 'written',
       'pre-command': 'written',
+      'pre-stop': 'written',
     });
 
     const settings = JSON.parse(fs.readFileSync(settingsPath(), 'utf8'));
@@ -55,6 +57,7 @@ describe('ClaudeCodeAdapter (src/harnesses/claudeCode.ts)', () => {
     expect(settings.hooks.UserPromptSubmit[0].hooks[0].args).toEqual(['hook', 'claude-code', 'pre-prompt']);
     expect(settings.hooks.PreCompact[0].hooks[0].args).toEqual(['hook', 'claude-code', 'context-reset']);
     expect(settings.hooks.PreToolUse[0].hooks[0].args).toEqual(['hook', 'claude-code', 'pre-command']);
+    expect(settings.hooks.Stop[0].hooks[0].args).toEqual(['hook', 'claude-code', 'pre-stop']);
   });
 
   it('is idempotent: a second install with identical content reports unchanged and does not duplicate entries', async () => {
@@ -65,11 +68,13 @@ describe('ClaudeCodeAdapter (src/harnesses/claudeCode.ts)', () => {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     });
 
     const settings = JSON.parse(fs.readFileSync(settingsPath(), 'utf8'));
     expect(settings.hooks.SessionStart.length).toBe(1);
     expect(settings.hooks.UserPromptSubmit.length).toBe(1);
+    expect(settings.hooks.Stop.length).toBe(1);
   });
 
   it('never touches a user\'s own pre-existing hooks in the same file', async () => {
@@ -156,7 +161,7 @@ describe('ClaudeCodeAdapter (src/harnesses/claudeCode.ts)', () => {
 
     const result = await adapter.uninstall(projectDir);
     expect(result.removed).toHaveLength(1);
-    expect(result.removed[0].removedCount).toBe(4);
+    expect(result.removed[0].removedCount).toBe(5);
 
     const settings = JSON.parse(fs.readFileSync(settingsPath(), 'utf8'));
     expect(settings.someOtherSetting).toBe(true);
@@ -164,6 +169,7 @@ describe('ClaudeCodeAdapter (src/harnesses/claudeCode.ts)', () => {
     expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe('my-custom-hook.sh');
     expect(settings.hooks.SessionStart).toBeUndefined();
     expect(settings.hooks.PreCompact).toBeUndefined();
+    expect(settings.hooks.Stop).toBeUndefined();
   });
 
   it('uninstall on a project with no hooks installed is a safe no-op', async () => {

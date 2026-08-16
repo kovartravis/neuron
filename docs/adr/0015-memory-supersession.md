@@ -145,4 +145,20 @@ orthogonal.
 
 ## Amendments
 
-(none yet)
+### 2026-08-16 — Third gate-resolution path: `--companion-of`
+
+Ticket 6 — Design the Write-Side Compliance Trigger Mechanism (`neuron-2.4.3`,
+ticket `ae0e3d5d-8564-471e-a2ed-73e54480c7e0`) extends Decision 1 with a third
+resolution to the write-time similarity gate, alongside `--supersedes` and the
+explicit not-a-reversal override: `--companion-of <id>`. It exempts a write
+from the gate **only** against the named `<id>`, for a deliberate companion
+entry that intentionally reads as a near-duplicate of one just written under a
+different category (e.g. a session-conclusion pointer restating a fix just
+logged elsewhere) — not a blanket bypass. If the gate's real near-dup
+candidate is a different entry than `<id>`, it still fires normally, and
+`<id>` is validated to exist, the same as `--supersedes`. This closes gate
+friction Ticket 5 (`neuron-2.4.3`) surfaced live: an agent's own §1/§2
+session-conclusion entries tripping the gate against each other. The
+resolution stays purely additive to Decision 1's shape — still
+"vector-shortlist, never auto-adjudicate," still requiring an explicit flag
+before anything lands — and does not touch Decisions 2-6.

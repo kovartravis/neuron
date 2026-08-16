@@ -253,6 +253,146 @@ describe('CLI: memory add write-time supersession gate (ticket 17 / ADR 0015)', 
   });
 });
 
+// Ticket 6 (neuron-2.4.3): --companion-of skips the near-dup/supersession
+// gate against one named, deliberate companion entry — the fix for the
+// gate-friction Ticket 5's A/B surfaced (an agent's own §1 fix and §2
+// session-conclusion pointer reading as near-duplicates of each other).
+describe('CLI: memory add --companion-of (ticket 6, neuron-2.4.3)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('skips the gate when the near-dup candidate is the named companion', async () => {
+    const memory = makeMemory();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handleMemoryCommand(
+      ['memory', 'add', 'prune ceiling fix landed', '--category', 'learning'],
+      memory,
+      'test-project'
+    );
+    const firstId = JSON.parse(String(logSpy.mock.calls[0][0])).id;
+
+    await handleMemoryCommand(
+      [
+        'memory', 'add', 'prune ceiling fix pointer for the session record',
+        '--category', 'decisions', '--companion-of', firstId,
+      ],
+      memory,
+      'test-project'
+    );
+
+    // Both land; the companion write is not superseded, blocked, or flagged.
+    const all = await memory.query({ categories: ['learning', 'decisions'], limit: 10, includeSuperseded: true });
+    expect(all).toHaveLength(2);
+    expect(all.every(m => !m.supersededBy)).toBe(true);
+    const companionResult = JSON.parse(String(logSpy.mock.calls[1][0]));
+    expect(companionResult.possibleConflict).toBeUndefined();
+  });
+
+  it('still gates normally against an unrelated near-dup when the real candidate is not the named companion', async () => {
+    const memory = makeMemory();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = captureExit();
+
+    // An unrelated entry the companion flag does not name.
+    await handleMemoryCommand(
+      ['memory', 'add', 'the prune ceiling is a real hazard', '--category', 'decisions'],
+      memory,
+      'test-project'
+    );
+    const realCandidateId = JSON.parse(String(logSpy.mock.calls[0][0])).id;
+
+    // A companion target that exists but is not the near-dup candidate.
+    await handleMemoryCommand(
+      ['memory', 'add', 'an unrelated companion entry', '--category', 'learning'],
+      memory,
+      'test-project'
+    );
+    const unrelatedCompanionId = JSON.parse(String(logSpy.mock.calls[1][0])).id;
+
+    await expect(
+      handleMemoryCommand(
+        [
+          'memory', 'add', 'the prune ceiling collision is a hazard needing a fix',
+          '--category', 'decisions', '--companion-of', unrelatedCompanionId,
+        ],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+
+    const stderr = errSpy.mock.calls.map(c => String(c[0])).join('\n');
+    expect(stderr).toContain(realCandidateId);
+  });
+
+  it('rejects an unknown --companion-of target before writing anything', async () => {
+    const memory = makeMemory();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    captureExit();
+
+    await expect(
+      handleMemoryCommand(
+        ['memory', 'add', 'a fresh entry', '--category', 'decisions', '--companion-of', 'does-not-exist'],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+
+    expect(errSpy.mock.calls.map(c => String(c[0])).join('\n')).toContain('does-not-exist');
+    const all = await memory.query({ categories: ['decisions'], limit: 10 });
+    expect(all).toHaveLength(0);
+  });
+
+  it('--companion-of and --supersedes together are rejected by parseFlags', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    captureExit();
+    const memory = makeMemory();
+
+    await expect(
+      handleMemoryCommand(
+        ['memory', 'add', 'x', '--category', 'decisions', '--supersedes', 'abc', '--companion-of', 'def'],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+  });
+
+  it('--companion-of and --not-a-reversal together are rejected by parseFlags', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    captureExit();
+    const memory = makeMemory();
+
+    await expect(
+      handleMemoryCommand(
+        ['memory', 'add', 'x', '--category', 'decisions', '--not-a-reversal', '--companion-of', 'def'],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+  });
+
+  it('--companion-of and --if-novel together are rejected by parseFlags (ticket 11)', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    captureExit();
+    const memory = makeMemory();
+
+    await expect(
+      handleMemoryCommand(
+        ['memory', 'add', 'x', '--category', 'decisions', '--if-novel', '--companion-of', 'def'],
+        memory,
+        'test-project'
+      )
+    ).rejects.toThrow('process.exit(1)');
+  });
+});
+
 describe('CLI: memory query/list --include-superseded (ticket 17 / ADR 0015)', () => {
   afterEach(() => {
     vi.restoreAllMocks();

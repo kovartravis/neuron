@@ -24,14 +24,23 @@
  *   not a temporary one: only Claude Code and Codex CLI expose a
  *   context-carrying hook here at all — Copilot CLI and Cursor's shell hooks
  *   are permission/gating-only, so both keep `injects: false` permanently.
+ * - `pre-stop` fires when the agent is about to finish a turn and can force
+ *   one more turn before it does (ticket 6, neuron-2.4.3) — the write-side
+ *   analog of `pre-prompt`'s read-side nudge. Named `pre-stop`, not
+ *   `session-end`: every harness's literal session-teardown event
+ *   (`SessionEnd`/`sessionEnd`) is fire-and-forget and can never reach the
+ *   model, confirmed by direct verification during this ticket's own
+ *   implementation — `pre-stop` maps instead to each harness's real
+ *   per-turn stop-and-escalate event (`Stop`/`agentStop`/`stop`).
  */
-export type LifecyclePoint = 'session-start' | 'pre-prompt' | 'context-reset' | 'pre-command';
+export type LifecyclePoint = 'session-start' | 'pre-prompt' | 'context-reset' | 'pre-command' | 'pre-stop';
 
 export const LIFECYCLE_POINTS: readonly LifecyclePoint[] = [
   'session-start',
   'pre-prompt',
   'context-reset',
   'pre-command',
+  'pre-stop',
 ];
 
 /**

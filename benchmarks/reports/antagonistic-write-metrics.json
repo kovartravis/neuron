@@ -1,17 +1,17 @@
 {
-  "timestamp": "2026-08-15T23:22:28.914Z",
+  "timestamp": "2026-08-16T18:32:33.763Z",
   "pillars": [
     {
       "pillar": "Pillar 14: Antagonistic Write & Quality Gate (Diagnostic)",
       "samples": 4,
-      "p50Ms": 318.92,
-      "p95Ms": 835.95,
-      "p99Ms": 864.19,
-      "minMs": 0.29,
-      "maxMs": 871.25,
-      "meanMs": 377.35,
-      "totalMs": 1509.38,
-      "throughputPerSec": 2.65,
+      "p50Ms": 1850.43,
+      "p95Ms": 3892.85,
+      "p99Ms": 3921.01,
+      "minMs": 0.54,
+      "maxMs": 3928.05,
+      "meanMs": 1907.36,
+      "totalMs": 7629.46,
+      "throughputPerSec": 0.52,
       "extra": {
         "results": [
           {
@@ -20,7 +20,7 @@
             "description": "Near-duplicate content (paraphrase, not exact-hash match) of a live entry",
             "caught": true,
             "flagged": false,
-            "detail": "dtype not specified for \"model\". Using the default dtype (fp32) for this device (cpu).\nError: this write looks like it may supersede an existing entry (reranker score 8.516, cosine 0.899):\n  [e71ae4bc-454a-4ebd-97d6-c68dac8362e5] (learning) The default request timeout is 30 seconds.\n  If this is a r"
+            "detail": "dtype not specified for \"model\". Using the default dtype (fp32) for this device (cpu).\nError: this write looks like it may supersede an existing entry (reranker score 8.516, cosine 0.899):\n  [c819e737-846f-44d4-8c55-5ce9a2b7c3f9] (learning) The default request timeout is 30 seconds.\n  If this is a r"
           },
           {
             "id": "case-2-direct-contradiction",
@@ -28,7 +28,7 @@
             "description": "Content that directly contradicts a live entry in the same category, no --supersedes",
             "caught": false,
             "flagged": true,
-            "detail": "accepted, flagged: {\"id\":\"30f1f44f-cb37-4e4c-9d48-c5fc32714746\",\"status\":\"created\",\"project\":\"neuron\",\"possibleConflict\":{\"candidateId\":\"0308ea61-7771-4e3c-89c7-4e48ed58c49f\",\"category\":\"learning\",\"content\":\"Query results are limited to 10 items by default.\",\"contradic"
+            "detail": "accepted, flagged: {\"id\":\"f5fddf1c-bbe3-4b79-baa6-c2ef514d8e02\",\"status\":\"created\",\"project\":\"neuron\",\"possibleConflict\":{\"candidateId\":\"0b4cf7ae-c83c-439b-8658-55d6f85f67e6\",\"category\":\"learning\",\"content\":\"Query results are limited to 10 items by default.\",\"contradic"
           },
           {
             "id": "case-3-missing-provenance",

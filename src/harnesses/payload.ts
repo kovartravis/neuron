@@ -43,6 +43,16 @@ export const GIT_LOG_CHAR_BUDGET = 1000;
  */
 export const PRE_COMMAND_CHAR_BUDGET = 1500;
 
+/**
+ * Ticket 6 (neuron-2.4.3): the `pre-stop` compliance nudge's own fixed cap —
+ * fires at most once per session (deduped via `ledger.ts`'s
+ * `hasPreStopNudgeFired`), so unlike `pre-prompt`/`pre-command` it never
+ * repeats. Sized the same as the other fixed points regardless: the nudge
+ * text itself is a small constant, so the exact ceiling barely matters, but
+ * staying on the same scale keeps every point's budget legible together.
+ */
+export const PRE_STOP_CHAR_BUDGET = 1500;
+
 export function formatMemoryEntry(m: Memory): string {
   const tags = m.tags && m.tags.length > 0 ? ` (tags: ${m.tags.join(', ')})` : '';
   return `- [${m.category}] ${m.content}${tags}`;

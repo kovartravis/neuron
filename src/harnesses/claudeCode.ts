@@ -22,6 +22,7 @@ const EVENT_NAME: Record<LifecyclePoint, string> = {
   'pre-prompt': 'UserPromptSubmit',
   'context-reset': 'PreCompact',
   'pre-command': 'PreToolUse',
+  'pre-stop': 'Stop',
 };
 
 /**
@@ -36,6 +37,7 @@ const HOOK_TIMEOUT_SECONDS: Record<LifecyclePoint, number> = {
   'pre-prompt': 10,
   'context-reset': 5,
   'pre-command': 10,
+  'pre-stop': 10,
 };
 
 /**
@@ -82,6 +84,17 @@ function capability(): CapabilityMap {
         'Sourced from a direct fetch of code.claude.com/docs/en/hooks during ticket 22 (neuron-2.4.0), not assumed from pre-prompt\'s own record: the 10,000-char output cap is shared across every hook point (confirmed the same figure applies to PreToolUse), but the timeout is not — PreToolUse uses the general 600s command-hook default, not UserPromptSubmit\'s own 30s figure.',
         'A timed-out, erroring, or non-zero-exit PreToolUse hook does not block the tool call — it fails open and the call proceeds through the normal permission flow regardless. Matches ADR 0014\'s existing fail-safe posture; neuron never sets a permissionDecision here either way.',
         'Fires for every tool call, not just Bash — additionalContext also renders after the tool has already run, next to its result, not before (ADR 0014\'s 2026-08-10 amendment, item 3). The hook handler no-ops for non-Bash tool calls rather than relying on the matcher to filter them.',
+      ],
+    },
+    'pre-stop': {
+      injects: true,
+      payloadCapChars: 10000,
+      failurePosture: 'fail-open',
+      timeoutMs: 600000,
+      caveats: [
+        'Structurally different from every point above: pre-stop can force one more turn rather than merely inject into the current one, via hookSpecificOutput.decision:"escalate" (exit code 2 is equivalent).',
+        'Empirically confirmed during ticket 6 (neuron-2.4.3) via a live headless-session probe run from within this repo\'s own Claude Code session, not assumed from documentation: hookSpecificOutput.decision:"escalate" forces the continuation, and only hookSpecificOutput.additionalContext\'s content reaches the model — a parallel hookSpecificOutput.reason field is accepted without error but never surfaces to the model in any form.',
+        'A timed-out or errored Stop hook does not block the stop (fail-open, same posture as every other point) — Claude proceeds with stopping through the normal flow.',
       ],
     },
   };
@@ -194,6 +207,7 @@ export class ClaudeCodeAdapter implements HarnessAdapter {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     };
 
     for (const point of LIFECYCLE_POINTS) {

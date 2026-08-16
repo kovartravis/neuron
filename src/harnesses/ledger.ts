@@ -283,6 +283,39 @@ export function summarizeRecallCost(projectRoot: string, epochCharBudget: number
   };
 }
 
+function preStopNudgePath(projectRoot: string, sessionId: string): string {
+  return path.join(hookCacheDir(projectRoot), `prestop-${sessionFileKey(sessionId)}.json`);
+}
+
+/**
+ * Ticket 6 (neuron-2.4.3): has this session's one-time `pre-stop` compliance
+ * nudge already fired? Deliberately its own file, not folded into the epoch
+ * ledger above: whether the nudge was delivered is a session-wide fact that
+ * must survive a `context-reset` (`rollEpoch`) — a compaction mid-session
+ * doesn't undo having already asked the agent to write something, so this
+ * state is not epoch-scoped the way the dedupe ledger's `injectedIds` is.
+ */
+export function hasPreStopNudgeFired(projectRoot: string, sessionId: string): boolean {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(preStopNudgePath(projectRoot, sessionId), 'utf8'));
+    return parsed.fired === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Records that this session's `pre-stop` nudge has been delivered — every later `pre-stop` in the same session allows the stop through instead of escalating. */
+export function recordPreStopNudgeFired(projectRoot: string, sessionId: string): void {
+  const filePath = preStopNudgePath(projectRoot, sessionId);
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify({ fired: true }), 'utf8');
+  } catch {
+    // Best-effort, same posture as hookState.ts's recordFired: never let
+    // recording the nudge be the reason the hook itself fails.
+  }
+}
+
 /**
  * Ticket 21 (neuron-2.4.0): the write-only-store failure mode —
  * `sessionsObserved` is the signature of memories being added but recall

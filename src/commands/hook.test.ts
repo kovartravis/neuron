@@ -944,4 +944,71 @@ describe('CLI Command: hook', () => {
       expect(context).not.toContain('## Git History');
     });
   });
+
+  // --- Ticket 6 (neuron-2.4.3): the pre-stop compliance nudge ---
+  describe('pre-stop compliance nudge', () => {
+    it('escalates and delivers the nudge on the first pre-stop of a session (Claude Code shape)', () => {
+      const result = run(['hook', 'claude-code', 'pre-stop'], JSON.stringify({ session_id: 'prestop-s1' }));
+      expect(result.status).toBe(0);
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.hookSpecificOutput.hookEventName).toBe('Stop');
+      expect(parsed.hookSpecificOutput.decision).toBe('escalate');
+      expect(parsed.hookSpecificOutput.additionalContext).toContain('neuron memory add');
+    });
+
+    it('allows the stop through on a second pre-stop in the same session — one nudge per session', () => {
+      const stdin = JSON.stringify({ session_id: 'prestop-dedupe' });
+      const first = run(['hook', 'claude-code', 'pre-stop'], stdin);
+      expect(first.stdout.toString().trim()).not.toBe('');
+
+      const second = run(['hook', 'claude-code', 'pre-stop'], stdin);
+      expect(second.status).toBe(0);
+      expect(second.stdout.toString().trim()).toBe('');
+    });
+
+    it('keeps the nudge dedupe isolated per session id', () => {
+      run(['hook', 'claude-code', 'pre-stop'], JSON.stringify({ session_id: 'prestop-a' }));
+      const other = run(['hook', 'claude-code', 'pre-stop'], JSON.stringify({ session_id: 'prestop-b' }));
+      expect(other.stdout.toString().trim()).not.toBe('');
+    });
+
+    it('allows the stop through when no session_id is present — no ledger to dedupe against, degrades to silence not repetition', () => {
+      const result = run(['hook', 'claude-code', 'pre-stop'], JSON.stringify({}));
+      expect(result.status).toBe(0);
+      expect(result.stdout.toString().trim()).toBe('');
+    });
+
+    it('uses the flat decision/reason shape for Copilot CLI, with no additionalContext field', () => {
+      const result = run(['hook', 'copilot', 'pre-stop'], JSON.stringify({ session_id: 'prestop-copilot' }));
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.decision).toBe('block');
+      expect(parsed.reason).toContain('neuron memory add');
+      expect(parsed.additionalContext).toBeUndefined();
+      expect(parsed.hookSpecificOutput).toBeUndefined();
+    });
+
+    it('uses the flat followup_message shape for Cursor', () => {
+      const result = run(['hook', 'cursor', 'pre-stop'], JSON.stringify({ session_id: 'prestop-cursor' }));
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.followup_message).toContain('neuron memory add');
+      expect(parsed.decision).toBeUndefined();
+    });
+
+    it('hedges decision and additionalContext together for Codex CLI (doc-sourced, unverified field shape)', () => {
+      const result = run(['hook', 'codex', 'pre-stop'], JSON.stringify({ session_id: 'prestop-codex' }));
+      const parsed = JSON.parse(result.stdout.toString().trim());
+      expect(parsed.hookSpecificOutput.hookEventName).toBe('Stop');
+      expect(parsed.hookSpecificOutput.decision).toBe('block');
+      expect(parsed.hookSpecificOutput.reason).toContain('neuron memory add');
+      expect(parsed.hookSpecificOutput.additionalContext).toContain('neuron memory add');
+    });
+
+    it('survives a context-reset (epoch roll) without re-delivering the nudge — session-scoped, not epoch-scoped', () => {
+      const sessionId = 'prestop-epoch-survives';
+      run(['hook', 'claude-code', 'pre-stop'], JSON.stringify({ session_id: sessionId }));
+      run(['hook', 'claude-code', 'context-reset'], JSON.stringify({ session_id: sessionId }));
+      const afterReset = run(['hook', 'claude-code', 'pre-stop'], JSON.stringify({ session_id: sessionId }));
+      expect(afterReset.stdout.toString().trim()).toBe('');
+    });
+  });
 });

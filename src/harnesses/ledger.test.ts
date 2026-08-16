@@ -10,6 +10,8 @@ import {
   rollEpoch,
   summarizeRecallCost,
   buildZeroSessionsWarning,
+  hasPreStopNudgeFired,
+  recordPreStopNudgeFired,
 } from './ledger.js';
 import { hookCacheDir } from './cacheDir.js';
 import { Memory } from '../models/index.js';
@@ -199,6 +201,28 @@ describe('session ledger (src/harnesses/ledger.ts)', () => {
       // Scope is explicit: literal `=== 0`, not a low band — general
       // recall-rate tuning is a separate, unscoped question.
       expect(buildZeroSessionsWarning(1, 1000)).toBeNull();
+    });
+  });
+
+  describe('pre-stop nudge dedupe (hasPreStopNudgeFired / recordPreStopNudgeFired)', () => {
+    it('has not fired for a session with no prior record', () => {
+      expect(hasPreStopNudgeFired(projectRoot, 'session-1')).toBe(false);
+    });
+
+    it('reports fired after being recorded', () => {
+      recordPreStopNudgeFired(projectRoot, 'session-1');
+      expect(hasPreStopNudgeFired(projectRoot, 'session-1')).toBe(true);
+    });
+
+    it('keeps the record isolated per session id', () => {
+      recordPreStopNudgeFired(projectRoot, 'session-1');
+      expect(hasPreStopNudgeFired(projectRoot, 'session-2')).toBe(false);
+    });
+
+    it('survives an epoch roll (context-reset) — unlike the dedupe ledger, this is not epoch-scoped', () => {
+      recordPreStopNudgeFired(projectRoot, 'session-1');
+      rollEpoch(projectRoot, 'session-1');
+      expect(hasPreStopNudgeFired(projectRoot, 'session-1')).toBe(true);
     });
   });
 });

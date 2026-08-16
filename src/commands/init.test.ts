@@ -217,6 +217,9 @@ describe('CLI Command: init', () => {
       expect(fs.existsSync(settingsPath)).toBe(true);
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
       expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe('neuron');
+      // Ticket 6 (neuron-2.4.3): pre-stop ships generally via a bare `neuron
+      // init`, the same as every other point — no dogfood-only branch.
+      expect(settings.hooks.Stop[0].hooks[0].args).toEqual(['hook', 'claude-code', 'pre-stop']);
 
       fs.rmSync(initTempDir, { recursive: true });
     });
@@ -351,6 +354,7 @@ describe('CLI Command: init', () => {
         'pre-prompt': 'unchanged',
         'context-reset': 'unchanged',
         'pre-command': 'unchanged',
+        'pre-stop': 'unchanged',
       });
 
       const settings = JSON.parse(fs.readFileSync(path.join(initTempDir, '.claude', 'settings.json'), 'utf8'));
@@ -372,7 +376,7 @@ describe('CLI Command: init', () => {
       const result = JSON.parse(stdout);
 
       expect(result.status).toBe('hooks-uninstalled');
-      expect(result.results[0].removed[0].removedCount).toBe(4);
+      expect(result.results[0].removed[0].removedCount).toBe(5);
 
       const settings = JSON.parse(fs.readFileSync(path.join(initTempDir, '.claude', 'settings.json'), 'utf8'));
       expect(settings.hooks).toBeUndefined();

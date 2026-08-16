@@ -6,6 +6,7 @@ import { compressArchitectureCard } from '../scanner/compressCard.js';
 import {
   buildPayload,
   buildDiscoveryHint,
+  buildComplianceNudge,
   filterUnseen,
   loadEpochState,
   remainingEpochBudget,
@@ -16,12 +17,15 @@ import {
   recordFired,
   recordHintFired,
   recordToolUse,
+  hasPreStopNudgeFired,
+  recordPreStopNudgeFired,
   summarizeRecallCost,
   buildZeroSessionsWarning,
   SESSION_START_CHAR_BUDGET,
   PRE_PROMPT_CHAR_BUDGET,
   GIT_LOG_CHAR_BUDGET,
   PRE_COMMAND_CHAR_BUDGET,
+  PRE_STOP_CHAR_BUDGET,
   LifecyclePoint,
 } from '../harnesses/index.js';
 
@@ -149,9 +153,10 @@ const HOOK_TIMEOUT_MS: Record<LifecyclePoint, number> = {
   'pre-prompt': 8000,
   'context-reset': 3000,
   'pre-command': 8000,
+  'pre-stop': 8000,
 };
 
-const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset', 'pre-command'];
+const VALID_POINTS: LifecyclePoint[] = ['session-start', 'pre-prompt', 'context-reset', 'pre-command', 'pre-stop'];
 
 /**
  * Claude Code and Codex share the same stdin fields (`session_id`, `prompt`)
@@ -206,6 +211,52 @@ function emit(harness: string, hookEventName: string, additionalContext: string)
     return;
   }
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName, additionalContext: text } }) + '\n');
+}
+
+/**
+ * `pre-stop`'s own emit, distinct from `emit()` above: this point forces a
+ * continuation rather than merely injecting into the current turn, and each
+ * harness's real "agent about to stop" event uses a genuinely different
+ * response shape from its own session-start/pre-prompt shape — not just a
+ * different field name for the same wrapper.
+ *
+ * Claude Code's exact shape is empirically confirmed (ticket 6, neuron-2.4.3:
+ * a live headless-session probe run from within this repo's own Claude Code
+ * session — see harnesses/types.ts's pre-stop doc comment): `decision:
+ * "escalate"` forces the continuation, and only `additionalContext`'s content
+ * reaches the model; a parallel `reason` is accepted but never surfaces.
+ * Codex/Copilot/Cursor are doc-sourced only, not verified against a real
+ * installation, so their exact field is hedged by emitting every candidate
+ * field the docs mention together — harmless if a harness ignores a field it
+ * doesn't recognise, same fail-open posture as every other point here.
+ */
+function emitStop(harness: string, text: string): void {
+  const reminder = RECALL_PROVENANCE_PREFIX + text;
+  if (harness === 'copilot') {
+    // agentStop: decision:"block" + reason (next-turn prompt) — no additionalContext field.
+    process.stdout.write(JSON.stringify({ decision: 'block', reason: reminder }) + '\n');
+    return;
+  }
+  if (harness === 'cursor') {
+    // stop: followup_message, auto-submitted as the next user message.
+    process.stdout.write(JSON.stringify({ followup_message: reminder }) + '\n');
+    return;
+  }
+  if (harness === 'codex') {
+    // Doc-sourced only: hedges decision:"block" alongside additionalContext/reason.
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: { hookEventName: 'Stop', decision: 'block', reason: reminder, additionalContext: reminder },
+      }) + '\n'
+    );
+    return;
+  }
+  // claude-code: empirically confirmed shape.
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: { hookEventName: 'Stop', decision: 'escalate', reason: reminder, additionalContext: reminder },
+    }) + '\n'
+  );
 }
 
 /**
@@ -309,6 +360,22 @@ async function runHook(projectDir: string, harness: string, point: LifecyclePoin
   if (point === 'context-reset') {
     // Execution-only (ADR 0014 §5): rolling the epoch is the entire job.
     if (sessionId) rollEpoch(projectDir, sessionId);
+    return;
+  }
+
+  if (point === 'pre-stop') {
+    // No session id means no ledger to dedupe against. Unlike pre-prompt/
+    // pre-command's "degrade toward repetition" posture — repeating a
+    // read-side injection is harmless — pre-stop repetition would mean
+    // escalating every single turn forever with no way to ever mark it
+    // delivered, which could trap a sessionless caller in a loop. Degrades
+    // to silence instead: allow the stop through, no memory store needed at
+    // all for this point.
+    if (!sessionId || hasPreStopNudgeFired(projectDir, sessionId)) return;
+    const nudge = buildComplianceNudge(PRE_STOP_CHAR_BUDGET);
+    if (!nudge) return;
+    recordPreStopNudgeFired(projectDir, sessionId);
+    emitStop(harness, nudge);
     return;
   }
 

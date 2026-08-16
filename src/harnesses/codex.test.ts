@@ -27,22 +27,24 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
     expect(adapter.detect(path.join(tempRoot, 'no-such-dir'))).toBe(false);
   });
 
-  it('reports deterministic fidelity for session-start, pre-prompt, and pre-command', () => {
+  it('reports deterministic fidelity for session-start, pre-prompt, pre-command, and pre-stop', () => {
     const capability = adapter.capability();
     expect(capability['session-start'].injects).toBe(true);
     expect(capability['pre-prompt'].injects).toBe(true);
     expect(capability['context-reset'].injects).toBe(false);
     expect(capability['pre-command'].injects).toBe(true);
+    expect(capability['pre-stop'].injects).toBe(true);
     expect(deriveFidelity(capability)).toBe('deterministic');
   });
 
-  it('installs hooks for all four lifecycle points into a fresh hooks.json', async () => {
+  it('installs hooks for all five lifecycle points into a fresh hooks.json', async () => {
     const result = await adapter.install(projectDir, { target: 'project-committed' });
     expect(result.points).toEqual({
       'session-start': 'written',
       'pre-prompt': 'written',
       'context-reset': 'written',
       'pre-command': 'written',
+      'pre-stop': 'written',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
@@ -54,6 +56,7 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
     expect(file.hooks.UserPromptSubmit[0].hooks[0].command).toBe('neuron hook codex pre-prompt');
     expect(file.hooks.PreCompact[0].hooks[0].command).toBe('neuron hook codex context-reset');
     expect(file.hooks.PreToolUse[0].hooks[0].command).toBe('neuron hook codex pre-command');
+    expect(file.hooks.Stop[0].hooks[0].command).toBe('neuron hook codex pre-stop');
     // No `args` field — Codex's schema documents a single command string, not Claude Code's command+args split.
     expect(file.hooks.SessionStart[0].hooks[0].args).toBeUndefined();
   });
@@ -66,11 +69,13 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
       'pre-prompt': 'unchanged',
       'context-reset': 'unchanged',
       'pre-command': 'unchanged',
+      'pre-stop': 'unchanged',
     });
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.hooks.SessionStart.length).toBe(1);
     expect(file.hooks.UserPromptSubmit.length).toBe(1);
+    expect(file.hooks.Stop.length).toBe(1);
   });
 
   it('never touches a user\'s own pre-existing hooks in the same file', async () => {
@@ -159,7 +164,7 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
 
     const result = await adapter.uninstall(projectDir);
     expect(result.removed).toHaveLength(1);
-    expect(result.removed[0].removedCount).toBe(4);
+    expect(result.removed[0].removedCount).toBe(5);
 
     const file = JSON.parse(fs.readFileSync(hooksPath(), 'utf8'));
     expect(file.someOtherSetting).toBe(true);
@@ -167,6 +172,7 @@ describe('CodexAdapter (src/harnesses/codex.ts)', () => {
     expect(file.hooks.UserPromptSubmit[0].hooks[0].command).toBe('my-custom-hook.sh');
     expect(file.hooks.SessionStart).toBeUndefined();
     expect(file.hooks.PreCompact).toBeUndefined();
+    expect(file.hooks.Stop).toBeUndefined();
   });
 
   it('uninstall on a project with no hooks installed is a safe no-op', async () => {
