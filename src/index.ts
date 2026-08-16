@@ -1756,7 +1756,16 @@ export class NeuronMemory {
           if (exists) {
             const sets: string[] = [];
             const params: any[] = [];
-            
+
+            // Ticket 15: `upsert`'s exists check is store-wide (id +
+            // project only, no category), so a same-id upsert into a
+            // different category must move the row rather than silently
+            // leaving it under its old one. `update` requires `category`
+            // to already match via the `exists` check above, so this is a
+            // no-op there — safe to always include rather than branch on
+            // `m.op`.
+            sets.push('category = ?'); params.push(category);
+
             if (m.content !== undefined) {
               const vec = vectors.get(i.toString())!;
               const blob = Buffer.from(vec.buffer, vec.byteOffset, vec.byteLength);
