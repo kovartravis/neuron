@@ -1270,3 +1270,75 @@ tags:
 taskId: null
 ---
 CLI dependency-graph filtering for `neuron memory list` is generic, not wayfinder-specific: `--where <field>=<value>` and `--refs-satisfy <field>:<subfield>=<value>` are two composable, schema-agnostic filters (any category, any declared field name, any enum value), not a bespoke `--frontier` flag hardcoded to this repo's own `status`/`blockedBy`/`unclaimed`/`resolved` vocabulary. The wayfinder frontier (docs/agents/issue-tracker.md) is just one example composition of the two generic flags. Reasoning: a memory-store CLI used across many projects with different declared-field schemas (ADR 0013) should not bake one project's own tracker vocabulary into a built-in flag — that couples the general-purpose tool to a single use case and would need a new hardcoded flag for every future dependency-graph-shaped category (deploys/dependsOn, reviews/waitingOn, etc). Verified genericity with a real second schema (deploys/state/dependsOn) in the test suite, not just asserted.
+
+---
+id: 6b2b462c-9229-42ea-82fd-a22914ee4222
+createdAt: 2026-08-15T12:28:44.200Z
+importance: 4
+tags:
+  - release
+  - 2.2.0
+  - adr
+taskId: null
+---
+Provenance enforcement in neuron's write gate (Map -- neuron 2.4.2, ticket 2) will use a small, closed set of built-in declared-field types -- starting with a new commitRef type that validates a value resolves to a real commit via git -- rather than a pluggable field-verifier mechanism where projects supply their own validation code. Rationale: a custom-code verifier is a pluggable-provider surface, which this map's own non-goals explicitly rule out ('No new package, SDK, or pluggable-provider system'), and it would open a code-execution-on-write security question that a closed, named set of validator types avoids entirely. This repo's own decisions/learning categories will NOT get required commitRef/source fields as part of this work -- a decisions entry is routinely written before the commit that resolves it exists (this project's own session-time recording convention), so a required commitRef there would be unsatisfiable at write time. Instead a new git-notes category (required commitRef, durable commentary attached to an already-existing commit) is the mechanism's real live consumer, distinct from the auto-populated read-only git_log_index.
+
+---
+id: b2a804c7-09bf-477b-8743-45d3e8f9f59e
+createdAt: 2026-08-15T12:53:41.555Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+---
+Map — neuron 2.4.2, Ticket 3 (Near-Duplicate Suppression), resolved 2026-08-15: rejected adding any new raw-cosine similarity threshold below the existing 0.97 supersession gate, because ADR 0015 Decision 2 and ticket 39's LongMemEval sweep (0.50-0.70, every floor regressed recall) already established that real text has no reliable intermediate cosine band between 'same topic' and 'unrelated' -- picking a fresh guessed cosine number for near-dup detection would have repeated a pattern this codebase already disqualified twice. Decided instead to rebuild findSupersessionCandidate as a single unified gate: widen the candidate net to the top-N by raw cosine (a cheap pre-filter, not a decision), rerank each candidate with the existing TransformersReranker (src/components/reranker.ts, resident since ticket 29/ADR 0012), and gate on a newly-calibrated reranker-score bar rather than the existing RERANKER_ACCEPT_THRESHOLD=-8, since -8 is tuned for an asymmetric query-relevance task and is deliberately loose (19.4% false-accept rate) -- the wrong direction for a write-time block. The existing --supersedes/--not-a-reversal/--if-novel CLI surface and hit behavior carry over unchanged; only the detection signal underneath changes. This also sharpens ticket 4 (Conflict Detection): it can reuse the same widen-then-rerank primitive, but still needs its own signal to distinguish 'restates' from 'disagrees with', since reranker score alone measures relatedness, not polarity.
+
+---
+id: 1b51c428-d4e4-4475-b357-6ce4d54ac292
+createdAt: 2026-08-15T18:13:17.717Z
+importance: 4
+tags:
+  - release
+  - git
+  - 2.2.0
+taskId: null
+---
+commitRef declared-field type (ticket 5, neuron-2.4.2): git-history-verified provenance, not a general verifier. Implemented as a single closed, built-in field type — validated via git rev-parse --verify --quiet <ref>^{commit} at the same enforceFieldSchema choke point every other declared field already goes through — rather than a pluggable custom-code verifier, which ticket 2's grilling rejected outright as a pluggable-provider surface this map's non-goals rule out. The not-a-git-repo case is distinguished from an unknown-commit case at the gitLog.ts level (git rev-parse --is-inside-work-tree checked before ref resolution) so a refused write always names why, never silently degrading the way read-path git-log parsing does. Not dogfooded onto decisions/learning (would collide with this project's own same-session decision-recording convention) — the new git-notes category is commitRef's real consumer instead. ADR 0013 amended rather than reopened: its original 'string and enum only' type-floor decision stands, commitRef is recorded as the one narrow exception.
+
+---
+id: 293b68d4-9d34-40b5-b8dd-e5b72e950fda
+createdAt: 2026-08-15T18:47:58.922Z
+importance: 4
+tags:
+  - retrieval
+  - longmemeval
+  - benchmark
+taskId: null
+---
+Near-dup gate validation (ticket 7, neuron-2.4.2): the reranking-over-cosine approach itself is validated (N=10, bar=3 separates cleanly on isolated prose), but that calibration is not sufficient to build Ticket 6 against directly. A real-store counterfactual against this repo's own 683 live entries found the same bar/N flags mostly-false-positive pairs, driven by shared structural templates (scanner-generated architecture cards, templated wayfinder history logs) and by-design cross-category restatement (decisions/learning + history recording the same ticket twice on purpose) — content shapes the synthetic corpus never modeled. Decided not to let Ticket 6 proceed on the unvalidated bar/N: created Ticket 10 to decide the mitigation (exclude scanner-generated categories, scope to same-category only, a template pre-filter, or a separately-calibrated bar), and re-blocked Ticket 6 on it. Rationale: shipping the naive gate would visibly misfire on this repo's own store on day one — a dogfooding failure this map exists to prevent, not cause.
+
+---
+id: c19e8c03-ac83-41d8-9f8c-68069e9bc3de
+createdAt: 2026-08-15T20:40:51.631Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: null
+---
+Map — neuron 2.4.2, Ticket 12 (Redesign Session-Conclusion Recording), resolved 2026-08-15: decisions/learning and history entries cross-reference via the existing taskId field rather than each independently restating a session's resolution in full -- decisions/learning keeps the full content, history shrinks to a short pointer (plus the same taskId) whenever a decisions/learning entry exists for that session, and only keeps its current full-narrative shape when nothing was decided. This is the source-side fix Ticket 10 chose over gate-side special-casing in the near-dup gate (a config allowlist / taskId exemption inside the gate were both already rejected there). Explicitly scoped to new writes only: the maintainer declined to backfill the ~219 existing decisions/learning entries with null taskId (86/96 decisions, 133/133 learning) after confirming they resulted from CLAUDE.md's own documented command template never including --task-id for decisions/learning (unlike history's), not from entries bypassing the CLI -- backfilling them would be a retroactive migration pass, which this map's own non-goals already rule out. A companion neuron status --check finding to catch future drift was explored (blanket taskId-null check, then a category-scoped version, then a new non-required recommended: field-schema tier) and explicitly declined as unneeded scope. Implementation graduated to Ticket 48 rather than built in-session, matching this map's own Ticket 2->5 / 3->6 / 4->9 precedent; Ticket 6 now blocks on Ticket 48 instead of this design ticket, since Ticket 6's near-dup gate is only safe from the cross-category false-positive shape once new sessions actually stop producing full-restatement pairs.
+
+---
+id: 0facf45f-b8a4-4f9f-9ec3-ff28eb28c7a0
+createdAt: 2026-08-15T23:25:35.155Z
+importance: 3
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: 78c7b32d-274a-4cac-bab6-55e83fa868b8
+---
+Map — neuron 2.4.2, Ticket 9 (Implement Conflict Detection at Write Time), resolved 2026-08-15: two design points its own text flagged as undecided were confirmed with the maintainer before building, rather than assumed. (1) Soft-flag surfacing mechanism is an inline, non-persisted CLI warning (stderr + a possibleConflict field on that one call's JSON response) — a persisted flag state was the alternative and was rejected because it would reopen the map's own "no PM-software creep, no workflow states beyond live/superseded" non-goal by needing a new declared field. (2) The soft-flag confidence bar is P(contradiction) >= 0.90, adopted directly from Ticket 8's own findings doc, which already names this as the best joint false-silence/false-accept operating point in its bar sweep (13%/27%) — a fresh pick for a soft-flag (non-blocking) posture, not a value Ticket 8/13 themselves chose, since those tickets calibrated for a hard-block posture Ticket 13 then ruled out entirely. A stricter bar (0.98) was offered and declined as favoring quiet warnings over useful ones.

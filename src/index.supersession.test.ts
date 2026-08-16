@@ -6,6 +6,14 @@ import { NeuronMemory } from './index.js';
 // `superseded_by`/`superseded_at` write path, and the default read-path
 // exclusion). CLI-level gate/`--supersedes` behaviour is covered separately
 // in `commands/memory.supersession.test.ts`.
+//
+// Ticket 6 (neuron-2.4.2) rebuilt `findSupersessionCandidate` as a
+// widen-by-cosine -> rerank -> gate-on-bar pipeline (Ticket 3's design,
+// Ticket 7's N=10/bar=3 calibration); a mock reranker keeps this suite fast
+// and deterministic rather than depending on the real cross-encoder's
+// output for these synthetic fixtures — the real reranker's own behavior on
+// genuine near-dup text is covered live by `test/e2e/antagonistic-write.test.ts`
+// (Pillar 14) and `commands/memory.supersession.test.ts`.
 
 function vecAt(index: number, value = 1.0): Float32Array {
   const v = new Float32Array(384);
@@ -14,17 +22,20 @@ function vecAt(index: number, value = 1.0): Float32Array {
 }
 
 describe('Memory supersession (ticket 17 / ADR 0015)', () => {
-  it('findSupersessionCandidate returns null when nothing clears the threshold', async () => {
+  it('findSupersessionCandidate returns null when nothing clears the bar', async () => {
     const embedder = {
       embed: async (text: string) => (text.includes('alpha') ? vecAt(0) : vecAt(1)),
       embedQuery: async () => vecAt(0),
     };
+    // Every candidate the widen step surfaces scores below NEAR_DUP_RERANK_BAR.
+    const reranker = { score: async () => -10 };
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
       storageMode: 'vector',
       projectName: 'test-project',
       embedder,
+      reranker,
     });
 
     await memory.addLearning('alpha entry', [], { importance: 3 });
@@ -32,9 +43,9 @@ describe('Memory supersession (ticket 17 / ADR 0015)', () => {
     expect(candidate).toBeNull();
   });
 
-  it('findSupersessionCandidate shortlists the closest existing entry above the threshold, across categories', async () => {
+  it('findSupersessionCandidate shortlists the highest-reranked candidate clearing the bar, across categories', async () => {
     const nearDup = vecAt(0, 1.0);
-    const almostSame = vecAt(0, 0.999); // cosine ~1.0 against nearDup after normalization below
+    const almostSame = vecAt(0, 0.999);
     const unrelated = vecAt(1, 1.0);
 
     const embedder = {
@@ -45,12 +56,17 @@ describe('Memory supersession (ticket 17 / ADR 0015)', () => {
       },
       embedQuery: async () => nearDup,
     };
+    // Only the widened pair sharing "decision" content clears the bar.
+    const reranker = {
+      score: async (_query: string, passage: string) => (passage === 'original decision' ? 5 : -10),
+    };
     const memory = new NeuronMemory({
       dbPath: ':memory:',
       projectRoot: '/test/project',
       storageMode: 'vector',
       projectName: 'test-project',
       embedder,
+      reranker,
     });
 
     const created = await memory.transact([
@@ -62,7 +78,77 @@ describe('Memory supersession (ticket 17 / ADR 0015)', () => {
     expect(candidate).not.toBeNull();
     expect(candidate!.id).toBe(created[0].id);
     expect(candidate!.category).toBe('decisions');
-    expect(candidate!.similarity).toBeGreaterThanOrEqual(0.97);
+    expect(candidate!.rerankerScore).toBe(5);
+  });
+
+  it('findSupersessionCandidate widens to at most NEAR_DUP_WIDEN_N candidates by cosine before reranking', async () => {
+    // 12 candidates at strictly descending cosine similarity to the query —
+    // only the top 10 (NEAR_DUP_WIDEN_N) should ever reach the reranker.
+    // The reranker flags candidate-10 (the 11th, 0-based) with a high
+    // score; if it were ever reranked it would win, so it must never be
+    // scored at all if widening is doing its job.
+    const embedder = {
+      embed: async (text: string) => {
+        const m = text.match(/^candidate-(\d+)$/);
+        return m ? vecAt(0, 1.0 - Number(m[1]) * 0.01) : vecAt(0, 1.0);
+      },
+      embedQuery: async () => vecAt(0, 1.0),
+    };
+    const scoredPassages: string[] = [];
+    const reranker = {
+      score: async (_query: string, passage: string) => {
+        scoredPassages.push(passage);
+        return passage === 'candidate-10' ? 10 : -10;
+      },
+    };
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector',
+      projectName: 'test-project',
+      embedder,
+      reranker,
+    });
+
+    for (let i = 0; i < 12; i++) {
+      await memory.transact([{ op: 'upsert', category: 'decisions', content: `candidate-${i}` }]);
+    }
+
+    await memory.findSupersessionCandidate('query text');
+    expect(scoredPassages.length).toBeLessThanOrEqual(10);
+    expect(scoredPassages).not.toContain('candidate-10');
+  });
+
+  it('strips known template boilerplate from both sides before handing them to the reranker (Ticket 10)', async () => {
+    const vec = vecAt(0, 1.0);
+    const embedder = { embed: async () => vec, embedQuery: async () => vec };
+    const scored: Array<{ query: string; passage: string }> = [];
+    const reranker = {
+      score: async (query: string, passage: string) => {
+        scored.push({ query, passage });
+        return -10;
+      },
+    };
+    const memory = new NeuronMemory({
+      dbPath: ':memory:',
+      projectRoot: '/test/project',
+      storageMode: 'vector',
+      projectName: 'test-project',
+      embedder,
+      reranker,
+    });
+
+    await memory.transact([{
+      op: 'upsert',
+      category: 'history',
+      content: 'Wayfinder pickup on Map — neuron 2.4.2: resolved Ticket 3.',
+    }]);
+
+    await memory.findSupersessionCandidate('Wayfinder pickup on Map — neuron 2.4.2: resolved Ticket 6.');
+
+    expect(scored).toHaveLength(1);
+    expect(scored[0].query).toBe('resolved Ticket 6.');
+    expect(scored[0].passage).toBe('resolved Ticket 3.');
   });
 
   it('never shortlists a row that is already superseded', async () => {

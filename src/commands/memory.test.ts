@@ -439,10 +439,14 @@ describe('CLI Command: memory', () => {
       NEURON_DB_PATH: tempDbPath,
       NEURON_MOCK_EMBEDDER: 'true',
     });
+    // `--not-a-reversal`: these fixtures plant multiple near-templated
+    // ticket titles ("Blocker one"/"Blocker two", etc.) to exercise
+    // `--where`/`--refs-satisfy` composition, not the write-time near-dup
+    // gate (ticket 17 / Ticket 6, neuron-2.4.2) — bypass it here.
     const addTicket = (content: string, status: string, blockedBy?: string): { id: string } =>
       JSON.parse(
         execSync(
-          `node ${cliPath()} memory add "${content}" --category tickets --status ${status}` +
+          `node ${cliPath()} memory add "${content}" --category tickets --status ${status} --not-a-reversal` +
             (blockedBy ? ` --blocked-by "${blockedBy}"` : ''),
           { env: envFor(), cwd: projectDir }
         ).toString()
@@ -604,10 +608,12 @@ describe('CLI Command: memory', () => {
      * had no way to compose in one `list` call. Repeated `--where` now ANDs.
      */
     describe('compound --where (ticket 45)', () => {
+      // `--not-a-reversal`: see `addTicket` above — these fixtures aren't
+      // exercising the near-dup gate.
       const addTicketWithMap = (content: string, status: string, map: string, blockedBy?: string): { id: string } =>
         JSON.parse(
           execSync(
-            `node ${cliPath()} memory add "${content}" --category tickets --status ${status} --map ${map}` +
+            `node ${cliPath()} memory add "${content}" --category tickets --status ${status} --map ${map} --not-a-reversal` +
               (blockedBy ? ` --blocked-by "${blockedBy}"` : ''),
             { env: envFor(), cwd: projectDir }
           ).toString()

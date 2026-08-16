@@ -188,3 +188,21 @@ column parity (`44`) and `strict` mode (`45`) all shipped in 2.2.0 exactly as
 decided here. `--check`/`--repair` continues, design unchanged, as
 neuron-2.3.0's ticket 13 — `neuron status --check`/`--repair`: Report and
 Repair Non-Compliant Entries (ticket `99f85f06-9e6c-4224-8a58-dd4621a168c7`).
+
+### 2026-08-15 — `commitRef`, one narrow addition to the type floor
+
+Ticket 5 (neuron-2.4.2), graduated from Map — neuron 2.4.2's own ticket 2
+(Provenance Enforcement). "Type system floor: string and enum only" above
+stays true in spirit — no number/date, and explicitly no general
+custom-code verifier field (that map's own non-goals rule out a
+pluggable-provider surface). `commitRef` is a single closed, built-in type:
+a value must resolve to a real commit in the project's own git history
+(full or abbreviated SHA), checked via a `git` shell-out at the same
+`enforceFieldSchema` choke point this ADR already established as the one
+enforcement point every writer shares. A nonexistent hash hard-refuses the
+write; a `projectRoot` that isn't a git repository at all refuses with a
+distinct, named error rather than the silent-pass degrade `gitLog.ts`'s
+read paths use — a refused write must not look like a successful one. Not
+dogfooded onto `decisions`/`learning` (collides with this project's own
+same-session decision-recording convention); a new `git-notes` category
+gives it a real live consumer instead.

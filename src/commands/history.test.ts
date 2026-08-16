@@ -53,9 +53,12 @@ describe('CLI Command: history', () => {
     const cliPath = path.join(process.cwd(), 'dist/cli.js');
     const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
 
-    execSync(`node ${cliPath} history add "Old entry" --importance 1`, { env, cwd: projectDir });
-    execSync(`node ${cliPath} history add "Old default entry" --importance 3`, { env, cwd: projectDir });
-    execSync(`node ${cliPath} history add "Old important entry" --importance 4`, { env, cwd: projectDir });
+    // --not-a-reversal: these near-templated fixtures test pruning by age/
+    // importance, not the write-time near-dup gate (ticket 17 / Ticket 6,
+    // neuron-2.4.2).
+    execSync(`node ${cliPath} history add "Old entry" --importance 1 --not-a-reversal`, { env, cwd: projectDir });
+    execSync(`node ${cliPath} history add "Old default entry" --importance 3 --not-a-reversal`, { env, cwd: projectDir });
+    execSync(`node ${cliPath} history add "Old important entry" --importance 4 --not-a-reversal`, { env, cwd: projectDir });
 
     const db = openDatabase(tempDbPath);
     const oldDate = new Date();

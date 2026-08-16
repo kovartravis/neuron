@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
-import { getHeadSha, listAllCommits, listCommitsSince } from './gitLog.js';
+import { getHeadSha, listAllCommits, listCommitsSince, verifyCommitRef } from './gitLog.js';
 
 describe('git-log parsing (src/harnesses/gitLog.ts, ticket 08 neuron-2.4.0)', () => {
   const tempRoot = path.join(process.cwd(), 'src/__tests__/temp-gitlog');
@@ -108,6 +108,52 @@ describe('git-log parsing (src/harnesses/gitLog.ts, ticket 08 neuron-2.4.0)', ()
     it('degrades to an empty array for a sha that does not exist (e.g. after a history rewrite)', () => {
       commit('a commit');
       expect(listCommitsSince(repoDir, '0000000000000000000000000000000000000000')).toEqual([]);
+    });
+  });
+
+  describe('verifyCommitRef (ticket 5, neuron-2.4.2)', () => {
+    it('accepts a full SHA that exists', () => {
+      const sha = commit('first commit');
+      expect(verifyCommitRef(repoDir, sha)).toEqual({ valid: true });
+    });
+
+    it('accepts an abbreviated SHA that exists', () => {
+      const sha = commit('first commit');
+      expect(verifyCommitRef(repoDir, sha.slice(0, 8))).toEqual({ valid: true });
+    });
+
+    it('rejects a well-formed but nonexistent hash as "unknown-commit"', () => {
+      commit('a commit');
+      expect(verifyCommitRef(repoDir, '0000000000000000000000000000000000000000')).toEqual({
+        valid: false,
+        reason: 'unknown-commit',
+      });
+    });
+
+    it('rejects with "not-a-git-repo" for a directory that is not a git repo, distinct from an unknown commit', () => {
+      const bareDir = path.join(tempRoot, 'not-a-repo-for-commitref');
+      fs.mkdirSync(bareDir, { recursive: true });
+      const priorCeiling = process.env.GIT_CEILING_DIRECTORIES;
+      process.env.GIT_CEILING_DIRECTORIES = tempRoot;
+      try {
+        expect(verifyCommitRef(bareDir, '0000000000000000000000000000000000000000')).toEqual({
+          valid: false,
+          reason: 'not-a-git-repo',
+        });
+      } finally {
+        if (priorCeiling === undefined) delete process.env.GIT_CEILING_DIRECTORIES;
+        else process.env.GIT_CEILING_DIRECTORIES = priorCeiling;
+      }
+    });
+
+    it('treats a freshly-initialized repo with no commits yet as "unknown-commit", not "not-a-git-repo"', () => {
+      // `git rev-parse --is-inside-work-tree` is true the moment `git init`
+      // runs, before any commit exists — so an empty repo is a real repo
+      // with an unresolvable ref, distinct from no repo at all.
+      expect(verifyCommitRef(repoDir, '0000000000000000000000000000000000000000')).toEqual({
+        valid: false,
+        reason: 'unknown-commit',
+      });
     });
   });
 });

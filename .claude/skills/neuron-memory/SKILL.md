@@ -334,23 +334,44 @@ Whenever a command execution, test run, or tool invocation fails:
 
 ## 4. End of Run (Memory Recording)
 
-Before finishing your turn and ending the session:
+Before finishing your turn and ending the session, check whether this session
+produced a `decisions`/`learning` entry (steps 2-3) — that determines what
+`history` (step 1) looks like, so resolve it in that order.
 
-1. **Log Action History**: Record the action you took using the history log:
+1. **Record New Learnings**: If you established new rules, resolved
+   configurations, or fixed a failure, record it as a detailed multi-sentence
+   entry (3-4 sentences minimum), linked to the task it came from:
    ```bash
-   neuron memory add --category history "<summary of what was built or fixed>" [--task-id <id>]
+   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>" --task-id <id>
    ```
-   - **`--tags`**: leave it to inference (§0a) — pass it explicitly only to mint a
-     genuinely new tag, which is a deliberate act, not the default.
-   - **`--task-id`**: Link the history to the ticket or issue being resolved. Use the ticket/issue number (e.g., `01-db-schema-postgres` for local issues, or `#42` for GitHub/GitLab). Do NOT use process/task IDs like `task-144`.
-2. **Record New Learnings**: If you established new rules, resolved configurations, or made architectural decisions, record them explicitly as detailed multi-sentence entries (3-4 sentences minimum):
+2. **Record Architectural Decisions**: If you changed module boundaries or
+   made a design choice worth preserving, write it to the `decisions`
+   category, linked the same way:
    ```bash
-   neuron memory add --category learning "<new rule/learning established with full context, rationale, and exact implementation details>"
+   neuron memory add --category decisions "<decision, rationale, and alternatives considered>" --task-id <id>
    ```
-3. **Record Architectural Decisions**: If you changed module boundaries or made a design choice worth preserving, write it to the `decisions` category:
-   ```bash
-   neuron memory add --category decisions "<decision, rationale, and alternatives considered>"
-   ```
+3. **Log Action History**: Record what happened, sized to whether step 1 or 2
+   already captured the resolution in detail:
+   - **A `decisions`/`learning` entry was written above**: shrink `history`
+     to a short pointer — what happened, in a line or two — sharing the same
+     `--task-id`. The shared id is the link between the two entries, not a
+     separate id-to-id field, and `history` should not restate what the
+     other entry already said in full:
+     ```bash
+     neuron memory add --category history "<one or two lines: what happened>" --task-id <id>
+     ```
+   - **Nothing was decided this session** (pure execution — nothing to
+     record in `decisions`/`learning`): `history` keeps the full-narrative
+     shape, since there's nothing else to point at:
+     ```bash
+     neuron memory add --category history "<summary of what was built or fixed>" [--task-id <id>]
+     ```
+   - **`--tags`**: leave it to inference (§0a) — pass it explicitly only to
+     mint a genuinely new tag, which is a deliberate act, not the default.
+   - **`--task-id`**: Link the entry to the ticket or issue being resolved.
+     Use the ticket/issue number (e.g., `01-db-schema-postgres` for local
+     issues, or `#42` for GitHub/GitLab). Do NOT use process/task IDs like
+     `task-144`.
 4. **Refresh the Blueprint** if the session changed the codebase structure — see Section 8.
 
 > **Note**: `neuron learn` and `neuron history` still work as aliases but are

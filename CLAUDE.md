@@ -3,7 +3,7 @@
 <!-- neuron:protocol:start -->
 ## Memory Store Protocol (`@kovartravis/neuron`)
 
-Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`, `architecture`, `tickets`. Architecture scan settings: enabled: true, category: `architecture`, depth: 3.
+Follow this loop when working in this project. Memory categories configured in `neuron.yaml`: `learning`, `history`, `decisions`, `architecture`, `tickets`, `git-notes`. Architecture scan settings: enabled: true, category: `architecture`, depth: 3.
 
 ## 1. Failure-Fix Recording
 
@@ -14,12 +14,20 @@ neuron memory add --category learning "Fix for <error>: <context & symptom>. <ve
 
 ## 2. Session Conclusion
 
-Before finishing: log a history entry, plus any new learnings/decisions (3-4 sentences each):
-```bash
-neuron memory add --category history "<summary of work completed>" --task-id <ticket-id>
-# ADRs / design choices:
-neuron memory add --category decisions "<rationale and details>"
-```
+Before finishing, check whether this session produced a `decisions`/`learning` entry:
+
+- **It did** — write that entry first, then shrink `history` to a short pointer (what happened, in a line or two) instead of restating the resolution. Both share the same `--task-id`, which is the link between them — not a separate id-to-id field:
+  ```bash
+  # ADRs / design choices, or a new rule/failure-fix:
+  neuron memory add --category decisions "<rationale and details>" --task-id <ticket-id>
+  neuron memory add --category learning "<rule or fix, 3-4 sentences>" --task-id <ticket-id>
+  # then a pointer, not a restatement:
+  neuron memory add --category history "<one or two lines: what happened>" --task-id <ticket-id>
+  ```
+- **It didn't** (pure execution, nothing decided) — `history` keeps today's full-narrative shape; there's nothing else to point at:
+  ```bash
+  neuron memory add --category history "<summary of work completed>" --task-id <ticket-id>
+  ```
 
 If module boundaries, subsystems, or a public export contract changed, also refresh the blueprint:
 ```bash

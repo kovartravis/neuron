@@ -52,6 +52,18 @@ categories:
       map:
         type: string
 
+  git-notes:
+    description: >-
+      Commentary attached to an already-existing commit (why an approach was
+      later reversed, a regression traced back to it, context that didn't
+      belong in the commit message) — distinct from the auto-populated,
+      read-only git_log_index. Ticket 5 (neuron-2.4.2), graduated from
+      ticket 2's provenance-enforcement design.
+    fields:
+      commitRef:
+        type: commitRef
+        required: true
+
 scan:
   enabled: true
   depth: 3

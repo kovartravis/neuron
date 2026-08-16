@@ -1,6 +1,7 @@
 import { Embedder } from '../components/embedder.js';
 import { EnrichmentModel } from '../components/enricher.js';
 import { Reranker } from '../components/reranker.js';
+import { PolarityClassifier } from '../components/nliClassifier.js';
 
 export interface NeuronMemoryOptions {
   dbPath: string;
@@ -21,6 +22,14 @@ export interface NeuronMemoryOptions {
    * actually calls it.
    */
   reranker?: Reranker;
+  /**
+   * Injected NLI polarity classifier (Ticket 9, neuron-2.4.2). Tests supply a
+   * stub so the write-time conflict soft-flag can be exercised without
+   * loading the real cross-encoder; production leaves it unset and gets
+   * `TransformersNLIClassifier`, only ever called on candidates that already
+   * cleared Ticket 3/6's relatedness gate — never a full-category scan.
+   */
+  polarityClassifier?: PolarityClassifier;
   /**
    * Overrides `storage.mode` from the discovered `neuron.yaml`. Exists for
    * callers whose `projectRoot` is not a real directory — `NeuronMemory.inMemory`

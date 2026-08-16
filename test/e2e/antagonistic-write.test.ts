@@ -32,7 +32,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { NeuronMemory } from '../../src/index.js';
 import type { Embedder } from '../../src/components/embedder.js';
 import { MetricsRecorder } from './metrics.js';
@@ -46,6 +46,8 @@ interface WriteCaseResult {
   caseNum: number;
   description: string;
   caught: boolean;
+  /** Ticket 9 (neuron-2.4.2): write succeeded but a non-blocking conflict pointer was printed. */
+  flagged: boolean;
   detail: string;
 }
 
@@ -117,13 +119,20 @@ describe('Antagonistic Write Benchmark', () => {
     const cliEnv: NodeJS.ProcessEnv = { ...process.env, NEURON_DB_PATH: cliDbPath, NODE_ENV: 'production' };
     delete cliEnv.NEURON_MOCK_EMBEDDER;
 
+    // `execSync` only exposes stderr via the thrown error's `.stderr` on a
+    // non-zero exit — a Ticket 9 soft-flag exits 0 with a real stderr
+    // warning, which `execSync` would silently discard. `spawnSync` returns
+    // stdout/stderr separately regardless of exit code.
     const runCli = (args: string) => {
-      try {
-        const stdout = execSync(`node ${cliPath} ${args}`, { env: cliEnv, cwd: cliWorkDir }).toString();
-        return { exitCode: 0, stdout, stderr: '' };
-      } catch (e: any) {
-        return { exitCode: e.status ?? 1, stdout: e.stdout?.toString() ?? '', stderr: e.stderr?.toString() ?? '' };
-      }
+      const result = spawnSync('node', [cliPath, ...args.match(/(?:[^\s"]+|"[^"]*")+/g)!.map(a => a.replace(/^"|"$/g, ''))], {
+        env: cliEnv,
+        cwd: cliWorkDir,
+      });
+      return {
+        exitCode: result.status ?? 1,
+        stdout: result.stdout?.toString() ?? '',
+        stderr: result.stderr?.toString() ?? '',
+      };
     };
 
     // Case 1 — near-duplicate content (paraphrase, not exact-hash match) of
@@ -136,6 +145,7 @@ describe('Antagonistic Write Benchmark', () => {
         caseNum: 1,
         description: 'Near-duplicate content (paraphrase, not exact-hash match) of a live entry',
         caught: r.exitCode !== 0,
+        flagged: r.stderr.includes('possible conflict'),
         detail: r.exitCode !== 0 ? r.stderr.slice(0, 300) : `accepted: ${r.stdout.slice(0, 150)}`,
       });
     });
@@ -150,7 +160,8 @@ describe('Antagonistic Write Benchmark', () => {
         caseNum: 2,
         description: 'Content that directly contradicts a live entry in the same category, no --supersedes',
         caught: r.exitCode !== 0,
-        detail: r.exitCode !== 0 ? r.stderr.slice(0, 300) : `accepted: ${r.stdout.slice(0, 150)}`,
+        flagged: r.stderr.includes('possible conflict'),
+        detail: r.exitCode !== 0 ? r.stderr.slice(0, 300) : `accepted, flagged: ${r.stdout.slice(0, 250)}`,
       });
     });
 
@@ -173,6 +184,7 @@ describe('Antagonistic Write Benchmark', () => {
         caseNum: 3,
         description: 'Entry in a category that should require a source, written without one',
         caught,
+        flagged: false,
         detail,
       });
     });
@@ -215,6 +227,7 @@ describe('Antagonistic Write Benchmark', () => {
         caseNum: 5,
         description: 'Missing required declared field (regression re-assertion)',
         caught: missingFieldCaught,
+        flagged: false,
         detail: missingFieldDetail,
       });
       results.push({
@@ -222,6 +235,7 @@ describe('Antagonistic Write Benchmark', () => {
         caseNum: 5,
         description: 'Enum field set to an undeclared value (regression re-assertion)',
         caught: badEnumCaught,
+        flagged: false,
         detail: badEnumDetail,
       });
     });
@@ -231,13 +245,28 @@ describe('Antagonistic Write Benchmark', () => {
 
     const byId = Object.fromEntries(results.map(r => [r.id, r]));
 
-    // Measured against a real (non-mocked) embedder: neither a semantic
-    // paraphrase nor a same-shape numeric contradiction crosses
-    // SUPERSESSION_SIMILARITY_THRESHOLD (0.97) — the supersession gate is
-    // tuned for near-exact rewording/reversal, not general near-duplicates
-    // or conflicts. Both pass through uncaught today.
-    expect(byId['case-1-near-duplicate-paraphrase'].caught, byId['case-1-near-duplicate-paraphrase'].detail).toBe(false);
+    // Measured against a real (non-mocked) embedder and reranker, post
+    // Ticket 6 (neuron-2.4.2): the widen(N=10)/rerank/bar=3 gate replaced
+    // the old single-candidate 0.97-cosine check that let a genuine
+    // paraphrase (case 1) slip through uncaught. Case 1 still hard-blocks,
+    // as designed — reranker score 8.5, comfortably above bar=3, and NLI
+    // correctly does not read it as a contradiction, so Ticket 9's soft-flag
+    // never fires on it.
+    //
+    // Case 2 (a same-shape numeric contradiction) *used to* also hard-block
+    // (reranker alone can't tell "restates" from "contradicts"), but post
+    // Ticket 9 (neuron-2.4.2) it now downgrades to a soft-flag: NLI scores
+    // this pair P(contradiction) ~0.996, comfortably above
+    // `NLI_CONTRADICTION_BAR` (0.90), so the write succeeds with a
+    // non-blocking pointer to the entry it may conflict with instead of
+    // joining the near-dup gate's hard refusal. A human still sees the real
+    // prior entry either way — case 1 via the refusal message, case 2 via
+    // the flag — just without case 2 forcing a --supersedes/--not-a-reversal
+    // decision on what may be two independently true, non-duplicate facts.
+    expect(byId['case-1-near-duplicate-paraphrase'].caught, byId['case-1-near-duplicate-paraphrase'].detail).toBe(true);
+    expect(byId['case-1-near-duplicate-paraphrase'].flagged, byId['case-1-near-duplicate-paraphrase'].detail).toBe(false);
     expect(byId['case-2-direct-contradiction'].caught, byId['case-2-direct-contradiction'].detail).toBe(false);
+    expect(byId['case-2-direct-contradiction'].flagged, byId['case-2-direct-contradiction'].detail).toBe(true);
 
     // `decisions` declares no `fields:` block in this repo's own
     // neuron.yaml, so enforceFieldSchema has nothing to check against —

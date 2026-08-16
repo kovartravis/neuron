@@ -1,38 +1,41 @@
 {
-  "timestamp": "2026-08-15T11:59:45.337Z",
+  "timestamp": "2026-08-15T23:22:28.914Z",
   "pillars": [
     {
       "pillar": "Pillar 14: Antagonistic Write & Quality Gate (Diagnostic)",
       "samples": 4,
-      "p50Ms": 218.96,
-      "p95Ms": 443.98,
-      "p99Ms": 445.05,
-      "minMs": 0.22,
-      "maxMs": 445.32,
-      "meanMs": 220.87,
-      "totalMs": 883.46,
-      "throughputPerSec": 4.53,
+      "p50Ms": 318.92,
+      "p95Ms": 835.95,
+      "p99Ms": 864.19,
+      "minMs": 0.29,
+      "maxMs": 871.25,
+      "meanMs": 377.35,
+      "totalMs": 1509.38,
+      "throughputPerSec": 2.65,
       "extra": {
         "results": [
           {
             "id": "case-1-near-duplicate-paraphrase",
             "caseNum": 1,
             "description": "Near-duplicate content (paraphrase, not exact-hash match) of a live entry",
-            "caught": false,
-            "detail": "accepted: {\"id\":\"1bc6517d-8d8c-4427-8cb6-af2128e10f4e\",\"status\":\"created\",\"project\":\"neuron\"}\n"
+            "caught": true,
+            "flagged": false,
+            "detail": "dtype not specified for \"model\". Using the default dtype (fp32) for this device (cpu).\nError: this write looks like it may supersede an existing entry (reranker score 8.516, cosine 0.899):\n  [e71ae4bc-454a-4ebd-97d6-c68dac8362e5] (learning) The default request timeout is 30 seconds.\n  If this is a r"
           },
           {
             "id": "case-2-direct-contradiction",
             "caseNum": 2,
             "description": "Content that directly contradicts a live entry in the same category, no --supersedes",
             "caught": false,
-            "detail": "accepted: {\"id\":\"c634f21d-25c8-4daf-a9c7-8a3c89972d01\",\"status\":\"created\",\"project\":\"neuron\"}\n"
+            "flagged": true,
+            "detail": "accepted, flagged: {\"id\":\"30f1f44f-cb37-4e4c-9d48-c5fc32714746\",\"status\":\"created\",\"project\":\"neuron\",\"possibleConflict\":{\"candidateId\":\"0308ea61-7771-4e3c-89c7-4e48ed58c49f\",\"category\":\"learning\",\"content\":\"Query results are limited to 10 items by default.\",\"contradic"
           },
           {
             "id": "case-3-missing-provenance",
             "caseNum": 3,
             "description": "Entry in a category that should require a source, written without one",
             "caught": false,
+            "flagged": false,
             "detail": "accepted with no source/provenance field"
           },
           {
@@ -40,6 +43,7 @@
             "caseNum": 5,
             "description": "Missing required declared field (regression re-assertion)",
             "caught": true,
+            "flagged": false,
             "detail": "Error: --kind is required for category \"tickets\" (neuron.yaml categories.tickets.fields.kind). Pass --kind <value>, or add a \"default:\" in neuron.yaml."
           },
           {
@@ -47,6 +51,7 @@
             "caseNum": 5,
             "description": "Enum field set to an undeclared value (regression re-assertion)",
             "caught": true,
+            "flagged": false,
             "detail": "Error: --kind \"bogus-kind\" is not one of [research, prototype, grilling, task]"
           }
         ]

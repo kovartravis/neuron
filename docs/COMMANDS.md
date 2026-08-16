@@ -226,9 +226,9 @@ neuron memory list --category tickets --where "status=unclaimed" --refs-satisfy 
 
 ### Project-declared fields (ticket 43 / ADR 0013)
 
-A category can declare its own `string`/`enum` frontmatter fields in
-`neuron.yaml` — each one becomes its own CLI flag on `add`/`update`, not a
-generic `--field k=v` escape hatch:
+A category can declare its own `string`/`enum`/`commitRef` frontmatter
+fields in `neuron.yaml` — each one becomes its own CLI flag on
+`add`/`update`, not a generic `--field k=v` escape hatch:
 
 ```yaml
 categories:
@@ -241,10 +241,16 @@ categories:
         type: enum
         values: [low, medium, high]
         default: medium
+  git-notes:
+    fields:
+      commitRef:
+        type: commitRef
+        required: true
 ```
 
 ```bash
 neuron memory add --category decisions --ticket NEU-42 --confidence high "..."
+neuron memory add --category git-notes --commit-ref a1b2c3d "Why this landed"
 ```
 
 A required field with no `default:` hard-errors, naming the field and
@@ -252,6 +258,13 @@ category, when omitted on `add`. `update` is a partial patch, the same as
 `--tags`/`--importance`/`--task-id`: an omitted field is left untouched
 rather than re-demanded or cleared. `neuron memory --help` lists a project's
 declared fields once `neuron.yaml` declares any.
+
+`commitRef` (ticket 5, neuron-2.4.2) is a narrow addition to the type floor,
+not a general escape hatch: the value must resolve to a real commit in the
+project's own git history (full or abbreviated SHA), checked at write time
+via a `git` shell-out. A nonexistent hash hard-refuses the write, naming the
+field; a `projectRoot` that isn't a git repository at all refuses with a
+distinct error rather than silently passing.
 
 Every declared field also lives as a nullable SQLite column (`vector`-storage
 categories), added by an additive, idempotent auto-migration (ticket
