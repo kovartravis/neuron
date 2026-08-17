@@ -480,7 +480,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: claimed
 ---
 # 2 — Design Onboarding-Migration Behavior for the New First-Time-Setup Skill
 
