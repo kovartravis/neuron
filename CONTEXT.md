@@ -18,7 +18,11 @@ The generator behind the `## Memory Store Protocol` region `neuron init` writes 
 
 ### neuron-memory
 
-The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) that codifies how agents load memory store context at startup, record new decisions and learnings at shutdown, and prune obsolete/redundant memories during periodic maintenance.
+The standard agent skill (located at `.claude/skills/neuron-memory/SKILL.md`) that codifies the ongoing operate loop: how agents load memory store context at startup, look up relevant learnings before running commands, record new decisions and learnings at shutdown, prune obsolete/redundant memories during periodic maintenance, and — as of the **neuron-onboarding** split (wayfinder ticket 3, Map — MCP Server & Setup/Onboarding Skill Split) — surface in-session troubleshooting guidance for failure modes an agent hits mid-session (enrichment degradation, sync conflicts, prune surprises, drift/re-baseline confusion, strict-mode write errors). Does not cover initial project setup or onboarding-migration — see **neuron-onboarding**.
+
+### neuron-onboarding
+
+The agent skill (`.claude/skills/neuron-onboarding/SKILL.md`, wayfinder ticket 3/5, Map — MCP Server & Setup/Onboarding Skill Split) that owns first-time setup: the ask-first interview, `neuron.yaml` generation, `AGENTS.md` sync, the write-side-enrichment and `strict`-mode interviews, the initial half of architecture-scan configuration (ask & explain options, write the `scan:` block — scan *execution* and drift-reading stay with **neuron-memory**), and onboarding-migration (detecting an existing `CLAUDE.md`/`AGENTS.md`/`CURSOR.md` and offering to migrate its content into structured memory entries). Split out of **neuron-memory**, which narrows to the ongoing operate loop.
 
 ### task-id
 
