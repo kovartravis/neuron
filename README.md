@@ -60,10 +60,26 @@ them — no matter what the agent's prompt says.
 
 ## 🚀 Quick start
 
+Two fully-supported ways to install — neither is more "official" than the
+other, pick whichever fits your workflow.
+
 ```bash
-# Install globally
+# npm (requires Node.js)
 npm install -g @kovartravis/neuron
 
+# curl (macOS/Linux) — standalone binary, no Node.js required
+curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh
+```
+
+```powershell
+# PowerShell (Windows) — standalone binary, no Node.js required
+powershell -c "irm https://raw.githubusercontent.com/kovartravis/neuron/main/install.ps1 | iex"
+```
+
+Installed via curl/PowerShell? Run `neuron upgrade` to self-update the
+binary. Installed via npm? `npm update -g @kovartravis/neuron`.
+
+```bash
 # Initialize in your project (detects CLAUDE.md/AGENTS.md, pre-downloads local models)
 neuron init
 

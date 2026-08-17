@@ -1592,6 +1592,17 @@ self-updates the binary, and the README documents both install paths.
   local mock GitHub API + Releases server, not a real cut release, same
   honest gap those tickets already carry. Doesn't unblock or block Ticket 9.
 
+- [9 — README Install-Path Documentation](f35a2408-6091-415d-ac5e-422d62a154e2) —
+  shipped: README.md's Quick start now documents both paths side by side —
+  npm alongside Ticket 6's real `install.sh` one-liner in one block, Ticket
+  7's real `install.ps1` one-liner in a separate `powershell` block, both
+  copied verbatim from the scripts' own header comments so they can't drift
+  — plus a one-line pointer to `neuron upgrade` (curl/PowerShell) vs `npm
+  update -g` (npm), since Ticket 8 gave the two paths different upgrade
+  commands. Deferred winget/scoop templates deliberately left undocumented
+  (no real pinned release to point them at yet). This was the map's last
+  live ticket — no unclaimed, unblocked children remain.
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -2231,7 +2242,7 @@ taskId: null
 blockedBy: 8d843d50-a002-4f95-aa87-bae23db12535,c1680372-4dc8-4502-9b98-d86b31cbe007
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -2244,3 +2255,36 @@ https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`
 Make clear neither is more "official" than the other per the map's
 chartering decision that npm stays fully supported — this is an additive
 second path, not a deprecation notice for the first.
+
+## Answer
+
+Rewrote README.md's Quick start section (the only install-instructions
+location in the repo): a lead-in line states neither path is more
+"official," followed by two fenced blocks — npm alongside Ticket 6's real
+`install.sh` one-liner (macOS/Linux) in one `bash` block, then Ticket 7's
+real `install.ps1` one-liner (wrapped in `powershell -c "..."`, matching
+its own pasteable-from-any-shell design) in a separate `powershell` block
+so syntax highlighting matches each command's actual shell. Both curl/
+PowerShell one-liners were copied verbatim from the scripts' own header
+comments (`install.sh`/`install.ps1`), not retyped, so they can't drift
+from what Tickets 6/7 actually shipped.
+
+Added one line beyond the ticket's literal ask: since Ticket 8 shipped
+`neuron upgrade` as a binary-only self-updater (a no-op with a pointer to
+`npm install -g @kovartravis/neuron@latest` under npm), and the two
+install paths now have different upgrade commands, the install section
+says which upgrade path applies to which install method — otherwise a
+curl-installed user reading the rest of this repo's docs would have no
+way to know `npm update -g` doesn't apply to them. Kept to one line;
+no new section, no upgrade walkthrough.
+
+Did not touch Ticket 7's own deferred winget/scoop templates
+(`packaging/winget/`, `packaging/scoop/`) — those aren't real, publishable
+packages yet (no pinned version/URL/SHA256 against a real cut release),
+so surfacing them in the README would document an install path that
+doesn't work. Out of this ticket's scope; revisit once a real release
+exists to point them at.
+
+Verified by reading the rendered section back (`README.md:61-95`): both
+commands match `install.sh`/`install.ps1`'s own header-comment usage
+lines exactly, byte for byte.
