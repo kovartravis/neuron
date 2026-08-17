@@ -72,6 +72,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "env-paths": "^3.0.0",
     "onnxruntime-web": "^1.21.0",
     "web-tree-sitter": "^0.26.11",

@@ -334,6 +334,7 @@ time — real, enforced structure, not a convention your agent might forget.
 | `neuron sync` | Explicit forced rebuild between markdown and SQLite — ordinary commands already reconcile automatically |
 | `neuron status` / `status --health` / `status --check` | Storage, embedding model, drift and relevance-gate status as JSON; `--health` reports near-duplicate groups and store-hygiene signals (`--repair` auto-merges what's safe to); `--check` validates against your declared schema |
 | `neuron ui` | Launches the local dashboard |
+| `neuron mcp` | Runs an MCP server (stdio transport) exposing `neuron_remember`/`neuron_recall`/`neuron_query_exec` to any MCP-aware client |
 | `neuron feedback [message]` | Generates pre-filled GitHub issue links |
 
 Declared fields extend this automatically — `neuron memory --help` lists
@@ -349,6 +350,43 @@ loop a cron job can't complete. Pass `--if-novel` instead: on a gate hit it
 skips the write cleanly (exit 0, job still succeeds) rather than erroring,
 and it's never silent about it — the skip is printed to stderr and noted in
 the JSON result.
+
+## 🔌 MCP server
+
+Claude Code and Codex CLI already get neuron's recall deterministically,
+re-injected every turn via the hook model above — `neuron mcp` isn't a
+replacement for that. It's for editors with no per-turn hook point (Cursor,
+Windsurf, Zed, Claude Desktop, Roo Code), and it's available unconditionally
+to every client, hook-covered or not.
+
+`neuron mcp` runs an MCP server over the standard stdio transport, built on
+the official `@modelcontextprotocol/sdk`, exposing three tools — thin
+wrappers over the exact same store methods the CLI itself calls, not a
+second logic path:
+
+| Tool | Wraps | Notes |
+|---|---|---|
+| `neuron_remember` | `memory add` | `content`, `category`, `importance`, `supersedes`, `companion_of` — tags stay server-inferred, never model-settable |
+| `neuron_recall` | `memory query` | `query`, `categories` — returns `{ results, rejected }`, so an empty result set reads differently from an empty store |
+| `neuron_query_exec` | `exec`'s pre-command lookup | `command_text` — lookup only, never spawns the command |
+
+No separate auth/scoping layer: a local stdio server is a subprocess your
+editor spawns directly, inheriting exactly the OS-level access any CLI
+invocation already has.
+
+Point your MCP client at it directly — no separate binary, no new `bin`
+entry:
+
+```json
+{
+  "mcpServers": {
+    "neuron": {
+      "command": "npx",
+      "args": ["-y", "@kovartravis/neuron", "mcp"]
+    }
+  }
+}
+```
 
 ## 🏛️ Architecture awareness, as a deterministic artifact
 

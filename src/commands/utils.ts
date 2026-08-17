@@ -439,6 +439,7 @@ Commands:
   scan                 Scan project topology and manifests, ingest an architectural blueprint, and detect drift
   sync                 Sync memories between .neuron/*.md files and the vector database
   ui                   Launch the local web dashboard for browsing and querying memories
+  mcp                  Run an MCP server (stdio transport) exposing neuron_remember/neuron_recall/neuron_query_exec
   feedback [message]   Generate GitHub issue URL with pre-filled feedback parameters
   upgrade              Self-update the standalone curl-installed binary (no-op for npm installs)
   learn <subcommand>   [Deprecated] Manage learnings (use 'neuron memory --category learning')

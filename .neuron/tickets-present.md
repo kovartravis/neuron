@@ -138,6 +138,17 @@ something unshipped.
   just imported into `neuron-onboarding`. `CONTEXT.md` updated for both
   skill names. Grilled live with the maintainer via `/domain-modeling`.
   Feeds Ticket 5 (now unblocked) and Ticket 6.
+- [4 — Implement MCP Server](fada539c-31ee-4a3a-9f4a-2b3fe86165b4) —
+  `neuron mcp` ships as a subcommand exposing Ticket 1's 3-tool surface,
+  built on `@modelcontextprotocol/sdk` over stdio. `neuron_remember` reuses
+  a newly-extracted `performMemoryAdd` (`src/commands/memory.ts`) — the
+  CLI `memory add` branch's exact supersession-gate/conflict-flag logic,
+  pulled out to a shared function rather than duplicated at a second call
+  site. `npm test` 799/799, `tsc` clean, live JSON-RPC smoke test verified
+  all three tools end to end. Confirmed (not assumed) Map —
+  neuron.github.io Site (2.5.0)'s Ticket 2 still lists this ticket +
+  Ticket 6 in its `blockedBy` — stays blocked until Ticket 6 also
+  resolves.
 
 ## Not yet specified
 
@@ -393,7 +404,7 @@ taskId: null
 blockedBy: c338bfbb-40e9-420d-8a54-8d06e2fc2a3f
 kind: task
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: claimed
+status: resolved
 ---
 # 4 — Implement MCP Server
 
@@ -411,29 +422,89 @@ answer; this ticket implements exactly that.
 
 ## Deliverables
 
-- [ ] `@modelcontextprotocol/sdk` added as a dependency
-- [ ] MCP server implementing Ticket 1's tool surface, each tool calling
+- [x] `@modelcontextprotocol/sdk` added as a dependency
+- [x] MCP server implementing Ticket 1's tool surface, each tool calling
       straight into the existing handler it wraps (no parallel logic path)
-- [ ] Packaging per Ticket 1's decision (subcommand vs. separate entry
+- [x] Packaging per Ticket 1's decision (subcommand vs. separate entry
       point)
-- [ ] README/docs snippet showing the client-side `mcpServers` config
+- [x] README/docs snippet showing the client-side `mcpServers` config
       (or confirm this was already scoped into Ticket 1/this ticket vs.
       deferred — check Ticket 1's resolution)
-- [ ] `npm test` and `tsc` clean
-- [ ] This ticket + Ticket 6 unblock Map — neuron.github.io Site
+- [x] `npm test` and `tsc` clean
+- [x] This ticket + Ticket 6 unblock Map — neuron.github.io Site
       (2.5.0)'s Ticket 2 (Homepage Messaging & Positioning) — confirm
       that blocking edge still makes sense once this ships, don't just
       assume it
 
 ## Answer
 
-_Not yet resolved._
+Built `neuron mcp` (`src/commands/mcp.ts`) exactly to Ticket 1's spec:
+
+- **Dependency**: `@modelcontextprotocol/sdk@^1.30.0` added to
+  `package.json` `dependencies` (peer-compatible with the repo's existing
+  `zod@^4.4.3`, used directly for tool input schemas — no second schema
+  library).
+- **Packaging**: `neuron mcp` wired into `cli.ts`'s existing flat dispatch
+  chain (same pattern as `exec`/`status`/`hook`/`ui`), no separate binary,
+  no new `bin` entry. Opens its own `NeuronMemory` instance the same way
+  `exec`/`ui` do, over the standard stdio transport
+  (`StdioServerTransport`).
+- **Tool surface, each a thin wrapper — no parallel logic path**:
+  - `neuron_remember` → `performMemoryAdd` (new export,
+    `src/commands/memory.ts`): the CLI `memory add` branch's entire
+    write-time supersession gate (ticket 17 / ADR 0015), the ticket-9
+    (neuron-2.4.2) NLI conflict soft-flag, and the ticket-6 (neuron-2.4.3)
+    companion exemption were **extracted out of the CLI handler into a
+    shared function** returning a discriminated result instead of
+    printing/exiting, so the CLI `add` branch and this tool now call the
+    exact same decision logic rather than it being re-implemented at a
+    second call site. The CLI's observable behavior (stdout/stderr text,
+    exit codes) is unchanged — verified by the full `memory.test.ts`
+    suite (35 tests) passing unmodified. `ifNovel`/`notAReversal` stay
+    unexposed via MCP per Ticket 1; a supersession-candidate hit surfaces
+    as an `isError: true` tool result naming the candidate id, so the
+    calling model can retry with `supersedes` if it judges this a
+    reversal.
+  - `neuron_recall` → `autoRescanIfDriftDetected` +
+    `NeuronMemory.queryGated`, the same two calls `memory query`'s CLI
+    branch makes. Returns `{ results, rejected }` verbatim, per Ticket 1.
+  - `neuron_query_exec` → `loadConfig` + `resolveExecCategories` +
+    `NeuronMemory.queryGated`, the same calls `handleExecCommand` makes
+    minus the `spawnSync`. Lookup only, confirmed live (does not execute
+    the command).
+- **Docs**: added a `neuron mcp` row to both README.md's and
+  `docs/COMMANDS.md`'s command tables, plus a full section in each with
+  the tool table and the client-side `mcpServers` JSON stanza
+  (`npx -y @kovartravis/neuron mcp`).
+- **Verification**: `tsc --noEmit` clean; `npm test` 799/799 across 68
+  files (memory.test.ts's 35 tests cover the refactored add path
+  end-to-end via CLI subprocess calls); live smoke test against the built
+  `dist/cli.js mcp` over real JSON-RPC — `initialize`, `tools/list` (all
+  3 tools present with correct input schemas), `neuron_recall` and
+  `neuron_query_exec` returning real gated results from this repo's own
+  store, and `neuron_remember` in an isolated tmp project confirmed both
+  the create path and the supersession-block error path (writing the
+  same content twice correctly returned `isError: true` naming the
+  candidate).
+- **Cross-map blocking confirmed, not just assumed**: fetched Map —
+  neuron.github.io Site (2.5.0)'s Ticket 2 directly
+  (`96a9be90-1b56-4a78-9162-e9584f706877`) — its `blockedBy` does list
+  this ticket's id, alongside Ticket 6 (`0c51a772-…`, not yet resolved)
+  and two of the site map's own tickets. The edge is correct as designed;
+  Ticket 2 stays blocked until Ticket 6 also resolves.
+
+**Feeds forward**: partially unblocks Map — neuron.github.io Site
+(2.5.0)'s Ticket 2 (one of its four `blockedBy` ids now resolved; Ticket 6
+is the remaining one from this map).
 
 ## Comments
 
 - 2026-08-15: Created while chartering Map — MCP Server & Setup/Onboarding
   Skill Split. Blocked on Ticket 1. Alongside Ticket 6, unblocks Map —
   neuron.github.io Site (2.5.0)'s Ticket 2.
+- 2026-08-17: Resolved. Implemented `neuron mcp` per Ticket 1's exact
+  spec; extracted the CLI `memory add` supersession-gate logic into a
+  shared `performMemoryAdd` so `neuron_remember` reuses it directly.
 
 ---
 id: a773beec-dc7d-4da7-afe1-424a5b341fb1
