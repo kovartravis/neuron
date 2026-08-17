@@ -22,7 +22,7 @@ existing CLI command handlers, built on the official
 harness-adapter hook model — alongside a restructured onboarding
 experience: a new first-time-setup skill that onboards a fresh repo
 (including detecting and offering to migrate existing
-CLAUDE.md/.cursorrules/AGENTS.md content), replacing the setup
+CLAUDE.md/AGENTS.md/CURSOR.md content), replacing the setup
 responsibilities currently bundled into the `neuron-memory` skill, which
 narrows to just ongoing maintenance, help, and cleanup.
 
@@ -79,8 +79,10 @@ something unshipped.
     per-turn hook point (Cursor, Windsurf, Zed, Claude Desktop, Roo Code),
     not a migration away from hooks where they already work (ADR 0014).
   - No general-purpose rule-file-format sniffer — onboarding migration is
-    scoped to the file shapes neuron's harness adapters already recognize
-    (CLAUDE.md/.cursorrules/AGENTS.md-style prose), not arbitrary formats.
+    scoped to the file shapes neuron's harness adapters already recognize:
+    CLAUDE.md, AGENTS.md, CURSOR.md (corrected by Ticket 2 — `.cursorrules`
+    isn't recognized by any adapter in code, only in docs), not arbitrary
+    formats.
   - No change to the underlying memory store, schema, or storage adapters
     — this map is agent-facing surface (a new protocol server, a skill
     split), not storage engineering.
@@ -111,6 +113,18 @@ something unshipped.
   setup skill). Available unconditionally to every client, including
   Claude Code/Codex CLI, with no steering-away from the existing hook
   path. Grilled live with the maintainer. Feeds Ticket 4 (implementation).
+- [2 — Design Onboarding-Migration Behavior for the New First-Time-Setup Skill](4d49418c-4b64-4008-ba9e-3500ebb970c1) —
+  detect CLAUDE.md/AGENTS.md/CURSOR.md only (`.cursorrules` dropped — no
+  adapter recognizes it), LLM-parse into structured entries with the
+  *invoking agent itself* doing the parsing (no new embedded-model
+  pipeline), original file kept untouched with a migration note folded
+  into the existing protocol-block marker region, detect → preview →
+  confirm before any write, and detection runs before the category-
+  configuration interview so findings can inform it. Grilled live with the
+  maintainer. Graduated [7 — A/B: Does Neuron-Delivered Rule-Following
+  Match or Beat Static CLAUDE.md, on Claude Code?](7856befc-344a-4072-b906-b729be0d039f)
+  to validate the underlying premise (non-blocking on Ticket 4/5). Feeds
+  Ticket 5 (implementation), alongside Ticket 3.
 
 ## Not yet specified
 
@@ -480,7 +494,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: claimed
+status: resolved
 ---
 # 2 — Design Onboarding-Migration Behavior for the New First-Time-Setup Skill
 
@@ -518,7 +532,50 @@ harness adapters already recognize, not an open-ended format sniffer.
 
 ## Answer
 
-_Not yet resolved._
+Grilled live with the maintainer. Seven decisions:
+
+1. **File-shape scope corrected**: `CLAUDE.md`, `AGENTS.md`, `CURSOR.md` —
+   not `.cursorrules`, as this ticket's own question text assumed.
+   `src/config/harnesses.json` maps `agents`→`AGENTS.md`, `claude`→
+   `CLAUDE.md`, `cursor`→`CURSOR.md`, `github`→`AGENTS.md`, `codex`→
+   `AGENTS.md`; `.cursorrules` is referenced nowhere in `src/`, only in
+   docs. The map's Destination and Non-goals sections are corrected to
+   match.
+2. **Migration shape**: LLM-parse into structured, category-tagged memory
+   entries — not detect-and-flag-only.
+3. **Parsing engine**: the invoking coding agent itself (Claude Code,
+   Cursor, etc.), instructed by the skill to read the file and call
+   `neuron memory add` per logical entry — not a new embedded-model
+   pipeline in neuron's own code. There is no live "summarizer LLM" to
+   reuse for this today: `SmolLM2Summarizer` (`src/components/
+   summarizer.ts`) was made fully deterministic under ticket 26; the one
+   still-live model, `LocalEnrichmentModel.inferCategory`
+   (`src/components/enricher.ts`, `Xenova/Qwen1.5-0.5B-Chat`), is a
+   small few-shot single-entry classifier, not sized for bulk document
+   parsing.
+4. **Original file fate**: kept as-is, untouched — still human-readable,
+   still read by harnesses without a hook. Migration is additive, not a
+   replacement.
+5. **Migration marker**: folds into the existing marker-scoped protocol
+   block (`upsertProtocolBlock`, `src/config/protocolBlock.ts`) rather
+   than a new separate marker — one managed region per file, reusing the
+   block's existing overwrite/keep/ask policy.
+6. **Consent gate**: detect → preview proposed entries/categories →
+   confirm before writing anything, matching `neuron-memory`'s existing
+   ask-first mandate ("Ask the User... Explain First").
+7. **Setup ordering**: detection/migration runs *before* the
+   category-configuration interview (current `neuron-memory` §0), so
+   findings can inform which categories get proposed (e.g. ADR-shaped
+   content suggesting a `decisions` category).
+
+**Graduated ticket**: mid-grilling, the maintainer asked for evidence that
+migrating rules out of CLAUDE.md into neuron doesn't cost rule-following
+effectiveness. This validates a premise underlying this ticket's whole
+decision rather than being part of migration *behavior* itself, so it
+graduated as its own sibling ticket — [7 — A/B: Does Neuron-Delivered
+Rule-Following Match or Beat Static CLAUDE.md, on Claude
+Code?](7856befc-344a-4072-b906-b729be0d039f) (research, non-blocking on
+Ticket 4/5).
 
 ## Comments
 
@@ -526,6 +583,10 @@ _Not yet resolved._
   Skill Split. Supersedes the original growth-strategy review's idea B
   framing (a simple import flag) once the skill-split reframe happened.
   Blocks Ticket 5 (implementation), alongside Ticket 3.
+- 2026-08-17: Resolved via live grilling session. File-shape scope
+  corrected against the real harness registry (`.cursorrules` dropped).
+  Graduated Ticket 7 (rule-following A/B) as a validation sibling, not a
+  blocker.
 
 ---
 id: c338bfbb-40e9-420d-8a54-8d06e2fc2a3f
@@ -1472,3 +1533,87 @@ tracking tool:
 
 Full query list, table template, and log:
 docs/design/seo/geo-citation-log.md.
+
+---
+id: 7856befc-344a-4072-b906-b729be0d039f
+createdAt: 2026-08-17T18:53:05.372Z
+importance: 4
+tags:
+  - setup
+  - rc2
+  - 2.2.0
+taskId: null
+kind: research
+map: 5d4082cf-aee3-4319-818d-9e13669901f5
+status: unclaimed
+---
+# 7 — A/B: Does Neuron-Delivered Rule-Following Match or Beat Static CLAUDE.md, on Claude Code?
+
+## Question
+
+For Claude Code specifically, is an agent at least as likely to follow a
+behavioral rule when it's delivered through neuron (either the shipped
+deterministic per-turn hook, or the new `neuron_recall` MCP tool) as when
+the same rule sits as static prose in CLAUDE.md alone? Three arms, same
+rule content, same task, same model.
+
+## Context
+
+Raised while grilling Ticket 2 (Design Onboarding-Migration Behavior): if
+this map's onboarding-migration flow is going to move rule content out of
+CLAUDE.md and into neuron's memory store, the maintainer wants evidence
+backing the premise that doing so doesn't cost adherence — ideally shown
+to be at least as effective, or more effective. Two existing benchmarks
+are close precedent but measure a different behavior:
+
+- `benchmarks/write-compliance-ab` measures whether the agent calls
+  `neuron memory add` (write-side compliance with CLAUDE.md's own §1
+  protocol) — not whether it follows an arbitrary behavioral rule.
+- `benchmarks/hint-follow` measures whether a fired discovery hint gets
+  queried — passive instrumentation, not a controlled A/B.
+
+This ticket's test is read-side rule *adherence*, not write compliance or
+hint-querying.
+
+## Design (settled during Ticket 2's grilling session)
+
+- **Three arms, same rule, same task, same model** (Claude Sonnet 5, adapt
+  `benchmarks/write-compliance-ab/session.mjs`'s manual tool-use loop):
+  - `control` — rule stated once as static prose in CLAUDE.md/the system
+    prompt, neuron absent. Today's baseline behavior.
+  - `neuron-hook` — rule delivered via neuron's shipped deterministic
+    per-turn hook (ADR 0014, live since 2.2.0-rc3 for Claude Code) —
+    re-injected into context every turn without agent cooperation, not
+    just seen once at session start.
+  - `neuron-mcp` — rule delivered via Ticket 1's new `neuron_recall` MCP
+    tool — agent-invoked, not automatic. Depends on Ticket 4 shipping the
+    MCP server before this arm is runnable live; can stub/mock the tool
+    call for a dry run before then.
+- **Grading**: deterministic, not an LLM judge — did the transcript show
+  the agent's actions complying with the rule, same style as
+  `write-compliance-ab/grading.mjs`'s anchored transcript check. Exact
+  rule content and task fixture are this ticket's own session's job to
+  design, not pinned here — follow `write-compliance-ab/tasksHard.mjs`'s
+  pattern (a multi-step session with genuine competing work, not a
+  ceiling-effect toy task — easy mode's finding there was a wash for
+  exactly that reason).
+- **Non-blocking**: this ticket's result feeds documentation/positioning
+  claims (e.g. the neuron.github.io site's messaging) but does not gate
+  Ticket 4/5's implementation — they proceed regardless of this test's
+  outcome.
+- **Decision rule**: no fixed numeric bar set in advance, matching
+  `write-compliance-ab`'s own precedent — read the margin against sample
+  size once real data exists.
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-17: Graduated from Ticket 2 (Design Onboarding-Migration
+  Behavior) at the maintainer's request, mid-grilling — validates the
+  premise that migrating rules out of CLAUDE.md into neuron doesn't cost
+  adherence. Non-blocking on Ticket 4/5; the `neuron-mcp` arm is blocked
+  in practice (not by schema `blockedBy`) on Ticket 4 shipping a real MCP
+  server to call, until then it can only run as a dry-run/stub.
