@@ -145,3 +145,78 @@ jobs:
         run: |
           echo "## Published ${{ needs.build-and-test.outputs.pkg_name }}@${{ needs.build-and-test.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           echo "dist-tag: \`${{ needs.build-and-test.outputs.dist_tag }}\`, git tag: \`${{ needs.build-and-test.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  build-binaries:
+    needs: build-and-test
+    # Only latest-tagged releases get standalone binaries -- rc prereleases
+    # already skip real npm promotion (see the version/dist-tag resolution
+    # above), and this mirrors that same gate rather than diverging from it.
+    if: needs.build-and-test.outputs.already_published == 'false' && needs.build-and-test.outputs.dist_tag == 'latest'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [macos-x64, macos-arm64, linux-x64, linux-arm64, windows-x64, windows-arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Build standalone binary (${{ matrix.target }})
+        run: npm run build:binary -- ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neuron-${{ matrix.target }}
+          path: dist-bin/*
+          if-no-files-found: error
+
+  release-assets:
+    needs: [build-and-test, publish, build-binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-bin
+          pattern: neuron-*
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        working-directory: dist-bin
+        run: sha256sum * > SHA256SUMS
+
+      - name: Create GitHub Release and attach assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.build-and-test.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist-bin/* --clobber
+          else
+            gh release create "$TAG" dist-bin/* \
+              --title "${{ needs.build-and-test.outputs.pkg_name }}@${{ needs.build-and-test.outputs.version }}" \
+              --generate-notes
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Standalone binaries for ${{ needs.build-and-test.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "6 targets attached to the GitHub Release, plus SHA256SUMS." >> "$GITHUB_STEP_SUMMARY"

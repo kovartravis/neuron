@@ -59,6 +59,7 @@
     "bench:swebench-ab:dry-run": "node benchmarks/token-ab/run-swebench-ab.mjs --dry-run",
     "bench:swebench-ab:pilot:dry-run": "node benchmarks/token-ab/run-swebench-ab.mjs --pilot --dry-run",
     "build": "node ./node_modules/typescript/bin/tsc",
+    "build:binary": "node scripts/build-binary.mjs",
     "prepublishOnly": "npm run build && chmod +x dist/cli.js",
     "postinstall": "node -e \"if (process.platform === 'android') { try { require('child_process').execSync('termux-fix-shebang dist/cli.js 2>/dev/null || true'); } catch(e){} }\"",
     "start": "node ./dist/cli.js",
@@ -88,6 +89,8 @@
     "@anthropic-ai/sdk": "^0.116.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.0.0",
+    "@yao-pkg/pkg": "^6.22.0",
+    "esbuild": "^0.28.1",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "vitest": "^2.1.9"

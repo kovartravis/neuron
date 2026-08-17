@@ -1525,6 +1525,24 @@ self-updates the binary, and the README documents both install paths.
   (no complaint count or install-volume milestone tied to it). Tickets
   5-8 proceed against unsigned binaries.
 
+- [5 — Extend `publish.yml`, CI Build Matrix](docs/design/distribution/ci-build-matrix.md) —
+  shipped: `build-binaries` (6-target matrix, one `ubuntu-latest` runner per
+  Ticket 1's cross-compile story) + `release-assets` (SHA256SUMS, GitHub
+  Release) jobs, gated on `dist_tag == 'latest'`. `scripts/build-binary.mjs`
+  does the packaging. Surfaced two real findings docs alone couldn't have:
+  **(a)** `@yao-pkg/pkg` has no working ESM entry-point support at all
+  (matches the long-open vercel/pkg#1291) — fixed by pre-bundling
+  `dist/cli.js` to a single CJS file with esbuild before handing it to pkg;
+  **(b)** `onnxruntime-node`'s native binding can't be made to load inside a
+  pkg snapshot even as an explicit asset, narrowing Ticket 3's "bundle both
+  native addons" — `better-sqlite3` bundles and loads correctly (confirmed),
+  but the packaged binary runs every ONNX-backed feature (embeddings,
+  reranking, NLI, summarization) on WASM only. Confirmed non-fatal: a failed
+  vector-index write doesn't crash the command and reconciles from markdown.
+  Accepted as a v1 rough edge, same posture as Ticket 4's unsigned-binary
+  call — unscheduled follow-up, not a blocker. Feeds Ticket 6 (`install.sh`)
+  and Ticket 7 (Windows install path), which verify against `SHA256SUMS`.
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -1835,7 +1853,7 @@ taskId: null
 blockedBy: 143a05c6-41b4-40fd-a448-045c1538637e,f561802a-c31d-4f66-802c-fe47acf7d170
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1852,6 +1870,88 @@ chartering note on release cadence. Reuses the existing version/dist-tag
 resolution logic already in the workflow (only `latest`-tagged releases
 get binaries, matching how `rc` prereleases already skip real npm
 promotion, unless Ticket 1/3 surface a reason to diverge).
+
+## Answer
+
+Shipped. `publish.yml` gets two new jobs: `build-binaries` (a 6-target
+matrix, all on `ubuntu-latest` since pkg cross-compiles from one Linux
+runner per Ticket 1's research), and `release-assets` (downloads all 6
+artifacts, generates `SHA256SUMS`, creates/updates the GitHub Release via
+`gh release create`/`upload`). Both gated on `dist_tag == 'latest'`, no
+divergence from the rc-skips-binaries default. `scripts/build-binary.mjs`
+does the actual packaging, invoked as `npm run build:binary -- <target>`.
+
+Full mechanism, and two real blocking findings neither Ticket 1's research
+nor Ticket 3's grilling could have caught from docs alone, are written up
+in docs/design/distribution/ci-build-matrix.md — summary:
+
+1. **`@yao-pkg/pkg` has no working ESM entry-point support** (confirmed
+   live against this codebase's real dependency tree, not just pkg's
+   docs — matches the long-open vercel/pkg#1291). Fix: pre-bundle
+   `dist/cli.js` to a single CJS file with esbuild first (own correct
+   `"exports"` resolution at bundle time), hand pkg *that* instead of the
+   ESM output. Needs the standard esbuild `import.meta.url` shim
+   (`createRequire`/asset-path resolution in db.ts/embedder.ts/
+   generator.ts/harness.ts would otherwise silently break under CJS).
+2. **`onnxruntime-node`'s native binding cannot be made to load inside a
+   pkg snapshot**, even listed explicitly as a pkg asset — its
+   `binding.js` resolves the `.node` file via a computed `path.join()`,
+   which pkg's own error says plainly it can't handle ("specify a literal
+   in 'require' call"). Tried and confirmed NOT a fix: extending the
+   existing Android/Termux `require.cache`-patching WASM shim
+   (`src/shared/crossPlatformShims.ts`, now de-duplicated out of
+   embedder.ts/generator.ts) to trigger on `process.pkg` — doesn't
+   propagate into pkg's own module loader. `better-sqlite3` bundles and
+   loads correctly (confirmed with a real cross-target `prebuild-install`
+   fetch, e.g. Linux x64 from a macOS host, targeting the pkg-embedded
+   Node's ABI via `--target 22.13.0`, not the CI host's own Node version).
+
+**Net effect, narrower than Ticket 3's literal decision:** the packaged
+binary ships `better-sqlite3` native, but runs every ONNX-backed component
+(embeddings, reranking, NLI polarity, summarization) without native
+acceleration — confirmed this degrades gracefully rather than crashing
+(`memory add` against the packaged binary returns `{"status":"created"}`
+with a printed warning; neuron's write path already tolerates a failed
+vector-index step and reconciles from markdown). The `npm install` path is
+completely unaffected — it never touches pkg's snapshot fs. Fixing ONNX
+Runtime's native path for real inside a pkg binary is unscheduled
+follow-up, same posture Ticket 4 already set for code signing: an accepted
+v1 rough edge, not a blocker.
+
+**Independent fix, found along the way:** `reranker.ts` and
+`nliClassifier.ts` were missing the Android/Termux WASM-forcing shim
+entirely (`embedder.ts`/`generator.ts` had it, they didn't) — a real,
+pre-existing gap unrelated to pkg. Now consistent across all four
+`@huggingface/transformers` call sites via the de-duplicated shared shim.
+
+**Also confirmed and worth recording:** macOS enforces code-signature
+validity on any `dlopen()`'d native addon, especially on Apple Silicon — an
+unsigned `.node` file loaded outside pkg's own extraction mechanism gets
+SIGKILL'd by the kernel (`CODESIGNING`/"Invalid Page", not a catchable JS
+error). Hit this directly testing `better-sqlite3` manually on this
+machine; fixed locally with `codesign --sign - --force` /
+`npm rebuild better-sqlite3`. pkg's own native-addon extraction handles
+this correctly for the actual packaged binary (confirmed: the packaged
+binary's `better-sqlite3` loads and writes fine, no crash) — this is a
+local-dev-only gotcha from bypassing pkg's extraction flow, not a defect in
+the shipped pipeline, but worth flagging since it's exactly the kind of
+thing that looks like the binary itself is broken if hit blind.
+
+Verified locally end-to-end for the host target (macOS arm64,
+`@yao-pkg/pkg` 6.22.0): binary builds, runs `--help`, and completes a real
+`memory add` (entry created, embedder/reranker paths exercised, exit 0).
+The other 5 targets use the identical mechanism but weren't individually
+smoke-tested outside the CI matrix definition itself. `npm test` (781
+tests) shows the same 431 passed / 113 failed / 24 errors before and after
+this change (confirmed via `git stash` comparison) — pre-existing
+CLI-integration test-isolation gaps, not a regression from this ticket.
+`neuron scan --check` and `neuron status --check` both exit 0 against the
+new files (a separate, pre-existing `status --check` category-drift
+failure reproduces identically on unmodified baseline code too — local
+database history, not CI-visible, not this ticket's concern).
+
+Feeds Ticket 6 (`install.sh`) and Ticket 7 (Windows install path), which
+verify against `SHA256SUMS`.
 
 ---
 id: 8d843d50-a002-4f95-aa87-bae23db12535
