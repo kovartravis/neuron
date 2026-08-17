@@ -24,7 +24,9 @@ Default: `ast/2`
 - `@huggingface/transformers`
 - `@types/better-sqlite3`
 - `@types/node`
+- `@yao-pkg/pkg`
 - `env-paths`
+- `esbuild`
 - `onnxruntime-web`
 - `tsx`
 - `typescript`
@@ -72,7 +74,7 @@ Default: `ast/2`
 - **harnesses** — `src/harnesses` (24 files)
 - **models** — `src/models` (4 files)
 - **scanner** — `src/scanner` (18 files)
-- **shared** — `src/shared` (2 files)
+- **shared** — `src/shared` (3 files)
 - **storage** — `src/storage` (13 files)
 - **ui** — `src/ui` (4 files)
 - **e2e** — `test/e2e` (12 files)
@@ -208,7 +210,7 @@ Primary components module containing core application capabilities.
 - **`src/components/binaryVersion.test.ts`**: Builds a fake `<pkgRoot>/dist/cli.js`-shaped binary and returns its path.
 - **`src/components/binaryVersion.ts`** (Exports: `BinaryVersionMismatch, checkBinaryVersionMismatch`): `version` from the cwd's own `package.json` — the source tree being developed.
 - **`src/components/embedder.test.ts`**: Methods: describe(), it(), TransformersEmbedder(), embed().
-- **`src/components/embedder.ts`** (Exports: `Embedder, TransformersEmbedder`): Class TransformersEmbedder (Methods: createRequire(), applyCrossPlatformShims(), require(), dirname()).
+- **`src/components/embedder.ts`** (Exports: `Embedder, TransformersEmbedder`): Class TransformersEmbedder (Methods: embed(), embedQuery(), async(), applyCrossPlatformShims()).
 - **`src/components/enricher.ts`** (Exports: `Centroid, VocabularyEntry, buildTagVocabulary, buildCategoryCentroids, TagSelectionOptions, selectTags, selectCategory, CategoryOption, CategoryInferenceInput, CategoryInferenceResult, EnrichmentModel, LocalEnrichmentModelOptions, LocalEnrichmentModel, buildCategoryPrompt`): Write-side enrichment: inferring the metadata a caller did not supply. Two fields are inferred, by different machinery chosen from what each field actually is (see `docs/design/write-side-enrichment/spec.md`): tags       — selected from a closed vocabulary by centroid cosine. No model: the embedder is already loaded on the write path, and ADR 0010 §4 forbids the model from minting a tag, which makes tagging a ranking problem rather than a generation one. category   — centroid cosine by default, which beat the model 9/9 to 1/9 on the same corpus (Pillar 11). The model strategy survives as an opt-in because it can read a category's `description` as an instruction rather than merely as a similarity target. `importance` was a third inferred field and is not inferred any more. Pillar 10 measured the shipped 0.5B model's judgement as noise — discrimination of -0.5 then +0.167 across consecutive runs, per-entry stability 0.5, and a note about irreversible production data loss rated `1`. It shipped `off` in ticket 06 and was removed outright in ticket 26; an omitted `--importance` takes the column default. Git history holds the implementation if a larger model ever makes the question worth reopening.
 - **`src/components/fts-query.test.ts`**: Methods: describe(), it(), expect(), toBe().
 - **`src/components/fts-query.ts`** (Exports: `isStopword, cleanFtsQuery`): Converts a natural language query string into a safe SQLite FTS5 MATCH expression. ## Why stopwords are dropped The keyword leg is fused with the semantic leg by Reciprocal Rank Fusion, which rewards a document's rank position in each list rather than how well it actually matched. Because terms are joined with `OR`, a document matching a single common word enters the FTS ranking at all — and if it is the only match, it enters at rank 1 and collects the full RRF contribution. Observed: the query "what payment provider do we use" ranked a document about a Rust auth daemon above the correct billing document, because `"do"`, `"we"` and `"use"` were searchable terms. Noise words give noise a guaranteed seat. Dropping them means an all-stopword query produces an empty expression, which the caller treats as "no keyword leg" and answers semantically — the correct degradation, and far better than a MATCH that hits every row.
@@ -378,6 +380,7 @@ taskId: null
 Primary shared module containing core application capabilities.
 
 **Key Components & Export Contracts:**
+- **`src/shared/crossPlatformShims.ts`** (Exports: `applyCrossPlatformShims`): Forces `@huggingface/transformers` onto its WASM (`onnxruntime-web`) backend instead of the native `onnxruntime-node` one, needed on Android (no native addon support in Termux). Call before the first `await import('@huggingface/transformers')` in any module that loads one of its models. Does NOT help inside a pkg-packaged binary (curl-install effort, ticket 5): onnxruntime-node's binding.js resolves its `.node` file via a computed `path.join()`, which pkg's snapshot fs can't `dlopen()` even with the file listed as a pkg asset — and patching `require.cache` here to preempt it doesn't propagate into pkg's own module loader for snapshot-packaged node_modules deps, confirmed by direct testing. The packaged binary degrades gracefully instead (a failed vector-index write doesn't fail the overall command), so this is a shipped, accepted limitation rather than a bug this function fixes.
 - **`src/shared/projectRoot.ts`** (Exports: `findProjectRoot`): Single shared implementation of upward project-root discovery. Was duplicated byte-for-byte between `NeuronMemory.open()` (src/index.ts) and `commands/utils.ts` until ticket 30 (neuron-2.4.0): `autoRescanIfDriftDetected` and `neuron scan` derived their scan root from literal `process.cwd()` instead of this walk, so a CLI invocation from a project-marker-less subdirectory (any bare `.scratch` effort's `issues` dir qualifies) could scan and ingest a degenerate topology into the real project's store. Both surfaces now import this one function so the scan root and the storage root are provably the same resolution.
 - **`src/shared/textMatch.ts`** (Exports: `editDistance, suggestClosest`): Cheap edit distance, only ever called on an error path (a typo'd CLI flag or enum value). Shared between `commands/utils.ts` (unknown-flag suggestions) and `NeuronMemory`'s field-schema enforcement (enum-value suggestions, ticket 43) so the two surfaces suggest corrections the same way rather than drifting into two slightly different heuristics.
 

@@ -1543,6 +1543,20 @@ self-updates the binary, and the README documents both install paths.
   call — unscheduled follow-up, not a blocker. Feeds Ticket 6 (`install.sh`)
   and Ticket 7 (Windows install path), which verify against `SHA256SUMS`.
 
+- [6 — Write and Ship `install.sh`](8d843d50-a002-4f95-aa87-bae23db12535) —
+  shipped: a POSIX `sh` script at the repo root, detects OS/arch via
+  `uname`, resolves the latest GitHub Release tag via the API, downloads
+  the matching asset plus `SHA256SUMS`, and hard-fails (non-zero exit, no
+  install) on any missing or mismatched checksum entry. Installs to
+  `$HOME/.neuron/bin` by default, overridable via `NEURON_INSTALL`
+  (mirrors Bun/Deno's own-directory convention, per Ticket 2's research).
+  Verified end-to-end (happy path, checksum-mismatch rejection, PATH-
+  already-set) against a local mock release server, since no real Release
+  with Ticket 5's asset names has been cut yet. Windows explicitly out of
+  scope — points to Ticket 7 in its own error message. Unblocks Ticket 8
+  (`neuron upgrade`) and Ticket 9 (README install-path docs), both already
+  specified and now frontier.
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -1965,7 +1979,7 @@ taskId: null
 blockedBy: 1f3592a2-1032-4295-b3dc-405d05a63fe8
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1979,6 +1993,32 @@ https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`
 runs. Fail loudly and exit non-zero on checksum mismatch — never install an
 unverified binary. Print a clear next-step message on success (e.g. `neuron
 --version` to confirm).
+
+## Resolution
+
+Shipped: `install.sh` at the repo root (POSIX `sh`, no bashisms — matches
+the `| sh` pipe in the destination's own install command). Detects
+`uname -s`/`uname -m`, maps to Ticket 5's asset names
+(`neuron-<macos|linux>-<x64|arm64>`), resolves the latest release tag via
+the GitHub API, downloads the asset plus `SHA256SUMS`, and compares a
+locally computed `sha256sum`/`shasum -a 256` digest against the entry for
+that exact filename. A missing or mismatched entry hard-fails (non-zero
+exit, no install) before anything touches disk — verified live via three
+end-to-end runs against a local mock GitHub-release server (a temp dir
+served over `python3 -m http.server` with a fake `api/latest.json`,
+release asset, and SHA256SUMS, referenced via an env-substituted copy of
+the real script so the shipped file itself needed no test-only branches):
+(1) happy path installed a fake binary, `chmod +x`'d it, and it ran; (2) a
+corrupted SHA256SUMS entry correctly aborted with exit 1 and left the
+install directory nonexistent; (3) a pre-populated PATH correctly
+suppressed the 'add to PATH' hint. Install directory defaults to
+`$HOME/.neuron/bin`, overridable via `NEURON_INSTALL` (mirrors Bun's
+`BUN_INSTALL`/Deno's `DENO_INSTALL` convention, consistent with Ticket 2's
+research). Windows is explicitly out of scope for this script (points to
+`install.ps1`/Ticket 7 in its own error message for an unsupported OS).
+Ticket 8 (Implement `neuron upgrade`) and Ticket 9 (README install-path
+docs) were already correctly specified and blocked on this ticket — no new
+fog to graduate, both are now unblocked.
 
 ---
 id: c1680372-4dc8-4502-9b98-d86b31cbe007
