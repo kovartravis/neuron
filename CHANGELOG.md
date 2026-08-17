@@ -2,6 +2,28 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.4] - 2026-08-17
+
+**`neuron` is now installable without Node.js.** `curl -fsSL
+https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`
+(macOS/Linux) and `powershell -c "irm
+https://raw.githubusercontent.com/kovartravis/neuron/main/install.ps1 |
+iex"` (Windows) install a real standalone binary — packaged with
+`@yao-pkg/pkg`, built for macOS/Linux/Windows across x64/arm64 in a new CI
+matrix, published as GitHub Release assets in the same run as the npm
+publish. Both install scripts verify the downloaded binary against the
+release's `SHA256SUMS` and refuse to install on a mismatch. `npm install -g
+@kovartravis/neuron` stays fully supported — this is an additive second
+path, not a replacement. `neuron upgrade` self-updates a standalone-binary
+install in place (checksum-verified, atomic); it's a no-op pointing at `npm
+install -g @kovartravis/neuron@latest` for an npm install. `neuron
+--version` is new. Binaries ship unsigned at launch (no code-signing
+credentials available yet), so macOS/Windows will show a Gatekeeper/
+SmartScreen warning on first run — expected, not a bug; the packaged
+ONNX-backed features (embeddings, reranking, NLI, summarization) currently
+run on the WASM fallback rather than the native `onnxruntime-node` binding,
+since it can't load inside a pkg snapshot.
+
 ## [2.4.3] - 2026-08-16
 
 **The write gate now catches near-duplicate paraphrases and flags real
