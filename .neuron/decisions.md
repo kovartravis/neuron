@@ -1525,3 +1525,15 @@ tags:
 taskId: null
 ---
 Closed out Map — Curl-Installable Standalone Binary: the maintainer verified the destination live (v2.4.4 published to npm's latest dist-tag and to GitHub Releases with all 6 binary targets + SHA256SUMS, confirmed via 'npm view @kovartravis/neuron version' and 'gh release list'), so the map is reached, not just its tickets resolved. Archived the map and all 9 children (1 map + tickets 1-9, all previously resolved) from tickets-present into tickets-past via the documented delete-then-upsert pattern (docs/agents/issue-tracker.md's Archiving section) -- a one-off tsx script calling NeuronMemory.transact() directly, same precedent as ticket 40/45 and the 2.4.2/2.4.3 archiving session, since the CLI has no bulk-move command and a same-id upsert alone won't move an existing row's category. All 10 ids verified content-identical post-move via findById before/after. tickets-present now holds only the two other actively-sequenced maps (SEO & GEO Groundwork, MCP Server & Setup/Onboarding Skill Split).
+
+---
+id: 730e6873-9340-4b09-9232-65ff620a1a1d
+createdAt: 2026-08-17T18:54:37.872Z
+importance: 4
+tags:
+  - rc2
+  - adr
+  - setup
+taskId: 5d4082cf-aee3-4319-818d-9e13669901f5
+---
+Ticket 2 (Onboarding-Migration Behavior, map MCP Server & Setup/Onboarding Skill Split) resolved via live grilling. Migration flow for the new first-time-setup skill: on detecting CLAUDE.md/AGENTS.md/CURSOR.md (corrected from the ticket's original CLAUDE.md/.cursorrules/AGENTS.md wording -- .cursorrules is referenced nowhere in src/, only in docs, so it isn't one of the file shapes neuron's own harness adapters recognize), the invoking coding agent itself parses the prose into structured category-tagged entries and calls neuron memory add per entry -- not a new embedded-model pipeline, since neuron has no summarizer LLM sized for bulk document parsing (SmolLM2Summarizer was made fully deterministic under ticket 26; the one live model, Xenova/Qwen1.5-0.5B-Chat in LocalEnrichmentModel.inferCategory, is a small few-shot single-entry classifier). The original file is kept untouched, with a migration note folded into the existing protocol-block marker region (upsertProtocolBlock) rather than a new marker. Detection runs before the category-configuration interview so findings can inform which categories get proposed, and the skill previews proposed entries and gets explicit confirmation before writing anything, matching neuron-memory's existing ask-first mandate. Mid-grilling, the maintainer asked for evidence that this migration doesn't cost rule-following effectiveness, so a non-blocking sibling ticket (7 -- A/B test comparing CLAUDE.md-only control vs neuron's shipped deterministic hook vs the new neuron_recall MCP tool, on Claude Code, deterministic transcript grading not an LLM judge) graduated to validate the premise rather than being folded into ticket 2's own answer.
