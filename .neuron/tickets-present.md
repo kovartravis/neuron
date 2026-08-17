@@ -925,6 +925,16 @@ and content tickets have what they need from this map to proceed.
   sections, ADR log demoted to Optional) drafted against Ticket 2's IA with
   placeholder slugs — final link list waits on Site (2.5.0)'s Ticket 3.
   Full draft: docs/design/seo/llms-txt-draft.md.
+- [6 — Content-Authoring Guidelines for AI Citability](a3cc1972-e455-4c61-9ec4-bcc873c6353d) —
+  four rules, grounded in patterns already live in README.md: limitations
+  sections are content-driven (only pages whose topic has a real
+  README-disclosed caveat get a `## Limitations` H2, always last on the
+  page); source attribution covers both byline (`Person`, Ticket 3) and
+  evidence-linking (every measured claim links its source); factual/
+  quotable phrasing enforced via both a positive rule (no standalone
+  adjective claims) and a concrete banned-superlatives list. Grilled live
+  with the maintainer. Feeds Site (2.5.0)'s Ticket 2. Full guide:
+  docs/design/seo/content-authoring-style-guide.md.
 
 ## Not yet specified
 
@@ -1284,7 +1294,7 @@ taskId: null
 blockedBy: 1cca44ce-a2c7-4bae-9aed-c42b96ab2cee
 kind: grilling
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 6 — Content-Authoring Guidelines for AI Citability
 
@@ -1305,6 +1315,34 @@ turns that into a concrete, referenceable house style. Feeds Site
 (2.5.0)'s Ticket 2 (Homepage Messaging & Positioning) directly — messaging
 shouldn't be drafted before this exists, alongside its existing
 MCP-server-shipped blockers. Blocks Site (2.5.0)'s Ticket 2.
+
+## Answer
+
+Grilled live with the maintainer. Four rules, all grounded in patterns
+already live in README.md rather than invented:
+
+1. **Limitations sections are content-driven, not page-type-driven** — a
+   docs page gets a `## Limitations` H2 (always last on the page, after
+   any Q&A block) only if its topic already has a real caveat disclosed in
+   README.md (e.g. per-harness recall coverage, exec being purely
+   informational, the write-side compliance gap). No manufactured
+   limitations on pages with nothing genuine to disclose.
+2. **Source attribution, both senses**: byline attribution to Travis Kovar
+   as `Person` (Ticket 3's schema.org decision) *and* evidence-linking —
+   every quantitative/measured claim must link to its backing source
+   (benchmark file, A/B results), mirroring README's existing citation
+   pattern. A bare number is not publishable copy.
+3. **Factual/quotable phrasing, both a positive rule and a banned list**:
+   every claim must be falsifiable/backed by a fact or link (no adjective
+   allowed to stand alone); plus a concrete banned-superlatives list
+   (best-in-class, revolutionary, seamless, blazing-fast, cutting-edge,
+   world-class, state-of-the-art, game-changing, effortless, robust,
+   powerful, next-gen, unparalleled) — verified README.md already avoids
+   all of these, so this locks in existing practice rather than imposing a
+   new one.
+
+Feeds Site (2.5.0)'s Ticket 2 directly. Full guide:
+docs/design/seo/content-authoring-style-guide.md.
 
 ---
 id: 406c9701-a5bf-4001-9bbc-a69c85463c67
