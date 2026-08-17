@@ -67,8 +67,8 @@ Default: `ast/2`
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
 - **src** — `src` (13 files)
-- **commands** — `src/commands` (28 files)
-- **components** — `src/components` (19 files)
+- **commands** — `src/commands` (30 files)
+- **components** — `src/components` (21 files)
 - **config** — `src/config` (11 files)
 - **e2e** — `src/e2e` (1 file)
 - **harnesses** — `src/harnesses` (24 files)
@@ -189,6 +189,8 @@ Primary commands module containing core application capabilities.
 - **`src/commands/sync.ts`** (Exports: `handleSyncCommand, scaffoldNeuronDirectory`): Function handleSyncCommand (Methods: handleSyncCommand(), some(), includes(), error()).
 - **`src/commands/ui.test.ts`**: Methods: describe(), afterEach(), close(), it().
 - **`src/commands/ui.ts`** (Exports: `UiCommandOptions, handleUiCommand`): Function handleUiCommand (Methods: parseUiArgs(), parseInt(), findFreePort(), Promise()).
+- **`src/commands/upgrade.test.ts`**: A minimal local stand-in for the GitHub API + Releases download endpoints, in the spirit of ticket 6's own mock release server for install.sh.
+- **`src/commands/upgrade.ts`** (Exports: `AssetOs, AssetTarget, resolveAssetTarget, assetName, compareVersions, sha256File, atomicReplace, UpgradeOptions, UpgradeResult, runUpgrade, handleUpgradeCommand`): Mirrors install.sh's `uname`-based case statements, using Node's own process.platform/arch instead.
 - **`src/commands/utils.test.ts`**: Methods: describe(), it(), spyOn(), mockImplementation().
 - **`src/commands/utils.ts`** (Exports: `drawBox, parseFlags, updateMarkdownFile, getMemoryHelp`): Every option `parseFlags` understands with no `neuron.yaml` involved. Used to reject unrecognised flags and to suggest a correction — a typo'd flag used to be pushed into `positionals` and silently discarded, so `--importanc 5` looked like it worked and wrote the default instead. Re-exported from `config/neuronYaml.ts`, which is also where `validateNeuronYaml` checks a declared field's flag against this same list at config-load time (ticket 43) — one vocabulary, not two that can drift.
 
@@ -226,6 +228,8 @@ Primary components module containing core application capabilities.
 - **`src/components/templateFingerprint.test.ts`**: Methods: describe(), it(), widgets(), Button().
 - **`src/components/templateFingerprint.ts`** (Exports: `stripKnownTemplates`): Ticket 6 (neuron-2.4.2) / Ticket 10's answer: a closed set of known, deterministic content templates this repo's own write paths generate, stripped from a candidate pair before it reaches the near-duplicate reranker gate — so shared scaffolding stops contributing to the score at all, regardless of bar. Not category-scoped (the map's own non-goals rule out category-name branching): each pattern matches on the literal boilerplate text itself, wherever it appears, and leaves everything else untouched. A new template shape needs a new pattern here, the same tradeoff as any other closed enum (mirrors `commitRef`'s field-type floor, Ticket 5).
 - **`src/components/timeout.ts`** (Exports: `TimeoutError, withTimeout`): The timeout primitive. Before this, the only `timeout` in the codebase was SQLite's `busy_timeout`; a hung `generate()` hung its caller forever. ADR 0010 §3 requires every model call to be a bounded wait. It bounds the wait, not the work: the underlying ONNX generation cannot be cancelled, so a timed-out call keeps running to completion in the background and its result is discarded. That is acceptable because the process is short-lived — but it means a timeout does not free the CPU it was spending.
+- **`src/components/version.test.ts`**: Builds a fake `<pkgRoot>/dist/cli.js`-shaped entry point and returns its path.
+- **`src/components/version.ts`** (Exports: `getRunningVersion`): Injected via esbuild's `--define` by `scripts/build-binary.mjs` (ticket 5's packaging step, extended by ticket 8) when building the standalone pkg binary — never present in the plain `tsc` output `npm publish` ships. The `typeof` guard below is the standard safe way to read a bundler-injected global that may not exist at all in a given build: unlike a bare reference, `typeof` never throws on an undeclared identifier.
 
 ---
 id: 55fd983b-b2b3-a012-2507-837b46e7e94b

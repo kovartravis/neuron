@@ -1561,7 +1561,7 @@ self-updates the binary, and the README documents both install paths.
   shipped: `install.ps1` at the repo root, the primary `irm <url> | iex`
   channel Ticket 2's research recommended (Deno/Bun's mechanics — real-arch
   detection via `RuntimeInformation.OSArchitecture`, install to
-  `NEURON_INSTALL`/`%USERPROFILE%\.neuron\bin`, user-scope PATH via .NET
+  `NEURON_INSTALL`/`%USERPROFILE%\.neuronin`, user-scope PATH via .NET
   `SetEnvironmentVariable`), verified against Ticket 5's real asset shape
   (a raw `.exe`, not the zip the research speculated about pre-build) and
   reusing Ticket 6's `SHA256SUMS`-or-refuse discipline. Not run against a
@@ -1575,6 +1575,22 @@ self-updates the binary, and the README documents both install paths.
   docs/design/distribution/windows-install-path.md. Unblocks Ticket 9
   (README install-path docs) alongside Ticket 6, already specified and
   now frontier.
+
+- [8 — Implement `neuron upgrade`](33f6a40c-9a1e-432f-aeb4-325bc672be5f) —
+  shipped: a top-level `neuron upgrade` command that self-replaces the
+  running standalone binary in place, checksum-verified against the
+  release's `SHA256SUMS` (same discipline as Ticket 6), atomic and
+  rollback-safe if the swap fails mid-way, and a hard no-op (with a pointer
+  to `npm install -g @kovartravis/neuron@latest`) for an npm install. Along
+  the way, fixed a real gap Tickets 6/7 had already promised but never
+  delivered: `install.sh`/`install.ps1` both tell the user to run `neuron
+  --version`, which didn't exist until this ticket added it — now also the
+  mechanism `upgrade` itself uses to know its own version, baked in at
+  build time via esbuild `--define` since a pkg binary has no `package.json`
+  next to it at runtime. Does not touch the real packaging/release pipeline
+  (Ticket 5) or either install script (Tickets 6, 7) — verified against a
+  local mock GitHub API + Releases server, not a real cut release, same
+  honest gap those tickets already carry. Doesn't unblock or block Ticket 9.
 
 ## Not yet specified
 
@@ -2107,7 +2123,7 @@ taskId: null
 blockedBy: 1f3592a2-1032-4295-b3dc-405d05a63fe8,8d843d50-a002-4f95-aa87-bae23db12535
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -2122,6 +2138,86 @@ upgrading an npm-installed `neuron`; `npm install -g` already owns that
 path. Consider what happens if replacing the running binary fails
 mid-swap (e.g. permissions) — should leave the old binary working, never a
 half-replaced broken state.
+
+## Answer
+
+Shipped: `neuron upgrade` (`src/commands/upgrade.ts`), registered as a
+top-level command in `src/cli.ts` alongside `exec`/`scan`/`hook` (no
+project/memory store needed). Guarded on `typeof process.pkg !==
+'undefined'` — an npm-installed `neuron` refuses immediately with a pointer
+to `npm install -g @kovartravis/neuron@latest`, never attempting the binary
+swap.
+
+Flow: resolves the platform/arch asset name the same way `install.sh` does
+(`process.platform`/`process.arch` instead of `uname`) → fetches
+`GET /repos/kovartravis/neuron/releases/latest`, compares `tag_name` against
+the running version → downloads the matching asset plus `SHA256SUMS` from
+the same release → verifies via `node:crypto` sha256 (same algorithm/
+discipline as Ticket 6's shell `sha256sum`/`shasum` check, reimplemented
+rather than shared code since there's no sh/TypeScript sharing mechanism) →
+atomically replaces the running executable, refusing to install on any
+checksum mismatch.
+
+Found and fixed a real pre-existing gap while building this: both
+`install.sh` and `install.ps1` (Tickets 6, 7) already tell the user to run
+`neuron --version` to confirm the install, but the CLI had no `--version`/
+`-v` flag at all. Added one (`src/components/version.ts`'s
+`getRunningVersion()`), which doubles as the exact mechanism `upgrade`
+needs to know its own current version.
+
+Two non-obvious correctness points `getRunningVersion`/`atomicReplace`
+exist to handle, both explicitly flagged in this ticket's own text:
+
+1. **Knowing the running binary's own version.** A pkg-packaged binary has
+   no `package.json` sitting next to it at runtime (`install.sh` drops a
+   single file) — solved by baking the version in at build time via
+   esbuild's `--define` (`scripts/build-binary.mjs`, same mechanism the
+   existing `import.meta.url` shim already uses), read through a `typeof
+   __NEURON_VERSION__ !== 'undefined'` guard so the plain `tsc` build npm
+   publishes falls through unaffected to reading `package.json` two
+   directories up from the entry point (same shape
+   `checkBinaryVersionMismatch` already relies on). Verified live: bundled
+   `dist/cli.js` through the real esbuild `--define` step and confirmed
+   `--version` prints the injected value.
+2. **Never a half-replaced binary.** `atomicReplace` stages the downloaded
+   asset in the *same directory* as the running executable (not the system
+   tmpdir) so the final swap is a same-filesystem rename — a rename across
+   filesystems (tmpfs → the real install dir) can fail with `EXDEV`, which
+   would otherwise silently turn "atomic" into "sometimes." The swap itself
+   is backup-then-rename-then-cleanup: current → `<path>.old`, staged →
+   current, then best-effort delete of `.old`; if the second rename fails,
+   it rolls back from `.old` immediately and re-throws. On Windows this
+   relies on a real platform fact worth recording: the OS opens a running
+   executable's image with `FILE_SHARE_DELETE`, so renaming (not deleting
+   in place) the currently-executing file is allowed — the same trick
+   Chrome/electron-updater rely on.
+
+Tested: `resolveAssetTarget`/`assetName`/`compareVersions`/`sha256File` as
+pure unit tests; `atomicReplace` both on the happy path and on an induced
+second-rename failure (confirms rollback leaves the original content
+intact, no stray `.old`); a full `runUpgrade` end-to-end pass against a
+local mock GitHub API + Releases server (`node:http`, in the spirit of
+Ticket 6's own mock release server for `install.sh`) covering: successful
+download-verify-replace, checksum-mismatch rejection (binary left
+untouched, no stray staged file), already-up-to-date (asserts zero download
+requests made), and `--check` (reports availability, makes no download
+requests). `handleUpgradeCommand`'s `--help` output and its not-running-
+under-pkg guard (naturally exercised under vitest/npm, no mocking needed)
+are also covered. 18 new tests, `npm test` 799/799, `tsc --noEmit` clean,
+`neuron scan --check` clean after re-baselining for the new
+`upgrade.ts`/`version.ts` export surface, `neuron status --check` shows the
+same pre-existing `undeclaredCategories` drift as `main` (confirmed via
+`git stash` comparison) — unrelated to this ticket.
+
+Not exercised: a real end-to-end run of the actual packaged pkg binary
+self-replacing itself (would need a full native-addon `build:binary` run
+and a real GitHub Release to point at) — same gap Tickets 6 and 7 already
+carry for their own install scripts, closed once a real release with these
+assets exists.
+
+Ticket 9 (README install-path docs) is the map's other already-specified
+frontier ticket; this one didn't block it and doesn't unblock anything
+further itself.
 
 ---
 id: f35a2408-6091-415d-ac5e-422d62a154e2

@@ -12,9 +12,11 @@ import {
   handleFeedbackCommand,
   handleScanCommand,
   handleHookCommand,
+  handleUpgradeCommand,
   MASTER_HELP
 } from './commands/index.js';
 import { NeuronMemory } from './index.js';
+import { getRunningVersion } from './components/version.js';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -23,6 +25,15 @@ async function main() {
   if (!mainCommand || mainCommand === '--help' || mainCommand === '-h') {
     console.log(MASTER_HELP);
     process.exit(0);
+  }
+
+  if (mainCommand === '--version' || mainCommand === '-v') {
+    console.log(getRunningVersion());
+    process.exit(0);
+  }
+
+  if (mainCommand === 'upgrade') {
+    return await handleUpgradeCommand(args);
   }
 
   if (mainCommand === 'init') {

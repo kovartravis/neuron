@@ -68,6 +68,16 @@ const exe = target.platform === 'win32' ? '.exe' : '';
 const outputName = `neuron-${name}${exe}`;
 const outputPath = path.join(outDir, outputName);
 
+// `neuron upgrade` (ticket 8) needs a reliable way to know its own version
+// at runtime, and there's no package.json sitting next to the binary once
+// install.sh/install.ps1 drop it as a single file. Bake it in at build time
+// instead, via the same esbuild --define mechanism the import.meta.url shim
+// below already uses -- src/components/version.ts reads it through a
+// `typeof __NEURON_VERSION__ !== 'undefined'` guard, so the plain `tsc`
+// build npm publishes (no esbuild step) falls through to its package.json
+// fallback unaffected.
+const pkgVersion = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8')).version;
+
 function run(cmd, args, opts = {}) {
   console.log(`+ ${cmd} ${args.join(' ')}`);
   execFileSync(cmd, args, { stdio: 'inherit', cwd: repoRoot, ...opts });
@@ -85,6 +95,7 @@ run(path.join(repoRoot, 'node_modules/.bin/esbuild'), [
   '--external:onnxruntime-node',
   '--external:node:sqlite',
   '--define:import.meta.url=import_meta_url',
+  `--define:__NEURON_VERSION__=${JSON.stringify(pkgVersion)}`,
   "--banner:js=const import_meta_url = require('url').pathToFileURL(__filename).href;"
 ]);
 
