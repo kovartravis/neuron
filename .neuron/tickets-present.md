@@ -125,13 +125,28 @@ something unshipped.
   Match or Beat Static CLAUDE.md, on Claude Code?](7856befc-344a-4072-b906-b729be0d039f)
   to validate the underlying premise (non-blocking on Ticket 4/5). Feeds
   Ticket 5 (implementation), alongside Ticket 3.
+- [3 — Design the Setup/Maintenance Skill Boundary (`neuron-memory` Split)](a773beec-dc7d-4da7-afe1-424a5b341fb1) —
+  new skill named and located: `.claude/skills/neuron-onboarding/SKILL.md`.
+  §0/§0a/§0b plus §7's ask-and-configure steps move there; §1-6, §7's
+  execute-and-read steps, and §8 stay in `neuron-memory` as the operate
+  loop. "Help" = a new consolidated Troubleshooting section in
+  `neuron-memory` (enrichment degradation, sync conflicts, prune
+  surprises, drift/re-baseline confusion, strict-mode write errors) —
+  comprehensive from day one, not a thin pointer or a small seed. Flags
+  that some content inside sections moving wholesale (§0a/§0b) is actually
+  runtime-diagnosable and belongs duplicated into Troubleshooting too, not
+  just imported into `neuron-onboarding`. `CONTEXT.md` updated for both
+  skill names. Grilled live with the maintainer via `/domain-modeling`.
+  Feeds Ticket 5 (now unblocked) and Ticket 6.
 
 ## Not yet specified
 
-- **Whether the first-time-setup skill also absorbs `neuron scan`'s
-  initial configuration** (currently split across `neuron-memory"'s §7
-  and `neuron init`) — likely, but Ticket 3 decides the exact boundary
-  rather than assuming it here.
+- **`neuron init` writing the client-side `mcpServers` config stanza**
+  (which clients, where each config file lives, prompt vs. detect) —
+  Ticket 1 flagged `neuron-onboarding` (once named, by Ticket 3) as a
+  plausible home, but its own UX design pass hasn't run. Graduates into a
+  ticket once someone decides it belongs in this map's scope rather than a
+  future one.
 
 ## Out of scope
 
@@ -431,7 +446,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: claimed
+status: resolved
 ---
 # 3 — Design the Setup/Maintenance Skill Boundary (`neuron-memory` Split)
 
@@ -473,7 +488,78 @@ pinned down, not inferred.
 
 ## Answer
 
-_Not yet resolved._
+Grilled live with the maintainer via `/domain-modeling`. Four decisions:
+
+1. **New skill name/location**: `.claude/skills/neuron-onboarding/SKILL.md`
+   — not `neuron-setup`. Settles the placeholder Ticket 5's own deliverables
+   list left open ("name/location per Ticket 3's resolution").
+
+2. **§7 (Architectural Scan & Configuration Protocol) splits as proposed**:
+   steps 1-2 ("Ask & Explain Options First," "Update Config & `AGENTS.md`")
+   move into `neuron-onboarding` — they're an interview + config write,
+   setup-shaped like §0/§0a/§0b. Steps 3-4 ("Execute Architectural Scan,"
+   "Read the Blueprint Before Changing Module Boundaries") stay in
+   `neuron-memory`, renumbered, alongside all of §8 (Architectural Drift
+   Protocol) — both are operate-loop-shaped (run a command, consult its
+   output), unchanged from the map's own chartering read.
+
+3. **Full boundary, combining this with what the map's chartering already
+   settled**:
+   - **Moves to `neuron-onboarding`**: §0 (Initial Project Setup &
+     Interview Protocol), §0a (Write-Side Enrichment Interview), §0b
+     (Determinism/`strict`-mode Interview), §7 steps 1-2, plus Ticket 2's
+     onboarding-migration behavior (new content, not moved).
+   - **Stays in `neuron-memory`**: §1-6, §7 steps 3-4, §8 — the ongoing
+     operate loop — plus a new Troubleshooting section (point 4, below).
+   - **Watch for operate-shaped fragments inside sections that otherwise
+     move wholesale**: §0a's closing "Operating it" paragraph (checking
+     `enrichment.degraded` in `neuron status` "occasionally") and §0b's
+     strict-mode hard-error behavior are runtime-diagnosable concerns, not
+     setup-time ones, even though they currently live inside sections that
+     move in full. Ticket 6 should pull the diagnostic substance of these
+     into the new Troubleshooting section rather than only importing them
+     wholesale into `neuron-onboarding` — an agent troubleshooting a
+     strict-mode write failure mid-session shouldn't have to open the setup
+     skill to find out what the error means.
+
+4. **"Help" = an in-session troubleshooting guide, consolidated from what
+   already exists.** Not a thin pointer to `neuron --help`, and not a
+   living FAQ seeded small — pull every failure-mode callout already
+   documented in the current SKILL.md's `[!IMPORTANT]`/`[!WARNING]` boxes
+   into one dedicated new section (comprehensive from day one, sourced
+   entirely from existing documented behavior, no new failure modes
+   invented). Minimum seed set, all already written somewhere in the
+   current 569-line file:
+   - Enrichment degradation (`enrichment.degraded` in `neuron status`
+     going non-zero — inference silently falling back).
+   - A `sync` conflict after a manual `.md` edit, needing `--force` to
+     make markdown authoritative.
+   - `prune` deleting far more than "low-importance" entries, because
+     omitted `--importance` defaults to `3` and the ceiling comparison is
+     inclusive.
+   - `neuron scan --diff` reporting "Re-baseline Required" (parser-version
+     mismatch, exit code `2`) vs. real drift (exit code `1`) — not the same
+     thing.
+   - `strict: true` hard-erroring an omitted `--category` with no
+     configured fallback.
+
+**Feeds forward**: unblocks Ticket 5 (Implement First-Time-Setup Skill,
+now named — build `neuron-onboarding`) and Ticket 6 (Trim `neuron-memory`
+to Maintenance/Help/Cleanup Scope, now with a concrete definition of
+"Help" to implement, not just a word to interpret).
+
+**Left open, not this ticket's job**: `neuron init` writing the
+client-side `mcpServers` config stanza — Ticket 1 flagged this as a
+plausible fit for `neuron-onboarding` once it had a name, but which
+clients get auto-configured, where each config file lives, and prompt-vs-
+detect is its own UX design pass this session didn't run. Left for the
+map to graduate as a fresh ticket if the maintainer wants it in scope, or
+for Ticket 5's own judgment if it turns out to be small enough to fold in
+directly.
+
+`CONTEXT.md` updated in place: the **neuron-memory** glossary entry now
+describes the narrowed operate-loop scope and points at the split; a new
+**neuron-onboarding** entry describes the skill this ticket named.
 
 ## Comments
 
@@ -482,6 +568,8 @@ _Not yet resolved._
   onboarding-migration idea into a skill split. Blocks Ticket 5
   (implementation of the new skill) and Ticket 6 (trimming
   `neuron-memory`).
+- 2026-08-17: Resolved via live `/domain-modeling` session with the
+  maintainer.
 
 ---
 id: 4d49418c-4b64-4008-ba9e-3500ebb970c1
