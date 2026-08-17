@@ -14,7 +14,7 @@ taskId: null
 # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 18 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 19 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
@@ -53,7 +53,8 @@ Default: `ast/2`
 ├── shared (src/shared)
 ├── storage (src/storage)
 ├── ui (src/ui)
-└── e2e (test/e2e)
+├── e2e (test/e2e)
+└── . (.)
 ```
 
 ## 📦 Primary Subsystems
@@ -75,6 +76,7 @@ Default: `ast/2`
 - **storage** — `src/storage` (13 files)
 - **ui** — `src/ui` (4 files)
 - **e2e** — `test/e2e` (12 files)
+- **.** — `.` (1 file)
 
 ---
 id: e1d4e4de-a20f-2d75-c34d-9d3df1116eb7
@@ -529,3 +531,20 @@ Primary nli-polarity-ab module containing core application capabilities.
 - **`benchmarks/nli-polarity-ab/corpus.ts`** (Exports: `PolarityLabel, Pair`): Ticket 8 (neuron-2.4.2): labeled corpus for validating `cross-encoder/nli-MiniLM2-L6-H768` as the polarity signal Ticket 9 would hard-block on. Mirrors Ticket 7's near-dup-ab corpus in register and size — same topics, same seed prose lifted from this repo's own decisions/learning/tickets content — so this measures the actual domain the gate will run against. Each pair is `{ premise, hypothesis }`: `premise` mirrors an entry already live in the store, `hypothesis` mirrors a new write being evaluated against it — the same shape a real NLI call would take, layered on top of Ticket 3/6's relatedness gate (this corpus only contains pairs that would already have cleared that gate; polarity detection is never asked to separate related from unrelated, only contradiction from everything else that's already related). Two labels: - `contradiction` — hypothesis asserts a different value/fact for the same slot the premise fixed (numeric flip, policy reversal, named-value swap, direct negation). A real gate must catch these — this is Pillar 14 case 2's shape, generalized to 15 pairs. - `compatible` — hypothesis does NOT conflict with the premise. Two subtypes, both must NOT be caught: - `compatible-paraphrase` — same fact, reworded (NLI entailment). Reused verbatim from Ticket 7's near-dup-ab `CORPUS` (`nd-` label `near-dup`) — these already cleared the relatedness gate at a high bar in Ticket 7's own A/B run, so they're exactly the kind of pair polarity detection would see downstream of Ticket 6. - `compatible-related` — same topic, different non-conflicting fact (NLI neutral). Reused verbatim from Ticket 7's near-dup-ab `CORPUS` (`rd-` label `related-distinct`) — the hard negative that a vocabulary-overlap-only signal false-positives on.
 - **`benchmarks/nli-polarity-ab/run-ab-alt-models.ts`**: Ticket 13 (neuron-2.4.2): A/B tests alternative pretrained NLI cross-encoders against the exact same corpus and method Ticket 8 used (`benchmarks/nli-polarity-ab/corpus.ts`, `run-ab.ts`) to see whether a hard-block posture can be justified after all — no new corpus, no new evaluation method, only the model under test changes. Ticket 8 found `cross-encoder/nli-MiniLM2-L6-H768` (SNLI+MultiNLI only) cannot separate contradiction from compatible-related pairs at any bar, traced to an SNLI/MultiNLI annotation artifact. Per Ticket 11's resolution, this shortlist prioritizes models trained (also) on ANLI — collected specifically to counter that artifact — plus one larger SNLI/MultiNLI-only model as a control (tests whether bigger-same-data reproduces the bias or fixes it). Unlike `run-ab.ts`, this script does NOT assume a fixed id2label index order — Ticket 8's model happened to use {0: contradiction, 1: entailment, 2: neutral}, but candidates here use a different order ({0: entailment, 1: neutral, 2: contradiction}), confirmed by fetching each model's config.json before committing to this shortlist. The label index for each class is resolved per-model from its own config. Run: npx tsx benchmarks/nli-polarity-ab/run-ab-alt-models.ts
 - **`benchmarks/nli-polarity-ab/run-ab.ts`**: Ticket 8 (neuron-2.4.2): A/B validation of `cross-encoder/nli-MiniLM2-L6-H768` as the polarity signal Ticket 9 would hard-block on — does it separate "contradicts" from "compatible" (paraphrase or related-but-different) on real write-time pairs, and what confidence bar should trigger the block? Mirrors Ticket 7's measure-first discipline (`benchmarks/near-dup-ab/run-ab.ts`): one pass computes every score once, the bar sweep just re-thresholds the cached pass. `premise` = the live entry already in the store; `hypothesis` = the new write being evaluated against it — order matters for NLI (asymmetric), and this is the direction a real write-time call would make. Run: npx tsx benchmarks/nli-polarity-ab/run-ab.ts
+
+---
+id: 60a67fca-12e3-5490-0cd4-e514ee2f9a48
+createdAt: 2026-08-17T00:32:17.667Z
+importance: 5
+tags:
+  - architecture
+  - topology
+  - scan
+  - deep
+taskId: null
+---
+### 🧩 . (`.`)
+Primary . module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`vitest.config.ts`**: Root config for the main `--dir src` suite. `testTimeout`/`hookTimeout` are raised well past vitest's 5000ms default because a cold model cache (e.g. a fresh CI runner, or the first local run after `models/` is cleared) means whichever test first touches the embedder, reranker, or NLI classifier pays a real first-time ONNX download, not just inference cost — observed timing out at the 5000ms default even after `withModelCacheLock` (src/components/modelCacheLock.ts) fixed the actual corruption bug two concurrent downloads used to cause on the same race.
