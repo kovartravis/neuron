@@ -1429,3 +1429,15 @@ tags:
 taskId: null
 ---
 Resolved Ticket 9's (neuron-2.4.3) flagged gap on the 11 map-less tickets-present backlog items ('the maintainer may want a different rule' than status-only classification): grouped all 11 into one new map, Map — Codebase Cleanup & Engineering Health (id 19803cce-ad56-4774-9492-49f6f5d71f67), rather than splitting them into separate repo-hygiene and CLI-ergonomics maps. Chartered directly into tickets-future rather than tickets-present, since none of the 11 are claimed or blocking the two already-sequenced maps (Site 2.5.0, MCP Server & Setup/Onboarding Skill Split) — promote to tickets-present manually when ready to sequence. Same session also archived Map — neuron 2.4.2 and Map — neuron 2.4.3 (both fully resolved, 14 children each) from tickets-present into tickets-past via the documented delete-then-upsert pattern (docs/agents/issue-tracker.md's Archiving section), confirming tickets-present now holds only the two actively-sequenced maps.
+
+---
+id: 5d4ea5e7-dbaf-45bd-9acb-65ef9dc02009
+createdAt: 2026-08-17T11:20:50.590Z
+importance: 4
+tags:
+  - release
+  - failure-fix
+  - publish
+taskId: null
+---
+Curl-Installable Standalone Binary map's Ticket 1 resolved: chose @yao-pkg/pkg over Node SEA, nexe, and Bun build --compile for the standalone binary packaging tool. Deciding factor was cross-compilation from a single Linux CI runner across all six targets (macOS/Linux/Windows x x64/arm64) -- pkg's own docs are the only ones making an unqualified claim this works today, while Node SEA's docs explicitly mark macOS x64 as untested in Node's own CI. Bun was fastest and had the best-documented cross-compile story but was declined because it would move neuron onto Bun's runtime in production, requiring re-verification of every node:sqlite/onnxruntime-web fallback path against Bun's Node-API compatibility layer -- judged too large a bet for a packaging-tool ticket. Full research: docs/design/distribution/packaging-tool-research.md.
