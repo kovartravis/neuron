@@ -1441,3 +1441,15 @@ tags:
 taskId: null
 ---
 Curl-Installable Standalone Binary map's Ticket 1 resolved: chose @yao-pkg/pkg over Node SEA, nexe, and Bun build --compile for the standalone binary packaging tool. Deciding factor was cross-compilation from a single Linux CI runner across all six targets (macOS/Linux/Windows x x64/arm64) -- pkg's own docs are the only ones making an unqualified claim this works today, while Node SEA's docs explicitly mark macOS x64 as untested in Node's own CI. Bun was fastest and had the best-documented cross-compile story but was declined because it would move neuron onto Bun's runtime in production, requiring re-verification of every node:sqlite/onnxruntime-web fallback path against Bun's Node-API compatibility layer -- judged too large a bet for a packaging-tool ticket. Full research: docs/design/distribution/packaging-tool-research.md.
+
+---
+id: fb1d8656-09c6-4c1b-baf7-1e825e1b97b6
+createdAt: 2026-08-17T11:31:19.695Z
+importance: 4
+tags:
+  - release
+  - failure-fix
+  - publish
+taskId: null
+---
+Curl-Installable Standalone Binary map's Ticket 2 (Windows Install Convention) resolved: primary Windows install method is a PowerShell 'irm <url>/install.ps1 | iex' one-liner (Bun's wrapped powershell -c invocation shape), mirroring Deno's and Bun's own verified install.ps1 scripts — both are the closest prior-art (single-binary language/runtime CLIs distributed the same way neuron will be), and both fetched/read directly rather than assumed. rustup's downloadable-.exe pattern and ripgrep/fd's Releases-page-first convention were real alternatives found but declined — neither matches the one-paste-line UX the curl pattern already sets on macOS/Linux. Secondary: publish a winget manifest (peer-listed per Deno's posture, not headline) — Microsoft's own docs confirm winget isn't guaranteed present at first login on even supported Windows versions, and Bun's community winget package has a live unresolved PATH bug (oven-sh/bun#20868) as a concrete caution against relying on it alone. Scoop is a low-cost tertiary bucket entry; Chocolatey declined outright. Full research: docs/design/distribution/windows-install-convention-research.md. Ticket 3 (native-addon bundling) and Ticket 4 (code-signing) remain the open frontier on this map.
