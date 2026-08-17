@@ -22,6 +22,7 @@ Default: `ast/2`
 ## 🧾 Dependency Contract
 - `@anthropic-ai/sdk`
 - `@huggingface/transformers`
+- `@modelcontextprotocol/sdk`
 - `@types/better-sqlite3`
 - `@types/node`
 - `@yao-pkg/pkg`
@@ -67,7 +68,7 @@ Default: `ast/2`
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
 - **src** — `src` (13 files)
-- **commands** — `src/commands` (30 files)
+- **commands** — `src/commands` (31 files)
 - **components** — `src/components` (21 files)
 - **config** — `src/config` (11 files)
 - **e2e** — `src/e2e` (1 file)
@@ -174,10 +175,11 @@ Primary commands module containing core application capabilities.
 - **`src/commands/init.ts`** (Exports: `HarnessFidelityReport, ProtocolWriteReport, ProtocolBlockDrift, checkProtocolBlockDrift, handleInitCommand`): The three points `recallStep()`/this file's own fidelity reporting have always meant by "recall" — deliberately excludes `pre-command` (ticket 22, neuron-2.4.0). Filtering the full `LIFECYCLE_POINTS` instead would mean a harness upgraded to a neuron version that knows about `pre-command` but not yet re-`init`'d reports recall as un-wired the moment `pre-command` isn't registered, even though session-start/pre-prompt recall itself never changed — exactly the kind of self-inflicted regression the capability-map design exists to avoid. `pre-command`'s own wiring is a separate question for `execStep()` (ticket 23) to answer, not this one.
 - **`src/commands/learn.test.ts`**: Methods: describe(), join(), beforeAll(), mkdirSync().
 - **`src/commands/learn.ts`** (Exports: `handleLearnCommand`): Function handleLearnCommand (Methods: handleLearnCommand(), error(), exit(), log()).
+- **`src/commands/mcp.ts`** (Exports: `handleMcpCommand`): `neuron mcp` (ticket 4, Map — MCP Server & Setup/Onboarding Skill Split): a stdio-transport MCP server exposing the 3-tool surface ticket 1 designed — thin wrappers over the same store methods the CLI itself calls (`performMemoryAdd`, `NeuronMemory.queryGated`), never a parallel logic path. No auth/scoping layer: a local stdio server is a subprocess the client spawns directly, inheriting exactly the OS-level access of the local user running it, identical to any CLI invocation (ticket 1's own resolution).
 - **`src/commands/memory.conflict.test.ts`**: Methods: 9(), behavior(), vecAt(), Float32Array().
 - **`src/commands/memory.supersession.test.ts`**: Methods: process(), vecAt(), Float32Array(), makeMemory().
 - **`src/commands/memory.test.ts`**: A project whose config names a literal fallback category. The model is disabled under NODE_ENV=test, so the fallback is what makes the success path deterministic without loading 500M parameters.
-- **`src/commands/memory.ts`** (Exports: `WhereClause, RefsSatisfyClause, handleMemoryCommand`): `field!=value` (ticket 45) — negates the comparison instead of requiring equality.
+- **`src/commands/memory.ts`** (Exports: `MemoryAddParams, ConflictFlag, MemoryAddOutcome, performMemoryAdd, WhereClause, RefsSatisfyClause, handleMemoryCommand`): The write-time supersession gate (ticket 17 / ADR 0015) plus the ticket-9 (neuron-2.4.2) NLI conflict soft-flag and the ticket-6 (neuron-2.4.3) companion exemption — extracted from the CLI `add` branch (neuron-2.4.5 ticket 4) so the MCP `neuron_remember` tool can share this exact decision logic rather than re-implementing it against a second call site. Returns a result instead of printing/exiting so both the CLI and the MCP server can translate it to their own surface.
 - **`src/commands/scan.determinism.test.ts`**: Ticket 37 verification: the blueprint card is a deterministic artifact. Repeated real ingests never duplicate the card (making SCAN_HELP's "updates that card in place" promise true), and repeated dry-runs are byte-identical across both output formats.
 - **`src/commands/scan.fidelity.test.ts`**: The `--check` exit-code contract, which is what CI gates on: 0  clean and comparable 1  real architectural drift 2  incomparable — the baseline was produced by a different parser Code 2 is deliberately distinct from 1: failing a build for drift the user introduced is correct, and failing it because they upgraded neuron is a different problem with a different fix.
 - **`src/commands/scan.test.ts`**: Methods: describe(), join(), it(), execSync().

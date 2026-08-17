@@ -13,6 +13,7 @@ import {
   handleScanCommand,
   handleHookCommand,
   handleUpgradeCommand,
+  handleMcpCommand,
   MASTER_HELP
 } from './commands/index.js';
 import { NeuronMemory } from './index.js';
@@ -64,6 +65,10 @@ async function main() {
   if (mainCommand === 'ui') {
     const memory = NeuronMemory.open(process.cwd());
     return await handleUiCommand(args, memory);
+  }
+
+  if (mainCommand === 'mcp') {
+    return await handleMcpCommand(args);
   }
 
   // Resolve project details

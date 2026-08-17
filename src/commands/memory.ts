@@ -1,8 +1,108 @@
 import { NeuronMemory, NLI_CONTRADICTION_BAR } from '../index.js';
-import { Memory } from '../models/memory.js';
+import { Memory, MutationResult } from '../models/memory.js';
 import { parseFlags, getMemoryHelp } from './utils.js';
 import { autoRescanIfDriftDetected } from '../scanner/diff.js';
 import { collectDeclaredFieldFlags } from '../config/neuronYaml.js';
+
+export interface MemoryAddParams {
+  content: string;
+  category?: string;
+  tags?: string[];
+  importance?: number;
+  taskId?: string;
+  fields?: Record<string, string>;
+  supersedes?: string;
+  companionOf?: string;
+  notAReversal?: boolean;
+  ifNovel?: boolean;
+}
+
+export interface ConflictFlag {
+  candidateId: string;
+  category: string;
+  content: string;
+  contradictionProbability: number;
+}
+
+interface SupersessionCandidate {
+  id: string;
+  category: string;
+  content: string;
+  similarity: number;
+  rerankerScore: number;
+}
+
+export type MemoryAddOutcome =
+  | { kind: 'created'; entry: MutationResult; conflictFlag: ConflictFlag | null }
+  | { kind: 'skipped'; candidate: SupersessionCandidate }
+  | { kind: 'error'; code: 'companion-not-found' | 'supersedes-not-found'; message: string }
+  | { kind: 'error'; code: 'supersession-block'; message: string; candidate: SupersessionCandidate };
+
+/**
+ * The write-time supersession gate (ticket 17 / ADR 0015) plus the ticket-9
+ * (neuron-2.4.2) NLI conflict soft-flag and the ticket-6 (neuron-2.4.3)
+ * companion exemption — extracted from the CLI `add` branch (neuron-2.4.5
+ * ticket 4) so the MCP `neuron_remember` tool can share this exact decision
+ * logic rather than re-implementing it against a second call site. Returns a
+ * result instead of printing/exiting so both the CLI and the MCP server can
+ * translate it to their own surface.
+ */
+export async function performMemoryAdd(memory: NeuronMemory, params: MemoryAddParams): Promise<MemoryAddOutcome> {
+  const { content, category, tags, importance, taskId, fields, supersedes, companionOf, notAReversal, ifNovel } = params;
+
+  let supersedesTarget: Awaited<ReturnType<typeof memory.findById>> = null;
+  let conflictFlag: ConflictFlag | null = null;
+
+  if (companionOf) {
+    const companionTarget = await memory.findById(companionOf);
+    if (!companionTarget) {
+      return { kind: 'error', code: 'companion-not-found', message: `--companion-of target "${companionOf}" not found` };
+    }
+  }
+  if (supersedes) {
+    supersedesTarget = await memory.findById(supersedes);
+    if (!supersedesTarget) {
+      return { kind: 'error', code: 'supersedes-not-found', message: `--supersedes target "${supersedes}" not found` };
+    }
+  } else if (!notAReversal) {
+    const candidate = await memory.findSupersessionCandidate(content);
+    if (candidate && companionOf && candidate.id === companionOf) {
+      // Falls through to the plain write below: no supersede, no flag.
+    } else if (candidate) {
+      const contradictionProbability = await memory.classifyPolarity(candidate.content, content);
+      if (contradictionProbability >= NLI_CONTRADICTION_BAR) {
+        conflictFlag = {
+          candidateId: candidate.id,
+          category: candidate.category,
+          content: candidate.content,
+          contradictionProbability,
+        };
+      } else if (ifNovel) {
+        return { kind: 'skipped', candidate };
+      } else {
+        return { kind: 'error', code: 'supersession-block', message: 'this write looks like it may supersede an existing entry', candidate };
+      }
+    }
+  }
+
+  const res = await memory.transact([
+    { op: 'upsert', category, content, tags, importance, taskId, fields },
+  ]);
+
+  if (supersedesTarget) {
+    await memory.transact([
+      {
+        op: 'update',
+        category: supersedesTarget.category,
+        id: supersedesTarget.id,
+        supersededBy: res[0].id,
+        supersededAt: new Date().toISOString(),
+      },
+    ]);
+  }
+
+  return { kind: 'created', entry: res[0], conflictFlag };
+}
 
 // `list` returns at most 20 entries by default and the SQL/markdown read path
 // already loads every matching row before slicing to the caller's limit (see
@@ -184,127 +284,75 @@ export async function handleMemoryCommand(
       process.exit(1);
     }
 
-    // Ticket 17 / ADR 0015: the write-time supersession gate. `--supersedes`
-    // resolves it by naming the reversal target directly; `--not-a-reversal`
-    // resolves it by confirming the near-duplicate is not one. Either skips
-    // the embedding-similarity shortlist below. The target is validated
-    // *before* the new entry is written, so a bad `--supersedes` id fails
-    // clean rather than leaving an orphaned new entry with no old one marked.
-    let supersedesTarget: Awaited<ReturnType<typeof memory.findById>> = null;
+    const outcome = await performMemoryAdd(memory, {
+      content,
+      category,
+      tags: options.tags,
+      importance: options.importance,
+      taskId: options.taskId,
+      fields: options.fields,
+      supersedes: options.supersedes,
+      companionOf: options.companionOf,
+      notAReversal: options.notAReversal,
+      ifNovel: options.ifNovel,
+    });
+
+    if (outcome.kind === 'error') {
+      if (outcome.code === 'supersession-block') {
+        const { candidate } = outcome;
+        console.error(
+          `Error: this write looks like it may supersede an existing entry ` +
+            `(reranker score ${candidate.rerankerScore.toFixed(3)}, cosine ${candidate.similarity.toFixed(3)}):`
+        );
+        console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
+        console.error(`  If this is a reversal, re-run with --supersedes ${candidate.id}`);
+        console.error(`  If it is not, re-run with --not-a-reversal`);
+        console.error(`  If this is a non-interactive/scheduled writer, re-run with --if-novel`);
+      } else {
+        console.error(`Error: ${outcome.message}`);
+      }
+      process.exit(1);
+      return;
+    }
+
+    if (outcome.kind === 'skipped') {
+      // Ticket 19: `--if-novel` is the non-interactive resolution for
+      // scheduled/cron callers that cannot answer this gate by hand. It
+      // skips the write (job succeeds) rather than hard-erroring, but
+      // never silently — a silent skip would mask real duplicate-
+      // prevention failures the same way an unmonitored sessionsObserved
+      // counter would (ticket 21's own concern). Exit 0, not a plain
+      // console.log, so the skip is visible in stderr even when the
+      // caller only captures stdout.
+      const { candidate } = outcome;
+      console.error(
+        `[neuron] skipped: this write looks like it may supersede an existing entry ` +
+          `(reranker score ${candidate.rerankerScore.toFixed(3)}, cosine ${candidate.similarity.toFixed(3)}), and --if-novel was set:`
+      );
+      console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
+      console.log(JSON.stringify({
+        skipped: true,
+        reason: 'supersession-candidate',
+        candidateId: candidate.id,
+        similarity: candidate.similarity,
+        rerankerScore: candidate.rerankerScore,
+      }));
+      process.exit(0);
+      return;
+    }
+
     // Ticket 9 / ADR (neuron-2.4.2): a non-blocking pointer printed alongside
-    // the normal write result when the near-dup candidate below turns out,
-    // per NLI, to look like a contradiction rather than a restatement —
-    // never persisted (the map's own non-goals rule out a new workflow-state
-    // field), just an inline warning on this one CLI call.
-    let conflictFlag: { candidateId: string; category: string; content: string; contradictionProbability: number } | null = null;
-    // Ticket 6 (neuron-2.4.3): validated up front, same as --supersedes,
-    // so a bad --companion-of id fails clean before any write happens.
-    if (options.companionOf) {
-      const companionTarget = await memory.findById(options.companionOf);
-      if (!companionTarget) {
-        console.error(`Error: --companion-of target "${options.companionOf}" not found`);
-        process.exit(1);
-      }
+    // the normal write result when the near-dup candidate turns out, per
+    // NLI, to look like a contradiction rather than a restatement — never
+    // persisted, just an inline warning on this one CLI call.
+    if (outcome.conflictFlag) {
+      console.error(
+        `[neuron] possible conflict: this write may contradict an existing entry ` +
+          `(P(contradiction) ${outcome.conflictFlag.contradictionProbability.toFixed(3)}) — proceeding, not blocked:`
+      );
+      console.error(`  [${outcome.conflictFlag.candidateId}] (${outcome.conflictFlag.category}) ${outcome.conflictFlag.content}`);
     }
-    if (options.supersedes) {
-      supersedesTarget = await memory.findById(options.supersedes);
-      if (!supersedesTarget) {
-        console.error(`Error: --supersedes target "${options.supersedes}" not found`);
-        process.exit(1);
-      }
-    } else if (!options.notAReversal) {
-      const candidate = await memory.findSupersessionCandidate(content);
-      // Ticket 6 (neuron-2.4.3): a deliberate, named exemption — only skips
-      // the gate when the candidate the gate itself found IS the declared
-      // companion, never a blanket bypass for any candidate.
-      if (candidate && options.companionOf && candidate.id === options.companionOf) {
-        // Falls through to the plain write below: no supersede, no flag.
-      } else if (candidate) {
-        // Ticket 9 (neuron-2.4.2): before treating this as a possible
-        // restatement/reversal, ask whether it actually looks like a
-        // contradiction instead — Ticket 8/13 found the NLI signal can't
-        // support a hard-block posture (no bar reaches low false-silence
-        // and low false-accept against compatible-related pairs
-        // simultaneously), so a bar crossing here downgrades the outcome to
-        // a soft-flag: the write proceeds normally, with a pointer to the
-        // entry it may conflict with, instead of joining the
-        // --supersedes/--not-a-reversal/--if-novel refusal flow below.
-        const contradictionProbability = await memory.classifyPolarity(candidate.content, content);
-        if (contradictionProbability >= NLI_CONTRADICTION_BAR) {
-          conflictFlag = {
-            candidateId: candidate.id,
-            category: candidate.category,
-            content: candidate.content,
-            contradictionProbability,
-          };
-          console.error(
-            `[neuron] possible conflict: this write may contradict an existing entry ` +
-              `(P(contradiction) ${contradictionProbability.toFixed(3)}) — proceeding, not blocked:`
-          );
-          console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
-        } else {
-          // Ticket 19: `--if-novel` is the non-interactive resolution for
-          // scheduled/cron callers that cannot answer this gate by hand. It
-          // skips the write (job succeeds) rather than hard-erroring, but
-          // never silently — a silent skip would mask real duplicate-
-          // prevention failures the same way an unmonitored sessionsObserved
-          // counter would (ticket 21's own concern). Exit 0, not a plain
-          // console.log, so the skip is visible in stderr even when the
-          // caller only captures stdout.
-          if (options.ifNovel) {
-            console.error(
-              `[neuron] skipped: this write looks like it may supersede an existing entry ` +
-                `(reranker score ${candidate.rerankerScore.toFixed(3)}, cosine ${candidate.similarity.toFixed(3)}), and --if-novel was set:`
-            );
-            console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
-            console.log(JSON.stringify({
-              skipped: true,
-              reason: 'supersession-candidate',
-              candidateId: candidate.id,
-              similarity: candidate.similarity,
-              rerankerScore: candidate.rerankerScore,
-            }));
-            process.exit(0);
-            return;
-          }
-          console.error(
-            `Error: this write looks like it may supersede an existing entry ` +
-              `(reranker score ${candidate.rerankerScore.toFixed(3)}, cosine ${candidate.similarity.toFixed(3)}):`
-          );
-          console.error(`  [${candidate.id}] (${candidate.category}) ${candidate.content}`);
-          console.error(`  If this is a reversal, re-run with --supersedes ${candidate.id}`);
-          console.error(`  If it is not, re-run with --not-a-reversal`);
-          console.error(`  If this is a non-interactive/scheduled writer, re-run with --if-novel`);
-          process.exit(1);
-        }
-      }
-    }
-
-    const res = await memory.transact([
-      {
-        op: 'upsert',
-        category,
-        content,
-        tags: options.tags,
-        importance: options.importance,
-        taskId: options.taskId,
-        fields: options.fields,
-      },
-    ]);
-
-    if (supersedesTarget) {
-      await memory.transact([
-        {
-          op: 'update',
-          category: supersedesTarget.category,
-          id: supersedesTarget.id,
-          supersededBy: res[0].id,
-          supersededAt: new Date().toISOString(),
-        },
-      ]);
-    }
-
-    console.log(JSON.stringify(conflictFlag ? { ...res[0], possibleConflict: conflictFlag } : res[0]));
+    console.log(JSON.stringify(outcome.conflictFlag ? { ...outcome.entry, possibleConflict: outcome.conflictFlag } : outcome.entry));
   } else if (subCommand === 'query') {
     // A read harms nothing and retrying is free, so an unquoted query is joined
     // rather than refused — the write path is the one that must be strict.

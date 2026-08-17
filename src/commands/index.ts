@@ -10,5 +10,6 @@ export * from './feedback.js';
 export * from './scan.js';
 export * from './hook.js';
 export * from './upgrade.js';
+export * from './mcp.js';
 
 

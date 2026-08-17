@@ -374,6 +374,44 @@ Launches the local web dashboard.
 
 ---
 
+## `neuron mcp`
+
+Runs an MCP server over the standard stdio transport, built on the official
+`@modelcontextprotocol/sdk`. Additive to the deterministic hook model above
+— for editors with no per-turn hook point (Cursor, Windsurf, Zed, Claude
+Desktop, Roo Code) — and available unconditionally to every client,
+including Claude Code/Codex CLI.
+
+Exposes three tools, each a thin wrapper over the same store methods the CLI
+itself calls (`memory add`'s write-time supersession gate, `memory
+query`'s relevance-gated search, `exec`'s pre-command lookup) — no parallel
+logic path:
+
+| Tool | Wraps | Input |
+|---|---|---|
+| `neuron_remember` | `memory add` | `content` (required), `category`, `importance` (1-5, default 3 — not inferred), `supersedes`, `companion_of`. No `tags` (server-inferred only) |
+| `neuron_recall` | `memory query` | `query` (required), `categories`. Returns `{ results, rejected }` |
+| `neuron_query_exec` | `exec`'s pre-command lookup | `command_text` (required). Lookup only — never spawns the command |
+
+No auth/scoping: a local stdio server is a subprocess your editor spawns
+directly, inheriting exactly the OS-level access any CLI invocation already
+has — no sandboxing layer exists in the MCP protocol itself.
+
+Client config (no separate binary, no new `bin` entry):
+
+```json
+{
+  "mcpServers": {
+    "neuron": {
+      "command": "npx",
+      "args": ["-y", "@kovartravis/neuron", "mcp"]
+    }
+  }
+}
+```
+
+---
+
 ## `neuron feedback [message]`
 
 Generates pre-filled GitHub issue links.
