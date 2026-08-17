@@ -904,6 +904,13 @@ and content tickets have what they need from this map to proceed.
   issue tracker + architecture blueprint — that combination, and
   "architecture linter for AI agents," are open. Feeds Ticket 2 and
   Ticket 6.
+- [2 — Information Architecture & URL/Citability Conventions](4b5c1114-812d-4533-a992-7bebb4ca3ec1) — flat
+  single-segment `/docs/` slugs, one concept per page, strict H1-title/
+  H2-only headings (docs-only), Q&A blocks scoped to high-intent pages
+  only, self-contained-quotability as a hard rule (carries to homepage),
+  and permanent slugs (restructure via new pages, not renames). Grilled
+  live with the maintainer. Feeds Site (2.5.0)'s Ticket 3 (Docs IA) and
+  informs Ticket 6.
 
 ## Not yet specified
 
@@ -1016,7 +1023,7 @@ taskId: null
 blockedBy: 1cca44ce-a2c7-4bae-9aed-c42b96ab2cee
 kind: grilling
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 2 — Information Architecture & URL/Citability Conventions
 
@@ -1035,6 +1042,65 @@ Architecture) needs before it can commit to a real IA — building docs IA
 twice (once naively, once GEO-aware) is exactly the rework this map exists
 to prevent. Informed by Ticket 1's search-intent findings. Blocks Site
 (2.5.0)'s Ticket 3.
+
+## Answer
+
+Grilled live with the maintainer. Seven conventions, settled:
+
+1. **URL structure**: flat, single-segment slugs off `/docs/`
+   (e.g. `/docs/wayfinder`, `/docs/how-it-works-hybrid-search`) — no
+   nested URL segments, even if Starlight's source content is organized
+   into folders. Shorter, more stable, and a citation doesn't depend on
+   knowing the site's nav to make sense.
+
+2. **Page granularity**: one concept per page. Each "How It Works" topic
+   (hybrid search/RRF, write-side enrichment, declared field schema,
+   storage adapters) gets its own page/slug rather than being grouped —
+   lets each compete for its own query and gives an AI engine a single
+   focused URL to attribute a quote to, rather than a grab-bag page.
+
+3. **Heading hierarchy** (docs pages only, see point 7): strict H1
+   (declarative page title, stating the concept as a claim — e.g. "Hybrid
+   Search & RRF Ranking," not "Overview") / H2-only subsections, no H3+
+   nesting. A page needing H3-deep structure is a signal it should be
+   split into more pages (point 2), not a case for relaxing this.
+
+4. **FAQ/Q&A blocks**: scoped, not boilerplate. Only on high-intent pages
+   — homepage, Getting Started, CLI Reference, and a dedicated
+   alternatives/comparison page (per Ticket 1's finding that
+   comparison/"alternatives" query intent is the open, winnable space).
+   This is content-placement convention only; the actual `FAQPage`
+   JSON-LD markup is Ticket 3 on this map's call (Structured Data &
+   Schema.org Strategy), not this ticket's.
+
+5. **Self-contained quotability** (hard rule, carries to homepage — see
+   point 7): every H2 section (or homepage section) must stand alone —
+   define its own terms, no "as mentioned above," no pronoun references
+   to prior sections. An AI engine extracting one section has no access
+   to what came before it on the page, so a section that leans on prior
+   context risks being quoted wrong. Accept light repetition (e.g.
+   restating "neuron" instead of "it") as the cost of this — Ticket 6
+   should treat it as settled, not relitigate it as a prose nitpick.
+
+6. **URL stability**: slugs are permanent once published. Restructuring
+   means adding a new page (new slug) and, if needed, marking the old one
+   deprecated with a pointer forward — not renaming or moving an existing
+   URL out from under a citation an AI engine may have already indexed.
+   Redirect/canonical tag mechanics themselves belong to Ticket 4
+   (Sitemap, Robots.txt & Canonical URL Setup) on this map.
+
+7. **Scope — docs vs. homepage**: points 1-3 (URL structure, page
+   granularity, heading cap) are docs-only — the homepage is a single
+   page whose visual layout is Site (2.5.0)'s Ticket 4's own `/prototype`
+   call, not constrained by a docs-oriented structural rule. Points 4-5
+   (Q&A block placement, self-contained quotability) are citability rules
+   and carry over to the homepage too.
+
+**Feeds forward**: Site (2.5.0)'s Ticket 3 (Docs Information Architecture)
+can now build the real page list/nav against these conventions instead of
+deciding them ad hoc. Ticket 6 (Content-Authoring Guidelines) should adopt
+point 5 (self-contained quotability) as settled house style rather than
+re-deciding it.
 
 ---
 id: 3e0edd28-4651-4fc8-897f-5f44dad8b294
