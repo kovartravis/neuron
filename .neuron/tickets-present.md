@@ -1312,3 +1312,344 @@ periodic manual prompt-and-check routine (ask each engine neuron's target
 queries, log whether/how it's cited). Decide the approach now so it's ready
 to run the moment the site ships, rather than improvised later. Doesn't
 block anything else in this map — can resolve any time.
+
+---
+id: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+createdAt: 2026-08-17T10:43:28.209Z
+importance: 4
+tags:
+  - planning
+  - distribution
+  - install
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — Curl-Installable Standalone Binary
+
+## Destination
+
+`curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh
+| sh` installs a real, no-Node-required `neuron` executable — built for
+macOS + Linux (x64/arm64) and Windows (x64/arm64), released as GitHub
+Release assets in the same `publish.yml` run that publishes to npm, same
+version number. `npm install -g @kovartravis/neuron` stays fully supported
+alongside it — this is additive, not a replacement. Reached when the curl
+command works end-to-end on every target platform, `neuron upgrade`
+self-updates the binary, and the README documents both install paths.
+
+## Notes
+
+- **Chartered 2026-08-17**, at the maintainer's request, to give neuron a
+  curl-installable distribution path alongside the existing npm package.
+- **Settled during chartering** (pre-ticket scoping calls, not tickets):
+  - **npm stays** — additive, not a replacement. A full npm-to-binary
+    migration was considered and declined as a much larger destination
+    than this effort needs.
+  - **Install URL is a raw GitHub URL**
+    (`raw.githubusercontent.com/kovartravis/neuron/main/install.sh`), not
+    site-hosted — so this map has **no dependency** on Map — neuron.github.io
+    Site (2.5.0). A nicer front-end URL can be layered on later without
+    changing the mechanism.
+  - **This map carries execution**, per the wayfinder skill's own override
+    clause — same posture as the other three active maps. Tickets ship a
+    working binary + install script, not just a spec.
+  - **Platform matrix**: macOS + Linux + Windows, x64 + arm64 — full matrix
+    at launch, not a phased rollout.
+  - **Release cadence**: binaries build and publish in the same
+    `.github/workflows/publish.yml` run as the npm publish, same version
+    number — no separate release cadence, no drift between install paths.
+  - **Key feasibility fact, found during chartering**: both of neuron's
+    native deps already have pure-JS/WASM fallback paths —
+    `better-sqlite3` falls back to the built-in `node:sqlite` in
+    `src/db.ts`'s `openDatabase`/`createNodeSqliteWrapper`, and
+    `onnxruntime-node` falls back to `onnxruntime-web` (WASM) in
+    `src/components/embedder.ts`. ML model weights also aren't bundled —
+    they download lazily into a user-level cache dir via `env-paths`
+    (`env.cacheDir`) on first use, same as today. So a single portable
+    binary doesn't strictly require per-platform native addons or embedded
+    model weights; Ticket 3 decides whether to bundle native addons anyway
+    for performance.
+  - **Code signing**: no Apple Developer account or Windows signing cert
+    currently available (maintainer confirmed no/unknown at chartering).
+    Treated as an open ticket (4), not assumed solved — unsigned binaries
+    trip Gatekeeper/SmartScreen warnings until/unless resolved.
+  - **Windows install UX**: maintainer wants this benchmarked against what
+    comparable CLIs actually do (winget was named specifically) rather than
+    assumed to be a straight PowerShell port of the curl pattern — Ticket 2
+    is a real research ticket, not a rubber-stamp.
+- **Skills to consult**: `/research` for Tickets 1 and 2 (packaging tool,
+  Windows convention survey); `/grilling` for Tickets 3 and 4 (binary
+  composition, code-signing tradeoff).
+
+## Decisions so far
+
+## Not yet specified
+
+- Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
+  should feature the curl command once it exists — fog until this map has
+  a real, working install command to link; not this map's own concern to
+  ticket.
+- Supply-chain trust beyond SHA256 checksums (e.g. Sigstore/cosign signing
+  of the checksums file) — not sharp enough to ticket until Ticket 4's
+  code-signing decision lands and there's a real threat model to react to.
+
+## Out of scope
+
+- **Dropping the npm install path** — npm stays fully supported;
+  considered and declined at chartering (see Notes). Revisiting this would
+  be a fresh scoping decision, not a resumption of this map.
+
+---
+id: 143a05c6-41b4-40fd-a448-045c1538637e
+createdAt: 2026-08-17T10:43:51.213Z
+importance: 4
+tags:
+  - architecture
+  - release
+  - publish
+taskId: null
+kind: research
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Which packaging tool should build neuron's standalone binary — Node's
+built-in Single Executable Application (SEA) support, `pkg`, `nexe`, or
+Bun's `bun build --compile`?
+
+Given the map's chartering fact that both native deps (`better-sqlite3`,
+`onnxruntime-node`) already have pure-JS/WASM fallbacks (`src/db.ts`,
+`src/components/embedder.ts`), and ML model weights download lazily at
+runtime rather than bundling — does the chosen tool need to support native
+addons at all, or can this ship as a WASM-only, pure-JS bundle for maximum
+portability? Compare: maintenance status, native-addon support (in case
+Ticket 3 decides to bundle them anyway), cross-compilation story (can a
+Linux CI runner produce a macOS/Windows binary, or does it need matching
+runners per target), resulting binary size, and startup time versus the
+current `node dist/cli.js` invocation.
+
+Feeds nearly every other ticket on this map — the packaging tool choice
+constrains what's possible for binary composition (Ticket 3), the CI build
+matrix (Ticket 5), and code-signing mechanics (Ticket 4).
+
+---
+id: 81577dba-f63f-4548-bebe-d99311608c4c
+createdAt: 2026-08-17T10:43:51.773Z
+importance: 4
+tags:
+  - testing
+  - exec
+  - failure-fix
+taskId: null
+kind: research
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+What's the right one-command install convention for Windows users?
+
+`curl | sh` has no real equivalent tradition on Windows. Survey what
+comparable dev-tool CLIs actually ship: Deno, Bun, and rustup use a
+PowerShell `irm https://.../install.ps1 | iex` pattern; ripgrep, fd, and
+many Rust-ecosystem tools also publish to `winget` and/or `scoop`;
+some projects offer more than one of these simultaneously. The maintainer
+specifically flagged winget as something they've seen used — this ticket
+should come back with a concrete recommendation (one primary method, maybe
+a secondary) rather than assuming the PowerShell port is automatically
+right.
+
+Feeds Ticket 7 (ship the Windows install path).
+
+---
+id: f561802a-c31d-4f66-802c-fe47acf7d170
+createdAt: 2026-08-17T10:43:52.337Z
+importance: 4
+tags:
+  - sqlite
+  - architecture
+  - termux
+taskId: null
+blockedBy: 143a05c6-41b4-40fd-a448-045c1538637e
+kind: grilling
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Should the standalone binary bundle native addons (`better-sqlite3`,
+`onnxruntime-node`) per platform/arch for performance, or ship a single
+WASM-only build (using the existing `node:sqlite` and `onnxruntime-web`
+fallback paths) for simplicity and true cross-platform portability across
+all 6 targets (macOS/Linux/Windows × x64/arm64)?
+
+Grill the tradeoff: bundling native addons means 6 separate binary builds
+with platform-specific native modules staged alongside the SEA/compiled
+executable (exact mechanics depend on Ticket 1's packaging tool answer) and
+a real perf difference (better-sqlite3 and onnxruntime-node are both
+meaningfully faster than their WASM counterparts); WASM-only means one
+build recipe reused 6 ways, simpler CI, smaller surface for Ticket 5, at
+some runtime performance cost users on the npm path don't pay today.
+
+---
+id: 9cbc685c-807e-4f69-b599-c39d5d011824
+createdAt: 2026-08-17T10:43:52.875Z
+importance: 4
+tags:
+  - db-schema
+  - architecture
+  - failure-fix
+taskId: null
+kind: grilling
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Pursue macOS notarization + Windows Authenticode signing now, or ship
+unsigned at launch and accept the Gatekeeper/SmartScreen warning?
+
+No Apple Developer account or Windows signing cert currently exists
+(confirmed at chartering). Grill the real tradeoff: an Apple Developer
+account is $99/year plus a notarization pipeline step; Windows Authenticode
+certs have their own cost and acquisition process. Shipping unsigned means
+users see a scary first-run warning (and on macOS, an extra
+right-click-Open or `xattr -d com.apple.quarantine` step) — weigh that
+friction against the cost/effort of signing, and decide whether this
+blocks launch or is an accepted-tradeoff-for-now with a follow-up path.
+
+---
+id: 1f3592a2-1032-4295-b3dc-405d05a63fe8
+createdAt: 2026-08-17T10:44:12.890Z
+importance: 4
+tags:
+  - npm
+  - git
+  - release
+taskId: null
+blockedBy: 143a05c6-41b4-40fd-a448-045c1538637e,f561802a-c31d-4f66-802c-fe47acf7d170
+kind: task
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Extend `.github/workflows/publish.yml` so the `publish` job also builds
+the standalone binary for every target platform/arch (macOS/Linux/Windows ×
+x64/arm64), using Ticket 1's packaging tool and Ticket 3's bundling
+decision, attaches each as a GitHub Release asset alongside the existing
+npm publish step, and generates a `SHA256SUMS` file covering all of them
+for the install scripts (Tickets 6, 7) to verify against.
+
+Must stay inside the same run as the existing npm publish job so both
+install paths ship the exact same version with no drift — the map's
+chartering note on release cadence. Reuses the existing version/dist-tag
+resolution logic already in the workflow (only `latest`-tagged releases
+get binaries, matching how `rc` prereleases already skip real npm
+promotion, unless Ticket 1/3 surface a reason to diverge).
+
+---
+id: 8d843d50-a002-4f95-aa87-bae23db12535
+createdAt: 2026-08-17T10:44:13.447Z
+importance: 4
+tags:
+  - failure-fix
+  - publish
+  - release
+taskId: null
+blockedBy: 1f3592a2-1032-4295-b3dc-405d05a63fe8
+kind: task
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Write and ship `install.sh` at the repo root: detects OS (macOS/Linux)
+and arch (x64/arm64), downloads the matching GitHub Release binary asset,
+verifies it against `SHA256SUMS` (Ticket 5), installs it to a directory on
+$PATH (with a sane default and a way to override it), and `chmod +x`s it.
+
+This is the script `curl -fsSL
+https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`
+runs. Fail loudly and exit non-zero on checksum mismatch — never install an
+unverified binary. Print a clear next-step message on success (e.g. `neuron
+--version` to confirm).
+
+---
+id: c1680372-4dc8-4502-9b98-d86b31cbe007
+createdAt: 2026-08-17T10:44:13.938Z
+importance: 4
+tags:
+  - release
+  - failure-fix
+  - db-schema
+taskId: null
+blockedBy: 81577dba-f63f-4548-bebe-d99311608c4c,1f3592a2-1032-4295-b3dc-405d05a63fe8
+kind: task
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Ship the Windows install path per whatever Ticket 2's research
+recommends — a PowerShell `install.ps1` (`irm ... | iex`), a winget
+manifest submission, a scoop bucket, or some combination.
+
+Reuse Ticket 6's checksum-verification discipline regardless of mechanism —
+never install an unverified binary on Windows either.
+
+---
+id: 33f6a40c-9a1e-432f-aeb4-325bc672be5f
+createdAt: 2026-08-17T10:44:14.451Z
+importance: 4
+tags:
+  - publish
+  - release
+  - git
+taskId: null
+blockedBy: 1f3592a2-1032-4295-b3dc-405d05a63fe8,8d843d50-a002-4f95-aa87-bae23db12535
+kind: task
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Implement a `neuron upgrade` command for the standalone binary: checks
+GitHub Releases for a version newer than the running binary, downloads the
+matching platform/arch asset, verifies its checksum (reusing Ticket 6's
+verification logic rather than re-implementing it), and atomically replaces
+the currently-running executable.
+
+Binary-only — this command doesn't need to (and shouldn't try to) handle
+upgrading an npm-installed `neuron`; `npm install -g` already owns that
+path. Consider what happens if replacing the running binary fails
+mid-swap (e.g. permissions) — should leave the old binary working, never a
+half-replaced broken state.
+
+---
+id: f35a2408-6091-415d-ac5e-422d62a154e2
+createdAt: 2026-08-17T10:44:43.202Z
+importance: 4
+tags:
+  - publish
+  - release
+  - npm
+taskId: null
+blockedBy: 8d843d50-a002-4f95-aa87-bae23db12535,c1680372-4dc8-4502-9b98-d86b31cbe007
+kind: task
+map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
+status: unclaimed
+---
+## Question
+
+Update README.md's install section to document both install paths side by
+side: the existing `npm install -g @kovartravis/neuron`, and the new
+`curl -fsSL
+https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`
+(plus whatever Ticket 7 shipped for Windows).
+
+Make clear neither is more "official" than the other per the map's
+chartering decision that npm stays fully supported — this is an additive
+second path, not a deprecation notice for the first.
