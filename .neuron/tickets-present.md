@@ -532,7 +532,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: claimed
 ---
 # 1 — Design MCP Tool Surface & Packaging
 
@@ -577,8 +577,7 @@ _Not yet resolved._
 ## Comments
 
 - 2026-08-15: Created while chartering Map — MCP Server & Setup/Onboarding
-  Skill Split, itself spun out of a maintainer-submitted growth/
-  positioning-strategy review. Blocks Ticket 4 (implementation).
+  Skill Split. Blocks Ticket 4 (implementation).
 
 ---
 id: f075521d-16fc-4873-a27c-0e96eb73727e
