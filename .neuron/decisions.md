@@ -1489,3 +1489,15 @@ tags:
 taskId: null
 ---
 Curl-Installable Standalone Binary map's Ticket 6 (Write and Ship install.sh) resolved: shipped a POSIX sh script at the repo root that detects OS/arch via uname, resolves the latest GitHub Release tag via the API, downloads the matching asset plus SHA256SUMS, and hard-fails (non-zero exit, nothing written to disk) on any missing or mismatched checksum entry -- never installs an unverified binary. Installs to $HOME/.neuron/bin by default, overridable via NEURON_INSTALL, deliberately mirroring Bun's BUN_INSTALL/Deno's DENO_INSTALL own-directory convention rather than inventing a new one, consistent with Ticket 2's research into what comparable single-binary CLIs already do. Verified end-to-end (happy path, checksum-mismatch rejection, PATH-already-set) against a local mock GitHub-release server built with python3 -m http.server, since no real GitHub Release carrying Ticket 5's asset names has been cut yet -- the shipped script itself needed no test-only branches; only an env-substituted copy pointed at localhost was used for the test runs. Windows is explicitly out of scope for this script and its own error message points at Ticket 7/install.ps1 for an unsupported OS. Unblocks Ticket 8 (neuron upgrade) and Ticket 9 (README install-path docs), both already specified on the map and now the frontier.
+
+---
+id: 6893fcb9-327f-4f7c-a39c-7b8395666fc5
+createdAt: 2026-08-17T15:16:22.220Z
+importance: 4
+tags:
+  - publish
+  - release
+  - 2.2.0
+taskId: c1680372-4dc8-4502-9b98-d86b31cbe007
+---
+Curl-Installable Standalone Binary map's Ticket 7 (Ship the Windows Install Path) resolved: shipped install.ps1 at the repo root, mirroring Deno/Bun's own irm | iex script mechanics per Ticket 2's research -- real-arch detection via RuntimeInformation.OSArchitecture (correct under x64-on-ARM64 emulation, no registry read needed), install to NEURON_INSTALL/%USERPROFILE%\.neuron\bin, user-scope PATH via .NET SetEnvironmentVariable. Verified Ticket 5's CI matrix actually ships a raw .exe per target, not the zip the research doc assumed by analogy before a real build existed, so the script downloads and installs that file directly. Reuses Ticket 6's SHA256SUMS-or-refuse discipline against the same checksums file. Winget (secondary) and Scoop (tertiary) manifests drafted as templates under packaging/ rather than filed for real: both need a real cut release to pin a version/URL/SHA256, and winget specifically means a PR against the external microsoft/winget-pkgs repo, not fabricated against placeholder data -- same accepted-follow-up posture Ticket 4 (unsigned binaries) and Ticket 5 (WASM-only ONNX) already set on this map. Full record: docs/design/distribution/windows-install-path.md. Unblocks Ticket 9 (README install-path docs) alongside Ticket 6.
