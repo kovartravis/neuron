@@ -100,14 +100,20 @@ something unshipped.
 
 ## Decisions so far
 
+- [1 — Design MCP Tool Surface & Packaging](c338bfbb-40e9-420d-8a54-8d06e2fc2a3f) —
+  narrow 3-tool surface (`neuron_remember`, `neuron_recall`,
+  `neuron_query_exec`, thin wrappers over `memory add`/`query` and the
+  `exec` pre-command lookup; lookup-only, no shell execution), packaged as
+  a new `neuron mcp` subcommand on the existing `cli.ts` dispatch built on
+  the official `@modelcontextprotocol/sdk`. No extra auth/scoping —
+  inherits local-user process access, same as any CLI invocation. No
+  client-config-writing in `neuron init` (deferred to Ticket 3/the new
+  setup skill). Available unconditionally to every client, including
+  Claude Code/Codex CLI, with no steering-away from the existing hook
+  path. Grilled live with the maintainer. Feeds Ticket 4 (implementation).
+
 ## Not yet specified
 
-- **Whether MCP server auth/scoping needs anything beyond "local process,
-  full store access."** Every current CLI invocation already has that
-  same access running as the local user, so a same-machine MCP server
-  arguably needs no additional gate — but this hasn't been checked against
-  how MCP clients typically sandbox tool permissions. Not sharp enough to
-  ticket until Ticket 1's design pass gets there.
 - **Whether the first-time-setup skill also absorbs `neuron scan`'s
   initial configuration** (currently split across `neuron-memory"'s §7
   and `neuron init`) — likely, but Ticket 3 decides the exact boundary
@@ -532,7 +538,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: claimed
+status: resolved
 ---
 # 1 — Design MCP Tool Surface & Packaging
 
@@ -572,12 +578,77 @@ lookup) — reuse, not reimplementation — built on the official
 
 ## Answer
 
-_Not yet resolved._
+Grilled live with the maintainer. Settled:
+
+**Tool surface — narrow, 3 tools** (not a 1:1 CLI mirror; `get`/`update`/
+`delete`/`list` deliberately left off as maintainer-terminal concerns, not
+things a calling model should improvise mid-conversation):
+
+1. **`neuron_remember`** (→ `memory add`): `content` (required), `category`
+   (optional, inferred by write-side enrichment if omitted), `importance`
+   (optional, default 3 — enrichment does NOT infer this, unlike
+   tags/category, so a model that can't set it has no way to mark
+   something prune-worthy of keeping), `supersedes` (optional id),
+   `companion_of` (optional id). No `tags` (server-inferred only, per this
+   repo's own CLAUDE.md rule that hand-written tags widen the vocabulary
+   instead of converging it — never expose as a model-settable param). No
+   `task_id` (write-only field, confirmed no cross-tool/filter use in
+   `query`).
+2. **`neuron_recall`** (→ `memory query`): `query` (required text),
+   `categories` (optional filter — worth exposing since scoping a read to
+   a known category, e.g. "check `decisions`", is a normal low-risk model
+   judgment call, unlike the write-side params). `limit` and
+   `include_superseded` stay server-defaulted, not exposed. Output passes
+   `{results, rejected}` through as-is — `rejected` matters (ADR 0012):
+   tells the model "gate rejected N candidates" vs. an empty store.
+3. **`neuron_query_exec`** (→ `exec.ts`'s pre-command lookup):
+   `command_text` (required) only — routes through the existing
+   `resolveExecCategories`/`pullRules` automatic category matching, no
+   manual override param. **Lookup only — does not spawn/run the shell
+   command.** Execution stays with the MCP client's own tooling; this tool
+   exists purely to surface "here's what neuron knows," matching `exec.ts`'s
+   own relevant-learnings-to-stderr behavior minus the spawn.
+
+**Packaging**: `neuron mcp` as a new subcommand in `cli.ts`'s existing flat
+dispatch chain (same pattern as `exec`/`status`/`hook`/`ui`), built on the
+official `@modelcontextprotocol/sdk` (new dependency — not currently in
+`package.json`) over the standard stdio transport. No separate binary, no
+new `bin` entry.
+
+**Out of scope for this ticket**: `neuron init` offering to write the
+client-side `mcpServers` config stanza. Explicit follow-on — natural fit
+for Ticket 3 (Design the Setup/Maintenance Skill Boundary) or the new
+first-time-setup skill it specifies, since "which clients get
+auto-configured during onboarding" is its own UX design question (which
+clients, where each config file lives, prompt vs. detect) deserving its
+own pass.
+
+**Auth/scoping**: none in the server itself. A local stdio-transport MCP
+server is a subprocess the client spawns directly — it inherits exactly
+the OS-level access of the local user running it, identical to any CLI
+invocation. No sandboxing layer exists in the MCP protocol itself; any
+permission gating (e.g. per-tool-call approval prompts) is the calling
+client's own concern, not something `neuron mcp` implements.
+
+**Relationship to ADR 0014's hook model**: purely additive, available
+**unconditionally** to every client — including Claude Code/Codex CLI,
+where it sits alongside the existing deterministic hooks with no internal
+gating and no steering users away, despite the overlap being real (hooks
+push context automatically; these 3 tools are model-invoked pulls). Ruled
+out actively discouraging MCP on hook-covered clients: that would mean
+`neuron mcp` tracking "which clients already have hooks" internally,
+duplicating exactly the capability-awareness ADR 0014 already keeps as a
+harness-adapter concern. Matches the map's own non-goal ("no replacement
+of the existing deterministic hook model... not a migration away from
+hooks where they already work").
+
+**Feeds forward**: unblocks Ticket 4 (implementation) on this map.
 
 ## Comments
 
 - 2026-08-15: Created while chartering Map — MCP Server & Setup/Onboarding
   Skill Split. Blocks Ticket 4 (implementation).
+- 2026-08-17: Resolved via live `/grilling` session with the maintainer.
 
 ---
 id: f075521d-16fc-4873-a27c-0e96eb73727e
