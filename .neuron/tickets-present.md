@@ -1500,6 +1500,31 @@ self-updates the binary, and the README documents both install paths.
   entry. Chocolatey declined. Feeds Ticket 7 (ship the Windows install
   path).
 
+- [3 — Native Addon Bundling vs WASM-Only](f561802a-c31d-4f66-802c-fe47acf7d170) —
+  bundle native (`better-sqlite3`, `onnxruntime-node`) per platform/arch, not
+  WASM-only. pkg's own docs rule out auto-fetching cross-platform native
+  binaries during cross-compilation, but neither dependency needs that:
+  `onnxruntime-node` already ships prebuilt binaries for all 6 targets inside
+  its own npm package, and `better-sqlite3` fetches a prebuilt binary per
+  target via `prebuild-install` at install time — no native compilation
+  either way. Real CI cost for Ticket 5 is staging six prebuilt binaries into
+  six pkg outputs, not cross-compiling six times. The existing WASM/
+  `node:sqlite` runtime fallback stays in the binary as a safety net rather
+  than being stripped. Working assumption for Ticket 5 to confirm: "Linux"
+  means glibc, since pkg can't bundle native addons for `linuxstatic`/musl.
+  Feeds Ticket 5 (CI build matrix).
+
+- [4 — Code Signing: Notarize/Sign Now, or Ship Unsigned?](9cbc685c-807e-4f69-b599-c39d5d011824) —
+  ship unsigned at launch, accepting the Gatekeeper/SmartScreen warning.
+  Decided live with the maintainer: the audience is developers/CLI users
+  who already know how to right-click-Open or `xattr -d
+  com.apple.quarantine`, not a broader non-technical crowd the warning
+  could turn away. Not ruled out permanently — signing ($99/yr Apple
+  Developer + notarization pipeline, plus a Windows Authenticode/EV cert)
+  is an accepted, unscheduled follow-up, with no formal revisit trigger
+  (no complaint count or install-volume milestone tied to it). Tickets
+  5-8 proceed against unsigned binaries.
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -1693,7 +1718,7 @@ taskId: null
 blockedBy: 143a05c6-41b4-40fd-a448-045c1538637e
 kind: grilling
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1711,6 +1736,43 @@ meaningfully faster than their WASM counterparts); WASM-only means one
 build recipe reused 6 ways, simpler CI, smaller surface for Ticket 5, at
 some runtime performance cost users on the npm path don't pay today.
 
+## Answer
+
+Bundle native addons (`better-sqlite3`, `onnxruntime-node`) per
+platform/arch, not WASM-only.
+
+Grilled the '6x build complexity' framing against pkg's own docs and what's
+already in `node_modules`: it doesn't hold up as a blocker. pkg (the
+Ticket 1 packaging tool) does not auto-fetch cross-platform native binaries
+during cross-compilation — its docs say to 'install the right prebuilt
+binary for that target (or rebuild it with prebuildify/node-gyp)' — but
+neither dependency actually needs native compilation per target.
+`onnxruntime-node` already ships prebuilt `.node` binaries for all 6
+target combos inside its own npm package
+(`bin/napi-v3/{darwin,linux,win32}/{x64,arm64}`) — no rebuild, no fetch.
+`better-sqlite3` uses `prebuild-install`, which downloads a prebuilt
+binary per platform/arch from its own GitHub Releases at install time — no
+local compilation either. So the real CI cost Ticket 5 needs to handle is
+staging six prebuilt binaries into six pkg outputs, not cross-compiling C++
+six times. Given that, the performance win (`better-sqlite3` vs
+`node:sqlite`, `onnxruntime-node` vs `onnxruntime-web`) is close to
+free.
+
+The binary keeps the existing runtime fallback path
+(`src/db.ts`'s `node:sqlite` fallback, `src/components/embedder.ts`'s
+`onnxruntime-web` fallback) as a safety net rather than stripping it —
+if a bundled native addon somehow fails to load at runtime on some
+platform, it degrades to WASM instead of crashing. Cheap insurance,
+already built, for a first release of a new distribution channel.
+
+Working assumption carried to Ticket 5 (not decided here): 'Linux' in the
+platform matrix means glibc Linux, since pkg's docs say native bindings are
+unsupported on `linuxstatic`/Alpine/musl targets — Ticket 5 should
+confirm/handle this explicitly when it builds the CI matrix.
+
+Feeds Ticket 5 (CI build matrix: stage the right prebuilt native binary per
+target) and Ticket 6 (install.sh — no impact, still one script).
+
 ---
 id: 9cbc685c-807e-4f69-b599-c39d5d011824
 createdAt: 2026-08-17T10:43:52.875Z
@@ -1722,7 +1784,7 @@ tags:
 taskId: null
 kind: grilling
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1737,6 +1799,29 @@ users see a scary first-run warning (and on macOS, an extra
 right-click-Open or `xattr -d com.apple.quarantine` step) — weigh that
 friction against the cost/effort of signing, and decide whether this
 blocks launch or is an accepted-tradeoff-for-now with a follow-up path.
+
+## Answer
+
+Ship unsigned at launch. Decided via live grilling with the maintainer:
+
+- **Audience is developers/CLI users**, not a broader non-technical crowd —
+  the same audience rustup/deno/bun's own early unsigned or lightly-signed
+  releases targeted. That audience already knows how to right-click-Open or
+  run `xattr -d com.apple.quarantine`, so the Gatekeeper/SmartScreen warning
+  is real friction but not a launch-blocking one.
+- **Not a hard no-go** — explicitly considered and declined blocking launch
+  on signing. Signing is accepted as a later, unscheduled follow-up, not
+  ruled out of scope entirely.
+- **No formal revisit trigger.** Deliberately left open-ended rather than
+  tied to a complaint count or an install-volume milestone — a future
+  maintainer call, not something this ticket or map commits to watching
+  for. If/when a Apple Developer account ($99/yr + notarization pipeline
+  step) and a Windows Authenticode/EV cert get acquired, that's a fresh
+  scoping decision.
+
+No CI or code changes required by this ticket — it's a scope decision, not
+an implementation. Tickets 5-8 (CI build matrix, install.sh, Windows
+install path, `neuron upgrade`, README) proceed against unsigned binaries.
 
 ---
 id: 1f3592a2-1032-4295-b3dc-405d05a63fe8

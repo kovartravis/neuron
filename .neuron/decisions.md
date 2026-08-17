@@ -1453,3 +1453,15 @@ tags:
 taskId: null
 ---
 Curl-Installable Standalone Binary map's Ticket 2 (Windows Install Convention) resolved: primary Windows install method is a PowerShell 'irm <url>/install.ps1 | iex' one-liner (Bun's wrapped powershell -c invocation shape), mirroring Deno's and Bun's own verified install.ps1 scripts — both are the closest prior-art (single-binary language/runtime CLIs distributed the same way neuron will be), and both fetched/read directly rather than assumed. rustup's downloadable-.exe pattern and ripgrep/fd's Releases-page-first convention were real alternatives found but declined — neither matches the one-paste-line UX the curl pattern already sets on macOS/Linux. Secondary: publish a winget manifest (peer-listed per Deno's posture, not headline) — Microsoft's own docs confirm winget isn't guaranteed present at first login on even supported Windows versions, and Bun's community winget package has a live unresolved PATH bug (oven-sh/bun#20868) as a concrete caution against relying on it alone. Scoop is a low-cost tertiary bucket entry; Chocolatey declined outright. Full research: docs/design/distribution/windows-install-convention-research.md. Ticket 3 (native-addon bundling) and Ticket 4 (code-signing) remain the open frontier on this map.
+
+---
+id: a25865cf-477f-4571-afac-39c4fcc82014
+createdAt: 2026-08-17T14:13:32.103Z
+importance: 4
+tags:
+  - db-schema
+  - release
+  - failure-fix
+taskId: 9cbc685c-807e-4f69-b599-c39d5d011824
+---
+Curl-Installable Standalone Binary map's Ticket 4 (Code Signing) resolved: ship the standalone binary unsigned at launch, accepting the macOS Gatekeeper and Windows SmartScreen first-run warnings, rather than blocking on macOS notarization or Windows Authenticode signing. Decided live with the maintainer via grilling: the audience is developers/CLI users, the same crowd rustup/deno/bun's own early unsigned or lightly-signed releases targeted, who already know how to right-click-Open or run 'xattr -d com.apple.quarantine' -- not a broader non-technical audience the warning could turn away on first contact. Not ruled out permanently: signing (a $99/yr Apple Developer account plus a notarization pipeline step, plus a separate, pricier Windows Authenticode/EV cert) is an accepted, unscheduled follow-up with no formal revisit trigger tied to it (no complaint count or install-volume milestone). Tickets 5-8 (CI build matrix, install.sh, Windows install path, neuron upgrade, README) proceed against unsigned binaries.
