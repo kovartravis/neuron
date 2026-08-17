@@ -911,6 +911,13 @@ and content tickets have what they need from this map to proceed.
   and permanent slugs (restructure via new pages, not renames). Grilled
   live with the maintainer. Feeds Site (2.5.0)'s Ticket 3 (Docs IA) and
   informs Ticket 6.
+- [3 — Structured Data & Schema.org Strategy](3e0edd28-4651-4fc8-897f-5f44dad8b294) —
+  homepage carries `WebSite` + `SoftwareApplication` + `FAQPage`; every
+  docs page carries `TechArticle` uniformly, with `FAQPage` added on the
+  four pages Ticket 2 scoped Q&A blocks to; attribution is `Person`
+  (Travis Kovar), not `Organization` — solo-maintained OSS project;
+  `BreadcrumbList` explicitly skipped given the flat URL IA. Grilled live
+  with the maintainer. Feeds Site (2.5.0)'s Ticket 7 (Build the Homepage).
 
 ## Not yet specified
 
@@ -1114,7 +1121,7 @@ taskId: null
 blockedBy: 4b5c1114-812d-4533-a992-7bebb4ca3ec1
 kind: grilling
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 3 — Structured Data & Schema.org Strategy
 
@@ -1133,6 +1140,48 @@ template-level convention rather than ad hoc per page. Feeds Site
 (2.5.0)'s Ticket 7 (Build the Homepage), which should implement against
 this ticket's decision rather than invent its own markup. Blocks Site
 (2.5.0)'s Ticket 7.
+
+## Answer
+
+Grilled live with the maintainer. Per-template JSON-LD convention, settled:
+
+1. **Homepage**: `WebSite` (site-level container: name, url) +
+   `SoftwareApplication` (applicationCategory: DeveloperApplication,
+   operatingSystem, offers with price: "0", author) stacked together, plus
+   `FAQPage` sourced from the homepage's own visible Q&A block (Ticket 2
+   scoped Q&A placement; this ticket settles its markup).
+
+2. **Docs pages**: `TechArticle` uniformly across every docs page — Getting
+   Started, CLI Reference, every "How It Works" concept page, and the
+   alternatives/comparison page. One template-level rule, no per-page
+   judgment calls about which pages count as technical. Carries headline
+   (the H1), description, author, and datePublished/dateModified if
+   Starlight's frontmatter tracks them (Ticket 7/Ticket 5's scaffolding
+   call, not decided here).
+
+3. **FAQPage, additionally**: on exactly the four pages Ticket 2 already
+   scoped Q&A blocks to — homepage, Getting Started, CLI Reference, and the
+   alternatives/comparison page. Each Question/acceptedAnswer pair maps 1:1
+   to a real visible Q&A block already in the page content — no markup for
+   synthetic or hidden questions. Stacks alongside that page's primary type
+   (e.g. `TechArticle` + `FAQPage` together on Getting Started).
+
+4. **Attribution**: `Person` (Travis Kovar, GitHub profile url), not
+   `Organization` — this is a solo-maintained OSS project (LICENSE: Travis
+   Kovar, MIT; no registered org behind `kovartravis`), and claiming an
+   `Organization` would misrepresent it ahead of Ticket 6's citability
+   principles. One shared `Person` fragment reused as `author` on the
+   homepage's `SoftwareApplication` and on every docs page's `TechArticle`,
+   not re-typed per page.
+
+5. **Explicitly skipped**: `BreadcrumbList`. Ticket 2's flat, single-segment
+   `/docs/` URL IA removes the usual reason for it (inferring hierarchy from
+   the URL path), and nothing else in this map calls for a docs taxonomy —
+   low marginal signal for a new template obligation.
+
+**Feeds forward**: Site (2.5.0)'s Ticket 7 (Build the Homepage) implements
+this table directly rather than inventing its own markup. A page may stack
+multiple JSON-LD blocks (the homepage carries three).
 
 ---
 id: a8719d5c-34a9-4ebe-b1c2-f48408c963df
