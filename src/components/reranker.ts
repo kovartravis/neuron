@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import envPaths from 'env-paths';
+import { withModelCacheLock } from './modelCacheLock.js';
 
 export interface Reranker {
   /**
@@ -37,9 +38,11 @@ export class TransformersReranker implements Reranker {
         if (fs.existsSync(onnxPath)) {
           env.allowRemoteModels = false;
         }
-        const tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
-        const model = await AutoModelForSequenceClassification.from_pretrained(MODEL_ID, { dtype: 'q8' });
-        return { tokenizer, model };
+        return withModelCacheLock(onnxPath, async () => {
+          const tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+          const model = await AutoModelForSequenceClassification.from_pretrained(MODEL_ID, { dtype: 'q8' });
+          return { tokenizer, model };
+        });
       })();
     }
     const { tokenizer, model } = await this.modelPromise;

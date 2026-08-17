@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import envPaths from 'env-paths';
+import { withModelCacheLock } from './modelCacheLock.js';
 
 const require = createRequire(import.meta.url);
 
@@ -46,7 +47,7 @@ export class TransformersEmbedder implements Embedder {
         if (fs.existsSync(onnxPath)) {
           env.allowRemoteModels = false;
         }
-        return await pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5', { dtype: 'q8' });
+        return withModelCacheLock(onnxPath, () => pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5', { dtype: 'q8' }));
       })();
     }
     const extractor = await this.pipelinePromise;

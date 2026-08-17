@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import envPaths from 'env-paths';
+import { withModelCacheLock } from './modelCacheLock.js';
 
 export interface PolarityClassifier {
   /**
@@ -52,16 +53,18 @@ export class TransformersNLIClassifier implements PolarityClassifier {
         env.useFSCache = true;
         const onnxPath = path.join(modelCacheDir, MODEL_ID, 'onnx', 'model.onnx');
         env.allowRemoteModels = !fs.existsSync(onnxPath);
-        const tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
-        const model = await AutoModelForSequenceClassification.from_pretrained(MODEL_ID);
-        const id2label = (model.config as any).id2label as Record<string, string>;
-        if (id2label['0'] !== 'contradiction') {
-          throw new Error(
-            `${MODEL_ID}: expected id2label[0] === 'contradiction', got ${JSON.stringify(id2label)} — ` +
-              `Ticket 13 found this ordering varies by model; scoring the wrong class silently would be worse than failing loud.`
-          );
-        }
-        return { tokenizer, model };
+        return withModelCacheLock(onnxPath, async () => {
+          const tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+          const model = await AutoModelForSequenceClassification.from_pretrained(MODEL_ID);
+          const id2label = (model.config as any).id2label as Record<string, string>;
+          if (id2label['0'] !== 'contradiction') {
+            throw new Error(
+              `${MODEL_ID}: expected id2label[0] === 'contradiction', got ${JSON.stringify(id2label)} — ` +
+                `Ticket 13 found this ordering varies by model; scoring the wrong class silently would be worse than failing loud.`
+            );
+          }
+          return { tokenizer, model };
+        });
       })();
     }
     const { tokenizer, model } = await this.modelPromise;
