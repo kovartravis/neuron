@@ -918,6 +918,13 @@ and content tickets have what they need from this map to proceed.
   (Travis Kovar), not `Organization` — solo-maintained OSS project;
   `BreadcrumbList` explicitly skipped given the flat URL IA. Grilled live
   with the maintainer. Feeds Site (2.5.0)'s Ticket 7 (Build the Homepage).
+- [5 — llms.txt / llms-full.txt Decision & Draft](787c805a-69dd-409f-8060-91efa97fa044) —
+  publish both: `llms.txt` hand-maintained, `llms-full.txt` build-generated
+  from Starlight's content collection at Site (2.5.0) Ticket 5's build step
+  to avoid drift. Structural template (Docs / How It Works / Optional
+  sections, ADR log demoted to Optional) drafted against Ticket 2's IA with
+  placeholder slugs — final link list waits on Site (2.5.0)'s Ticket 3.
+  Full draft: docs/design/seo/llms-txt-draft.md.
 
 ## Not yet specified
 
@@ -1228,7 +1235,7 @@ taskId: null
 blockedBy: 4b5c1114-812d-4533-a992-7bebb4ca3ec1
 kind: task
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 5 — llms.txt / llms-full.txt Decision & Draft
 
@@ -1246,6 +1253,24 @@ machine-readable map of the site's key content). Low cost, uncertain
 payoff: worth a deliberate yes/no rather than skipping by default or
 cargo-culting it in. If yes, draft it against Ticket 2's IA once real URLs
 exist.
+
+## Answer
+
+**Publish both.** `llms.txt`: yes, hand-maintained (short, changes rarely).
+`llms-full.txt`: yes, but build-generated from Starlight's content
+collection at Site (2.5.0) Ticket 5's Astro build step, not hand-mirrored —
+avoids drift for zero incremental cost once a real content collection
+exists. Both live at the site root per the llms.txt convention (H1 title,
+blockquote summary, H2-grouped Markdown link lists).
+
+Since Site (2.5.0)'s own Ticket 3 (Docs IA) hasn't committed a real page
+inventory yet, this ticket drafts `llms.txt`'s **structure and topic
+curation** (Docs / How It Works / Optional sections, ADR log demoted to
+Optional per the map's no-raw-ADR-dump stance) against Ticket 2's flat
+`/docs/<slug>` convention, using placeholder slugs standing in for
+Site's Ticket 3's real ones. Full template, rationale, and the
+`llms-full.txt` generation approach:
+docs/design/seo/llms-txt-draft.md.
 
 ---
 id: a3cc1972-e455-4c61-9ec4-bcc873c6353d
