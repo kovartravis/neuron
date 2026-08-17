@@ -7,6 +7,19 @@ description: Manage agent session context by interviewing the user, configuring 
 
 This skill guides how agents configure and interact with `@kovartravis/neuron` to maintain persistent, category-driven memory across sessions.
 
+> [!NOTE]
+> **First-time setup on a fresh project now lives in `neuron-onboarding`**
+> (wayfinder ticket 5, Map — MCP Server & Setup/Onboarding Skill Split):
+> the ask-first interview, `neuron.yaml` generation, `AGENTS.md` sync, the
+> write-side-enrichment and `strict`-mode interviews, initial
+> architecture-scan configuration, and onboarding-migration of an existing
+> `CLAUDE.md`/`AGENTS.md`/`CURSOR.md`. Sections 0/0a/0b and §7 steps 1-2
+> below still document that content today and remain correct — trimming
+> them out of this file once every reader can be assumed to reach
+> `neuron-onboarding` instead is ticket 6's job, not yet done. If you are
+> onboarding a project that has no `neuron.yaml` yet, use `neuron-onboarding`
+> first; come back here once setup is complete.
+
 > [!CRITICAL]
 > **USER INTERACTION & EXPLANATION MANDATE**
 > Before taking ANY action or executing any memory operation (including querying memory, modifying `neuron.yaml` or `AGENTS.md`, writing learnings/decisions, running sync commands, or pruning entries), the agent **MUST ALWAYS**:

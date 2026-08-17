@@ -149,6 +149,19 @@ something unshipped.
   neuron.github.io Site (2.5.0)'s Ticket 2 still lists this ticket +
   Ticket 6 in its `blockedBy` — stays blocked until Ticket 6 also
   resolves.
+- [5 — Implement First-Time-Setup Skill](33bc46e8-c074-4275-a20b-7494d2a2a35e) —
+  `.claude/skills/neuron-onboarding/SKILL.md` shipped, combining Ticket 2's
+  onboarding-migration behavior with Ticket 3's moved setup content
+  (§0/§0a/§0b, §7 steps 1-2). Trigger mechanism (open per Ticket 3): fan
+  out via `neuron init`'s existing skill-copy path — `copySkill`
+  generalized to take a skill name, copies both `neuron-memory` and
+  `neuron-onboarding` to every detected harness, packaged via
+  `package.json`'s `files`. Migration-note-in-existing-marker (decision 5)
+  needed no new code: `upsertProtocolBlock`'s existing ask/keep-on-conflict
+  policy already protects a hand-added note inside the managed region.
+  Cross-linked both skills (a `[!NOTE]` in `neuron-memory` pointing at
+  `neuron-onboarding`, since Ticket 6 hasn't trimmed the old content yet).
+  `npm test` 799/799, `tsc` clean. Unblocks Ticket 6.
 
 ## Not yet specified
 
@@ -345,7 +358,7 @@ taskId: null
 blockedBy: 4d49418c-4b64-4008-ba9e-3500ebb970c1,a773beec-dc7d-4da7-afe1-424a5b341fb1
 kind: task
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: resolved
 ---
 # 5 — Implement First-Time-Setup Skill
 
@@ -368,22 +381,89 @@ against Ticket 3's resolution, which may settle this).
 
 ## Deliverables
 
-- [ ] New skill file (name/location per Ticket 3's resolution, e.g.
+- [x] New skill file (name/location per Ticket 3's resolution, e.g.
       `.claude/skills/neuron-setup/SKILL.md`) containing the moved
       setup content from Tickets 2 and 3
-- [ ] Wired into the first-run flow (confirm trigger mechanism against
+- [x] Wired into the first-run flow (confirm trigger mechanism against
       Ticket 3's resolution)
-- [ ] Onboarding-migration behavior implemented per Ticket 2's resolution
-- [ ] Cross-references between this skill and the trimmed
+- [x] Onboarding-migration behavior implemented per Ticket 2's resolution
+- [x] Cross-references between this skill and the trimmed
       `neuron-memory` (Ticket 6) are correct in both directions — a
       reader landing in either skill can find the other for what it no
       longer covers
-- [ ] `npm test` and `tsc` clean (to the extent skill files are covered
+- [x] `npm test` and `tsc` clean (to the extent skill files are covered
       by the test suite at all — confirm)
 
 ## Answer
 
-_Not yet resolved._
+`.claude/skills/neuron-onboarding/SKILL.md` created, containing: §0
+Detect & Migrate Existing Rule Files (new, implements Ticket 2's 7
+decisions), §1 Initial Project Setup & Interview Protocol (moved from
+`neuron-memory` §0), §1a Write-Side Enrichment Interview (moved from
+§0a), §1b Determinism/`strict`-mode Interview (moved from §0b), and §2
+Architectural Scan Configuration — Initial (moved from §7 steps 1-2
+only; steps 3-4 stay in `neuron-memory`, unchanged). Ordering matches
+Ticket 2 decision 7: migration detection runs *before* the
+category-configuration interview.
+
+**Trigger mechanism, decided this session** (open per Ticket 3's own
+"left open" note): fan out the same way `neuron-memory` already
+distributes — `copySkill` (`src/config/harness.ts`) generalized to take
+a `skillName` parameter instead of being hardcoded to `neuron-memory`;
+`neuron init` (`src/commands/init.ts`) now copies both `neuron-memory`
+and `neuron-onboarding` into every detected (or fallback `.agents/skills`)
+harness dir, so any harness that already gets `neuron-memory` gets
+`neuron-onboarding` alongside it, discoverable by the harness's own
+model-invocation skill matching (no `disable-model-invocation` flag, same
+as `neuron-memory` — auto-invocable via its `description`, not gated
+behind a slash command). `package.json`'s `files` field ships
+`.claude/skills/neuron-onboarding/` so this works for real `neuron init`
+runs against any repo, not just this one (mirrors how `neuron-memory`
+itself is packaged).
+
+**Onboarding-migration implementation** (Ticket 2's 7 decisions, §0 of
+the new skill): detection scope corrected to `CLAUDE.md`/`AGENTS.md`/
+`CURSOR.md` via `src/config/harnesses.json`'s real mapping; only content
+*outside* the existing `<!-- neuron:protocol:start/end -->` marker region
+(`findMarkerRange`, `src/config/protocolBlock.ts`) is candidate content;
+parsing is instructed as the invoking coding agent's own job (no new
+embedded-model pipeline in neuron's code — matches decision 3's explicit
+scoping); preview-then-confirm before any write; one `neuron memory add`
+call per logical entry, tags left to inference; source file is never
+modified. **Migration-note mechanism required no code change**: decision
+5 says the note should reuse the *existing* managed protocol block rather
+than a new marker pair. Read `upsertProtocolBlock`
+(`src/config/protocolBlock.ts`) closely — it already refuses to silently
+overwrite a managed region whose content differs from what it would
+generate (asks, or on a non-interactive run keeps existing) — so a
+hand-added migration paragraph inside that region is already covered by
+that exact ask/keep policy on any later `neuron init --overwrite-hooks`.
+The skill documents this as *why* the note goes inside the existing
+region instead of bare prose elsewhere in the file, rather than adding a
+`migration:` config schema field to make the note code-generated (judged
+out of proportion for this ticket — the existing ask-first conflict
+policy already delivers the protection decision 5 wants).
+
+**Cross-references**: added a `[!NOTE]` at the top of `neuron-memory`'s
+SKILL.md pointing to `neuron-onboarding` for first-time setup, explicitly
+flagging that §0/§0a/§0b and §7 steps 1-2 there are now duplicated (not
+yet trimmed — that's Ticket 6's job) rather than silently stale. The new
+skill's own closing "See also" section points back to `neuron-memory` for
+the ongoing operate loop. `CONTEXT.md`'s `neuron-memory`/`neuron-onboarding`
+glossary entries (already written during Ticket 3) needed no further
+edits — verified they match what actually shipped.
+
+**Tests**: `src/config/harness.ts`'s `copySkill` signature changed
+(added required `skillName` param) — no test called it directly by name,
+only through `neuron init`'s CLI surface. Updated four assertions in
+`src/commands/init.test.ts` (`init-test-project`, `harness-agents-test`,
+`harness-multi-test`, `harness-fallback-test`) to also assert the
+`neuron-onboarding` copy exists and appears in `result.skillsWritten`,
+including tightening the exact-equality assertion on the fallback-only
+case to the new two-element array. `npm test` 799/799, `tsc` clean,
+`neuron status --check` shows `protocolBlockDrift: []` (unrelated
+pre-existing `undeclaredCategories: history, tickets` untouched by this
+change).
 
 ## Comments
 
@@ -391,6 +471,11 @@ _Not yet resolved._
   Skill Split. Blocked on Tickets 2 and 3. Blocks Ticket 6 (Ticket 6
   shouldn't trim `neuron-memory`'s setup content until the replacement
   skill actually exists and covers it).
+- 2026-08-17: Resolved. Built `.claude/skills/neuron-onboarding/SKILL.md`,
+  wired it into `neuron init`'s existing skill-copy fan-out (generalized
+  `copySkill`), implemented onboarding-migration behavior per Ticket 2,
+  and cross-linked both skills. Ticket 6 (trim `neuron-memory`) is now
+  unblocked.
 
 ---
 id: fada539c-31ee-4a3a-9f4a-2b3fe86165b4

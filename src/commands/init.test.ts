@@ -36,7 +36,9 @@ describe('CLI Command: init', () => {
     expect(result.githubUrl).toBe('https://github.com/kovartravis/neuron');
     expect(result.callout).toContain('https://github.com/kovartravis/neuron');
     const expectedSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    const expectedOnboardingSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-onboarding', 'SKILL.md');
     expect(fs.existsSync(expectedSkillPath)).toBe(true);
+    expect(fs.existsSync(expectedOnboardingSkillPath)).toBe(true);
 
     fs.rmSync(initTempDir, { recursive: true });
   });
@@ -54,8 +56,11 @@ describe('CLI Command: init', () => {
     const result = JSON.parse(stdout);
 
     const expectedSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    const expectedOnboardingSkillPath = path.join(initTempDir, '.agents', 'skills', 'neuron-onboarding', 'SKILL.md');
     expect(fs.existsSync(expectedSkillPath)).toBe(true);
+    expect(fs.existsSync(expectedOnboardingSkillPath)).toBe(true);
     expect(result.skillsWritten).toContain(expectedSkillPath);
+    expect(result.skillsWritten).toContain(expectedOnboardingSkillPath);
 
     fs.rmSync(initTempDir, { recursive: true });
   });
@@ -74,10 +79,16 @@ describe('CLI Command: init', () => {
 
     const claudeSkill = path.join(initTempDir, '.claude', 'skills', 'neuron-memory', 'SKILL.md');
     const cursorSkill = path.join(initTempDir, '.cursor', 'skills', 'neuron-memory', 'SKILL.md');
+    const claudeOnboardingSkill = path.join(initTempDir, '.claude', 'skills', 'neuron-onboarding', 'SKILL.md');
+    const cursorOnboardingSkill = path.join(initTempDir, '.cursor', 'skills', 'neuron-onboarding', 'SKILL.md');
     expect(fs.existsSync(claudeSkill)).toBe(true);
     expect(fs.existsSync(cursorSkill)).toBe(true);
+    expect(fs.existsSync(claudeOnboardingSkill)).toBe(true);
+    expect(fs.existsSync(cursorOnboardingSkill)).toBe(true);
     expect(result.skillsWritten).toContain(claudeSkill);
     expect(result.skillsWritten).toContain(cursorSkill);
+    expect(result.skillsWritten).toContain(claudeOnboardingSkill);
+    expect(result.skillsWritten).toContain(cursorOnboardingSkill);
 
     fs.rmSync(initTempDir, { recursive: true });
   });
@@ -94,8 +105,10 @@ describe('CLI Command: init', () => {
     const result = JSON.parse(stdout);
 
     const fallbackSkill = path.join(initTempDir, '.agents', 'skills', 'neuron-memory', 'SKILL.md');
+    const fallbackOnboardingSkill = path.join(initTempDir, '.agents', 'skills', 'neuron-onboarding', 'SKILL.md');
     expect(fs.existsSync(fallbackSkill)).toBe(true);
-    expect(result.skillsWritten).toEqual([fallbackSkill]);
+    expect(fs.existsSync(fallbackOnboardingSkill)).toBe(true);
+    expect(result.skillsWritten).toEqual([fallbackSkill, fallbackOnboardingSkill]);
 
     fs.rmSync(initTempDir, { recursive: true });
   });
