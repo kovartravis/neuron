@@ -431,7 +431,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: claimed
 ---
 # 3 — Design the Setup/Maintenance Skill Boundary (`neuron-memory` Split)
 
