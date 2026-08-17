@@ -894,7 +894,16 @@ and content tickets have what they need from this map to proceed.
 
 ## Decisions so far
 
-(none yet)
+- [1 — Keyword & Search-Intent Research](docs/design/seo/keyword-search-intent-research.md) —
+  bare category phrases ("claude code memory," "AI agent long-term memory")
+  are saturated (Mem0, SEO-farmed roundups); long-tail/comparison/
+  alternatives phrasing and CLAUDE.md-pain-point vocabulary (amnesia,
+  goldfish, context rot, drift) are open. Closest direct competitor found:
+  `gastownhall/beads` (issue tracker + agent memory, graph/Dolt-backed).
+  No competitor combines markdown-as-source-of-truth + schema enforcement +
+  issue tracker + architecture blueprint — that combination, and
+  "architecture linter for AI agents," are open. Feeds Ticket 2 and
+  Ticket 6.
 
 ## Not yet specified
 
@@ -922,7 +931,7 @@ tags:
 taskId: null
 kind: research
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 1 — Keyword & Search-Intent Research
 
@@ -944,6 +953,56 @@ experience to draw on otherwise. Feeds Ticket 2 (IA) and Ticket 6
 (Content-Authoring Guidelines) directly, and indirectly informs Site
 (2.5.0)'s own Ticket 1 (marketing/docs site survey) and Ticket 2 (Homepage
 Messaging).
+
+## Answer
+
+Full findings, with sources cited per claim:
+`docs/design/seo/keyword-search-intent-research.md`.
+
+**No ranking tool (Ahrefs/SEMrush/GSC) or browser was available**, so this
+is qualitative (SERP-population-based), not a measured keyword-volume
+study — treat "wide open" / "contested" judgments as directional, and
+re-verify with real tooling before spending content-production effort
+against any single phrase.
+
+**Query landscape**: bare category phrases ("claude code memory",
+"persistent memory for llm agents", "AI agent long-term memory") are
+saturated — dominated by Mem0's content marketing, Anthropic's own docs,
+and SEO-farmed "best of 2026" roundups (Braintrust, Vectorize, EverMind,
+Powerdrill all list the same six tools; neuron is in none of them).
+Long-tail and comparison phrases are more winnable: "mem0 alternatives"
+pages already exist as their own query intent; "X vs Y" comparison posts
+(Vectorize, SourceForge) are a well-established pattern with no neuron
+pairing yet; hand-written multi-tool comparison posts (e.g. a Medium
+six-way comparison) don't include neuron and are a more realistic near-term
+target than organic ranking against Mem0's domain authority.
+
+**CLAUDE.md/AGENTS.md pain points** (verified primary sources): GitHub
+issue `anthropics/claude-code#14227` ("It's a goldfish," "amnesia in the
+CLI," closed as not-planned by Anthropic), HN thread `#47034087` on the
+AGENTS.md effectiveness study ("This file could be renamed CONTRIBUTING.md"),
+and claudelint's docs confirming Claude Code warns at 40KB. Real developer
+vocabulary to reuse in content: amnesia, goldfish, context rot, drift,
+stale, unwieldy. "Context rot" itself is shared vocabulary, not
+vendor-owned — open for neuron's relevance-gated injection (ADR 0012) to
+answer directly.
+
+**Competing categories** — the field is more crowded than this map's
+sibling `docs/design/site/competitive-landscape-and-positioning.md`
+suggested: `gastownhall/beads` is the closest direct competitor found
+(issue tracker + agent memory, "memory upgrade for your coding agent," but
+graph+Dolt-backed rather than plain-markdown); `rohitg00/agentmemory`
+claims "#1 persistent memory for AI coding agents"; `hmans/beans` is a
+plain-markdown issue tracker. **No competitor found combines
+markdown-as-source-of-truth + schema enforcement + issue tracker +
+architecture blueprint the way neuron does** — that combination, and the
+exact phrase "architecture linter for AI agents" (maps to `neuron scan
+--check`), are open on this pass.
+
+**Feeds forward**: Ticket 2 (IA & Citability Conventions) and Ticket 6
+(Content-Authoring Guidelines) should prioritize the long-tail/comparison/
+alternatives phrasing and the amnesia/context-rot vocabulary over
+competing head-on for saturated category terms.
 
 ---
 id: 4b5c1114-812d-4533-a992-7bebb4ca3ec1
