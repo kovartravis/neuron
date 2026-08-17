@@ -393,7 +393,7 @@ taskId: null
 blockedBy: c338bfbb-40e9-420d-8a54-8d06e2fc2a3f
 kind: task
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: claimed
 ---
 # 4 — Implement MCP Server
 
