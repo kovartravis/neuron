@@ -1474,6 +1474,135 @@ self-updates the binary, and the README documents both install paths.
 
 ## Decisions so far
 
+- [1 — Packaging Tool for the Standalone Binary](docs/design/distribution/packaging-tool-research.md) —
+  `@yao-pkg/pkg` (actively maintained fork of the archived vercel/pkg), the
+  only one of the four candidates whose own docs claim unqualified
+  cross-compilation of all six targets from a single Linux CI runner; Node
+  SEA tracked as a migration candidate once its VFS work and macOS-x64 CI
+  coverage mature; nexe eliminated (17-month-stale beta); Bun declined
+  despite being fastest, since it would move neuron onto Bun's runtime in
+  production. Feeds Ticket 3 (native-addon bundling), Ticket 4
+  (code-signing), and Ticket 5 (CI build matrix).
+
+- [2 — Windows Install Convention](docs/design/distribution/windows-install-convention-research.md) —
+  primary: a PowerShell `irm <url>/install.ps1 | iex` one-liner (Bun's
+  `powershell -c "irm ... | iex"` wrapped shape), mirroring Deno's and
+  Bun's own verified scripts — both fetched and read directly, both ship
+  this as their primary, first-documented Windows method. rustup's
+  `.exe`-download pattern and ripgrep/fd's Releases-page-first convention
+  were both real alternatives found but declined: neither matches the
+  one-paste-line UX the curl pattern sets on macOS/Linux. Secondary:
+  publish a winget manifest (peer-listed, not headline, per Deno's own
+  posture) — winget is close to universal on modern Windows but not
+  guaranteed present at first login per Microsoft's own docs, and Bun's
+  community winget package has a live unresolved PATH bug
+  (oven-sh/bun#20868) as a concrete caution. Tertiary: a scoop bucket
+  entry. Chocolatey declined. Feeds Ticket 7 (ship the Windows install
+  path).
+
+- [3 — Native Addon Bundling vs WASM-Only](f561802a-c31d-4f66-802c-fe47acf7d170) —
+  bundle native (`better-sqlite3`, `onnxruntime-node`) per platform/arch, not
+  WASM-only. pkg's own docs rule out auto-fetching cross-platform native
+  binaries during cross-compilation, but neither dependency needs that:
+  `onnxruntime-node` already ships prebuilt binaries for all 6 targets inside
+  its own npm package, and `better-sqlite3` fetches a prebuilt binary per
+  target via `prebuild-install` at install time — no native compilation
+  either way. Real CI cost for Ticket 5 is staging six prebuilt binaries into
+  six pkg outputs, not cross-compiling six times. The existing WASM/
+  `node:sqlite` runtime fallback stays in the binary as a safety net rather
+  than being stripped. Working assumption for Ticket 5 to confirm: "Linux"
+  means glibc, since pkg can't bundle native addons for `linuxstatic`/musl.
+  Feeds Ticket 5 (CI build matrix).
+
+- [4 — Code Signing: Notarize/Sign Now, or Ship Unsigned?](9cbc685c-807e-4f69-b599-c39d5d011824) —
+  ship unsigned at launch, accepting the Gatekeeper/SmartScreen warning.
+  Decided live with the maintainer: the audience is developers/CLI users
+  who already know how to right-click-Open or `xattr -d
+  com.apple.quarantine`, not a broader non-technical crowd the warning
+  could turn away. Not ruled out permanently — signing ($99/yr Apple
+  Developer + notarization pipeline, plus a Windows Authenticode/EV cert)
+  is an accepted, unscheduled follow-up, with no formal revisit trigger
+  (no complaint count or install-volume milestone tied to it). Tickets
+  5-8 proceed against unsigned binaries.
+
+- [5 — Extend `publish.yml`, CI Build Matrix](docs/design/distribution/ci-build-matrix.md) —
+  shipped: `build-binaries` (6-target matrix, one `ubuntu-latest` runner per
+  Ticket 1's cross-compile story) + `release-assets` (SHA256SUMS, GitHub
+  Release) jobs, gated on `dist_tag == 'latest'`. `scripts/build-binary.mjs`
+  does the packaging. Surfaced two real findings docs alone couldn't have:
+  **(a)** `@yao-pkg/pkg` has no working ESM entry-point support at all
+  (matches the long-open vercel/pkg#1291) — fixed by pre-bundling
+  `dist/cli.js` to a single CJS file with esbuild before handing it to pkg;
+  **(b)** `onnxruntime-node`'s native binding can't be made to load inside a
+  pkg snapshot even as an explicit asset, narrowing Ticket 3's "bundle both
+  native addons" — `better-sqlite3` bundles and loads correctly (confirmed),
+  but the packaged binary runs every ONNX-backed feature (embeddings,
+  reranking, NLI, summarization) on WASM only. Confirmed non-fatal: a failed
+  vector-index write doesn't crash the command and reconciles from markdown.
+  Accepted as a v1 rough edge, same posture as Ticket 4's unsigned-binary
+  call — unscheduled follow-up, not a blocker. Feeds Ticket 6 (`install.sh`)
+  and Ticket 7 (Windows install path), which verify against `SHA256SUMS`.
+
+- [6 — Write and Ship `install.sh`](8d843d50-a002-4f95-aa87-bae23db12535) —
+  shipped: a POSIX `sh` script at the repo root, detects OS/arch via
+  `uname`, resolves the latest GitHub Release tag via the API, downloads
+  the matching asset plus `SHA256SUMS`, and hard-fails (non-zero exit, no
+  install) on any missing or mismatched checksum entry. Installs to
+  `$HOME/.neuron/bin` by default, overridable via `NEURON_INSTALL`
+  (mirrors Bun/Deno's own-directory convention, per Ticket 2's research).
+  Verified end-to-end (happy path, checksum-mismatch rejection, PATH-
+  already-set) against a local mock release server, since no real Release
+  with Ticket 5's asset names has been cut yet. Windows explicitly out of
+  scope — points to Ticket 7 in its own error message. Unblocks Ticket 8
+  (`neuron upgrade`) and Ticket 9 (README install-path docs), both already
+  specified and now frontier.
+
+- [7 — Ship the Windows Install Path](c1680372-4dc8-4502-9b98-d86b31cbe007) —
+  shipped: `install.ps1` at the repo root, the primary `irm <url> | iex`
+  channel Ticket 2's research recommended (Deno/Bun's mechanics — real-arch
+  detection via `RuntimeInformation.OSArchitecture`, install to
+  `NEURON_INSTALL`/`%USERPROFILE%\.neuronin`, user-scope PATH via .NET
+  `SetEnvironmentVariable`), verified against Ticket 5's real asset shape
+  (a raw `.exe`, not the zip the research speculated about pre-build) and
+  reusing Ticket 6's `SHA256SUMS`-or-refuse discipline. Not run against a
+  real release or real PowerShell — none available yet, same gap
+  `install.sh` already carries. Winget (secondary) and Scoop (tertiary)
+  deferred rather than filed for real: both need a real cut release to
+  pin a real version/URL/SHA256, and winget means a PR against the
+  external `microsoft/winget-pkgs` repo — drafted as templates instead
+  (`packaging/winget/`, `packaging/scoop/`), same accepted-follow-up
+  posture as Ticket 4 and Ticket 5. Full record:
+  docs/design/distribution/windows-install-path.md. Unblocks Ticket 9
+  (README install-path docs) alongside Ticket 6, already specified and
+  now frontier.
+
+- [8 — Implement `neuron upgrade`](33f6a40c-9a1e-432f-aeb4-325bc672be5f) —
+  shipped: a top-level `neuron upgrade` command that self-replaces the
+  running standalone binary in place, checksum-verified against the
+  release's `SHA256SUMS` (same discipline as Ticket 6), atomic and
+  rollback-safe if the swap fails mid-way, and a hard no-op (with a pointer
+  to `npm install -g @kovartravis/neuron@latest`) for an npm install. Along
+  the way, fixed a real gap Tickets 6/7 had already promised but never
+  delivered: `install.sh`/`install.ps1` both tell the user to run `neuron
+  --version`, which didn't exist until this ticket added it — now also the
+  mechanism `upgrade` itself uses to know its own version, baked in at
+  build time via esbuild `--define` since a pkg binary has no `package.json`
+  next to it at runtime. Does not touch the real packaging/release pipeline
+  (Ticket 5) or either install script (Tickets 6, 7) — verified against a
+  local mock GitHub API + Releases server, not a real cut release, same
+  honest gap those tickets already carry. Doesn't unblock or block Ticket 9.
+
+- [9 — README Install-Path Documentation](f35a2408-6091-415d-ac5e-422d62a154e2) —
+  shipped: README.md's Quick start now documents both paths side by side —
+  npm alongside Ticket 6's real `install.sh` one-liner in one block, Ticket
+  7's real `install.ps1` one-liner in a separate `powershell` block, both
+  copied verbatim from the scripts' own header comments so they can't drift
+  — plus a one-line pointer to `neuron upgrade` (curl/PowerShell) vs `npm
+  update -g` (npm), since Ticket 8 gave the two paths different upgrade
+  commands. Deferred winget/scoop templates deliberately left undocumented
+  (no real pinned release to point them at yet). This was the map's last
+  live ticket — no unclaimed, unblocked children remain.
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -1501,7 +1630,7 @@ tags:
 taskId: null
 kind: research
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1524,6 +1653,55 @@ Feeds nearly every other ticket on this map — the packaging tool choice
 constrains what's possible for binary composition (Ticket 3), the CI build
 matrix (Ticket 5), and code-signing mechanics (Ticket 4).
 
+## Answer
+
+Researched primary sources (Node.js docs, GitHub repos/API, npm registry)
+across all four candidates. Full findings:
+docs/design/distribution/packaging-tool-research.md.
+
+**Recommendation: `@yao-pkg/pkg`** (v6.22.0, actively maintained fork of
+the archived vercel/pkg — vercel/pkg confirmed archived, last push
+2024-01-03), for the binary-composition and CI-build-matrix tickets, with
+Node's own SEA support tracked as a migration candidate once its VFS work
+and macOS-x64 CI coverage mature (pkg's own README points the same
+direction).
+
+**Eliminated: nexe** — 17-month-stale beta (5.0.0-beta.4, published
+2025-03-08), ~1 maintenance commit/year, 164 open issues not being worked
+down, no documented cross-compilation story, and native-addon support
+that's a "ship the .node file as a separate sidecar" instruction rather
+than real bundling.
+
+**Considered and declined: Bun `build --compile`** — the fastest (111ms
+vs Node SEA's 139.7-161.3ms per a named third-party Hyperfine benchmark)
+and best-documented cross-compilation story (8 explicit `--target`
+values, one host builds all six targets) of the four, but disqualified
+because shipping via Bun means neuron runs on Bun's runtime in production,
+not Node's — every `node:sqlite`/`onnxruntime-web` fallback path in
+`src/db.ts` and `src/components/embedder.ts` would need
+re-verification against Bun's Node-API compatibility layer. A materially
+larger bet than a packaging-tool swap; worth revisiting only if neuron
+considers Bun as a runtime target in its own right.
+
+**The deciding tradeoff**: pkg is the only one of the four whose own docs
+make an unqualified claim that a single Linux CI runner can cross-build
+all six targets (macOS/Linux/Windows × x64/arm64) today. Node SEA's own
+docs explicitly mark macOS x64 as untested in Node's own CI, and
+cross-platform SEA builds require disabling the flags (`useCodeCache`/
+`useSnapshot`) that make its startup competitive.
+
+**Not verified this pass** (flagged in the doc, re-check before committing
+to the CI-matrix ticket's design): no actual cross-compilation was run;
+pkg's binary-size/startup-time figures are proxies from the Node-SEA
+benchmark, not pkg-specific measurements; native-addon bundling wasn't
+tested against neuron's actual `better-sqlite3`/`onnxruntime-node`
+binaries.
+
+**Feeds forward**: unblocks Ticket 3 (native-addon bundling decision —
+pkg's snapshot-extraction mechanism handles either outcome without a
+tooling change) directly, and Ticket 5 (CI build-matrix) and Ticket 4
+(code-signing) indirectly.
+
 ---
 id: 81577dba-f63f-4548-bebe-d99311608c4c
 createdAt: 2026-08-17T10:43:51.773Z
@@ -1535,7 +1713,7 @@ tags:
 taskId: null
 kind: research
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1553,6 +1731,59 @@ right.
 
 Feeds Ticket 7 (ship the Windows install path).
 
+## Answer
+
+Primary: a PowerShell `irm <url>/install.ps1 | iex` one-liner, invoked
+as `powershell -c "irm https://<neuron-install-host>/install.ps1 | iex"`
+(Bun's exact wrapped-invocation shape, pasteable from any shell context —
+not Deno's bare form, which assumes an already-open PowerShell prompt).
+This is what both of the two most directly comparable prior-art tools —
+Deno and Bun, both single-binary language/runtime CLIs distributed the
+same way neuron would be — actually ship as their **primary,
+first-documented** Windows method, verified by fetching their real
+install.ps1 scripts (not assumed from secondary sources). rustup and the
+ripgrep/fd survey do NOT use this pattern (rustup ships a downloadable
+rustup-init.exe; ripgrep/fd point to a manual Releases-page download
+first), but neither fits neuron's stated one-paste-line UX goal the way
+the piped-script pattern does.
+
+The script itself should mirror Deno's/Bun's verified mechanics: download
+a prebuilt zip per arch (neuron-windows-x64.zip / -arm64.zip) from GitHub
+Releases, extract to %USERPROFILE%\.neuron\bin (override via a
+NEURON_INSTALL env var, mirroring DENO_INSTALL/BUN_INSTALL), and add that
+dir to user-scope PATH via .NET's
+[System.Environment]::SetEnvironmentVariable (Deno's approach — simpler
+than Bun's raw registry-key write, no elevation needed).
+
+Secondary: publish a winget manifest (winget install <publisher>.neuron)
+as an additional, not primary, channel — mirroring Deno's posture (winget
+peer-listed, not headline) rather than Bun's (no winget mention at all).
+Verified via Microsoft's own docs that winget is close to universal on
+Windows 11 / Windows 10 1809+ but not guaranteed present at first login,
+excluded from Windows Sandbox, and has a hard version floor — every
+Microsoft-documented fallback for a missing winget is itself a PowerShell
+command, so a winget-only instruction has no self-contained fallback.
+Bun's own community winget package has a live, unresolved PATH bug
+(oven-sh/bun#20868) — concrete evidence that a winget manifest is a
+second maintenance surface with its own failure modes, separate from
+neuron's own installer, worth having but not worth trusting alone.
+
+Tertiary: a scoop bucket entry — low incremental cost, since scoop's own
+install command (irm get.scoop.sh | iex) is the same PowerShell-irm idiom
+neuron's installer already uses. Chocolatey: not recommended — lowest
+signal-to-effort ratio of the channels surveyed, never a tool's own
+first-party-documented primary or clear second-ranked method in anything
+fetched directly.
+
+Full findings, citations, and comparison table:
+[Windows install convention research](../../docs/design/distribution/windows-install-convention-research.md)
+
+Not verified (flagged in the research doc, follow-up for the implementing
+ticket): no actual neuron install.ps1 was built or tested; the
+winget-pkgs manifest submission/review process wasn't researched; scoop.sh's
+own landing page failed to fetch (Scoop's install command was instead
+confirmed from its installer repo's README, still a primary source).
+
 ---
 id: f561802a-c31d-4f66-802c-fe47acf7d170
 createdAt: 2026-08-17T10:43:52.337Z
@@ -1565,7 +1796,7 @@ taskId: null
 blockedBy: 143a05c6-41b4-40fd-a448-045c1538637e
 kind: grilling
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1583,6 +1814,43 @@ meaningfully faster than their WASM counterparts); WASM-only means one
 build recipe reused 6 ways, simpler CI, smaller surface for Ticket 5, at
 some runtime performance cost users on the npm path don't pay today.
 
+## Answer
+
+Bundle native addons (`better-sqlite3`, `onnxruntime-node`) per
+platform/arch, not WASM-only.
+
+Grilled the '6x build complexity' framing against pkg's own docs and what's
+already in `node_modules`: it doesn't hold up as a blocker. pkg (the
+Ticket 1 packaging tool) does not auto-fetch cross-platform native binaries
+during cross-compilation — its docs say to 'install the right prebuilt
+binary for that target (or rebuild it with prebuildify/node-gyp)' — but
+neither dependency actually needs native compilation per target.
+`onnxruntime-node` already ships prebuilt `.node` binaries for all 6
+target combos inside its own npm package
+(`bin/napi-v3/{darwin,linux,win32}/{x64,arm64}`) — no rebuild, no fetch.
+`better-sqlite3` uses `prebuild-install`, which downloads a prebuilt
+binary per platform/arch from its own GitHub Releases at install time — no
+local compilation either. So the real CI cost Ticket 5 needs to handle is
+staging six prebuilt binaries into six pkg outputs, not cross-compiling C++
+six times. Given that, the performance win (`better-sqlite3` vs
+`node:sqlite`, `onnxruntime-node` vs `onnxruntime-web`) is close to
+free.
+
+The binary keeps the existing runtime fallback path
+(`src/db.ts`'s `node:sqlite` fallback, `src/components/embedder.ts`'s
+`onnxruntime-web` fallback) as a safety net rather than stripping it —
+if a bundled native addon somehow fails to load at runtime on some
+platform, it degrades to WASM instead of crashing. Cheap insurance,
+already built, for a first release of a new distribution channel.
+
+Working assumption carried to Ticket 5 (not decided here): 'Linux' in the
+platform matrix means glibc Linux, since pkg's docs say native bindings are
+unsupported on `linuxstatic`/Alpine/musl targets — Ticket 5 should
+confirm/handle this explicitly when it builds the CI matrix.
+
+Feeds Ticket 5 (CI build matrix: stage the right prebuilt native binary per
+target) and Ticket 6 (install.sh — no impact, still one script).
+
 ---
 id: 9cbc685c-807e-4f69-b599-c39d5d011824
 createdAt: 2026-08-17T10:43:52.875Z
@@ -1594,7 +1862,7 @@ tags:
 taskId: null
 kind: grilling
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1610,6 +1878,29 @@ right-click-Open or `xattr -d com.apple.quarantine` step) — weigh that
 friction against the cost/effort of signing, and decide whether this
 blocks launch or is an accepted-tradeoff-for-now with a follow-up path.
 
+## Answer
+
+Ship unsigned at launch. Decided via live grilling with the maintainer:
+
+- **Audience is developers/CLI users**, not a broader non-technical crowd —
+  the same audience rustup/deno/bun's own early unsigned or lightly-signed
+  releases targeted. That audience already knows how to right-click-Open or
+  run `xattr -d com.apple.quarantine`, so the Gatekeeper/SmartScreen warning
+  is real friction but not a launch-blocking one.
+- **Not a hard no-go** — explicitly considered and declined blocking launch
+  on signing. Signing is accepted as a later, unscheduled follow-up, not
+  ruled out of scope entirely.
+- **No formal revisit trigger.** Deliberately left open-ended rather than
+  tied to a complaint count or an install-volume milestone — a future
+  maintainer call, not something this ticket or map commits to watching
+  for. If/when a Apple Developer account ($99/yr + notarization pipeline
+  step) and a Windows Authenticode/EV cert get acquired, that's a fresh
+  scoping decision.
+
+No CI or code changes required by this ticket — it's a scope decision, not
+an implementation. Tickets 5-8 (CI build matrix, install.sh, Windows
+install path, `neuron upgrade`, README) proceed against unsigned binaries.
+
 ---
 id: 1f3592a2-1032-4295-b3dc-405d05a63fe8
 createdAt: 2026-08-17T10:44:12.890Z
@@ -1622,7 +1913,7 @@ taskId: null
 blockedBy: 143a05c6-41b4-40fd-a448-045c1538637e,f561802a-c31d-4f66-802c-fe47acf7d170
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1640,6 +1931,88 @@ resolution logic already in the workflow (only `latest`-tagged releases
 get binaries, matching how `rc` prereleases already skip real npm
 promotion, unless Ticket 1/3 surface a reason to diverge).
 
+## Answer
+
+Shipped. `publish.yml` gets two new jobs: `build-binaries` (a 6-target
+matrix, all on `ubuntu-latest` since pkg cross-compiles from one Linux
+runner per Ticket 1's research), and `release-assets` (downloads all 6
+artifacts, generates `SHA256SUMS`, creates/updates the GitHub Release via
+`gh release create`/`upload`). Both gated on `dist_tag == 'latest'`, no
+divergence from the rc-skips-binaries default. `scripts/build-binary.mjs`
+does the actual packaging, invoked as `npm run build:binary -- <target>`.
+
+Full mechanism, and two real blocking findings neither Ticket 1's research
+nor Ticket 3's grilling could have caught from docs alone, are written up
+in docs/design/distribution/ci-build-matrix.md — summary:
+
+1. **`@yao-pkg/pkg` has no working ESM entry-point support** (confirmed
+   live against this codebase's real dependency tree, not just pkg's
+   docs — matches the long-open vercel/pkg#1291). Fix: pre-bundle
+   `dist/cli.js` to a single CJS file with esbuild first (own correct
+   `"exports"` resolution at bundle time), hand pkg *that* instead of the
+   ESM output. Needs the standard esbuild `import.meta.url` shim
+   (`createRequire`/asset-path resolution in db.ts/embedder.ts/
+   generator.ts/harness.ts would otherwise silently break under CJS).
+2. **`onnxruntime-node`'s native binding cannot be made to load inside a
+   pkg snapshot**, even listed explicitly as a pkg asset — its
+   `binding.js` resolves the `.node` file via a computed `path.join()`,
+   which pkg's own error says plainly it can't handle ("specify a literal
+   in 'require' call"). Tried and confirmed NOT a fix: extending the
+   existing Android/Termux `require.cache`-patching WASM shim
+   (`src/shared/crossPlatformShims.ts`, now de-duplicated out of
+   embedder.ts/generator.ts) to trigger on `process.pkg` — doesn't
+   propagate into pkg's own module loader. `better-sqlite3` bundles and
+   loads correctly (confirmed with a real cross-target `prebuild-install`
+   fetch, e.g. Linux x64 from a macOS host, targeting the pkg-embedded
+   Node's ABI via `--target 22.13.0`, not the CI host's own Node version).
+
+**Net effect, narrower than Ticket 3's literal decision:** the packaged
+binary ships `better-sqlite3` native, but runs every ONNX-backed component
+(embeddings, reranking, NLI polarity, summarization) without native
+acceleration — confirmed this degrades gracefully rather than crashing
+(`memory add` against the packaged binary returns `{"status":"created"}`
+with a printed warning; neuron's write path already tolerates a failed
+vector-index step and reconciles from markdown). The `npm install` path is
+completely unaffected — it never touches pkg's snapshot fs. Fixing ONNX
+Runtime's native path for real inside a pkg binary is unscheduled
+follow-up, same posture Ticket 4 already set for code signing: an accepted
+v1 rough edge, not a blocker.
+
+**Independent fix, found along the way:** `reranker.ts` and
+`nliClassifier.ts` were missing the Android/Termux WASM-forcing shim
+entirely (`embedder.ts`/`generator.ts` had it, they didn't) — a real,
+pre-existing gap unrelated to pkg. Now consistent across all four
+`@huggingface/transformers` call sites via the de-duplicated shared shim.
+
+**Also confirmed and worth recording:** macOS enforces code-signature
+validity on any `dlopen()`'d native addon, especially on Apple Silicon — an
+unsigned `.node` file loaded outside pkg's own extraction mechanism gets
+SIGKILL'd by the kernel (`CODESIGNING`/"Invalid Page", not a catchable JS
+error). Hit this directly testing `better-sqlite3` manually on this
+machine; fixed locally with `codesign --sign - --force` /
+`npm rebuild better-sqlite3`. pkg's own native-addon extraction handles
+this correctly for the actual packaged binary (confirmed: the packaged
+binary's `better-sqlite3` loads and writes fine, no crash) — this is a
+local-dev-only gotcha from bypassing pkg's extraction flow, not a defect in
+the shipped pipeline, but worth flagging since it's exactly the kind of
+thing that looks like the binary itself is broken if hit blind.
+
+Verified locally end-to-end for the host target (macOS arm64,
+`@yao-pkg/pkg` 6.22.0): binary builds, runs `--help`, and completes a real
+`memory add` (entry created, embedder/reranker paths exercised, exit 0).
+The other 5 targets use the identical mechanism but weren't individually
+smoke-tested outside the CI matrix definition itself. `npm test` (781
+tests) shows the same 431 passed / 113 failed / 24 errors before and after
+this change (confirmed via `git stash` comparison) — pre-existing
+CLI-integration test-isolation gaps, not a regression from this ticket.
+`neuron scan --check` and `neuron status --check` both exit 0 against the
+new files (a separate, pre-existing `status --check` category-drift
+failure reproduces identically on unmodified baseline code too — local
+database history, not CI-visible, not this ticket's concern).
+
+Feeds Ticket 6 (`install.sh`) and Ticket 7 (Windows install path), which
+verify against `SHA256SUMS`.
+
 ---
 id: 8d843d50-a002-4f95-aa87-bae23db12535
 createdAt: 2026-08-17T10:44:13.447Z
@@ -1652,7 +2025,7 @@ taskId: null
 blockedBy: 1f3592a2-1032-4295-b3dc-405d05a63fe8
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1667,6 +2040,32 @@ runs. Fail loudly and exit non-zero on checksum mismatch — never install an
 unverified binary. Print a clear next-step message on success (e.g. `neuron
 --version` to confirm).
 
+## Resolution
+
+Shipped: `install.sh` at the repo root (POSIX `sh`, no bashisms — matches
+the `| sh` pipe in the destination's own install command). Detects
+`uname -s`/`uname -m`, maps to Ticket 5's asset names
+(`neuron-<macos|linux>-<x64|arm64>`), resolves the latest release tag via
+the GitHub API, downloads the asset plus `SHA256SUMS`, and compares a
+locally computed `sha256sum`/`shasum -a 256` digest against the entry for
+that exact filename. A missing or mismatched entry hard-fails (non-zero
+exit, no install) before anything touches disk — verified live via three
+end-to-end runs against a local mock GitHub-release server (a temp dir
+served over `python3 -m http.server` with a fake `api/latest.json`,
+release asset, and SHA256SUMS, referenced via an env-substituted copy of
+the real script so the shipped file itself needed no test-only branches):
+(1) happy path installed a fake binary, `chmod +x`'d it, and it ran; (2) a
+corrupted SHA256SUMS entry correctly aborted with exit 1 and left the
+install directory nonexistent; (3) a pre-populated PATH correctly
+suppressed the 'add to PATH' hint. Install directory defaults to
+`$HOME/.neuron/bin`, overridable via `NEURON_INSTALL` (mirrors Bun's
+`BUN_INSTALL`/Deno's `DENO_INSTALL` convention, consistent with Ticket 2's
+research). Windows is explicitly out of scope for this script (points to
+`install.ps1`/Ticket 7 in its own error message for an unsupported OS).
+Ticket 8 (Implement `neuron upgrade`) and Ticket 9 (README install-path
+docs) were already correctly specified and blocked on this ticket — no new
+fog to graduate, both are now unblocked.
+
 ---
 id: c1680372-4dc8-4502-9b98-d86b31cbe007
 createdAt: 2026-08-17T10:44:13.938Z
@@ -1679,7 +2078,7 @@ taskId: null
 blockedBy: 81577dba-f63f-4548-bebe-d99311608c4c,1f3592a2-1032-4295-b3dc-405d05a63fe8
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1689,6 +2088,39 @@ manifest submission, a scoop bucket, or some combination.
 
 Reuse Ticket 6's checksum-verification discipline regardless of mechanism —
 never install an unverified binary on Windows either.
+
+## Answer
+
+Shipped `install.ps1` at the repo root — the primary channel Ticket 2's
+research recommended (Deno/Bun's `irm <url> | iex` shape, wrapped in
+`powershell -c "..."` for pasteability). Detects arch via
+RuntimeInformation.OSArchitecture (correct under x64-on-ARM64 emulation,
+no registry read needed), downloads the real asset Ticket 5's CI matrix
+produces — `neuron-windows-x64.exe` / `neuron-windows-arm64.exe`, a raw
+exe, not the zip the research doc speculated about before a real build
+existed — verifies it against the release's SHA256SUMS (same file, same
+discipline as install.sh/Ticket 6), installs to
+$env:NEURON_INSTALL or %USERPROFILE%\.neuron\bin, and adds that dir to
+the user-scope PATH via .NET SetEnvironmentVariable (Deno's mechanism, the
+simpler of the two the research verified). Not run against a real release
+(none cut yet, same gap install.sh carries) or a real PowerShell (none
+available in this dev environment) — reviewed by hand against sha256sum's
+real two-space output format and Deno/Bun's own verified script mechanics
+instead.
+
+Winget (secondary) and Scoop (tertiary), per the research's own ranking,
+are deferred rather than filed for real: both need a real cut release to
+pin a real version/URL/SHA256, and winget specifically means a PR against
+the external microsoft/winget-pkgs repo — not fabricated against
+placeholder data. Drafted as templates instead (packaging/winget/,
+packaging/scoop/, README explaining the gap), same accepted-follow-up
+posture Ticket 4 (unsigned binaries) and Ticket 5 (WASM-only ONNX) already
+set on this map. Chocolatey not drafted, per the research's explicit
+recommendation against it. Full record:
+docs/design/distribution/windows-install-path.md.
+
+Unblocks Ticket 9 (README install-path docs), which was waiting on this
+ticket alongside Ticket 6.
 
 ---
 id: 33f6a40c-9a1e-432f-aeb4-325bc672be5f
@@ -1702,7 +2134,7 @@ taskId: null
 blockedBy: 1f3592a2-1032-4295-b3dc-405d05a63fe8,8d843d50-a002-4f95-aa87-bae23db12535
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1718,6 +2150,86 @@ path. Consider what happens if replacing the running binary fails
 mid-swap (e.g. permissions) — should leave the old binary working, never a
 half-replaced broken state.
 
+## Answer
+
+Shipped: `neuron upgrade` (`src/commands/upgrade.ts`), registered as a
+top-level command in `src/cli.ts` alongside `exec`/`scan`/`hook` (no
+project/memory store needed). Guarded on `typeof process.pkg !==
+'undefined'` — an npm-installed `neuron` refuses immediately with a pointer
+to `npm install -g @kovartravis/neuron@latest`, never attempting the binary
+swap.
+
+Flow: resolves the platform/arch asset name the same way `install.sh` does
+(`process.platform`/`process.arch` instead of `uname`) → fetches
+`GET /repos/kovartravis/neuron/releases/latest`, compares `tag_name` against
+the running version → downloads the matching asset plus `SHA256SUMS` from
+the same release → verifies via `node:crypto` sha256 (same algorithm/
+discipline as Ticket 6's shell `sha256sum`/`shasum` check, reimplemented
+rather than shared code since there's no sh/TypeScript sharing mechanism) →
+atomically replaces the running executable, refusing to install on any
+checksum mismatch.
+
+Found and fixed a real pre-existing gap while building this: both
+`install.sh` and `install.ps1` (Tickets 6, 7) already tell the user to run
+`neuron --version` to confirm the install, but the CLI had no `--version`/
+`-v` flag at all. Added one (`src/components/version.ts`'s
+`getRunningVersion()`), which doubles as the exact mechanism `upgrade`
+needs to know its own current version.
+
+Two non-obvious correctness points `getRunningVersion`/`atomicReplace`
+exist to handle, both explicitly flagged in this ticket's own text:
+
+1. **Knowing the running binary's own version.** A pkg-packaged binary has
+   no `package.json` sitting next to it at runtime (`install.sh` drops a
+   single file) — solved by baking the version in at build time via
+   esbuild's `--define` (`scripts/build-binary.mjs`, same mechanism the
+   existing `import.meta.url` shim already uses), read through a `typeof
+   __NEURON_VERSION__ !== 'undefined'` guard so the plain `tsc` build npm
+   publishes falls through unaffected to reading `package.json` two
+   directories up from the entry point (same shape
+   `checkBinaryVersionMismatch` already relies on). Verified live: bundled
+   `dist/cli.js` through the real esbuild `--define` step and confirmed
+   `--version` prints the injected value.
+2. **Never a half-replaced binary.** `atomicReplace` stages the downloaded
+   asset in the *same directory* as the running executable (not the system
+   tmpdir) so the final swap is a same-filesystem rename — a rename across
+   filesystems (tmpfs → the real install dir) can fail with `EXDEV`, which
+   would otherwise silently turn "atomic" into "sometimes." The swap itself
+   is backup-then-rename-then-cleanup: current → `<path>.old`, staged →
+   current, then best-effort delete of `.old`; if the second rename fails,
+   it rolls back from `.old` immediately and re-throws. On Windows this
+   relies on a real platform fact worth recording: the OS opens a running
+   executable's image with `FILE_SHARE_DELETE`, so renaming (not deleting
+   in place) the currently-executing file is allowed — the same trick
+   Chrome/electron-updater rely on.
+
+Tested: `resolveAssetTarget`/`assetName`/`compareVersions`/`sha256File` as
+pure unit tests; `atomicReplace` both on the happy path and on an induced
+second-rename failure (confirms rollback leaves the original content
+intact, no stray `.old`); a full `runUpgrade` end-to-end pass against a
+local mock GitHub API + Releases server (`node:http`, in the spirit of
+Ticket 6's own mock release server for `install.sh`) covering: successful
+download-verify-replace, checksum-mismatch rejection (binary left
+untouched, no stray staged file), already-up-to-date (asserts zero download
+requests made), and `--check` (reports availability, makes no download
+requests). `handleUpgradeCommand`'s `--help` output and its not-running-
+under-pkg guard (naturally exercised under vitest/npm, no mocking needed)
+are also covered. 18 new tests, `npm test` 799/799, `tsc --noEmit` clean,
+`neuron scan --check` clean after re-baselining for the new
+`upgrade.ts`/`version.ts` export surface, `neuron status --check` shows the
+same pre-existing `undeclaredCategories` drift as `main` (confirmed via
+`git stash` comparison) — unrelated to this ticket.
+
+Not exercised: a real end-to-end run of the actual packaged pkg binary
+self-replacing itself (would need a full native-addon `build:binary` run
+and a real GitHub Release to point at) — same gap Tickets 6 and 7 already
+carry for their own install scripts, closed once a real release with these
+assets exists.
+
+Ticket 9 (README install-path docs) is the map's other already-specified
+frontier ticket; this one didn't block it and doesn't unblock anything
+further itself.
+
 ---
 id: f35a2408-6091-415d-ac5e-422d62a154e2
 createdAt: 2026-08-17T10:44:43.202Z
@@ -1730,7 +2242,7 @@ taskId: null
 blockedBy: 8d843d50-a002-4f95-aa87-bae23db12535,c1680372-4dc8-4502-9b98-d86b31cbe007
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1743,3 +2255,36 @@ https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`
 Make clear neither is more "official" than the other per the map's
 chartering decision that npm stays fully supported — this is an additive
 second path, not a deprecation notice for the first.
+
+## Answer
+
+Rewrote README.md's Quick start section (the only install-instructions
+location in the repo): a lead-in line states neither path is more
+"official," followed by two fenced blocks — npm alongside Ticket 6's real
+`install.sh` one-liner (macOS/Linux) in one `bash` block, then Ticket 7's
+real `install.ps1` one-liner (wrapped in `powershell -c "..."`, matching
+its own pasteable-from-any-shell design) in a separate `powershell` block
+so syntax highlighting matches each command's actual shell. Both curl/
+PowerShell one-liners were copied verbatim from the scripts' own header
+comments (`install.sh`/`install.ps1`), not retyped, so they can't drift
+from what Tickets 6/7 actually shipped.
+
+Added one line beyond the ticket's literal ask: since Ticket 8 shipped
+`neuron upgrade` as a binary-only self-updater (a no-op with a pointer to
+`npm install -g @kovartravis/neuron@latest` under npm), and the two
+install paths now have different upgrade commands, the install section
+says which upgrade path applies to which install method — otherwise a
+curl-installed user reading the rest of this repo's docs would have no
+way to know `npm update -g` doesn't apply to them. Kept to one line;
+no new section, no upgrade walkthrough.
+
+Did not touch Ticket 7's own deferred winget/scoop templates
+(`packaging/winget/`, `packaging/scoop/`) — those aren't real, publishable
+packages yet (no pinned version/URL/SHA256 against a real cut release),
+so surfacing them in the README would document an install path that
+doesn't work. Out of this ticket's scope; revisit once a real release
+exists to point them at.
+
+Verified by reading the rendered section back (`README.md:61-95`): both
+commands match `install.sh`/`install.ps1`'s own header-comment usage
+lines exactly, byte for byte.

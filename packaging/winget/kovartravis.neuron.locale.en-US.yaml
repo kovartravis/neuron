@@ -1,0 +1,13 @@
+# DRAFT -- not validated against winget-pkgs manifest schema, not submitted.
+# Fill in <VERSION> before filing at github.com/microsoft/winget-pkgs.
+# See docs/design/distribution/windows-install-path.md.
+PackageIdentifier: kovartravis.neuron
+PackageVersion: <VERSION>
+PackageLocale: en-US
+Publisher: kovartravis
+PackageName: neuron
+License: MIT
+ShortDescription: Persistent, structured memory store for AI coding agents.
+PackageUrl: https://github.com/kovartravis/neuron
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

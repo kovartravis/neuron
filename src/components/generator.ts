@@ -8,36 +8,14 @@
  * rather than each consumer loading its own copy.
  */
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import envPaths from 'env-paths';
-
-const require = createRequire(import.meta.url);
+import { applyCrossPlatformShims } from '../shared/crossPlatformShims.js';
 
 export const GENERATION_MODEL = 'Xenova/Qwen1.5-0.5B-Chat';
 
 export interface GeneratorProgress {
   phase: string;
   percent?: number;
-}
-
-function applyCrossPlatformShims() {
-  if (process.platform === 'android') {
-    try {
-      const ort = require('onnxruntime-web');
-      if (ort && ort.env && ort.env.wasm) {
-        ort.env.wasm.numThreads = 1;
-        const distDir = path.dirname(require.resolve('onnxruntime-web'));
-        ort.env.wasm.wasmPaths = distDir + '/';
-      }
-      const resolvedOrt = require.resolve('onnxruntime-node');
-      (require.cache as any)[resolvedOrt] = { id: resolvedOrt, filename: resolvedOrt, loaded: true, exports: ort };
-    } catch (e) {}
-
-    try {
-      const resolvedSharp = require.resolve('sharp');
-      (require.cache as any)[resolvedSharp] = { id: resolvedSharp, filename: resolvedSharp, loaded: true, exports: {} };
-    } catch (e) {}
-  }
 }
 
 let generatorPromise: Promise<any> | null = null;

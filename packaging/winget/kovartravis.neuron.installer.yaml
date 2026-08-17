@@ -1,0 +1,18 @@
+# DRAFT -- not validated against winget-pkgs manifest schema, not submitted.
+# Fill in <VERSION>, <SHA256_X64>, <SHA256_ARM64> from a real GitHub Release
+# and its SHA256SUMS (Ticket 5) before filing at github.com/microsoft/winget-pkgs.
+# See docs/design/distribution/windows-install-path.md.
+PackageIdentifier: kovartravis.neuron
+PackageVersion: <VERSION>
+InstallerType: portable
+Commands:
+  - neuron
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/kovartravis/neuron/releases/download/v<VERSION>/neuron-windows-x64.exe
+    InstallerSha256: <SHA256_X64>
+  - Architecture: arm64
+    InstallerUrl: https://github.com/kovartravis/neuron/releases/download/v<VERSION>/neuron-windows-arm64.exe
+    InstallerSha256: <SHA256_ARM64>
+ManifestType: installer
+ManifestVersion: 1.6.0

@@ -1,0 +1,9 @@
+# DRAFT -- not validated against winget-pkgs manifest schema, not submitted.
+# Fill in <VERSION> and file at github.com/microsoft/winget-pkgs once a real
+# GitHub Release with Ticket 5's binary assets exists. See
+# docs/design/distribution/windows-install-path.md.
+PackageIdentifier: kovartravis.neuron
+PackageVersion: <VERSION>
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

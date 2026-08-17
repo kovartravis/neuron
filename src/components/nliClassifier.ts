@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import envPaths from 'env-paths';
 import { withModelCacheLock } from './modelCacheLock.js';
+import { applyCrossPlatformShims } from '../shared/crossPlatformShims.js';
 
 export interface PolarityClassifier {
   /**
@@ -46,6 +47,7 @@ export class TransformersNLIClassifier implements PolarityClassifier {
   async scoreContradiction(premise: string, hypothesis: string): Promise<number> {
     if (!this.modelPromise) {
       this.modelPromise = (async () => {
+        applyCrossPlatformShims();
         const { AutoTokenizer, AutoModelForSequenceClassification, env } = await import('@huggingface/transformers');
         const appPaths = envPaths('neuron', { suffix: '' });
         const modelCacheDir = path.join(appPaths.data, 'models');
