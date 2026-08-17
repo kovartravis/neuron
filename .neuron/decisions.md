@@ -1465,3 +1465,15 @@ tags:
 taskId: 9cbc685c-807e-4f69-b599-c39d5d011824
 ---
 Curl-Installable Standalone Binary map's Ticket 4 (Code Signing) resolved: ship the standalone binary unsigned at launch, accepting the macOS Gatekeeper and Windows SmartScreen first-run warnings, rather than blocking on macOS notarization or Windows Authenticode signing. Decided live with the maintainer via grilling: the audience is developers/CLI users, the same crowd rustup/deno/bun's own early unsigned or lightly-signed releases targeted, who already know how to right-click-Open or run 'xattr -d com.apple.quarantine' -- not a broader non-technical audience the warning could turn away on first contact. Not ruled out permanently: signing (a $99/yr Apple Developer account plus a notarization pipeline step, plus a separate, pricier Windows Authenticode/EV cert) is an accepted, unscheduled follow-up with no formal revisit trigger tied to it (no complaint count or install-volume milestone). Tickets 5-8 (CI build matrix, install.sh, Windows install path, neuron upgrade, README) proceed against unsigned binaries.
+
+---
+id: 3fb733dd-c167-4bbc-bb96-dc49cc22cd98
+createdAt: 2026-08-17T14:57:30.230Z
+importance: 4
+tags:
+  - release
+  - npm
+  - publish
+taskId: 1f3592a2-1032-4295-b3dc-405d05a63fe8
+---
+Curl-Installable Standalone Binary map's Ticket 5 (CI Build Matrix) resolved: publish.yml gains build-binaries (6-target matrix, one ubuntu-latest runner per Ticket 1's cross-compile story) and release-assets (SHA256SUMS + GitHub Release) jobs, gated on dist_tag == 'latest'. Narrows Ticket 3's literal 'bundle both native addons' decision: better-sqlite3 bundles and loads correctly inside the pkg-packaged binary (confirmed), but onnxruntime-node's native binding cannot be made to load inside a pkg snapshot even as an explicit pkg asset, so every ONNX-backed feature (embeddings, reranking, NLI, summarization) runs on WASM only in the curl-installed binary specifically -- confirmed non-fatal (a failed vector-index write reconciles from markdown rather than crashing the command), accepted as an unscheduled-follow-up v1 gap, same posture as Ticket 4's unsigned-binary call. The npm install path is unaffected. Full mechanism and both real findings: docs/design/distribution/ci-build-matrix.md. Tickets 6 (install.sh) and 7 (Windows install path) are now the open frontier.

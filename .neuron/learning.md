@@ -1664,3 +1664,27 @@ tags:
 taskId: null
 ---
 Fix for a category-move gap in NeuronMemory.transactVector's upsert path (src/index.ts): the 'exists' check for op:'upsert' looks up an id store-wide (SELECT 1 FROM memories WHERE id = ? AND project_id = ?, no category filter), so upserting an existing id under a NEW category hits the UPDATE branch, not INSERT — and the UPDATE branch's column list never includes category, so the row silently stays under its old category while every other field updates. Found while designing neuron-2.4.3 ticket 9's tickets-category split migration, before it ran against the live store (caught by reasoning about the code, not by a live failure). No shipped caller hits this today: the CLI's update requires --category to already match the existing row (mismatched category is treated as not_found, not a wrong-category update), so the gap is only reachable by code that does a same-id cross-category upsert directly, which nothing in the codebase currently does. Workaround for any future category-move script: delete the row from its old category first, then upsert into the new one — the second write then hits the INSERT branch, which does set category correctly. Documented as the required pattern in docs/agents/issue-tracker.md's new Archiving section, not filed as its own bug ticket since no live code path is exposed.
+
+---
+id: b2456e33-dcd3-4e16-b470-3b49f8c6d29f
+createdAt: 2026-08-17T14:57:40.620Z
+importance: 4
+tags:
+  - publish
+  - npm
+  - failure-fix
+taskId: 1f3592a2-1032-4295-b3dc-405d05a63fe8
+---
+Fix for @yao-pkg/pkg (v6.22.0) failing to package an ESM entry point against neuron's real dependency tree: pointing pkg directly at dist/cli.js (a real ESM file, package.json type:module) crashed at runtime with 'Cannot find package @huggingface/transformers' even though the identical file runs fine under plain node. Root cause: pkg's snapshot filesystem does not correctly resolve conditional package.json exports maps for exports-only packages with no fallback main field (transformers.js's own main points at a source file the published npm package doesn't even ship) -- this matches the long-open vercel/pkg#1291 'ES modules not supported', inherited unchanged by the yao-pkg fork. Resolution: pre-bundle dist/cli.js to a single CommonJS file with esbuild before handing it to pkg (esbuild does correct exports resolution at its own bundle time, sidestepping pkg's broken runtime resolution entirely) -- esbuild dist/cli.js --bundle --platform=node --format=cjs --external:better-sqlite3 --external:onnxruntime-node --external:node:sqlite. Edge case: esbuild's CJS output silently empties import.meta.url (only a warning, not an error), which breaks every createRequire(import.meta.url) call in db.ts/embedder.ts/generator.ts -- needs the standard esbuild shim: --define:import.meta.url=import_meta_url plus a --banner:js setting import_meta_url via require('url').pathToFileURL(__filename).href. Full writeup: docs/design/distribution/ci-build-matrix.md, implemented in scripts/build-binary.mjs.
+
+---
+id: 09b325a4-4021-4154-885a-71e714d6894a
+createdAt: 2026-08-17T14:58:12.571Z
+importance: 4
+tags:
+  - failure-fix
+  - exec
+  - sqlite
+taskId: 1f3592a2-1032-4295-b3dc-405d05a63fe8
+---
+Fix for macOS SIGKILL ('CODESIGNING'/Invalid Page in the crash report, EXC_BAD_ACCESS at the OS level, not a catchable JS error) when dlopen()-ing a native addon: manually running better-sqlite3's prebuild-install locally on Apple Silicon (outside any packaging tool's own extraction flow) downloads a valid Mach-O arm64 .node file that has no valid code signature, and macOS's AMFI enforcement kills the entire process the instant Node tries to dlopen it -- confirmed via ~/Library/Logs/DiagnosticReports/node-*.ips showing termination.namespace CODESIGNING. This is silent and total: no JS exception, no stack trace, just exit 137, so it looks exactly like an OOM kill or sandbox timeout until you check the actual crash report. Fix: 'codesign --sign - --force <path-to-.node>' (ad-hoc self-sign) restores it to loadable, or for local dev use just 'npm rebuild better-sqlite3' to get a properly-built-and-signed copy back. Edge case confirmed separately: @yao-pkg/pkg's own native-addon extraction mechanism does NOT hit this problem for the actual packaged binary -- pkg handles the macOS signing correctly when it extracts a bundled native asset at runtime, so this trap only bites when you bypass a packaging tool's own flow and swap node_modules binaries by hand, e.g. while testing cross-target prebuild-install fetches for a CI build script.
