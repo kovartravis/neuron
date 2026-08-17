@@ -1557,6 +1557,25 @@ self-updates the binary, and the README documents both install paths.
   (`neuron upgrade`) and Ticket 9 (README install-path docs), both already
   specified and now frontier.
 
+- [7 — Ship the Windows Install Path](c1680372-4dc8-4502-9b98-d86b31cbe007) —
+  shipped: `install.ps1` at the repo root, the primary `irm <url> | iex`
+  channel Ticket 2's research recommended (Deno/Bun's mechanics — real-arch
+  detection via `RuntimeInformation.OSArchitecture`, install to
+  `NEURON_INSTALL`/`%USERPROFILE%\.neuron\bin`, user-scope PATH via .NET
+  `SetEnvironmentVariable`), verified against Ticket 5's real asset shape
+  (a raw `.exe`, not the zip the research speculated about pre-build) and
+  reusing Ticket 6's `SHA256SUMS`-or-refuse discipline. Not run against a
+  real release or real PowerShell — none available yet, same gap
+  `install.sh` already carries. Winget (secondary) and Scoop (tertiary)
+  deferred rather than filed for real: both need a real cut release to
+  pin a real version/URL/SHA256, and winget means a PR against the
+  external `microsoft/winget-pkgs` repo — drafted as templates instead
+  (`packaging/winget/`, `packaging/scoop/`), same accepted-follow-up
+  posture as Ticket 4 and Ticket 5. Full record:
+  docs/design/distribution/windows-install-path.md. Unblocks Ticket 9
+  (README install-path docs) alongside Ticket 6, already specified and
+  now frontier.
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -2032,7 +2051,7 @@ taskId: null
 blockedBy: 81577dba-f63f-4548-bebe-d99311608c4c,1f3592a2-1032-4295-b3dc-405d05a63fe8
 kind: task
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -2042,6 +2061,39 @@ manifest submission, a scoop bucket, or some combination.
 
 Reuse Ticket 6's checksum-verification discipline regardless of mechanism —
 never install an unverified binary on Windows either.
+
+## Answer
+
+Shipped `install.ps1` at the repo root — the primary channel Ticket 2's
+research recommended (Deno/Bun's `irm <url> | iex` shape, wrapped in
+`powershell -c "..."` for pasteability). Detects arch via
+RuntimeInformation.OSArchitecture (correct under x64-on-ARM64 emulation,
+no registry read needed), downloads the real asset Ticket 5's CI matrix
+produces — `neuron-windows-x64.exe` / `neuron-windows-arm64.exe`, a raw
+exe, not the zip the research doc speculated about before a real build
+existed — verifies it against the release's SHA256SUMS (same file, same
+discipline as install.sh/Ticket 6), installs to
+$env:NEURON_INSTALL or %USERPROFILE%\.neuron\bin, and adds that dir to
+the user-scope PATH via .NET SetEnvironmentVariable (Deno's mechanism, the
+simpler of the two the research verified). Not run against a real release
+(none cut yet, same gap install.sh carries) or a real PowerShell (none
+available in this dev environment) — reviewed by hand against sha256sum's
+real two-space output format and Deno/Bun's own verified script mechanics
+instead.
+
+Winget (secondary) and Scoop (tertiary), per the research's own ranking,
+are deferred rather than filed for real: both need a real cut release to
+pin a real version/URL/SHA256, and winget specifically means a PR against
+the external microsoft/winget-pkgs repo — not fabricated against
+placeholder data. Drafted as templates instead (packaging/winget/,
+packaging/scoop/, README explaining the gap), same accepted-follow-up
+posture Ticket 4 (unsigned binaries) and Ticket 5 (WASM-only ONNX) already
+set on this map. Chocolatey not drafted, per the research's explicit
+recommendation against it. Full record:
+docs/design/distribution/windows-install-path.md.
+
+Unblocks Ticket 9 (README install-path docs), which was waiting on this
+ticket alongside Ticket 6.
 
 ---
 id: 33f6a40c-9a1e-432f-aeb4-325bc672be5f

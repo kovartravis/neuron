@@ -1,0 +1,30 @@
+{
+  "version": "<VERSION>",
+  "description": "Persistent, structured memory store for AI coding agents.",
+  "homepage": "https://github.com/kovartravis/neuron",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/kovartravis/neuron/releases/download/v<VERSION>/neuron-windows-x64.exe#/neuron.exe",
+      "hash": "<SHA256_X64>"
+    },
+    "arm64": {
+      "url": "https://github.com/kovartravis/neuron/releases/download/v<VERSION>/neuron-windows-arm64.exe#/neuron.exe",
+      "hash": "<SHA256_ARM64>"
+    }
+  },
+  "bin": "neuron.exe",
+  "checkver": {
+    "github": "https://github.com/kovartravis/neuron"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/kovartravis/neuron/releases/download/v$version/neuron-windows-x64.exe#/neuron.exe"
+      },
+      "arm64": {
+        "url": "https://github.com/kovartravis/neuron/releases/download/v$version/neuron-windows-arm64.exe#/neuron.exe"
+      }
+    }
+  }
+}
