@@ -494,12 +494,17 @@ export async function handleInitCommand(args: string[]): Promise<void> {
   );
   const newlyOnboardedHarnessNames = detectedHarnessNames.filter(name => !priorSkillFiles.has(name));
 
-  // Detect harnesses and copy the bundled neuron-memory skill
+  // Detect harnesses and copy the bundled skills — neuron-memory (the ongoing
+  // operate loop) and neuron-onboarding (first-time setup, ticket 5) — to
+  // every detected harness's skills dir.
   let detectedSkillsDirs = detectHarnesses(projectDir);
   if (detectedSkillsDirs.length === 0) {
     detectedSkillsDirs = ['.agents/skills'];
   }
-  const skillsWritten = detectedSkillsDirs.map(dir => copySkill(projectDir, dir));
+  const skillsWritten = detectedSkillsDirs.flatMap(dir => [
+    copySkill(projectDir, dir, 'neuron-memory'),
+    copySkill(projectDir, dir, 'neuron-onboarding'),
+  ]);
 
   if (newlyOnboardedHarnessNames.length > 0) {
     process.stderr.write(

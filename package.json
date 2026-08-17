@@ -41,6 +41,7 @@
     "README.md",
     "LICENSE",
     ".claude/skills/neuron-memory/",
+    ".claude/skills/neuron-onboarding/",
     "docs/images/"
   ],
   "scripts": {

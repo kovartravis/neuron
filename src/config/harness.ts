@@ -39,12 +39,19 @@ export function detectHarnesses(projectDir: string): string[] {
     .map(h => h.skills);
 }
 
-export function copySkill(projectDir: string, skillsRelDir: string): string {
+/**
+ * Copies one bundled skill's SKILL.md (identified by its `.claude/skills/`
+ * directory name — `neuron-memory`, `neuron-onboarding`) into a harness's
+ * skills dir. Generalized from a `neuron-memory`-only copy (ticket 5,
+ * Map — MCP Server & Setup/Onboarding Skill Split) so `neuron init` can fan
+ * both bundled skills out to every detected harness the same way.
+ */
+export function copySkill(projectDir: string, skillsRelDir: string, skillName: string): string {
   const skillSrc = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
-    '../../.claude/skills/neuron-memory/SKILL.md'
+    `../../.claude/skills/${skillName}/SKILL.md`
   );
-  const destDir = path.join(projectDir, skillsRelDir, 'neuron-memory');
+  const destDir = path.join(projectDir, skillsRelDir, skillName);
   fs.mkdirSync(destDir, { recursive: true });
   const destPath = path.join(destDir, 'SKILL.md');
   fs.copyFileSync(skillSrc, destPath);
