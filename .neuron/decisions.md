@@ -1477,3 +1477,15 @@ tags:
 taskId: 1f3592a2-1032-4295-b3dc-405d05a63fe8
 ---
 Curl-Installable Standalone Binary map's Ticket 5 (CI Build Matrix) resolved: publish.yml gains build-binaries (6-target matrix, one ubuntu-latest runner per Ticket 1's cross-compile story) and release-assets (SHA256SUMS + GitHub Release) jobs, gated on dist_tag == 'latest'. Narrows Ticket 3's literal 'bundle both native addons' decision: better-sqlite3 bundles and loads correctly inside the pkg-packaged binary (confirmed), but onnxruntime-node's native binding cannot be made to load inside a pkg snapshot even as an explicit pkg asset, so every ONNX-backed feature (embeddings, reranking, NLI, summarization) runs on WASM only in the curl-installed binary specifically -- confirmed non-fatal (a failed vector-index write reconciles from markdown rather than crashing the command), accepted as an unscheduled-follow-up v1 gap, same posture as Ticket 4's unsigned-binary call. The npm install path is unaffected. Full mechanism and both real findings: docs/design/distribution/ci-build-matrix.md. Tickets 6 (install.sh) and 7 (Windows install path) are now the open frontier.
+
+---
+id: 2e8ff47b-c7fd-4d74-8315-a08e060db4ff
+createdAt: 2026-08-17T15:07:37.307Z
+importance: 4
+tags:
+  - publish
+  - release
+  - failure-fix
+taskId: null
+---
+Curl-Installable Standalone Binary map's Ticket 6 (Write and Ship install.sh) resolved: shipped a POSIX sh script at the repo root that detects OS/arch via uname, resolves the latest GitHub Release tag via the API, downloads the matching asset plus SHA256SUMS, and hard-fails (non-zero exit, nothing written to disk) on any missing or mismatched checksum entry -- never installs an unverified binary. Installs to $HOME/.neuron/bin by default, overridable via NEURON_INSTALL, deliberately mirroring Bun's BUN_INSTALL/Deno's DENO_INSTALL own-directory convention rather than inventing a new one, consistent with Ticket 2's research into what comparable single-binary CLIs already do. Verified end-to-end (happy path, checksum-mismatch rejection, PATH-already-set) against a local mock GitHub-release server built with python3 -m http.server, since no real GitHub Release carrying Ticket 5's asset names has been cut yet -- the shipped script itself needed no test-only branches; only an env-substituted copy pointed at localhost was used for the test runs. Windows is explicitly out of scope for this script and its own error message points at Ticket 7/install.ps1 for an unsupported OS. Unblocks Ticket 8 (neuron upgrade) and Ticket 9 (README install-path docs), both already specified on the map and now the frontier.
