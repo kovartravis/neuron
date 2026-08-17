@@ -935,13 +935,20 @@ and content tickets have what they need from this map to proceed.
   adjective claims) and a concrete banned-superlatives list. Grilled live
   with the maintainer. Feeds Site (2.5.0)'s Ticket 2. Full guide:
   docs/design/seo/content-authoring-style-guide.md.
+- [7 — GEO Citation Measurement Approach](406c9701-a5bf-4001-9bbc-a69c85463c67) —
+  manual, no-cost monthly check across all four target engines (ChatGPT,
+  Claude, Perplexity, Google AI Overviews) against a fixed 8-query set
+  drawn from Ticket 1; logs the full mention spectrum (linked, named-but-
+  unlinked, or unattributed) rather than a binary yes/no. Grilled live
+  with the maintainer. Log and query set: docs/design/seo/geo-citation-log.md.
 
 ## Not yet specified
 
-- Ongoing ranking/citation maintenance cadence once the site is live and
-  initial measurement (Ticket 7) is running — how often to re-check, what
-  triggers a content refresh. Can't specify until Ticket 7 picks an
-  approach and the site has real traffic/citation data to react to.
+- What triggers a content refresh once real citation data exists — Ticket 7
+  settled the check's own cadence (monthly) and what counts as a citation,
+  but not how a maintainer should react to a bad run (e.g. a page that
+  never gets cited after several checks). Can't specify until the site is
+  live and Ticket 7's log has real data to react to.
 
 ## Out of scope
 
@@ -1355,7 +1362,7 @@ tags:
 taskId: null
 kind: grilling
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 7 — GEO Citation Measurement Approach
 
@@ -1375,6 +1382,26 @@ periodic manual prompt-and-check routine (ask each engine neuron's target
 queries, log whether/how it's cited). Decide the approach now so it's ready
 to run the moment the site ships, rather than improvised later. Doesn't
 block anything else in this map — can resolve any time.
+
+## Answer
+
+Grilled live with the maintainer. Manual, no-cost routine — no paid
+tracking tool:
+
+1. **Engines**: all four named at chartering — ChatGPT, Claude, Perplexity,
+   Google AI Overviews.
+2. **Queries**: a fixed set of 8, pulled from Ticket 1's keyword research,
+   reused every check so results are comparable month to month (not
+   re-derived per check).
+3. **Cadence**: monthly, starting once the site ships.
+4. **Citation definition**: log the full spectrum, not a binary yes/no —
+   direct source link, named-but-unlinked mention, or content clearly
+   drawn from the site without attribution.
+5. **Log location**: `docs/design/seo/geo-citation-log.md`, dated entries
+   per check.
+
+Full query list, table template, and log:
+docs/design/seo/geo-citation-log.md.
 
 ---
 id: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
