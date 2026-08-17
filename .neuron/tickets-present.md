@@ -1484,6 +1484,22 @@ self-updates the binary, and the README documents both install paths.
   production. Feeds Ticket 3 (native-addon bundling), Ticket 4
   (code-signing), and Ticket 5 (CI build matrix).
 
+- [2 — Windows Install Convention](docs/design/distribution/windows-install-convention-research.md) —
+  primary: a PowerShell `irm <url>/install.ps1 | iex` one-liner (Bun's
+  `powershell -c "irm ... | iex"` wrapped shape), mirroring Deno's and
+  Bun's own verified scripts — both fetched and read directly, both ship
+  this as their primary, first-documented Windows method. rustup's
+  `.exe`-download pattern and ripgrep/fd's Releases-page-first convention
+  were both real alternatives found but declined: neither matches the
+  one-paste-line UX the curl pattern sets on macOS/Linux. Secondary:
+  publish a winget manifest (peer-listed, not headline, per Deno's own
+  posture) — winget is close to universal on modern Windows but not
+  guaranteed present at first login per Microsoft's own docs, and Bun's
+  community winget package has a live unresolved PATH bug
+  (oven-sh/bun#20868) as a concrete caution. Tertiary: a scoop bucket
+  entry. Chocolatey declined. Feeds Ticket 7 (ship the Windows install
+  path).
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -1594,7 +1610,7 @@ tags:
 taskId: null
 kind: research
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1611,6 +1627,59 @@ a secondary) rather than assuming the PowerShell port is automatically
 right.
 
 Feeds Ticket 7 (ship the Windows install path).
+
+## Answer
+
+Primary: a PowerShell `irm <url>/install.ps1 | iex` one-liner, invoked
+as `powershell -c "irm https://<neuron-install-host>/install.ps1 | iex"`
+(Bun's exact wrapped-invocation shape, pasteable from any shell context —
+not Deno's bare form, which assumes an already-open PowerShell prompt).
+This is what both of the two most directly comparable prior-art tools —
+Deno and Bun, both single-binary language/runtime CLIs distributed the
+same way neuron would be — actually ship as their **primary,
+first-documented** Windows method, verified by fetching their real
+install.ps1 scripts (not assumed from secondary sources). rustup and the
+ripgrep/fd survey do NOT use this pattern (rustup ships a downloadable
+rustup-init.exe; ripgrep/fd point to a manual Releases-page download
+first), but neither fits neuron's stated one-paste-line UX goal the way
+the piped-script pattern does.
+
+The script itself should mirror Deno's/Bun's verified mechanics: download
+a prebuilt zip per arch (neuron-windows-x64.zip / -arm64.zip) from GitHub
+Releases, extract to %USERPROFILE%\.neuron\bin (override via a
+NEURON_INSTALL env var, mirroring DENO_INSTALL/BUN_INSTALL), and add that
+dir to user-scope PATH via .NET's
+[System.Environment]::SetEnvironmentVariable (Deno's approach — simpler
+than Bun's raw registry-key write, no elevation needed).
+
+Secondary: publish a winget manifest (winget install <publisher>.neuron)
+as an additional, not primary, channel — mirroring Deno's posture (winget
+peer-listed, not headline) rather than Bun's (no winget mention at all).
+Verified via Microsoft's own docs that winget is close to universal on
+Windows 11 / Windows 10 1809+ but not guaranteed present at first login,
+excluded from Windows Sandbox, and has a hard version floor — every
+Microsoft-documented fallback for a missing winget is itself a PowerShell
+command, so a winget-only instruction has no self-contained fallback.
+Bun's own community winget package has a live, unresolved PATH bug
+(oven-sh/bun#20868) — concrete evidence that a winget manifest is a
+second maintenance surface with its own failure modes, separate from
+neuron's own installer, worth having but not worth trusting alone.
+
+Tertiary: a scoop bucket entry — low incremental cost, since scoop's own
+install command (irm get.scoop.sh | iex) is the same PowerShell-irm idiom
+neuron's installer already uses. Chocolatey: not recommended — lowest
+signal-to-effort ratio of the channels surveyed, never a tool's own
+first-party-documented primary or clear second-ranked method in anything
+fetched directly.
+
+Full findings, citations, and comparison table:
+[Windows install convention research](../../docs/design/distribution/windows-install-convention-research.md)
+
+Not verified (flagged in the research doc, follow-up for the implementing
+ticket): no actual neuron install.ps1 was built or tested; the
+winget-pkgs manifest submission/review process wasn't researched; scoop.sh's
+own landing page failed to fetch (Scoop's install command was instead
+confirmed from its installer repo's README, still a primary source).
 
 ---
 id: f561802a-c31d-4f66-802c-fe47acf7d170
