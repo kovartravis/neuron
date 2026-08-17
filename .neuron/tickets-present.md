@@ -1474,6 +1474,16 @@ self-updates the binary, and the README documents both install paths.
 
 ## Decisions so far
 
+- [1 — Packaging Tool for the Standalone Binary](docs/design/distribution/packaging-tool-research.md) —
+  `@yao-pkg/pkg` (actively maintained fork of the archived vercel/pkg), the
+  only one of the four candidates whose own docs claim unqualified
+  cross-compilation of all six targets from a single Linux CI runner; Node
+  SEA tracked as a migration candidate once its VFS work and macOS-x64 CI
+  coverage mature; nexe eliminated (17-month-stale beta); Bun declined
+  despite being fastest, since it would move neuron onto Bun's runtime in
+  production. Feeds Ticket 3 (native-addon bundling), Ticket 4
+  (code-signing), and Ticket 5 (CI build matrix).
+
 ## Not yet specified
 
 - Whether/how Map — neuron.github.io Site (2.5.0)'s homepage quickstart
@@ -1501,7 +1511,7 @@ tags:
 taskId: null
 kind: research
 map: 53f4a3e4-d25e-449e-acc8-2f65f7aedaef
-status: unclaimed
+status: resolved
 ---
 ## Question
 
@@ -1523,6 +1533,55 @@ current `node dist/cli.js` invocation.
 Feeds nearly every other ticket on this map — the packaging tool choice
 constrains what's possible for binary composition (Ticket 3), the CI build
 matrix (Ticket 5), and code-signing mechanics (Ticket 4).
+
+## Answer
+
+Researched primary sources (Node.js docs, GitHub repos/API, npm registry)
+across all four candidates. Full findings:
+docs/design/distribution/packaging-tool-research.md.
+
+**Recommendation: `@yao-pkg/pkg`** (v6.22.0, actively maintained fork of
+the archived vercel/pkg — vercel/pkg confirmed archived, last push
+2024-01-03), for the binary-composition and CI-build-matrix tickets, with
+Node's own SEA support tracked as a migration candidate once its VFS work
+and macOS-x64 CI coverage mature (pkg's own README points the same
+direction).
+
+**Eliminated: nexe** — 17-month-stale beta (5.0.0-beta.4, published
+2025-03-08), ~1 maintenance commit/year, 164 open issues not being worked
+down, no documented cross-compilation story, and native-addon support
+that's a "ship the .node file as a separate sidecar" instruction rather
+than real bundling.
+
+**Considered and declined: Bun `build --compile`** — the fastest (111ms
+vs Node SEA's 139.7-161.3ms per a named third-party Hyperfine benchmark)
+and best-documented cross-compilation story (8 explicit `--target`
+values, one host builds all six targets) of the four, but disqualified
+because shipping via Bun means neuron runs on Bun's runtime in production,
+not Node's — every `node:sqlite`/`onnxruntime-web` fallback path in
+`src/db.ts` and `src/components/embedder.ts` would need
+re-verification against Bun's Node-API compatibility layer. A materially
+larger bet than a packaging-tool swap; worth revisiting only if neuron
+considers Bun as a runtime target in its own right.
+
+**The deciding tradeoff**: pkg is the only one of the four whose own docs
+make an unqualified claim that a single Linux CI runner can cross-build
+all six targets (macOS/Linux/Windows × x64/arm64) today. Node SEA's own
+docs explicitly mark macOS x64 as untested in Node's own CI, and
+cross-platform SEA builds require disabling the flags (`useCodeCache`/
+`useSnapshot`) that make its startup competitive.
+
+**Not verified this pass** (flagged in the doc, re-check before committing
+to the CI-matrix ticket's design): no actual cross-compilation was run;
+pkg's binary-size/startup-time figures are proxies from the Node-SEA
+benchmark, not pkg-specific measurements; native-addon bundling wasn't
+tested against neuron's actual `better-sqlite3`/`onnxruntime-node`
+binaries.
+
+**Feeds forward**: unblocks Ticket 3 (native-addon bundling decision —
+pkg's snapshot-extraction mechanism handles either outcome without a
+tooling change) directly, and Ticket 5 (CI build-matrix) and Ticket 4
+(code-signing) indirectly.
 
 ---
 id: 81577dba-f63f-4548-bebe-d99311608c4c
