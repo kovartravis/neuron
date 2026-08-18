@@ -1573,3 +1573,15 @@ tags:
 taskId: 33bc46e8-c074-4275-a20b-7494d2a2a35e
 ---
 Ticket 5 (Implement First-Time-Setup Skill, Map — MCP Server & Setup/Onboarding Skill Split) resolved: built .claude/skills/neuron-onboarding/SKILL.md combining Ticket 2's onboarding-migration design and Ticket 3's moved setup content (interview, neuron.yaml generation, write-side-enrichment/strict-mode interviews, initial architecture-scan config). Decided the trigger mechanism (left open by Ticket 3): generalized copySkill in src/config/harness.ts to take a skillName parameter instead of being hardcoded to neuron-memory, and neuron init now fans both neuron-memory and neuron-onboarding out to every detected harness's skills dir identically, packaged via package.json's files field so it works on real neuron init runs against other repos, not just this one. For the migration-note-inside-the-existing-marker decision (Ticket 2 decision 5), determined no new code was needed: upsertProtocolBlock (src/config/protocolBlock.ts) already refuses to silently clobber a managed protocol-block region whose content differs from what it would regenerate (asks, or keeps existing non-interactively) — so a hand-added migration note inside that same marker region is already protected by that existing ask/keep policy, avoiding a new migration: config schema field that would have been disproportionate scope for this ticket. Cross-linked both skills with a note (neuron-memory still carries the full duplicated setup content pending Ticket 6's trim, now unblocked).
+
+---
+id: 6d357f73-f609-43e1-9e25-490d0988cf63
+createdAt: 2026-08-17T20:22:45.557Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: 0c51a772-ff20-4d78-89dd-49a018b01b55
+---
+Resolved wayfinder ticket 6 (Trim neuron-memory SKILL.md to Maintenance/Help/Cleanup Scope) on Map — MCP Server & Setup/Onboarding Skill Split. Removed §0/§0a/§0b (initial-setup interview, write-side-enrichment interview, determinism/strict-mode interview) and §7's setup-config steps from .claude/skills/neuron-memory/SKILL.md, per Ticket 3's exact boundary decision — that content now lives solely in neuron-onboarding, shipped by Ticket 5. Added a new §9 Troubleshooting section implementing Ticket 3's 'help' definition: five failure modes (enrichment degradation, sync conflicts, prune surprises, scan --diff re-baseline-vs-drift, strict-mode write errors) as Symptom/Cause/Fix, deliberately duplicating the enrichment-degradation and strict-mode diagnostics out of the removed setup sections rather than leaving them setup-skill-only, since an agent troubleshooting mid-session shouldn't need to open the onboarding skill. Rewrote the skill's frontmatter description to match the narrowed operate-loop scope. npm test 799/799, tsc clean (docs-only change). This ticket plus the already-resolved Ticket 4 unblock Map — neuron.github.io Site (2.5.0)'s Ticket 2 (Homepage Messaging). Only remaining frontier item on this map is Ticket 7, a non-blocking A/B benchmark.

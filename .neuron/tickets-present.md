@@ -160,8 +160,31 @@ something unshipped.
   needed no new code: `upsertProtocolBlock`'s existing ask/keep-on-conflict
   policy already protects a hand-added note inside the managed region.
   Cross-linked both skills (a `[!NOTE]` in `neuron-memory` pointing at
-  `neuron-onboarding`, since Ticket 6 hasn't trimmed the old content yet).
+  `neuron-onboarding`).
   `npm test` 799/799, `tsc` clean. Unblocks Ticket 6.
+- [6 — Trim `neuron-memory` SKILL.md to Maintenance/Help/Cleanup Scope](0c51a772-ff20-4d78-89dd-49a018b01b55) —
+  §0/§0a/§0b and §7's setup-config steps removed per Ticket 3's exact
+  boundary (§1-6/§8 numbering untouched, so every cross-reference still
+  resolves); frontmatter `description` rewritten to the narrowed
+  maintenance/help/cleanup scope; new §9 Troubleshooting implements
+  Ticket 3's "help" definition — five failure modes as Symptom/Cause/Fix
+  (enrichment degradation, `sync` conflicts, `prune` surprises,
+  `scan --diff` re-baseline vs. drift, `strict`-mode write errors), with
+  the enrichment/strict-mode entries duplicated from the removed §0a/§0b
+  rather than left setup-skill-only, per Ticket 3's explicit flag.
+  `npm test` 799/799, `tsc` clean. Alongside Ticket 4, unblocks Map —
+  neuron.github.io Site (2.5.0)'s Ticket 2.
+- [7 — A/B: Does Neuron-Delivered Rule-Following Match or Beat Static CLAUDE.md, on Claude Code?](7856befc-344a-4072-b906-b729be0d039f) —
+  mixed result across four independent live rule designs (24 sessions,
+  $0.62 total). `neuron-mcp` (agent-invoked recall): 0% compliance in all
+  four, tool called only 5/8 sessions — a real, replicated adherence risk
+  for MCP-only delivery with no hook backing it. `control` vs.
+  `neuron-hook`: inconclusive — `control` hit a 100% ceiling in all four
+  designs the harness couldn't break (root cause identified: needs a
+  fixture with a genuinely confusable alternative action, per
+  `write-compliance-ab`'s own proven design, not just a rule-wording
+  tweak), so no evidence the hook helps *or* hurts adherence. Full
+  writeup: `docs/design/rule-recall-ab/findings.md`.
 
 ## Not yet specified
 
@@ -300,7 +323,7 @@ taskId: null
 blockedBy: a773beec-dc7d-4da7-afe1-424a5b341fb1,33bc46e8-c074-4275-a20b-7494d2a2a35e
 kind: task
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: resolved
 ---
 # 6 — Trim `neuron-memory` SKILL.md to Maintenance/Help/Cleanup Scope
 
@@ -320,31 +343,91 @@ implements whatever "help" scope Ticket 3 pins down.
 
 ## Deliverables
 
-- [ ] §0/§0a/§0b and the setup-config half of §7 removed from
+- [x] §0/§0a/§0b and the setup-config half of §7 removed from
       `neuron-memory`'s SKILL.md per Ticket 3's exact boundary
-- [ ] The skill's frontmatter `description` updated to match its
+- [x] The skill's frontmatter `description` updated to match its
       narrowed scope (currently: "Manage agent session context by
       interviewing the user, configuring neuron.yaml, loading learnings,
       recording history, and pruning obsolete entries" — the
       "interviewing the user, configuring neuron.yaml" clause no longer
       applies once setup moves out)
-- [ ] Ticket 3's "help" scope implemented, not just documented as a word
-- [ ] A pointer from `neuron-memory` to the new first-time-setup skill
+- [x] Ticket 3's "help" scope implemented, not just documented as a word
+- [x] A pointer from `neuron-memory` to the new first-time-setup skill
       for the content that moved (so an agent that lands here first for a
       brand-new repo isn't stranded)
-- [ ] `npm test` and `tsc` clean
-- [ ] This ticket + Ticket 4 unblock Map — neuron.github.io Site
+- [x] `npm test` and `tsc` clean
+- [x] This ticket + Ticket 4 unblock Map — neuron.github.io Site
       (2.5.0)'s Ticket 2 (Homepage Messaging & Positioning)
 
 ## Answer
 
-_Not yet resolved._
+**Executed exactly Ticket 3's boundary**, verified against its Answer
+section line by line before editing.
+
+**Removed wholesale**: §0 (Initial Project Setup & Interview Protocol),
+§0a (Write-Side Enrichment Interview), §0b (Determinism/`strict`-mode
+Interview) — 246 lines, all now living only in `neuron-onboarding`
+(already shipped there by Ticket 5). §7's steps 1-2 ("Ask & Explain
+Options First," "Update Config & `AGENTS.md`") also removed; the section
+was retitled "Architectural Scan Execution & Blueprint," kept its former
+steps 3-4 renumbered 1-2, and gained a `[!NOTE]` pointing initial scan
+configuration at `neuron-onboarding`. §1-6 and §8 are untouched — their
+own numbering never shifted, so every existing cross-reference inside the
+file (`§5`, `§6`, `§8`) and inside `neuron-onboarding` (which points at
+`neuron-memory §6` and `§7-8`) still resolves correctly.
+
+**Frontmatter `description` rewritten**: from "Manage agent session
+context by interviewing the user, configuring neuron.yaml..." to "Manage
+the ongoing operate loop for an already-configured @kovartravis/neuron
+project — load relevant memory at session start, wrap commands for
+pre-command lookup, record failures/decisions, sync markdown storage, run
+periodic maintenance and pruning, and troubleshoot common failure modes.
+For first-time setup on a fresh project, use neuron-onboarding instead."
+The top-of-file `[!NOTE]` was also reworded — it previously said trimming
+"is ticket 6's job, not yet done"; now states the split as accomplished
+fact.
+
+**New §9 Troubleshooting**, implementing Ticket 3's "help" definition
+exactly: the five failure modes it named, each as
+Symptom/Cause/Fix — enrichment degradation (`enrichment.degraded` in
+`neuron status`), a `sync` conflict needing `--force`, `prune` deleting
+far more than "low-importance" entries (omitted `--importance` defaults
+to `3`, ceiling comparison inclusive), `neuron scan --diff` reporting
+"Re-baseline Required" (exit 2, parser-version mismatch) vs. real drift
+(exit 1), and `strict: true` hard-erroring an omitted `--category`. Per
+Ticket 3's explicit flag, the enrichment-degradation and strict-mode
+entries are the runtime-diagnosable fragments pulled out of the
+now-removed §0a/§0b rather than only living in `neuron-onboarding` — an
+agent troubleshooting a strict-mode write failure mid-session doesn't
+need to open the setup skill. No new failure modes invented; every entry
+sourced from behavior already documented elsewhere in this file (§5, §6,
+§8) or in the removed §0a/§0b.
+
+**Verified no stale references**: `CONTEXT.md`'s `neuron-memory` and
+`neuron-onboarding` glossary entries (updated by Ticket 3) already
+describe exactly this final boundary — no further edit needed. Grepped
+the repo for the old frontmatter description string; the only hit is this
+ticket's own stored content in `.neuron/tickets-present.md` (historical
+record, not live doc).
+
+**Testing**: docs-only change (no `src/` touched). `npx tsc --noEmit`
+clean. `npm test`: 799/799 (unchanged from Ticket 5's count — confirms
+nothing in the suite depends on SKILL.md content).
+
+**Unblocks**: alongside Ticket 4 (already resolved), Map —
+neuron.github.io Site (2.5.0)'s Ticket 2 (Homepage Messaging &
+Positioning) is now unblocked on this map's side.
 
 ## Comments
 
 - 2026-08-15: Created while chartering Map — MCP Server & Setup/Onboarding
   Skill Split. Blocked on Tickets 3 and 5. Alongside Ticket 4, unblocks
   Map — neuron.github.io Site (2.5.0)'s Ticket 2.
+- 2026-08-17: Resolved. (Note: an earlier `neuron memory update` call in
+  this same session accidentally overwrote this ticket's content with a
+  placeholder string due to a shell substitution bug; caught immediately
+  via `neuron memory get` and restored verbatim from the query result
+  still in context before any further work proceeded.)
 
 ---
 id: 33bc46e8-c074-4275-a20b-7494d2a2a35e
@@ -1789,7 +1872,7 @@ tags:
 taskId: null
 kind: research
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: unclaimed
+status: resolved
 ---
 # 7 — A/B: Does Neuron-Delivered Rule-Following Match or Beat Static CLAUDE.md, on Claude Code?
 
@@ -1851,7 +1934,44 @@ hint-querying.
 
 ## Answer
 
-_Not yet resolved._
+**Two findings, of very different strength.** Full writeup, all four
+designs, exact numbers: `docs/design/rule-recall-ab/findings.md`.
+
+1. **`neuron-mcp` (agent-invoked recall): 0% compliance, replicated across
+   four independent rule designs, 8/8 sessions.** The `neuron_recall` tool
+   was called in only 5 of 8 sessions (62.5%), and never once produced
+   compliant output even when called. This is the strongest, most
+   reproducible result of the investigation — a real, load-bearing
+   adherence risk for any delivery path that depends entirely on voluntary
+   tool use with no hook backing it.
+2. **`control` vs. `neuron-hook`: inconclusive, not disproven.** `control`
+   hit 100% compliance in all four designs (8/8 sessions) — a ceiling
+   effect that never broke despite four attempts, each targeting a
+   different evidence-grounded hypothesis (comment format, exact tag,
+   unconditional action, conditional/triggered action). Root cause
+   identified, not just observed: `write-compliance-ab`'s own proven
+   ceiling-breaking design relies on a genuinely confusable alternative
+   action (a model can write a *different*, real-looking record that
+   satisfies neither the specific rule nor counts as compliance); no rule
+   tested here had such a substitute available in the fixture. Breaking
+   this needs a structurally different fixture, not another rule-wording
+   tweak — explicitly out of scope for this investigation; the maintainer
+   called a stop after the fourth attempt rather than fund a fifth.
+
+**For the premise this ticket exists to test** ("does moving rule content
+out of CLAUDE.md into neuron cost adherence?"): no evidence the per-turn
+hook costs adherence (tied `control` in 4/4 attempts) — but also no
+evidence yet that it improves it, since `control` never once failed.
+
+**Recommendation for documentation/positioning claims** (this ticket's own
+stated consumer): don't claim the hook measurably *improves* compliance
+over static prose — untested, not disproven. Do flag MCP-only delivery (no
+hook) as needing a stronger nudge or default-on hook wiring, rather than
+resting on voluntary tool use — the one clear, replicated, negative result
+this investigation produced.
+
+**Total cost: $0.62** across all four live runs (24 sessions), against the
+maintainer's self-imposed $2 budget for this investigation.
 
 ## Comments
 
@@ -1861,3 +1981,123 @@ _Not yet resolved._
   adherence. Non-blocking on Ticket 4/5; the `neuron-mcp` arm is blocked
   in practice (not by schema `blockedBy`) on Ticket 4 shipping a real MCP
   server to call, until then it can only run as a dry-run/stub.
+- 2026-08-17: **Harness built and a $2-budget pilot run live** — not a
+  resolution, a preliminary data point. New harness at
+  `benchmarks/rule-recall-ab/` (README, fixtures/session/grading/run.mjs),
+  reusing `write-compliance-ab/tasksHard.mjs`'s `stats-multi-step` task
+  unmodified. Rule under test: "every new function needs a one-line `//`
+  comment" — deliberately unrelated to neuron's own protocol (unlike
+  `write-compliance-ab`'s rule), so nothing about solving the task forces
+  compliance either way. `neuron-mcp` arm is real, not a stub — Ticket 4
+  shipped the MCP server since this ticket was written, so its
+  `neuron_recall` tool handler shells out to a real seeded store via the
+  same `memory.queryGated` path `src/commands/mcp.ts` wraps.
+  Pilot: `--k=2`, 1 task, 3 arms = 6 sessions, **$0.1208 total** (well
+  under the $1 cap and the maintainer's $2 budget). Results:
+  `control`=100% (2/2), `neuron-hook`=100% (2/2), `neuron-mcp`=**0%**
+  (0/2, tool called in only 1 of 2 sessions) — raw margins neuron-hook=0pts,
+  neuron-mcp=-100pts. **Read with real caution, not as this ticket's
+  answer**: n=2/arm is far below anything decision-grade, and `control`
+  landing at 100% on its very first session is the same ceiling-effect
+  failure mode `write-compliance-ab`'s own easy-mode run hit — Sonnet 5
+  may just default to commenting new functions regardless of any rule,
+  which would make this task/rule pairing unable to discriminate the
+  arms at all. Full results: `benchmarks/rule-recall-ab/results/7-rule-recall-ab/pilot/results.json`.
+  Left open rather than resolved: needs a task/rule pairing verified to
+  produce real variance in `control` first (same fix `write-compliance-ab`
+  ticket 5 applied — full CLAUDE.md-shaped pressure, not an easy toy case),
+  then a `--k=5`, both-tasks run once there's budget for it.
+- 2026-08-17: **Hard-mode variant built and run — ceiling effect persisted,
+  and the reason is now understood.** Applied the same two changes that
+  broke `write-compliance-ab`'s identical ceiling effect (ticket 5 there):
+  the rule now requires an exact, arbitrary format (`// @behavior: <desc>`,
+  not any comment — verified for free beforehand that a generic `//`
+  comment now fails grading and only the exact tag passes) and is buried
+  as one bullet among five unrelated style bullets (`HARD_STYLE_NOTE`)
+  instead of being the system note's sole content. `node
+  benchmarks/rule-recall-ab/run-hard.mjs` (`--k=2`, 1 task, 3 arms = 6
+  sessions): **`control` still complied 100% (2/2)**, identical to the
+  pilot — `neuron-hook` also 100% (2/2), so still no measurable margin
+  between them. `neuron-mcp` stayed at 0% (0/2, tool called in only 1 of
+  2 sessions), same as the pilot. Cost: $0.1997 (cumulative across both
+  live runs: $0.32 of the maintainer's $2 budget).
+
+  **Root cause, not just a restated symptom**: unlike `write-compliance-ab`'s
+  rule (an extra, separate CLI call the agent must remember to make
+  *after* finishing the visible work — genuinely easy to forget across
+  unrelated turns), this rule is satisfied *while writing code the task
+  already requires the agent to write*. The system prompt is resent in
+  full on every single API turn (an Anthropic Messages-API structural
+  fact, not a harness choice) — so "buried in six bullets, told once"
+  is not actually less available at turn 3 than at turn 1 the way a
+  chat-history rule would be; the model can just re-read it at the exact
+  moment it writes the annotated line. No amount of dilution burial fixes
+  a rule of this *shape* — the fix would have to change what kind of rule
+  is tested, not how hard it's buried. `write-compliance-ab`'s
+  "action the agent must remember to take separately from what the task
+  already asks for" shape is structurally the one that produces a real
+  ceiling-effect-breaking gap; a "how to write code you're already
+  writing" shape is not, regardless of format-exactness or burial depth.
+
+  **The one finding both runs agree on, and the most actionable one so
+  far**: `neuron-mcp` is genuinely different in kind from the other two,
+  not just noisier — 0% compliance in both pilots, tool called in only
+  1 of 2 sessions each time. This isn't a memory-decay effect like
+  `control`/`neuron-hook`; it's that agent-invoked recall depends on the
+  agent choosing to look at all, which it often doesn't. This is the real
+  risk the ticket's own Design section flagged in advance for this arm,
+  now with two independent n=2 samples pointing the same direction — still
+  not decision-grade sample size, but a consistent signal, not a fluke of
+  one run.
+
+  **Next step, if continued**: redesign the rule/task pairing around an
+  action-shaped rule (matching `write-compliance-ab`'s own proven fix)
+  rather than a code-annotation-shaped one, since the latter appears
+  structurally unable to discriminate `control` from `neuron-hook` no
+  matter how it's tuned. `neuron-mcp`'s low-compliance finding doesn't
+  need a redesign to keep investigating — it's already showing signal.
+- 2026-08-17: **Fourth attempt (`run-trigger.mjs`) — ceiling still didn't
+  break.** Re-read `write-compliance-ab`'s own findings doc closely this
+  time rather than re-guessing: its real mechanism wasn't just "separate
+  action," it's that the rule is *conditional* on an earlier event ("when
+  a failing test gets fixed, record it *immediately*"), which forces
+  genuine episodic recall across real distance by session end.
+  `run-action.mjs`'s rule was *unconditional* ("before finishing, always
+  log") — which lands the obligation at exactly `finish_task`, the moment
+  a model naturally reviews what's left, the easiest possible moment to
+  satisfy it. `fixtures.mjs`'s new `TRIGGER_RULE_TEXT` fixes that: fires
+  at the same early moment as the task's own step-1 fix. Result:
+  **`control` still 100% (2/2)**, `neuron-hook` 100% (2/2), `neuron-mcp`
+  0% (0/2, 1/2 recall-called) — identical shape to all three prior
+  attempts. Cost $0.167 (cumulative across all four live runs: **$0.62 of
+  the maintainer's $2 budget**).
+
+  **Assessment after four independent attempts, each targeting a
+  different, evidence-grounded hypothesis for the ceiling**: `control`
+  has now hit 100% compliance in 4/4 live designs (8/8 sessions total)
+  regardless of rule shape (style vs. exact-format vs. unconditional
+  action vs. conditional/triggered action) or system-note dilution. A
+  competing hypothesis worth naming before spending more: `tasksHard.mjs`
+  sessions here run only 3-6 turns (batched tool calls, `effort=low`),
+  well short of write-compliance-ab hard mode's real distinguishing
+  factor — and that harness's actual disambiguation failure (a model
+  could plausibly write a *different*, real-looking record — a `history`
+  entry via §2 — that satisfies neither §1's specific ask nor gets
+  graded as compliance) has no analog in this harness: `.session-log` has
+  no plausible in-task substitute a model might mistake for compliance
+  (tasksHard.mjs's own required `CHANGELOG.md` line is the closest
+  candidate and doesn't appear to have caused any confusion in 8/8
+  sessions). Reproducing that mechanism would need a real confusable
+  alternative action, not just more turns or more conditionality — a
+  structurally different fixture, not a further tweak to this one.
+
+  **What has NOT been shaky across all four attempts**: `neuron-mcp` at
+  0% compliance, 4/4 independent designs, 8/8 sessions, tool called in
+  only half of sessions on average. That is the one result this session's
+  repeated iteration has actually strengthened into something closer to
+  decision-grade, even though `control` vs. `neuron-hook` remains
+  unresolved. Left open for the maintainer to decide whether to keep
+  spending on breaking the `control` ceiling (next real attempt needs a
+  confusable-alternative-action fixture, not just another rule wording)
+  or treat the `neuron-mcp` finding as this ticket's actual headline
+  result.
