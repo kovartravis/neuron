@@ -1,276 +1,27 @@
 ---
 name: neuron-memory
-description: Manage agent session context by interviewing the user, configuring neuron.yaml, loading learnings and decisions, and pruning obsolete entries from the memory store.
+description: Manage the ongoing operate loop for an already-configured @kovartravis/neuron project — load relevant memory at session start, wrap commands for pre-command lookup, record failures/decisions, sync markdown storage, run periodic maintenance and pruning, and troubleshoot common failure modes. For first-time setup on a fresh project, use neuron-onboarding instead.
 ---
 
 # Neuron Memory Store Management
 
-This skill guides how agents configure and interact with `@kovartravis/neuron` to maintain persistent, category-driven memory across sessions.
+This skill guides how agents operate `@kovartravis/neuron` on a project that already has a working `neuron.yaml` — maintenance, help, and cleanup, not initial setup.
 
 > [!NOTE]
-> **First-time setup on a fresh project now lives in `neuron-onboarding`**
+> **First-time setup on a fresh project lives in `neuron-onboarding`**
 > (wayfinder ticket 5, Map — MCP Server & Setup/Onboarding Skill Split):
 > the ask-first interview, `neuron.yaml` generation, `AGENTS.md` sync, the
 > write-side-enrichment and `strict`-mode interviews, initial
 > architecture-scan configuration, and onboarding-migration of an existing
-> `CLAUDE.md`/`AGENTS.md`/`CURSOR.md`. Sections 0/0a/0b and §7 steps 1-2
-> below still document that content today and remain correct — trimming
-> them out of this file once every reader can be assumed to reach
-> `neuron-onboarding` instead is ticket 6's job, not yet done. If you are
-> onboarding a project that has no `neuron.yaml` yet, use `neuron-onboarding`
-> first; come back here once setup is complete.
+> `CLAUDE.md`/`AGENTS.md`/`CURSOR.md`. If you are onboarding a project that
+> has no `neuron.yaml` yet, use `neuron-onboarding` first; come back here
+> once setup is complete.
 
 > [!CRITICAL]
 > **USER INTERACTION & EXPLANATION MANDATE**
 > Before taking ANY action or executing any memory operation (including querying memory, modifying `neuron.yaml` or `AGENTS.md`, writing learnings/decisions, running sync commands, or pruning entries), the agent **MUST ALWAYS**:
 > 1. **Ask the User**: Ask the user what they want to do or confirm their explicit intent and options.
 > 2. **Explain First**: Clearly explain the exact action, CLI command, or file modification it plans to perform before executing it.
-
-## 0. Initial Project Setup & Interview Protocol
-
-When asked to set up memory for a project or configure memory settings:
-
-> [!IMPORTANT]
-> **`neuron init` already wrote a working `neuron.yaml`.** As of 2.2.0 the
-> project is usable before this interview runs: `init` scaffolds a config with
-> `storage.mode: md`, the four standard categories, and default pull rules. So
-> this interview is a **refinement** step, not the only path to a working
-> project — and it now has an existing file to reason about.
->
-> That changes two things. First, **read the file before asking anything** and
-> present the questions below as *"here is what you have; what should change?"*
-> rather than as a blank-slate questionnaire. Second, **never rewrite the file
-> wholesale** — it may already carry the user's edits. Change the keys the user
-> asked about and leave the rest alone.
-
-> [!NOTE]
-> **`neuron.yaml` is a file the tool itself can write to, not just the agent
-> (ADR 0017).** Categories stay advisory, not validated: a write against a
-> category `neuron.yaml` doesn't yet declare is never rejected. Instead it
-> auto-appends a minimal `categories.<name>: {}` block to the file on disk
-> (comments and formatting preserved) the first time that category is
-> written. So a `categories` entry with no `description`/`tags` you didn't
-> add yourself is expected, not a sign something else edited the file — it's
-> this hook converging the declared set toward what the store actually
-> contains. `neuron status --repair` backfills any category that already had
-> rows before this hook existed.
-
-1. **Ask & Explain First (Interview Protocol)**:
-   Before taking any action or writing configuration files, explain to the user what setup steps will be performed, and ask how they would like memory configured for their project:
-   - **Default Categories**: `learning` (rules, conventions, failure fixes).
-   - **Custom Categories**: Offer options to add custom categories such as `decisions` (ADRs & design choices), `snippets` (reusable code), or `architecture`.
-   - **Storage Mode**: Ask whether memory should live as markdown files with SQLite kept as a derived index (`md` — the default, and what `init` wrote) or in the SQLite vector database only with no `.md` files (`vector`). Either can be overridden per category — see "Per-category storage" below — so routing e.g. a high-volume category to `vector` while everything else stays `md` doesn't need a special top-level mode; the override is always live. `md-only`, `dual`, `vector-only`, and `split` are all pre-2.3.0 spellings: `md-only` and `dual` now mean `md`, `vector-only` now means `vector`, and `split` (which used to be the only way to make a per-category override take effect) also now means `md` — all four still parse and warn on `stderr`. Do not write any of them into a new config.
-     - Under `md`, the `.md` files are the **record of truth**: they are reconciled into the index on every command, and an entry deleted from a `.md` file is deleted from the index. That is the point of the mode, but say it out loud before recommending it — it means hand-editing those files is a supported operation *and* a destructive one.
-   - **Per-category storage**: Ask if any individual category should override the top-level mode (e.g. `categories.telemetry.storage: vector` to keep a high-volume category out of markdown while the rest stays `md`). Precedence is `categories.<name>.storage > storage.mode > "md"`. If a category's resolved storage flips from `md` to `vector` and it already has an existing `.md` file, that file is left on disk but stops being updated — mention this so it doesn't go unnoticed.
-   - **Exec Triggers**: Ask if there are specific shell commands (e.g. `npm test`, `git commit`, `cargo build`) that should trigger rule lookups.
-   - **Architectural Scan Config**: Ask whether to enable automatic architecture scanning (`enabled: true/false`), target category (default `architecture`), and directory traversal depth (default `3`). Explain how the scan analyzes codebase structure to ingest architecture cards into memory.
-   - **Write-Side Enrichment**: Ask which metadata the agent should keep supplying by hand and which `neuron memory add` should infer. See §0a below — this question has two halves, config *and* agent instructions, and answering only one produces a store that silently does not enrich.
-
-2. **Generate `neuron.yaml`**:
-   Write `neuron.yaml` at the project root based on the user's answers (or standard defaults if they prefer default setup):
-   ```yaml
-   version: "1.0"
-
-   storage:
-     mode: md            # md | vector
-     path: .neuron       # directory where .md category files are stored
-
-   categories:
-     learning:
-       description: Agent conventions, rules, and failure fixes
-       tags:
-         - rule
-         - convention
-
-     # Custom categories requested by user:
-     architecture:
-       description: Architectural blueprints & structure cards
-       tags:
-         - architecture
-         - topology
-         - scan
-
-   scan:
-     enabled: true          # auto-scan on init; also enables drift reporting
-                            # in `neuron status` and `neuron exec`
-     category: architecture # target category for the blueprint card
-     depth: 3               # structural traversal depth
-
-   pullRules:
-     default:
-       categories:
-         - learning
-         - architecture
-       limit: 5
-       minScore: 0.35
-
-     onExec:
-       - commandPattern: ".*"
-         categories:
-           - learning
-         limit: 5
-
-       - commandPattern: "^(git|gh|npm) "
-         categories:
-           - learning
-           - decisions
-         limit: 8
-   ```
-
-3. **Configure & Align `AGENTS.md` / Instruction Files (Mandatory)**:
-   Always write or update `AGENTS.md` (or `CLAUDE.md`, `CURSOR.md`) immediately after creating or updating `neuron.yaml`. Ensure `AGENTS.md` explicitly documents:
-   - All declared categories from `neuron.yaml` (e.g., `learning`, `decisions`, `architecture`).
-   - Architectural scan settings (e.g., `Architecture scan settings: enabled: true, category: architecture, depth: 3`).
-   - CLI command examples for querying custom categories (e.g. `neuron memory query "<query>" --categories learning,decisions`).
-   - CLI command examples for adding entries to custom categories (e.g. `neuron memory add --category decisions "<ADR details>" --tags adr,<topic>`).
-   - If `storage.mode` (or any category's `storage` override) resolves to `md` (i.e. not `vector`), document the `.neuron/` directory, that those files are the record of truth, and the `neuron sync` command.
-
-4. **Synchronize On Edits**:
-   Whenever `neuron.yaml` is created or modified in any session, always update `AGENTS.md` immediately to keep category lists, CLI flags, and agent operating procedures strictly synchronized.
-
-## 0a. Write-Side Enrichment Interview
-
-`neuron memory add` can infer the metadata the caller did not supply. Every field
-is optional, and **anything passed explicitly is honoured untouched** — inference
-only ever fills a gap.
-
-### The trade-off to present
-
-| Posture | Write latency | Failure risk | Tag vocabulary |
-|---|---|---|---|
-| Agent passes all three flags | none | none | fragmented |
-| Agent omits all three | up to ~3.5s per write | hard error when inference cannot answer | converged |
-| **Agent passes `--category`, omits `--tags` and `--importance`** | **none** | **none** | **converged** |
-
-**Recommend the third.** It is not a compromise: `--category` is the only field
-whose omission can trigger a model load and the only one that can hard-fail the
-write, while tags are selected by the already-loaded embedder for about a
-millisecond.
-
-> [!IMPORTANT]
-> **`--importance` is never inferred.** There is no setting that infers it: the
-> job was measured, found to be noise, and removed. An omitted `--importance` is
-> stored as the default **`3`** — no model call, no inference. A trivial typo fix
-> and a critical data-loss warning both land on `3`.
->
-> This matters because `3` is also `neuron memory prune`'s default ceiling and
-> the comparison is inclusive, so **every entry written without `--importance`
-> becomes prune-eligible** once it is older than `--days`. Passing
-> `--importance 4` or `5` at write time is the *only* thing that protects an
-> entry from a bare prune. See §6.
-
-Recommend the second posture for humans adding memories ad hoc, where a few
-seconds are invisible and a readable error beats learning the project's taxonomy
-first. The two can coexist — posture is protocol wording, not config.
-
-### Why omitting `--tags` is the point
-
-Tags and content are what the full-text index covers, so a fragmented tag
-vocabulary is fragmented keyword recall: an entry tagged `treesitter` is
-invisible to a query that says `tree-sitter`. Inferred tags are *selected* from a
-closed vocabulary — every tag declared in `neuron.yaml`, plus every store tag
-carried by at least three entries — so inference can only converge the
-vocabulary, never widen it. Minting a new tag stays a deliberate act: pass it.
-
-### The config half
-
-```yaml
-llm:
-  enrichment:
-    enabled: true          # master toggle; false is the A/B control arm
-    category: infer        # infer | <declared-category-name> | off
-    tags: infer            # infer | off
-    categoryStrategy: centroid   # centroid | model
-    timeoutMs: 15000
-    maxTags: 3
-    minTagSimilarity: 0.5
-```
-
-Points worth raising with the user:
-
-- **`enabled` is separate from the per-field keys on purpose.** `enabled: false`
-  disables the whole job and is the measurement arm; `category: off` is a
-  standing preference that leaves the other fields inferring.
-- **A literal category name is the *fallback***, used when inference cannot
-  answer. Left as `infer`, that case is a hard error instead — which is the
-  right default if filing an entry into the wrong category would be worse than
-  being told to pass the flag.
-- **There is no `importance` key.** It existed through 2.2.0-rc1/rc2 and was
-  removed: the local 0.5B model's importance judgement benchmarked as
-  *negatively* discriminating, so it shipped `off` and then went entirely. A
-  `neuron.yaml` still carrying the key parses fine — the key is ignored. Tell the
-  user to pass `--importance` on writes that must survive a prune.
-- **`categoryStrategy: centroid` beat `model` 9/9 to 1/9** on the benchmark
-  corpus. Its one weakness: a store with no entries has no centroids, so on a
-  cold store an omitted `--category` hard-errors until the first entries are
-  filed explicitly.
-
-### The agent-instruction half (do not skip)
-
-After writing `neuron.yaml`, update `AGENTS.md` / `CLAUDE.md` so the protocol's
-command examples match the chosen posture. Config that infers tags while the
-protocol still tells the agent to pass `--tags` on every write produces a store
-where enrichment never runs — the config looks right and does nothing.
-
-### Operating it
-
-```bash
-neuron memory add "<content>" --category learning   # recommended posture
-neuron status                                       # degradation counters
-```
-
-Enrichment resolves inline on every write — both inferred fields use the
-embedder that is already loaded on the write path — so there is nothing to drain
-and no backlog to watch. Check `enrichment.degraded` in `neuron status`
-occasionally: a non-zero counter means inference is silently falling back, which
-is how a broken local model otherwise goes unnoticed for months.
-
-## 0b. Determinism: Shape, Byte, Value — and `strict` Mode
-
-"Deterministic" is not one property — neuron's own design work (ADR 0013,
-ticket 36) split it into three, and only two of them ship on by default:
-
-| Property | What it means | On by default? |
-|---|---|---|
-| **Shape** | Every entry conforms to its category's declared field schema — a required field with no `default:` hard-errors the write rather than landing malformed. | Yes, always enforced at `transact()`, the single choke point every writer shares. |
-| **Byte** | A given input produces byte-identical output every time — the architecture card in particular (ticket 35/37) only changes when the codebase does. | Yes, always. |
-| **Value** | The *values* a stored entry ends up with depend only on what the caller passed, never on unrelated store state. | **No — only under `strict: true`.** Off by default because centroid-based tag and category inference (§0a) is on by default, and centroids are built from whatever else is in the store, so the same content can enrich differently as the store changes. |
-
-Value determinism is unreachable while inference runs, by construction — it
-is not a bug the other two properties happen to share. A project that wants
-to claim "fully deterministic," not just "schema- and byte-deterministic,"
-has to give up inference's convenience for it. That trade is what `strict`
-mode is for.
-
-### What `strict: true` does
-
-```yaml
-strict: true   # top-level key, sibling to storage/categories/llm
-```
-
-- **Disables tag inference** (`llm.enrichment.tags: infer` becomes a no-op) —
-  an entry gets exactly the tags the caller passed, or none.
-- **Disables category *inference*** (`llm.enrichment.categoryStrategy`'s
-  centroid/model call never runs) — an omitted `--category` hard-errors,
-  naming `strict: true` as the cause, unless a fallback is configured (next
-  bullet).
-- **Does not touch a literal `llm.enrichment.category` fallback name.** A
-  fixed category name is a constant, content-independent default, not
-  inference — it stays available as the answer for an omitted `--category`
-  even under `strict`, and using it never calls the embedder or the model.
-- **Does not affect shape or byte determinism** — those are already always on
-  and unaffected by this key.
-
-### The trade-off to present
-
-Recommending `strict` trades away §0a's "pass `--category`, let tags infer"
-posture: **every write needs an explicit `--category`** (or a configured
-fallback name), and **tags never auto-fill** — an agent that wants tags under
-`strict` must pass `--tags` itself, which reintroduces the fragmented-
-vocabulary risk §0a's inference exists to avoid. Recommend `strict` only when
-the user has explicitly said the literal "deterministic" claim matters more
-than that convenience; it is not the default recommendation from §0a's own
-interview.
 
 ## 1. Beginning of Run (Context Loading)
 
@@ -478,30 +229,17 @@ When the user requests memory maintenance (e.g., "clean memory", "prune obsolete
      neuron sync
      ```
 
-## 7. Architectural Scan & Configuration Protocol (`neuron scan`)
+## 7. Architectural Scan Execution & Blueprint (`neuron scan`)
 
-When asked to run an architectural scan or configure architecture analysis for a project:
+> [!NOTE]
+> **Initial scan configuration (`enabled`/`category`/`depth`, and writing the
+> `scan:` block into `neuron.yaml`) lives in `neuron-onboarding`.** This
+> section only covers running an already-configured scan and reading its
+> output.
 
-1. **Ask & Explain Options First**:
-   Before running any scan or modifying `neuron.yaml`, explain the available architectural scan options to the user and ask for their preferences:
-   - **`enabled`** (`true` / `false`): Enables or disables automatic architecture scanning on `neuron init`.
-   - **`category`** (e.g. `architecture`): Specifies which memory category stores the generated architecture blueprint card (default: `architecture`).
-   - **`depth`** (integer, default `3`): Controls directory tree traversal depth when analyzing codebase structure.
-   - **Config Persist Option**: Ask the user if they would like to add or update these scan settings directly in `neuron.yaml`.
+When asked to run an architectural scan for a project:
 
-2. **Update Config & `AGENTS.md` (if confirmed by user)**:
-   If the user confirms adding or updating scan configuration:
-   - Add or update the `scan:` block in `neuron.yaml`:
-     ```yaml
-     scan:
-       enabled: true
-       category: architecture
-       depth: 3
-     ```
-   - Immediately update `AGENTS.md` to document the active architecture scan settings (`Architecture scan settings: enabled: true, category: architecture, depth: 3`).
-   - Explain the exact configuration edits made to the user.
-
-3. **Execute Architectural Scan**:
+1. **Execute Architectural Scan**:
    - Run the scan command:
      ```bash
      neuron scan --category architecture --depth 3
@@ -514,7 +252,7 @@ When asked to run an architectural scan or configure architecture analysis for a
    - Preview without writing to memory using `neuron scan --dry-run`
      (add `--json` for structured topology output).
 
-4. **Read the Blueprint Before Changing Module Boundaries**:
+2. **Read the Blueprint Before Changing Module Boundaries**:
    The scan stores one **Repository Architectural Blueprint** card containing
    the subsystem tree, tech-stack manifests, and exported symbol contracts.
    Query it before moving code between modules or changing a public API:
@@ -579,3 +317,80 @@ produced by a different parser than the current scan, so the two cannot be
 compared. That is not drift and nothing is wrong with the code — run
 `neuron scan` once to re-baseline. `--check` reports this as exit code `2`,
 distinct from `1` for real drift.
+
+## 9. Troubleshooting
+
+In-session diagnosis for the failure modes this skill's own commands produce.
+This is "help" for an agent mid-operation, not a setup guide — for anything
+about configuring a project for the first time, see `neuron-onboarding`.
+
+### Enrichment silently degraded
+
+**Symptom**: writes succeed, but tags/categories stop looking inferred — or
+`neuron status`'s `enrichment.degraded` counter is non-zero.
+
+**Cause**: `neuron memory add`'s inference job (tag/category selection) is
+falling back rather than erroring loudly, so nothing on the write path
+complains.
+
+**Fix**: check `neuron status` for `enrichment.degraded` periodically — a
+non-zero counter is the only signal, since a degraded write still succeeds.
+Investigate the embedder/model path if it climbs; there is no auto-recovery.
+
+### `sync` reports a conflict
+
+**Symptom**: `neuron sync` exits non-zero and reports an entry as a
+**conflict** instead of propagating a hand-edit to `.md` files.
+
+**Cause**: the entry differs on both sides (markdown and the SQLite index)
+and `sync` has no `updatedAt` in `.md` frontmatter to tell which side was
+actually edited, so it refuses to guess and touches neither store.
+
+**Fix**: run `neuron sync --force` to make markdown authoritative and push
+the edit through. This is genuinely required after hand-editing a `.md`
+file — a plain `neuron sync` will not resolve it. See §5 for the full sync
+command reference.
+
+### `prune` deleted far more than expected
+
+**Symptom**: `neuron memory prune --category <name>` removed nearly an
+entire category, not just a handful of "low-importance" entries.
+
+**Cause**: every entry written *without* an explicit `--importance` is
+stored at the default of `3`, and `prune`'s default ceiling is also `3`,
+compared **inclusively**. A category that never rated its entries
+explicitly loses almost everything older than `--days` on a bare prune.
+
+**Fix**: there is no undo and no `--dry-run`. Before pruning, count matches
+with `neuron memory list --category <category> --limit 1000`, then pass an
+explicit, deliberate `--importance` threshold (e.g. `--importance 1` to
+only catch entries explicitly marked lowest). See §6 for the full
+procedure.
+
+### `neuron scan --diff` says "Re-baseline Required"
+
+**Symptom**: `neuron scan --diff` reports "Re-baseline Required" (exit code
+`2`) instead of a drift report.
+
+**Cause**: this is **not drift** — the stored blueprint card was produced by
+a different parser version than the current scan, so the two aren't
+comparable. Real drift is a separate condition (exit code `1`).
+
+**Fix**: run `neuron scan` once to re-baseline. Nothing is wrong with the
+code; see §8 above for the distinction between this and genuine drift.
+
+### `strict: true` hard-errors an omitted `--category`
+
+**Symptom**: `neuron memory add` fails outright, naming `strict: true` as
+the cause, on a write that omitted `--category`.
+
+**Cause**: under `strict` mode, category *inference* (centroid/model) never
+runs — an omitted `--category` has no fallback to resolve to unless the
+project's `neuron.yaml` configures a literal `llm.enrichment.category`
+fallback name (which stays available even under `strict`, since a fixed
+name isn't inference).
+
+**Fix**: pass `--category` explicitly on every write under a `strict`
+project, or ask whether the project should configure a fallback category
+name. This is an intentional trade `strict` mode makes, not a bug — see
+`neuron-onboarding`'s determinism interview for the full trade-off.
