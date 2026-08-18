@@ -2,6 +2,32 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.4.5] - 2026-08-18
+
+**`neuron mcp` runs a standard MCP server** over stdio, built on the official
+`@modelcontextprotocol/sdk`, for editors with no per-turn hook point (Cursor,
+Windsurf, Zed, Claude Desktop, Roo Code) — Claude Code and Codex CLI keep
+getting recall deterministically via the existing hook model, this is
+additive reach, not a replacement. It exposes three tools that wrap the same
+store methods the CLI itself calls (`neuron_remember`, `neuron_recall`,
+`neuron_query_exec`), never a second logic path. `neuron init` now writes
+each detected client's MCP config directly (`.mcp.json`, `.cursor/mcp.json`,
+`.codex/config.toml`) in the same run that wires hooks, using the same
+ask-on-conflict `--overwrite-hooks`/`--keep-hooks` policy. On a harness with
+no deterministic hook, the generated instructions file's Recall step calls
+`neuron_recall` directly instead of shelling out. This tool-call path is
+best-effort, not deterministic — a live A/B found agent-invoked
+`neuron_recall` with no hook backing it under-complied in every session
+tested (5/8 calls, never compliant even when called); see
+[`docs/design/rule-recall-ab/findings.md`](docs/design/rule-recall-ab/findings.md).
+
+**First-time setup is now its own skill.** `neuron-onboarding` carries the
+interview, `neuron.yaml` generation, and migration of existing
+CLAUDE.md/AGENTS.md/CURSOR.md prose into structured entries; `neuron-memory`
+is narrowed to the ongoing operate loop (recall, recording, drift, cleanup)
+plus a new Troubleshooting section covering enrichment degradation, `sync
+--force` conflicts, prune surprises, and strict-mode write errors.
+
 ## [2.4.4] - 2026-08-17
 
 **`neuron` is now installable without Node.js.** `curl -fsSL
