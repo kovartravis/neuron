@@ -188,12 +188,15 @@ something unshipped.
 
 ## Not yet specified
 
-- **`neuron init` writing the client-side `mcpServers` config stanza**
-  (which clients, where each config file lives, prompt vs. detect) —
-  Ticket 1 flagged `neuron-onboarding` (once named, by Ticket 3) as a
-  plausible home, but its own UX design pass hasn't run. Graduates into a
-  ticket once someone decides it belongs in this map's scope rather than a
-  future one.
+_Empty as of 2026-08-18._ The one patch this section held — `neuron init`
+writing the client-side `mcpServers` config stanza — graduated into
+[8 — Design What `neuron init` Writes When MCP Is the Reach Mechanism](31ea7120-edf3-473c-b0ef-8f6223426157),
+which merged it with the newer agent-file question Ticket 7's findings
+raised (whether the protocol block's existing recall step swaps its verb to
+`neuron_recall`, and whether MCP's presence may ever count as
+`deterministic` fidelity — proposed: never, since MCP has no per-turn
+injection point). The maintainer made the scope call that patch was waiting
+on: it belongs to this map, not a future one.
 
 ## Out of scope
 
@@ -2101,3 +2104,138 @@ maintainer's self-imposed $2 budget for this investigation.
   confusable-alternative-action fixture, not just another rule wording)
   or treat the `neuron-mcp` finding as this ticket's actual headline
   result.
+
+---
+id: 31ea7120-edf3-473c-b0ef-8f6223426157
+createdAt: 2026-08-18T09:05:26.511Z
+importance: 4
+tags:
+  - setup
+  - explanation
+  - init
+taskId: null
+kind: grilling
+map: 5d4082cf-aee3-4319-818d-9e13669901f5
+status: claimed
+---
+# 8 — Design What `neuron init` Writes When MCP Is the Reach Mechanism
+
+## Question
+
+When a user reaches neuron through the MCP server rather than (or alongside)
+a harness hook, what does `neuron init` write, and where? Two surfaces, one
+trigger:
+
+- **The agent file** (the managed protocol block in
+  CLAUDE.md/AGENTS.md/CURSOR.md): does the recall instruction change verb
+  from the bash `neuron memory query` to the `neuron_recall` tool, and does
+  MCP's presence change whether that instruction is emitted at all?
+- **The client config** (the `mcpServers` stanza): which clients, where each
+  config file lives, prompt vs. detect, and whether `neuron init` writes it
+  or `neuron-onboarding` walks the user through it.
+
+## Context
+
+Two threads converge on this one decision, which is why it's a single ticket
+rather than two.
+
+**The client-config half** was deferred, twice on purpose. Ticket 1 settled
+"No client-config-writing in `neuron init` (deferred to Ticket 3/the new
+setup skill)"; Ticket 3 named `neuron-onboarding` but didn't run a UX pass
+over it. It has sat in the map's **Not yet specified** since, with its own
+note saying it graduates "once someone decides it belongs in this map's
+scope rather than a future one." Graduated 2026-08-18 at the maintainer's
+request — that decision has now been made.
+
+**The agent-file half** is newer and sharper, and it's what makes this
+urgent rather than tidy. `neuron init` already forks on exactly this axis:
+
+- `src/config/protocolBlock.ts:171` — `if (fidelity !== 'deterministic')
+  steps.push(recallStep(config))`. A harness with a deterministic per-turn
+  recall hook gets **no** recall instruction (the hook owns the read side);
+  every other harness gets `recallStep()`, which is already mandatory-voiced
+  ("Before viewing files, editing code, or taking any other action, your
+  first tool call should be to query the memory store") and already emits a
+  concrete command — today always the bash `neuron memory query`.
+- `src/commands/init.ts:355` — `fidelity` is computed purely from harness
+  adapter capability via `resolveHarnessFidelity`. MCP is invisible to it.
+
+So the instruction slot this question is about **already exists and already
+ships**. The open question is narrower than "should init take a different
+path": it's whether MCP swaps that slot's verb, and what MCP's presence does
+to the `fidelity` computation feeding it.
+
+**Ticket 7's evidence bears directly on the second part, and cuts finer than
+its headline.** That A/B's `neuron-mcp` arm scored 0% compliance across four
+independent rule designs (8/8 sessions), tool called in only 5/8. But its
+system note was (`benchmarks/rule-recall-ab/fixtures.mjs:84`):
+
+> "Use the `neuron_recall` tool **if you want to** check for relevant
+> conventions before writing new code."
+
+Permissive framing, and no rule text anywhere else in context. That is a
+materially weaker prompt than `recallStep`'s existing mandatory wording — so
+the finding condemns **MCP as the sole carrier of a rule, behind an optional
+pointer**. It is *not* a test of MCP-plus-mandatory-instruction, which is
+the configuration this ticket has to decide. The discovery half of that
+failure (called only 5/8) is exactly what stronger wording targets. The
+half that should still constrain the answer: in the 5 sessions it *was*
+called, compliance was still 0% — so wording plausibly fixes discovery, and
+nothing in Ticket 7 shows it fixes translation-into-action. Untested, not
+disproven.
+
+## Decisions to settle
+
+1. **Does MCP presence ever count as `deterministic`?** Proposed: no,
+   permanently. MCP has no per-turn injection point — it is agent-invoked,
+   structurally the same tier as instruction-only. If wiring MCP suppressed
+   `recallStep`, `neuron init` would ship precisely the Ticket 7
+   configuration that scored 0/8. This is the load-bearing constraint and
+   the one most worth grilling for counter-arguments.
+2. **Does the recall step swap verbs under MCP?** Proposed: where MCP is
+   configured and no deterministic recall hook exists, `recallStep` emits
+   `neuron_recall` instead of the bash `neuron memory query` — one tool call
+   beats asking the agent to shell out. Open: how init learns MCP is
+   configured at all (it doesn't write the client config today, so it has no
+   signal — which couples this to decision 4).
+3. **Both wired (Claude Code, Codex CLI): what does the agent file say?**
+   Proposed: hook stays authoritative, MCP is purely additive, no recall
+   instruction emitted — matching Ticket 1's settled "no steering-away from
+   the existing hook path." Open: whether the *write*-side steps
+   (failure-fix, session-conclusion) should also offer `neuron_remember` as
+   an alternative verb to `neuron memory add`, which this ticket has so far
+   only considered for the read side.
+4. **Client config: written, prompted, or documented?** Which of the five
+   registry harnesses (`src/config/harnesses.json`: agents, claude, cursor,
+   github, codex) have an `mcpServers` config location neuron can safely
+   write; whether `neuron init` writes it directly, prompts, or leaves it to
+   `neuron-onboarding`'s interview; and what the overwrite posture is
+   against a hand-edited stanza (ADR 0014 §7's ask-on-conflict is the
+   obvious precedent, and `upsertProtocolBlock`'s policy the obvious model).
+
+## Non-goals
+
+- **Re-running Ticket 7's A/B to test MCP-plus-mandatory-instruction.**
+  Tempting, and it is the honest gap in the evidence — but that harness
+  never broke its `control` ceiling in four attempts, so a fifth run would
+  measure nothing until the fixture itself is redesigned around a genuine
+  confusable alternative action (see
+  `docs/design/rule-recall-ab/findings.md`). Decide this ticket on design
+  reasoning; leave the measurement to whoever rebuilds that harness.
+- **Changing the hook model anywhere it already works** — same non-goal the
+  map carries (ADR 0014). MCP is additive reach, not a migration.
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-18: Graduated from the map's **Not yet specified** section at the
+  maintainer's request, merging the long-deferred client-config question
+  (deferred by Ticket 1, unaddressed by Ticket 3) with the newer agent-file
+  question raised after Ticket 7's findings landed. Filed as `grilling`: the
+  substance is UX/scope judgement, not research or implementation, and
+  decisions 1 and 4 in particular want a human's own scope call rather than
+  an agent's inference. Unblocked — Tickets 1-7 are all resolved, so this
+  enters the frontier immediately as the map's only open ticket.
