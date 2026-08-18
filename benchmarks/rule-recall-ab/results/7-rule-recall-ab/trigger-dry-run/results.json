@@ -1,0 +1,157 @@
+{
+  "generatedAt": "2026-08-18T00:42:16.712Z",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "arms": [
+    "control",
+    "neuron-hook",
+    "neuron-mcp"
+  ],
+  "dryRun": true,
+  "mode": "trigger",
+  "taskCount": 1,
+  "repeats": 2,
+  "sessionCount": 6,
+  "sessionsSkippedByCap": 0,
+  "hardCapUsd": 1,
+  "totalCostUsd": 0,
+  "summary": {
+    "armStats": {
+      "control": {
+        "sessions": 2,
+        "complied": 0,
+        "complianceRate": 0,
+        "taskSolved": 0,
+        "taskSolveRate": 0,
+        "recallCalled": null,
+        "costUsd": 0
+      },
+      "neuron-hook": {
+        "sessions": 2,
+        "complied": 2,
+        "complianceRate": 1,
+        "taskSolved": 0,
+        "taskSolveRate": 0,
+        "recallCalled": null,
+        "costUsd": 0
+      },
+      "neuron-mcp": {
+        "sessions": 2,
+        "complied": 2,
+        "complianceRate": 1,
+        "taskSolved": 0,
+        "taskSolveRate": 0,
+        "recallCalled": 2,
+        "costUsd": 0
+      }
+    },
+    "margins": {
+      "neuron-hook": 1,
+      "neuron-mcp": 1
+    }
+  },
+  "results": [
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "taskPassed": false,
+      "ruleFollowed": false,
+      "recallCalled": false,
+      "finishedCleanly": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-hook",
+      "sessionLabel": "stats-multi-step-neuron-hook-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "taskPassed": false,
+      "ruleFollowed": true,
+      "recallCalled": false,
+      "finishedCleanly": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-mcp",
+      "sessionLabel": "stats-multi-step-neuron-mcp-r0",
+      "turns": 0,
+      "wallMs": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "taskPassed": false,
+      "ruleFollowed": true,
+      "recallCalled": true,
+      "finishedCleanly": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "taskPassed": false,
+      "ruleFollowed": false,
+      "recallCalled": false,
+      "finishedCleanly": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-hook",
+      "sessionLabel": "stats-multi-step-neuron-hook-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "taskPassed": false,
+      "ruleFollowed": true,
+      "recallCalled": false,
+      "finishedCleanly": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-mcp",
+      "sessionLabel": "stats-multi-step-neuron-mcp-r1",
+      "turns": 0,
+      "wallMs": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "taskPassed": false,
+      "ruleFollowed": true,
+      "recallCalled": true,
+      "finishedCleanly": true
+    }
+  ]
+}
