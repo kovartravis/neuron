@@ -19,12 +19,19 @@ deterministic recall hooks (`session-start`/`pre-prompt`/`context-reset`), a
 `pre-command` hook for every harness with an adapter (Claude Code, Codex
 CLI — `pre-command` is a fourth, independent lifecycle point, ticket 22/23),
 and a `pre-stop` write-compliance nudge hook (ticket 6, neuron-2.4.3) on
-every harness — see "Write-side compliance by harness" below — writes the
+every harness — see "Write-side compliance by harness" below — writes each
+detected harness's MCP client config (`mcpServers`/`mcp_servers.neuron`
+pointing at `npx -y @kovartravis/neuron mcp`, for `claude`/`cursor`/`codex`/
+`github` — see "MCP client config by harness" below; `agents` has no single
+MCP-config product to target and is skipped), writes the
 capability-aware memory-store instructions block into each
 detected harness's instructions file (the Recall and Command Execution steps
 are each dropped independently, per whichever of the two hook groups that
-harness has wired), pre-downloads the local ONNX models with a progress bar,
-fetches Tree-Sitter grammars, and runs the initial scan if configured.
+harness has wired; Recall further swaps to the `neuron_recall` MCP tool call
+in place of the bash `neuron memory query` command whenever that harness's
+own MCP config is wired and no deterministic recall hook exists), pre-downloads
+the local ONNX models with a progress bar, fetches Tree-Sitter grammars, and
+runs the initial scan if configured.
 
 | Flag | Description |
 |---|---|
@@ -42,7 +49,32 @@ interactive answer — a user's own, non-neuron hooks are never read or
 modified, even when they share the same event array. The same
 overwrite/keep policy also governs the generated protocol block: an existing
 managed region that differs from what this run would write is asked about,
-never silently replaced.
+never silently replaced. **The MCP client-config write reuses this exact same
+`--hook-target`/`--overwrite-hooks`/`--keep-hooks`/`--harness`/`--no-hooks`
+posture** (ticket 9, neuron-2.4.3) — not a second policy invented for MCP — so
+a conflicting `mcpServers.neuron` entry is asked about (or kept, non-
+interactively) the same way a conflicting hook entry is, and `--no-hooks`
+skips both writes together.
+
+### MCP client config by harness
+
+| Harness | `project-committed` / `project-local` | `user-global` |
+|---|---|---|
+| `claude` | `.mcp.json` (project root) | `~/.claude.json` (top-level `mcpServers`) |
+| `cursor` | `.cursor/mcp.json` (no separate `project-local` scope; collapses into `project-committed`'s file) | `~/.cursor/mcp.json` |
+| `codex` | `.codex/config.toml`, `[mcp_servers.neuron]` (no separate `project-local` scope; requires the project be marked trusted in `~/.codex/config.toml` or Codex silently ignores it) | `~/.codex/config.toml`, `[mcp_servers.neuron]` |
+| `github` | `.mcp.json` — **not** `.github/mcp.json`; Copilot CLI prefers `.mcp.json` over `.github/mcp.json` whenever both exist, so this is the file guaranteed to be read even when a `claude` harness shares the repo | `~/.copilot/mcp-config.json` |
+
+`claude`'s `project-local` scope is Claude Code's own "local scope": private
+to this project but stored in `~/.claude.json` under
+`projects["<absolute project path>"].mcpServers`, not in the repo. `claude`
+and `github` can resolve to the same `.mcp.json` when both harnesses are
+detected — `init` writes it once and reports a result for each harness
+rather than prompting about the same file twice. Codex's `config.toml` is
+edited by a targeted text splice of just the `[mcp_servers.neuron]` table
+(comments and the rest of the file are left untouched byte for byte), not a
+general TOML parse-and-restringify, which would strip a hand-maintained
+file's comments and formatting.
 
 The generated `neuron.yaml` sets `storage.mode: md` and declares `learning`,
 `decisions` and `architecture`. An **existing** config — including one
@@ -50,7 +82,8 @@ in an ancestor directory that already governs this project — is never touched,
 rewritten or merged into; `init` is re-run routinely to refresh skills, models
 and grammars, and anything it edits it would edit again over your changes. The
 JSON output reports which config governs the project under `config`, per-harness
-hook install results under `hooks.installed`, and the fidelity each harness's
+hook install results under `hooks.installed`, per-harness MCP client-config
+write results under `mcp.configured`, and the fidelity each harness's
 instructions file ended up with (derived from `verify()`, not inferred) under
 `protocol.written`. `harnesses.detected` lists every harness this run found;
 `harnesses.newlyOnboarded` is the subset with no earlier evidence of being
@@ -381,6 +414,13 @@ Runs an MCP server over the standard stdio transport, built on the official
 — for editors with no per-turn hook point (Cursor, Windsurf, Zed, Claude
 Desktop, Roo Code) — and available unconditionally to every client,
 including Claude Code/Codex CLI.
+
+Best-effort, not deterministic: a live A/B
+([`docs/design/rule-recall-ab/findings.md`](design/rule-recall-ab/findings.md))
+found agent-invoked `neuron_recall` with no hook backing it under-complied in
+every session tested (called only 5/8 times, never compliant even when
+called). Ship it as reach for otherwise-unreachable editors, not as a
+hook-equivalent guarantee.
 
 Exposes three tools, each a thin wrapper over the same store methods the CLI
 itself calls (`memory add`'s write-time supersession gate, `memory

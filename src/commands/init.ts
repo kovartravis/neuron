@@ -29,6 +29,13 @@ import {
   deriveFidelity,
   FidelityLabel,
   LifecyclePoint,
+  installMcpConfig,
+  isMcpConfigured,
+  isMcpClientHarnessName,
+  mcpTargetPath,
+  McpConfigInstallResult,
+  McpClientHarnessName,
+  MCP_SERVER_NAME,
 } from '../harnesses/index.js';
 import {
   generateProtocolBlock,
@@ -144,17 +151,62 @@ async function onHookConflict(info: { targetPath: string; point: string }): Prom
   return false;
 }
 
-async function installHooks(
+/**
+ * Ticket 9's own conflict prompt for an MCP client-config entry — kept
+ * separate from `onHookConflict` since the two name different things (a
+ * hook entry vs. an `mcpServers` stanza), even though both reuse the exact
+ * same `--overwrite-hooks`/`--keep-hooks` policy plumbing (Ticket 8 decision
+ * 4: "not a second policy invented for MCP").
+ */
+async function onMcpConflict(info: { targetPath: string }): Promise<boolean> {
+  if (isInteractive()) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    try {
+      const answer = (
+        await rl.question(
+          `[neuron] An existing MCP server entry named '${MCP_SERVER_NAME}' in ${info.targetPath} was written by a ` +
+          `different version or hand-edited. Overwrite it? [y/N]: `
+        )
+      ).trim().toLowerCase();
+      return answer === 'y' || answer === 'yes';
+    } finally {
+      rl.close();
+    }
+  }
+  process.stderr.write(
+    `[neuron warning] Existing MCP server entry '${MCP_SERVER_NAME}' in ${info.targetPath} kept (non-interactive ` +
+    `run). Pass --overwrite-hooks to replace it.\n`
+  );
+  return false;
+}
+
+/**
+ * Installs both recall hooks and, per Ticket 9 (Ticket 8 decision 4), each
+ * detected harness's MCP client config (`mcpServers`/`mcp_servers.neuron`) —
+ * one function, not two, so the hook-target/overwrite-policy prompts (ADR
+ * 0014 §6/§7) are each asked at most once per `init` run even though both
+ * surfaces reuse them. `claude` and `github` can resolve to the same target
+ * file (`.mcp.json`, see `mcpClientConfig.ts`'s own doc comment); `seenPaths`
+ * dedupes the actual write while still reporting a result for each harness.
+ */
+async function installHooksAndMcpConfig(
   projectDir: string,
+  detectedHarnessNames: string[],
   options: { yes?: boolean; hookTarget?: string; overwriteHooks?: boolean; keepHooks?: boolean; harness?: string[] }
-): Promise<InstallResult[]> {
+): Promise<{ hooks: InstallResult[]; mcp: McpConfigInstallResult[] }> {
   const adapters = getAdapters(options.harness).filter(a => a.detect(projectDir));
-  if (adapters.length === 0) return [];
+  const mcpHarnessNames = detectedHarnessNames.filter(
+    name => (!options.harness || options.harness.includes(name)) && isMcpClientHarnessName(name)
+  ) as McpClientHarnessName[];
+
+  if (adapters.length === 0 && mcpHarnessNames.length === 0) {
+    return { hooks: [], mcp: [] };
+  }
 
   const target = await resolveHookTarget(options);
   const overwrite = resolveOverwritePolicy(options);
-  const results: InstallResult[] = [];
 
+  const hooks: InstallResult[] = [];
   for (const adapter of adapters) {
     try {
       const result = await adapter.install(projectDir, {
@@ -162,13 +214,36 @@ async function installHooks(
         overwrite,
         onConflict: overwrite === 'ask' ? onHookConflict : undefined,
       });
-      results.push(result);
+      hooks.push(result);
     } catch (e: any) {
       process.stderr.write(`[neuron warning] Failed to install ${adapter.id} hooks: ${e.message}\n`);
     }
   }
 
-  return results;
+  const mcp: McpConfigInstallResult[] = [];
+  const seenPaths = new Map<string, McpConfigInstallResult>();
+  for (const name of mcpHarnessNames) {
+    const targetPath = mcpTargetPath(name, projectDir, target);
+    const already = seenPaths.get(targetPath);
+    if (already) {
+      mcp.push({ ...already, harness: name });
+      continue;
+    }
+    try {
+      const result = await installMcpConfig(name, projectDir, {
+        target,
+        overwrite,
+        onConflict: overwrite === 'ask' ? onMcpConflict : undefined,
+      });
+      seenPaths.set(targetPath, result);
+      mcp.push(result);
+      if (result.warning) process.stderr.write(`[neuron warning] ${result.warning}\n`);
+    } catch (e: any) {
+      process.stderr.write(`[neuron warning] Failed to write MCP client config for ${name}: ${e.message}\n`);
+    }
+  }
+
+  return { hooks, mcp };
 }
 
 /** Only harnesses with a real adapter can ever earn `'deterministic'`; every other detected harness has nothing else performing recall. */
@@ -184,7 +259,7 @@ const ADAPTER_ID_BY_HARNESS_NAME: Record<string, string> = {
  * still performs recall even if this invocation passed `--no-hooks`, and a
  * hook this run declined to overwrite (kept-existing, still neuron's own)
  * still fires. `verify()` reads the actual config file rather than inferring
- * from what `installHooks` just did.
+ * from what `installHooksAndMcpConfig` just did.
  */
 function resolveHarnessFidelity(
   adapters: HarnessAdapter[],
@@ -209,7 +284,7 @@ function resolveHarnessFidelity(
  * Ticket 03: what a user actually gets from one detected harness, reported
  * truthfully rather than inferred from config-file presence. `wired` comes
  * from `verify()` (real firing-capable registration), never from whether
- * `installHooks` just ran — a hook installed by an earlier session, or one
+ * `installHooksAndMcpConfig` just ran — a hook installed by an earlier session, or one
  * this run declined to overwrite, still counts.
  */
 export interface HarnessFidelityReport {
@@ -219,6 +294,8 @@ export interface HarnessFidelityReport {
   wired: boolean;
   /** The fidelity actually delivered right now — `'instruction-only'` whenever `wired` is false, regardless of what the adapter could deliver if installed. */
   fidelity: FidelityLabel;
+  /** Ticket 9: whether a live MCP server entry for this harness points at this project right now — read the same truthful way as `wired`. `false` for `agents` (no MCP-config surface at all, see `mcpClientConfig.ts`). */
+  mcpConfigured: boolean;
   remediation: string;
 }
 
@@ -231,6 +308,7 @@ function buildHarnessFidelityReport(
   const mdFile = meta?.mdFile ?? 'AGENTS.md';
   const adapterId = ADAPTER_ID_BY_HARNESS_NAME[harnessName];
   const adapter = adapterId ? adapters.find(a => a.id === adapterId) : undefined;
+  const mcpConfigured = isMcpClientHarnessName(harnessName) && isMcpConfigured(harnessName, projectDir);
 
   if (!adapter) {
     return {
@@ -239,9 +317,12 @@ function buildHarnessFidelityReport(
       hasAdapter: false,
       wired: false,
       fidelity: 'instruction-only',
-      remediation:
-        `No recall hook adapter exists for this harness yet. Recall depends entirely on the model reading ` +
-        `${mdFile} and choosing to run 'neuron memory query' itself.`,
+      mcpConfigured,
+      remediation: mcpConfigured
+        ? `No recall hook adapter exists for this harness yet, but an MCP server is configured — the protocol ` +
+          `block calls the 'neuron_recall' tool instead of asking the model to shell out.`
+        : `No recall hook adapter exists for this harness yet. Recall depends entirely on the model reading ` +
+          `${mdFile} and choosing to run 'neuron memory query' itself.`,
     };
   }
 
@@ -253,7 +334,11 @@ function buildHarnessFidelityReport(
   const fidelity: FidelityLabel = wired ? verdict : 'instruction-only';
 
   let remediation: string;
-  if (!wired) {
+  if (!wired && mcpConfigured) {
+    remediation =
+      `Recall hooks are not registered for this harness, but an MCP server is configured for this project — ` +
+      `the protocol block calls the 'neuron_recall' tool instead of asking the model to shell out.`;
+  } else if (!wired) {
     remediation =
       `Recall hooks are not currently registered for this harness in this project. Run 'neuron init' again ` +
       `(without --no-hooks) or 'neuron hook install --harness ${adapter.id}' to enable ${verdict} recall.`;
@@ -270,7 +355,7 @@ function buildHarnessFidelityReport(
       `regardless of hooks; the model must choose to read ${mdFile} and run 'neuron memory query' itself.`;
   }
 
-  return { name: harnessName, mdFile, hasAdapter: true, wired, fidelity, remediation };
+  return { name: harnessName, mdFile, hasAdapter: true, wired, fidelity, mcpConfigured, remediation };
 }
 
 function formatHarnessFidelityReport(reports: HarnessFidelityReport[]): string {
@@ -278,7 +363,8 @@ function formatHarnessFidelityReport(reports: HarnessFidelityReport[]): string {
   const lines = ['', 'Recall fidelity by harness:'];
   for (const r of reports) {
     const status = r.wired ? 'wired' : r.hasAdapter ? 'detected, not wired' : 'detected, no adapter';
-    lines.push(`  ${r.name} (${r.mdFile}) — ${status} — ${r.fidelity}`);
+    const mcpSuffix = r.mcpConfigured ? ', MCP configured' : '';
+    lines.push(`  ${r.name} (${r.mdFile}) — ${status} — ${r.fidelity}${mcpSuffix}`);
     lines.push(`    ${r.remediation}`);
   }
   lines.push('See the README compatibility matrix for the full harness x mechanism x fidelity picture.');
@@ -362,9 +448,16 @@ function resolveProtocolTargets(
     )
       ? 'deterministic'
       : 'fallback';
+    // Ticket 9: true the moment any harness sharing this instruction file has
+    // a live MCP server entry pointing at this project — read truthfully from
+    // disk (`isMcpConfigured`), same "ground truth, not this run's flags"
+    // posture as `fidelity`/`execFidelity` above.
+    const mcpConfigured = harnessNames.some(
+      name => isMcpClientHarnessName(name) && isMcpConfigured(name, projectDir)
+    );
 
     const targetPath = path.join(projectDir, mdFile);
-    const block = generateProtocolBlock({ fidelity, execFidelity, config });
+    const block = generateProtocolBlock({ fidelity, execFidelity, mcpConfigured, config });
     targets.push({ targetPath, fidelity, execFidelity, block });
   }
 
@@ -513,7 +606,9 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     );
   }
 
-  const hookResults = options.noHooks ? [] : await installHooks(projectDir, options);
+  const { hooks: hookResults, mcp: mcpConfigResults } = options.noHooks
+    ? { hooks: [], mcp: [] }
+    : await installHooksAndMcpConfig(projectDir, detectedHarnessNames, options);
 
   const progressBar = new ScanProgressBar({ enabled: !options.noProgress, prefix: 'Initializing' });
   let grammarOutcomes: GrammarFetchOutcome[] = [];
@@ -637,6 +732,10 @@ export async function handleInitCommand(args: string[]): Promise<void> {
     },
     hooks: {
       installed: hookResults,
+      skipped: !!options.noHooks,
+    },
+    mcp: {
+      configured: mcpConfigResults,
       skipped: !!options.noHooks,
     },
     protocol: {

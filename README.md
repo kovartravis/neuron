@@ -374,7 +374,25 @@ No separate auth/scoping layer: a local stdio server is a subprocess your
 editor spawns directly, inheriting exactly the OS-level access any CLI
 invocation already has.
 
-Point your MCP client at it directly — no separate binary, no new `bin`
+`neuron init` writes this client config for you — `.mcp.json` (Claude Code,
+GitHub Copilot CLI), `.cursor/mcp.json` (Cursor), and `.codex/config.toml`
+(Codex CLI, as a `[mcp_servers.neuron]` table) — for every detected harness,
+the same run that wires recall hooks. On a harness with no deterministic
+hook, the generated instructions file's Recall step also switches to calling
+`neuron_recall` directly once its MCP config is wired, rather than asking the
+model to shell out. See [`docs/COMMANDS.md`](docs/COMMANDS.md#neuron-init) for
+the full per-harness path table and the conflict/overwrite policy (identical
+to the hook install's own `--overwrite-hooks`/`--keep-hooks`).
+
+This tool-call path is best-effort, not deterministic — a live A/B
+([`docs/design/rule-recall-ab/findings.md`](docs/design/rule-recall-ab/findings.md))
+found agent-invoked `neuron_recall` with no hook backing it under-complied
+in every session it was tested (called only 5/8 times, never compliant even
+when called). It's still strictly additive reach for editors with no hook
+point at all, not a regression from some deterministic baseline they'd
+otherwise have.
+
+To point a client at it by hand instead — no separate binary, no new `bin`
 entry:
 
 ```json
