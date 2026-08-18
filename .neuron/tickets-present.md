@@ -82,12 +82,21 @@ rotting the moment 2.5.0 ships.
 
 ## Decisions so far
 
+- [Survey Dev-Tool Marketing + Docs Sites for Patterns](ab6103ac-1b08-4ea6-aadd-816a8d5d4e46) —
+  9 reusable patterns from Stripe/Linear/Vercel/Resend/Supabase/Turso, most
+  load-bearing: H1 = category noun + audience; subheadline carries the
+  differentiator; "for AI agents" is a foregrounded primary audience on
+  several surveyed docs homepages, not a footnote; no homepage surveyed
+  embeds a live demo. Full findings:
+  docs/design/site/dev-tool-marketing-docs-survey.md.
+
 ## Not yet specified
 
 - **Whether the homepage needs a live/interactive demo** (e.g. an
-  asciinema-style terminal recording) — likely surfaces once ticket 4's
-  prototype session has something concrete to react to; not sharp enough
-  to ticket yet.
+  asciinema-style terminal recording) — Ticket 1's survey found no
+  surveyed homepage uses one (leaning no), but flagged a fetch-method
+  caveat on two client-rendered sites; still waits on ticket 4's prototype
+  session to verify live and settle it, not sharp enough to ticket yet.
 - **Analytics/telemetry for the live site** — low priority, not worth
   pinning down before the site exists to put it on.
 - **Distribution channels** (README badge linking to the site, any tool
@@ -344,7 +353,7 @@ tags:
 taskId: null
 kind: research
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 1 — Survey Dev-Tool Marketing + Docs Sites for Patterns
 
@@ -355,6 +364,26 @@ What do best-in-class developer-tool sites (marketing homepage + docs) actually 
 ## Context
 
 Chartered directly from the "something like a SaaS would have" framing in the original request. Collected once here so ticket 2 (messaging) and ticket 4 (homepage prototype) don't each re-derive inspiration from scratch.
+
+## Answer
+
+Surveyed 6 sites — Stripe, Linear, Vercel, Resend, Supabase, and Turso (a closer local-first/embedded-database analogue targeting the same AI-agent developer audience) — homepages plus docs landing pages for all but Turso. Full findings with per-pattern citations: docs/design/site/dev-tool-marketing-docs-survey.md.
+
+Nine concrete, reusable patterns found, most load-bearing for Ticket 2/4:
+
+1. H1 states category noun + audience, not a mood (Resend, Turso, Stripe).
+2. Subheadline carries the differentiator/"X alternative built on Y" framing the H1 has no room for (Supabase) — a working example of the SEO map's own winnable-query-intent finding.
+3. "For AI agents" is a foregrounded primary homepage/docs audience on Resend, Vercel, and Stripe's docs homepage, not a footnote — real precedent for making coding agents neuron's own named primary audience.
+4. Docs pages fetchable directly as markdown (docs.stripe.com's .md URL suffix), advertised to human readers too — supplementary note for the llms.txt ticket, not a reopening.
+5. One quickstart per language/framework (Resend, Supabase), not a single tabbed page — validates the SEO map's flat one-concept-per-page IA ruling with real precedent.
+6. Reference always its own top-level nav item, never blended with narrative guides (all 3 docs IAs fetched) — validates Site's own Ticket 8/9 split.
+7. **No homepage surveyed embeds a live/interactive demo** — direct answer to this map's own "live demo?" fog item, leaning no. Caveat: the fetch method may undercount JS-rendered code blocks on Stripe/Supabase specifically, so Ticket 4 should verify live before treating this as fully settled.
+8. A dedicated "why the status quo isn't enough" section right after the hero, before feature lists (Turso) — working precedent for the competitive-landscape doc's own amnesia-tax framing.
+9. Visible YAML frontmatter in the docs page itself (Vercel), not just hidden JSON-LD — supplementary note for the SEO map's structured-data ticket.
+
+Also flagged patterns to avoid: Stripe's 11-section enterprise-breadth homepage (wrong shape for a single-audience OSS tool) and duplicated near-identical headline copy stacked on itself (Vercel).
+
+Verification note: this is a research ticket — no code/tests to run. The one factual claim needing live re-verification before it's load-bearing is pattern 7's live-demo absence on the two client-rendered sites (see the doc's own Method section).
 
 ---
 id: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
