@@ -1,0 +1,235 @@
+{
+  "generatedAt": "2026-08-18T00:40:29.738Z",
+  "model": "claude-sonnet-5",
+  "effort": "low",
+  "arms": [
+    "control",
+    "neuron-hook",
+    "neuron-mcp"
+  ],
+  "dryRun": false,
+  "mode": "action",
+  "taskCount": 1,
+  "repeats": 2,
+  "sessionCount": 6,
+  "sessionsSkippedByCap": 0,
+  "hardCapUsd": 1,
+  "totalCostUsd": 0.1325,
+  "summary": {
+    "armStats": {
+      "control": {
+        "sessions": 2,
+        "complied": 2,
+        "complianceRate": 1,
+        "taskSolved": 2,
+        "taskSolveRate": 1,
+        "recallCalled": null,
+        "costUsd": 0.0445
+      },
+      "neuron-hook": {
+        "sessions": 2,
+        "complied": 2,
+        "complianceRate": 1,
+        "taskSolved": 1,
+        "taskSolveRate": 0.5,
+        "recallCalled": null,
+        "costUsd": 0.0454
+      },
+      "neuron-mcp": {
+        "sessions": 2,
+        "complied": 0,
+        "complianceRate": 0,
+        "taskSolved": 2,
+        "taskSolveRate": 1,
+        "recallCalled": 2,
+        "costUsd": 0.0426
+      }
+    },
+    "margins": {
+      "neuron-hook": 0,
+      "neuron-mcp": -1
+    }
+  },
+  "results": [
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r0",
+      "turns": 3,
+      "wallMs": 7252,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one loop bug in average(), added a working sum() function to stats.mjs, confirmed all tests and lint-check pass, and added CHANGELOG.md and session log entry.",
+      "tokens": {
+        "input": 6170,
+        "output": 533,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 6703,
+      "bashCommands": [
+        "cat stats.mjs; echo ---; cat test-average.mjs; echo ---; cat test-sum.mjs; echo ---; cat lint-check.mjs",
+        "cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one bug in average and added a new sum function to stats.mjs.\" >> CHANGELOG.md\necho \"Fixed average bug, added sum function, verified lint passes.\" >> .session-log\ncat CHANGELOG.md"
+      ],
+      "toolCallNames": [
+        "bash",
+        "bash",
+        "finish_task"
+      ],
+      "taskPassed": true,
+      "ruleFollowed": true,
+      "recallCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-hook",
+      "sessionLabel": "stats-multi-step-neuron-hook-r0",
+      "turns": 4,
+      "wallMs": 16122,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a sum() function to stats.mjs, verified lint-check passes, created CHANGELOG.md, and logged the session.",
+      "tokens": {
+        "input": 8880,
+        "output": 801,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 9681,
+      "bashCommands": [
+        "cat /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-hook-r0-iDfeFT/repo/stats.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-hook-r0-iDfeFT/repo\ncat test-average.mjs test-sum.mjs lint-check.mjs\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-hook-r0-iDfeFT/repo\ncat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\ncat > CHANGELOG.md << 'EOF'\n- Fixed the off-by-one bug in average() and added a new sum() function to stats.mjs.\nEOF\necho \"Fixed average() off-by-one bug, added sum() function, and added CHANGELOG.md\" >> .session-log\n"
+      ],
+      "toolCallNames": [
+        "bash",
+        "bash",
+        "bash",
+        "finish_task"
+      ],
+      "taskPassed": true,
+      "ruleFollowed": true,
+      "recallCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-mcp",
+      "sessionLabel": "stats-multi-step-neuron-mcp-r0",
+      "turns": 3,
+      "wallMs": 15053,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed off-by-one bug in average(), added sum() function to stats.mjs, verified all tests and lint check pass, and created CHANGELOG.md.",
+      "tokens": {
+        "input": 6473,
+        "output": 682,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7155,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-mcp-r0-vbxvjf/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-mcp-r0-vbxvjf/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one loop bug in average and added a new sum function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md"
+      ],
+      "toolCallNames": [
+        "neuron_recall",
+        "bash",
+        "bash",
+        "finish_task"
+      ],
+      "taskPassed": true,
+      "ruleFollowed": false,
+      "recallCalled": true
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "control",
+      "sessionLabel": "stats-multi-step-control-r1",
+      "turns": 4,
+      "wallMs": 10154,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one bug in average(), added a sum() function to stats.mjs, confirmed all tests and lint-check pass, logged the session, and created CHANGELOG.md.",
+      "tokens": {
+        "input": 9149,
+        "output": 852,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 10001,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-control-r1-VoB5Qq/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-control-r1-VoB5Qq/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"Fixed off-by-one bug in average and added sum function to stats.mjs.\" >> CHANGELOG.md\necho \"Fixed average bug and added sum function to stats.mjs.\" >> .session-log\ncat CHANGELOG.md\n",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-control-r1-VoB5Qq/repo && echo \"- Fixed off-by-one bug in average and added sum function to stats.mjs.\" > CHANGELOG.md && cat CHANGELOG.md"
+      ],
+      "toolCallNames": [
+        "bash",
+        "bash",
+        "bash",
+        "finish_task"
+      ],
+      "taskPassed": true,
+      "ruleFollowed": true,
+      "recallCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-hook",
+      "sessionLabel": "stats-multi-step-neuron-hook-r1",
+      "turns": 3,
+      "wallMs": 8709,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a new sum() function, confirmed lint passes, created CHANGELOG.md, and logged the session.",
+      "tokens": {
+        "input": 6584,
+        "output": 647,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 7231,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-hook-r1-z2g4tG/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-hook-r1-z2g4tG/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"Fixed off-by-one loop bug in average() and added a new sum() function to stats.mjs.\" > CHANGELOG.md\necho \"Fixed average() off-by-one bug, added sum() function, verified lint passes.\" >> .session-log\n"
+      ],
+      "toolCallNames": [
+        "bash",
+        "bash",
+        "finish_task"
+      ],
+      "taskPassed": false,
+      "ruleFollowed": true,
+      "recallCalled": false
+    },
+    {
+      "task": "stats-multi-step",
+      "arm": "neuron-mcp",
+      "sessionLabel": "stats-multi-step-neuron-mcp-r1",
+      "turns": 4,
+      "wallMs": 16509,
+      "cappedBy": null,
+      "finishedCleanly": true,
+      "finishSummary": "Fixed the off-by-one loop bug in average(), added a working sum() function to stats.mjs, verified lint-check passes (no console.log), and created CHANGELOG.md summarizing the changes.",
+      "tokens": {
+        "input": 7955,
+        "output": 695,
+        "cacheCreation": 0,
+        "cacheRead": 0
+      },
+      "totalTokens": 8650,
+      "bashCommands": [
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-mcp-r1-XasS0x/repo && cat stats.mjs test-average.mjs test-sum.mjs lint-check.mjs",
+        "cd /var/folders/0_/c3fqh6fx5djgqrvkrjf5xdpm0000gp/T/neuron-rule-recall-ab-stats-multi-step-neuron-mcp-r1-XasS0x/repo && cat > stats.mjs << 'EOF'\nexport function average(nums) {\n  let sum = 0;\n  for (let i = 0; i < nums.length; i++) {\n    sum += nums[i];\n  }\n  return sum / nums.length;\n}\n\nexport function sum(nums) {\n  let total = 0;\n  for (let i = 0; i < nums.length; i++) {\n    total += nums[i];\n  }\n  return total;\n}\nEOF\nnode test-average.mjs && node test-sum.mjs && node lint-check.mjs\necho \"- Fixed the off-by-one bug in average and added a new sum function to stats.mjs.\" > CHANGELOG.md\ncat CHANGELOG.md"
+      ],
+      "toolCallNames": [
+        "neuron_recall",
+        "bash",
+        "bash",
+        "finish_task"
+      ],
+      "taskPassed": true,
+      "ruleFollowed": false,
+      "recallCalled": true
+    }
+  ]
+}
