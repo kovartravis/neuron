@@ -59,9 +59,38 @@ function headerSection(config: NeuronConfig): string {
   return lines.join('\n');
 }
 
-function recallStep(config: NeuronConfig): string {
+/**
+ * Ticket 9 (neuron-2.4.3), implementing Ticket 8's decisions 2/3: the recall
+ * step only ever has two forms, never three. `fidelity === 'deterministic'`
+ * already drops this step entirely (see `generateProtocolBlock`) regardless
+ * of MCP — a hook stays authoritative and the agent file stays silent on MCP
+ * for the read side, matching Ticket 1's "no steering-away from the existing
+ * hook path." The choice below only ever matters on a non-deterministic
+ * harness: `mcpConfigured` swaps the bash `neuron memory query` command for
+ * the `neuron_recall` MCP tool call, one tool call beating a shell-out, per
+ * Ticket 7's finding that a *mandatory* instruction (unlike its own tested
+ * permissive "if you want to" framing) is the configuration worth shipping.
+ */
+function recallStep(config: NeuronConfig, mcpConfigured: boolean): string {
   const categories = categoryList(config);
   const example = categories.slice(0, 2).join(',') || categories[0] || 'learning';
+  if (mcpConfigured) {
+    return [
+      '## 1. Recall',
+      '',
+      'No hook performs recall on this harness. Before viewing files, editing code, ' +
+        'or taking any other action, your first tool call should be the `neuron_recall` ' +
+        'MCP tool, querying for the current task topic or goal:',
+      '```',
+      `neuron_recall(query: "<task topic or goal>", categories: [${example
+        .split(',')
+        .map(c => `"${c}"`)
+        .join(', ')}])`,
+      '```',
+      'Omit `categories` to search every category. If no results return, try a broader ' +
+        'keyword (`git`, `tdd`, `db`, etc.).',
+    ].join('\n');
+  }
   return [
     '## 1. Recall',
     '',
@@ -151,6 +180,8 @@ function sessionEndStep(n: number, config: NeuronConfig): string {
 export interface ProtocolBlockOptions {
   fidelity: ProtocolFidelity;
   execFidelity: ProtocolFidelity;
+  /** Ticket 9 (neuron-2.4.3): whether an MCP server config pointing at this project is wired for at least one harness sharing this instruction file. Irrelevant once `fidelity === 'deterministic'` — see `recallStep`'s own doc comment. */
+  mcpConfigured: boolean;
   config: NeuronConfig;
 }
 
@@ -167,9 +198,9 @@ export interface ProtocolBlockOptions {
  * after it is numbered by position.
  */
 export function generateProtocolBlock(options: ProtocolBlockOptions): string {
-  const { fidelity, execFidelity, config } = options;
+  const { fidelity, execFidelity, mcpConfigured, config } = options;
   const steps: string[] = [];
-  if (fidelity !== 'deterministic') steps.push(recallStep(config));
+  if (fidelity !== 'deterministic') steps.push(recallStep(config, mcpConfigured));
   let n = steps.length + 1;
   if (execFidelity !== 'deterministic') steps.push(execStep(n++));
   steps.push(failureFixStep(n++));

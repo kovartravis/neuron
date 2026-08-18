@@ -414,6 +414,164 @@ describe('CLI Command: init', () => {
     });
   });
 
+  // --- Ticket 9 (neuron-2.4.3): MCP client-config wiring ---
+
+  describe('MCP client config wiring (ticket 9)', () => {
+    it('writes an mcpServers.neuron entry into .mcp.json for a detected Claude Code project', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-claude-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.mcp.skipped).toBe(false);
+      expect(result.mcp.configured).toHaveLength(1);
+      expect(result.mcp.configured[0]).toMatchObject({ harness: 'claude', target: 'project-committed', action: 'written' });
+
+      const mcpJsonPath = path.join(initTempDir, '.mcp.json');
+      expect(fs.existsSync(mcpJsonPath)).toBe(true);
+      const file = JSON.parse(fs.readFileSync(mcpJsonPath, 'utf8'));
+      expect(file.mcpServers.neuron).toEqual({ command: 'npx', args: ['-y', '@kovartravis/neuron', 'mcp'] });
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('writes a [mcp_servers.neuron] table into .codex/config.toml, preserving an existing hand-written table', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-codex-test');
+      fs.mkdirSync(path.join(initTempDir, '.codex'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+      fs.writeFileSync(
+        path.join(initTempDir, '.codex', 'config.toml'),
+        '# my hand-written comment\nmodel = "gpt-5"\n\n[mcp_servers.other]\ncommand = "foo"\n'
+      );
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      const codexResult = result.mcp.configured.find((r: any) => r.harness === 'codex');
+      expect(codexResult).toMatchObject({ target: 'project-committed', action: 'written' });
+      expect(codexResult.warning).toContain('trust_level');
+
+      const content = fs.readFileSync(path.join(initTempDir, '.codex', 'config.toml'), 'utf8');
+      expect(content).toContain('# my hand-written comment');
+      expect(content).toContain('[mcp_servers.other]\ncommand = "foo"');
+      expect(content).toContain('[mcp_servers.neuron]');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('claude and github share .mcp.json and report one write, not a duplicate conflict prompt', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-shared-file-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.mkdirSync(path.join(initTempDir, '.github'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, '.github', 'copilot-instructions.md'), '# instructions');
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.mcp.configured).toHaveLength(2);
+      const harnesses = result.mcp.configured.map((r: any) => r.harness).sort();
+      expect(harnesses).toEqual(['claude', 'github']);
+      const targetPaths = new Set(result.mcp.configured.map((r: any) => r.targetPath));
+      expect(targetPaths.size).toBe(1);
+      expect(fs.existsSync(path.join(initTempDir, '.github', 'mcp.json'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--no-hooks skips MCP config writing too, not just hooks', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-no-hooks-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --no-hooks`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.mcp.skipped).toBe(true);
+      expect(result.mcp.configured).toEqual([]);
+      expect(fs.existsSync(path.join(initTempDir, '.mcp.json'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('--harness filters which harnesses get MCP config too', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-harness-filter-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.mkdirSync(path.join(initTempDir, '.codex'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init --harness codex`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.mcp.configured).toHaveLength(1);
+      expect(result.mcp.configured[0].harness).toBe('codex');
+      expect(fs.existsSync(path.join(initTempDir, '.mcp.json'))).toBe(false);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('re-running init leaves the mcpServers.neuron entry unchanged rather than duplicating it', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-idempotent-test');
+      fs.mkdirSync(path.join(initTempDir, '.claude'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.mcp.configured[0].action).toBe('unchanged');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('does not write MCP config when no MCP-client harness is detected', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-no-harness-test');
+      fs.mkdirSync(initTempDir, { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const result = JSON.parse(stdout);
+
+      expect(result.mcp.configured).toEqual([]);
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+
+    it('swaps the Recall step to the neuron_recall MCP tool call on a harness with no hook adapter once its MCP config is wired', () => {
+      const cliPath = path.join(process.cwd(), 'dist/cli.js');
+      const initTempDir = path.join(tempDbDir, 'mcp-recall-swap-test');
+      fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
+      fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
+
+      const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
+      execSync(`node ${cliPath} init`, { env, cwd: initTempDir });
+
+      const cursorMdPath = path.join(initTempDir, 'CURSOR.md');
+      expect(fs.existsSync(cursorMdPath)).toBe(true);
+      const content = fs.readFileSync(cursorMdPath, 'utf8');
+      expect(content).toContain('neuron_recall(');
+      expect(content).not.toContain('neuron memory query');
+
+      fs.rmSync(initTempDir, { recursive: true });
+    });
+  });
+
   // --- Ticket 14: capability-aware protocol block ---
 
   describe('protocol block wiring', () => {
@@ -445,14 +603,18 @@ describe('CLI Command: init', () => {
       fs.rmSync(initTempDir, { recursive: true });
     });
 
-    it('keeps the manual recall step for a harness with no adapter', () => {
+    it('keeps the manual recall step for a harness with no deterministic hook and no MCP config wired', () => {
       const cliPath = path.join(process.cwd(), 'dist/cli.js');
       const initTempDir = path.join(tempDbDir, 'protocol-cursor-test');
       fs.mkdirSync(path.join(initTempDir, '.cursor'), { recursive: true });
       fs.writeFileSync(path.join(initTempDir, 'package.json'), '{}');
 
+      // --no-hooks: this test's own point is the plain, nothing-wired fallback
+      // shape. A bare `init` would also wire Cursor's MCP client config
+      // (ticket 9, neuron-2.4.3) and swap this step to `neuron_recall` — see
+      // the dedicated "MCP client config wiring" describe block for that.
       const env = { ...process.env, NEURON_DB_PATH: tempDbPath, NEURON_MOCK_EMBEDDER: 'true' };
-      const stdout = execSync(`node ${cliPath} init`, { env, cwd: initTempDir }).toString();
+      const stdout = execSync(`node ${cliPath} init --no-hooks`, { env, cwd: initTempDir }).toString();
       const result = JSON.parse(stdout);
 
       const cursorMdPath = path.join(initTempDir, 'CURSOR.md');

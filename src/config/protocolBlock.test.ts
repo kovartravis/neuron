@@ -4,6 +4,7 @@ import {
   upsertProtocolBlock,
   PROTOCOL_MARKER_START,
   PROTOCOL_MARKER_END,
+  type ProtocolBlockOptions,
 } from './protocolBlock.js';
 import { NeuronConfigSchema, type NeuronConfig } from './neuronYaml.js';
 
@@ -18,15 +19,20 @@ function config(overrides: Partial<NeuronConfig> = {}): NeuronConfig {
   });
 }
 
+/** Defaults `mcpConfigured: false` — irrelevant to most of this suite; see the dedicated "MCP recall verb swap" describe block below. */
+function genBlock(options: Omit<ProtocolBlockOptions, 'mcpConfigured'> & { mcpConfigured?: boolean }): string {
+  return generateProtocolBlock({ mcpConfigured: false, ...options });
+}
+
 describe('generateProtocolBlock', () => {
   it('wraps the block in marker comments', () => {
-    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const block = genBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
     expect(block.startsWith(PROTOCOL_MARKER_START)).toBe(true);
     expect(block.endsWith(PROTOCOL_MARKER_END)).toBe(true);
   });
 
   it('deletes both manual steps once recall and command execution are both hooked', () => {
-    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const block = genBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
     expect(block).not.toContain('## 1. Recall');
     expect(block).not.toContain('neuron memory query');
     expect(block).not.toContain('Command Execution');
@@ -37,7 +43,7 @@ describe('generateProtocolBlock', () => {
   });
 
   it('keeps the manual command-execution step when only recall is hooked', () => {
-    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'fallback', config: config() });
+    const block = genBlock({ fidelity: 'deterministic', execFidelity: 'fallback', config: config() });
     expect(block).not.toContain('## 1. Recall');
     expect(block).toContain('## 1. Command Execution');
     expect(block).toContain('neuron exec');
@@ -46,7 +52,7 @@ describe('generateProtocolBlock', () => {
   });
 
   it('keeps the manual recall step when only command execution is hooked', () => {
-    const block = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'deterministic', config: config() });
+    const block = genBlock({ fidelity: 'fallback', execFidelity: 'deterministic', config: config() });
     expect(block).toContain('## 1. Recall');
     expect(block).toContain('neuron memory query');
     expect(block).not.toContain('Command Execution');
@@ -55,7 +61,7 @@ describe('generateProtocolBlock', () => {
   });
 
   it('keeps the manual recall step as step 1 on a fallback harness', () => {
-    const block = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
+    const block = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     expect(block).toContain('## 1. Recall');
     expect(block).toContain('neuron memory query');
     expect(block).toContain('## 2. Command Execution');
@@ -64,14 +70,14 @@ describe('generateProtocolBlock', () => {
   });
 
   it('never claims something is MANDATORY when nothing enforces it', () => {
-    const deterministic = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
-    const fallback = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
+    const deterministic = genBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const fallback = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     expect(deterministic).not.toMatch(/MANDATORY/);
     expect(fallback).not.toMatch(/MANDATORY/);
   });
 
   it('lists the declared categories', () => {
-    const block = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
+    const block = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     expect(block).toContain('`learning`');
     expect(block).toContain('`history`');
     expect(block).toContain('`decisions`');
@@ -79,7 +85,7 @@ describe('generateProtocolBlock', () => {
 
   it('drops the history-pointer branch and the history example command when history is not declared', () => {
     const withoutHistory = config({ categories: { learning: { description: 'rules' }, decisions: { description: 'adrs' } } });
-    const block = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: withoutHistory });
+    const block = genBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: withoutHistory });
     expect(block).not.toContain('`history`');
     expect(block).not.toContain('shrink `history`');
     expect(block).toContain('neuron memory add --category decisions');
@@ -88,24 +94,54 @@ describe('generateProtocolBlock', () => {
   });
 
   it('reports scan settings only when scanning is enabled', () => {
-    const enabled = generateProtocolBlock({
+    const enabled = genBlock({
       fidelity: 'deterministic',
       execFidelity: 'deterministic',
       config: config({ scan: { enabled: true, category: 'decisions', depth: 3 } }),
     });
     expect(enabled).toContain('Architecture scan settings: enabled: true, category: `decisions`, depth: 3');
 
-    const disabled = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const disabled = genBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
     expect(disabled).not.toContain('Architecture scan settings');
   });
 
   it('preserves the metadata-flags guidance on both variants', () => {
-    const deterministic = generateProtocolBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
-    const fallback = generateProtocolBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
+    const deterministic = genBlock({ fidelity: 'deterministic', execFidelity: 'deterministic', config: config() });
+    const fallback = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', config: config() });
     for (const block of [deterministic, fallback]) {
       expect(block).toContain('### Metadata flags');
       expect(block).toContain('`--importance`: omit defaults to `3`');
     }
+  });
+
+  describe('MCP recall verb swap (Ticket 9, neuron-2.4.3, implementing Ticket 8 decisions 2/3)', () => {
+    it('emits the neuron_recall MCP tool call instead of the bash command when MCP is configured on a fallback harness', () => {
+      const block = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', mcpConfigured: true, config: config() });
+      expect(block).toContain('## 1. Recall');
+      expect(block).toContain('neuron_recall(');
+      expect(block).not.toContain('neuron memory query');
+    });
+
+    it('keeps the bash command when MCP is not configured on a fallback harness', () => {
+      const block = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', mcpConfigured: false, config: config() });
+      expect(block).toContain('neuron memory query');
+      expect(block).not.toContain('neuron_recall(');
+    });
+
+    it('drops the recall step entirely once fidelity is deterministic, regardless of mcpConfigured — the hook stays authoritative and the agent file stays silent on MCP', () => {
+      const withMcp = genBlock({ fidelity: 'deterministic', execFidelity: 'fallback', mcpConfigured: true, config: config() });
+      const withoutMcp = genBlock({ fidelity: 'deterministic', execFidelity: 'fallback', mcpConfigured: false, config: config() });
+      expect(withMcp).toBe(withoutMcp);
+      expect(withMcp).not.toContain('## 1. Recall');
+      expect(withMcp).not.toContain('neuron_recall(');
+      expect(withMcp).not.toContain('neuron memory query');
+    });
+
+    it('never offers neuron_remember as an alternative write-side verb, even when MCP is configured (decision 3, write side)', () => {
+      const block = genBlock({ fidelity: 'fallback', execFidelity: 'fallback', mcpConfigured: true, config: config() });
+      expect(block).not.toContain('neuron_remember');
+      expect(block).toContain('neuron memory add --category decisions');
+    });
   });
 });
 
