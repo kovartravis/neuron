@@ -1688,3 +1688,15 @@ tags:
 taskId: 1f3592a2-1032-4295-b3dc-405d05a63fe8
 ---
 Fix for macOS SIGKILL ('CODESIGNING'/Invalid Page in the crash report, EXC_BAD_ACCESS at the OS level, not a catchable JS error) when dlopen()-ing a native addon: manually running better-sqlite3's prebuild-install locally on Apple Silicon (outside any packaging tool's own extraction flow) downloads a valid Mach-O arm64 .node file that has no valid code signature, and macOS's AMFI enforcement kills the entire process the instant Node tries to dlopen it -- confirmed via ~/Library/Logs/DiagnosticReports/node-*.ips showing termination.namespace CODESIGNING. This is silent and total: no JS exception, no stack trace, just exit 137, so it looks exactly like an OOM kill or sandbox timeout until you check the actual crash report. Fix: 'codesign --sign - --force <path-to-.node>' (ad-hoc self-sign) restores it to loadable, or for local dev use just 'npm rebuild better-sqlite3' to get a properly-built-and-signed copy back. Edge case confirmed separately: @yao-pkg/pkg's own native-addon extraction mechanism does NOT hit this problem for the actual packaged binary -- pkg handles the macOS signing correctly when it extracts a bundled native asset at runtime, so this trap only bites when you bypass a packaging tool's own flow and swap node_modules binaries by hand, e.g. while testing cross-target prebuild-install fetches for a CI build script.
+
+---
+id: bbc3d72c-2325-4f03-a53f-4f8b8b1bba63
+createdAt: 2026-08-18T01:09:02.450Z
+importance: 4
+tags:
+  - longmemeval
+  - adr
+  - rc2
+taskId: 7856befc-344a-4072-b906-b729be0d039f
+---
+A/B harness ceiling effects on a control arm require a genuinely confusable alternative action to break, not just a harder-worded or better-hidden rule. Ticket 7 (Map — MCP Server & Setup/Onboarding Skill Split) tried four independent rule designs (any comment, exact-format tag buried in a style guide, an unconditional pre-finish action, a conditional/triggered action) against the same multi-step task and control complied 100% in all four (8/8 sessions) -- because the Anthropic Messages API resends the full system prompt every turn, so a rule with no plausible in-fixture substitute the model could mistake for compliance is always satisfiable regardless of wording or burial. write-compliance-ab's own hard mode (ticket 5, neuron-2.4.3) broke its ceiling not because its rule was 'an action' but because two plausible-looking recording actions competed (a history entry vs the specific learning entry required), so control frequently took the wrong-but-real action. Any future rule-adherence A/B needs to build that specific kind of confusable alternative into the fixture from the start, or budget for discovering this the hard way across several live iterations (cost /bin/zsh.62 across 24 sessions here). Full writeup: docs/design/rule-recall-ab/findings.md.
