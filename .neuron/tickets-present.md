@@ -185,18 +185,21 @@ something unshipped.
   `write-compliance-ab`'s own proven design, not just a rule-wording
   tweak), so no evidence the hook helps *or* hurts adherence. Full
   writeup: `docs/design/rule-recall-ab/findings.md`.
+- [8 — Design What `neuron init` Writes When MCP Is the Reach Mechanism](31ea7120-edf3-473c-b0ef-8f6223426157) —
+  MCP never counts as `deterministic` fidelity; where MCP is configured and
+  no deterministic hook exists, `recallStep()` swaps to the `neuron_recall`
+  tool verb; where a deterministic hook already exists (Claude Code, Codex
+  CLI) the agent file stays silent on MCP for both read and write;
+  `neuron init` writes each client's `mcpServers` config directly, with
+  ADR 0014 §7's exact ask-on-conflict/default-keep posture reused rather
+  than a second policy. Exact per-client config paths/formats deferred,
+  unverified against primary sources — graduated into
+  [9 — Implement MCP Reach Signaling in `neuron init`](6471bcf0-27c3-46a8-8263-2997d1a82bda).
+  Grilled live with the maintainer. Feeds Ticket 9.
 
 ## Not yet specified
 
-_Empty as of 2026-08-18._ The one patch this section held — `neuron init`
-writing the client-side `mcpServers` config stanza — graduated into
-[8 — Design What `neuron init` Writes When MCP Is the Reach Mechanism](31ea7120-edf3-473c-b0ef-8f6223426157),
-which merged it with the newer agent-file question Ticket 7's findings
-raised (whether the protocol block's existing recall step swaps its verb to
-`neuron_recall`, and whether MCP's presence may ever count as
-`deterministic` fidelity — proposed: never, since MCP has no per-turn
-injection point). The maintainer made the scope call that patch was waiting
-on: it belongs to this map, not a future one.
+_Empty as of 2026-08-18._
 
 ## Out of scope
 
@@ -2116,7 +2119,7 @@ tags:
 taskId: null
 kind: grilling
 map: 5d4082cf-aee3-4319-818d-9e13669901f5
-status: claimed
+status: resolved
 ---
 # 8 — Design What `neuron init` Writes When MCP Is the Reach Mechanism
 
@@ -2227,7 +2230,66 @@ disproven.
 
 ## Answer
 
-_Not yet resolved._
+Grilled live with the maintainer, 2026-08-18. Answers in the ticket's own
+order:
+
+**1. Does MCP presence ever count as `deterministic`? No, permanently —
+confirmed.** `resolveHarnessFidelity`/`fidelity` computation stays exactly as
+today; MCP being configured never suppresses `recallStep()`. Reasoning
+accepted as proposed: MCP has no per-turn injection point, and wiring it into
+`deterministic` would make `neuron init` ship precisely the configuration
+Ticket 7 measured at 0/8.
+
+**2. Does the recall step swap verbs under MCP? Yes.** Where MCP is
+configured and no deterministic recall hook exists for that harness (i.e.
+`fidelity !== 'deterministic'` **and** MCP is wired), `recallStep()` emits
+the `neuron_recall` tool call instead of the bash `neuron memory query`
+command. This is possible without a new discovery mechanism because of
+decision 4: `neuron init` itself becomes the source of truth for "is MCP
+configured," since it writes the client config directly (see below) — no
+separate detection step needed, the same init run that decides to write the
+`mcpServers` stanza also decides `recallStep`'s verb.
+
+**3. Both wired (Claude Code, Codex CLI): agent file stays silent on MCP,
+read and write.** Confirmed as proposed for the read side (hook
+authoritative, no recall instruction emitted, matching Ticket 1's "no
+steering-away from the hook path"), and extended to the write side by
+maintainer decision: `neuron_remember` is **not** offered as an alternative
+to bash `neuron memory add` on harnesses that already have the deterministic
+hook. Rationale: symmetric with the read-side ruling — one authoritative
+verb per surface, no second verb to keep in sync, and MCP's value
+proposition here is reach for harnesses that lack the hook, which Claude
+Code/Codex CLI already have.
+
+**4. Client config: `neuron init` writes it directly.** Not a prompt-only
+flow, not deferred to `neuron-onboarding`. This matches the existing
+hook-install precedent (ADR 0014 §7: init already writes hook config
+directly, asking only on conflict) and gives init the hard signal decision 2
+needs. **Conflict posture matches ADR 0014 §7 exactly**: if an
+`mcpServers`/neuron entry already exists at a client's config location, show
+what's there and ask overwrite y/n; non-interactive runs default to keep and
+warn, so CI/scripted runs never silently replace a hand-edited entry — the
+same `--overwrite-hooks`/`--keep-hooks` posture, not a second policy
+invented for MCP.
+
+**Exact per-client paths deferred, not settled here.** Ticket 10's original
+harness research predates MCP entirely and only surfaced one MCP-adjacent
+fact in passing (Copilot CLI's `~/.copilot/mcp-config.json`, user-level only,
+no project-level equivalent found). Claude Code's `.mcp.json`, Cursor's
+`.cursor/mcp.json` (project) / `~/.cursor/mcp.json` (user), and Codex's
+`~/.codex/config.toml` `[mcp_servers.<name>]` TOML table (same
+comment/round-trip-destruction risk ADR 0014 §7 already solved for Codex
+hooks via a sibling JSON file, not a direct `config.toml` rewrite) are named
+here from general knowledge, not from this map's own verified research — and
+the generic `agents` harness has no single MCP-config product to target at
+all, since it's a convention shared by many unrelated tools rather than one
+product with one config surface. Verifying and implementing the exact
+per-harness mechanics graduates as its own follow-up ticket rather than being
+pinned down in this grilling ticket, matching the map's own
+grilling-then-implement pattern (Ticket 1 → Ticket 4; Ticket 2/3 → Ticket 5).
+
+**Implementation graduates as a new ticket** — see the map's Decisions-so-far
+entry for this ticket for the link.
 
 ## Comments
 
@@ -2239,3 +2301,85 @@ _Not yet resolved._
   decisions 1 and 4 in particular want a human's own scope call rather than
   an agent's inference. Unblocked — Tickets 1-7 are all resolved, so this
   enters the frontier immediately as the map's only open ticket.
+- 2026-08-18: Resolved live via `/grilling`, one question at a time, with the
+  facts above (harness config-surface excerpts, README's existing MCP
+  section, ADR 0014 §7's conflict-posture precedent) looked up rather than
+  asked, per the skill's own instruction to only put genuine judgment calls
+  to the maintainer.
+
+---
+id: 6471bcf0-27c3-46a8-8263-2997d1a82bda
+createdAt: 2026-08-18T17:22:32.382Z
+importance: 4
+tags:
+  - setup
+  - 2.2.0
+  - rc2
+taskId: null
+kind: task
+map: 5d4082cf-aee3-4319-818d-9e13669901f5
+status: unclaimed
+---
+# 9 — Implement MCP Reach Signaling in `neuron init`
+
+## Question
+
+Implement Ticket 8's ruling: `neuron init` writes each detected client's
+`mcpServers` config directly, and `recallStep()`/write-side steps in the
+generated protocol block change verb accordingly. This ticket owns pinning
+the exact per-client config paths/formats that Ticket 8 deliberately left
+unverified, plus the implementation itself.
+
+## Scope, per Ticket 8's Answer
+
+1. **Verify real config paths/formats** for each of the five registry
+   harnesses (`src/config/harnesses.json`: agents, claude, cursor, github,
+   codex) against primary sources — same bar Ticket 10's original research
+   used (official docs/source, not blog posts), since Ticket 8's Answer only
+   carried these from general knowledge, unverified:
+   - Claude Code: `.mcp.json` (project root), JSON, `{"mcpServers": {...}}`
+   - Cursor: `.cursor/mcp.json` (project), `~/.cursor/mcp.json` (user), same
+     shape
+   - Codex CLI: `~/.codex/config.toml` / `<repo>/.codex/config.toml`,
+     `[mcp_servers.<name>]` TOML table — apply ADR 0014 §7's existing
+     Codex resolution (sibling JSON file, not a direct `config.toml`
+     rewrite, to avoid destroying hand-written TOML comments)
+   - GitHub Copilot CLI: `~/.copilot/mcp-config.json` (user-level only per
+     Ticket 10's research — confirm no project-level equivalent exists
+     before treating this as the only write target)
+   - `agents` (generic AGENTS.md-fallback harness): confirm there is no
+     single MCP-config product to target, and decide whether `neuron init`
+     simply skips MCP client-config writing for this harness
+2. **Write the `mcpServers` stanza** for each verified target, pointing at
+   `npx -y @kovartravis/neuron mcp` (matching README's existing example),
+   using the ask-on-conflict / default-keep posture ADR 0014 §7 already
+   established for hooks — reuse or mirror that mechanism, don't invent a
+   second one.
+3. **Signal MCP-configured status into `recallStep()`/protocol block
+   generation** so Ticket 8 decision 2's verb swap (`neuron_recall` in
+   place of bash `neuron memory query`, on non-deterministic-fidelity
+   harnesses only) and decision 3 (no MCP mention at all where a
+   deterministic hook already exists) both fire correctly from the same
+   `neuron init` run that wrote the client config.
+4. Tests for: each verified harness's config gets a correct, idempotent
+   `mcpServers` write; conflict prompt/keep-default behavior; the protocol
+   block's recall step verb under each fidelity × MCP-configured
+   combination; re-running init leaves an unchanged write alone (matching
+   the existing hook-block idempotency test pattern).
+
+## Non-goals
+
+- Re-litigating any of Ticket 8's four policy decisions — implement them as
+  ruled.
+- Changing the hook model anywhere it already works (ADR 0014's standing
+  non-goal).
+
+## Answer
+
+_Not yet resolved._
+
+## Comments
+
+- 2026-08-18: Graduated from Ticket 8's resolution — the path-verification
+  half the maintainer chose to defer rather than settle inside the
+  grilling ticket. Unblocked immediately (Ticket 8 is resolved).
