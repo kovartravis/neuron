@@ -1597,3 +1597,27 @@ tags:
 taskId: 31ea7120-edf3-473c-b0ef-8f6223426157
 ---
 Resolved wayfinder ticket 8 (Design What neuron init Writes When MCP Is the Reach Mechanism, Map — MCP Server & Setup/Onboarding Skill Split) via a live /grilling session with the maintainer. Four decisions settled: (1) MCP presence never counts as deterministic fidelity in neuron init's protocolBlock generation, permanently -- MCP has no per-turn injection point, and ticket 7's A/B already showed MCP-as-sole-carrier-behind-an-optional-pointer scoring 0/8 compliance, so wiring MCP into the deterministic check would make neuron init ship exactly that losing configuration by default. (2) Where MCP is configured and no deterministic recall hook exists for that harness, recallStep() emits the neuron_recall tool call instead of bash neuron memory query -- made possible without a separate detection mechanism because decision 4 makes neuron init itself the source of truth for MCP-configured status. (3) Where a deterministic hook already exists (Claude Code, Codex CLI), the agent file stays silent on MCP for both read AND write -- the maintainer explicitly extended ticket 1's read-side 'no steering away from the hook' ruling to the write side too (no neuron_remember mention), keeping one authoritative verb per surface. (4) neuron init writes each client's mcpServers config directly (not prompt-only, not deferred to neuron-onboarding), reusing ADR 0014 section 7's exact ask-on-conflict/default-keep posture rather than inventing a second policy. Deliberately left unresolved: exact per-client config paths/formats (Claude Code's .mcp.json, Cursor's .cursor/mcp.json, Codex's config.toml [mcp_servers] TOML table, Copilot CLI's user-level-only ~/.copilot/mcp-config.json, and the agents harness having no single MCP-config product to target) -- ticket 10's original harness research predates MCP entirely, so these were carried from general knowledge rather than verified, and the maintainer chose to graduate ticket 9 (Implement MCP Reach Signaling in neuron init) as a follow-up rather than settle unverified facts inside a grilling ticket. Matches this map's established grilling-then-implement pattern (ticket 1 into ticket 4, tickets 2/3 into ticket 5).
+
+---
+id: da515e6e-2d48-4119-9c4d-17d9f1960045
+createdAt: 2026-08-18T17:48:14.641Z
+importance: 4
+tags:
+  - 2.2.0
+  - rc2
+  - setup
+taskId: 6471bcf0-27c3-46a8-8263-2997d1a82bda
+---
+Ticket 9 (neuron-2.4.3, MCP Server & Setup/Onboarding Skill Split map): implemented Ticket 8's ruling that neuron init writes each detected harness's MCP client config directly. Key design choice: MCP client-config writing is a new module (src/harnesses/mcpClientConfig.ts) parallel to HarnessAdapter, not bolted onto it — a hook adapter answers how a harness receives a per-turn recall event, this module answers where that harness's editor looks for an MCP server to spawn, and the two are independent (a harness can have one, both, or neither). It reuses the exact --hook-target/--overwrite-hooks/--keep-hooks/--harness/--no-hooks flags already resolved once per init run for hooks (ADR 0014 section 7), rather than inventing a second conflict policy. For Codex CLI's config.toml, chose a hand-rolled line-based [mcp_servers.neuron] table finder/splicer (mirroring protocolBlock.ts's own marker-region-splice convention) over a general TOML parse-and-restringify, after live-testing the one npm package claiming comment-preserving TOML patch semantics (toml-patch) and finding it broken for inserting brand-new keys. claude and github harnesses share the same .mcp.json target file by design (Copilot CLI prefers .mcp.json over .github/mcp.json whenever both exist), deduped at the init.ts orchestration layer so the identical entry is written once but reported per harness.
+
+---
+id: bc44464e-6a44-4592-9fbe-b7cfb68bec9d
+createdAt: 2026-08-18T20:18:20.497Z
+importance: 4
+tags:
+  - rc2
+  - wayfinder
+  - 2.2.0
+taskId: 5d4082cf-aee3-4319-818d-9e13669901f5
+---
+Ran a breadth-first grill on Map — MCP Server & Setup/Onboarding Skill Split after all 9 child tickets closed, to check whether its 'Not yet specified' being empty actually meant the destination was reached. Surfaced one real gap: Ticket 7's A/B finding that agent-invoked neuron_recall with no hook backing it gets 0% compliance (called only 5/8 sessions, never compliant even when called) was never folded into the shipped docs, which described the MCP recall-verb swap as if it were compliance-neutral. Maintainer ruled it an accepted limitation per ADR 0014's own MCP-is-additive-not-a-hook-replacement non-goal (no new ticket), but asked for the docs to be made honest about it now rather than deferred — added a caveat citing docs/design/rule-recall-ab/findings.md to both README.md's MCP server section and docs/COMMANDS.md's neuron mcp section. With no further fog, archived the whole map (10 entries: the map plus tickets 1-9) from tickets-present to tickets-past via same-id delete-then-upsert, per docs/agents/issue-tracker.md's whole-map archiving convention.

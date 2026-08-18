@@ -1700,3 +1700,15 @@ tags:
 taskId: 7856befc-344a-4072-b906-b729be0d039f
 ---
 A/B harness ceiling effects on a control arm require a genuinely confusable alternative action to break, not just a harder-worded or better-hidden rule. Ticket 7 (Map — MCP Server & Setup/Onboarding Skill Split) tried four independent rule designs (any comment, exact-format tag buried in a style guide, an unconditional pre-finish action, a conditional/triggered action) against the same multi-step task and control complied 100% in all four (8/8 sessions) -- because the Anthropic Messages API resends the full system prompt every turn, so a rule with no plausible in-fixture substitute the model could mistake for compliance is always satisfiable regardless of wording or burial. write-compliance-ab's own hard mode (ticket 5, neuron-2.4.3) broke its ceiling not because its rule was 'an action' but because two plausible-looking recording actions competed (a history entry vs the specific learning entry required), so control frequently took the wrong-but-real action. Any future rule-adherence A/B needs to build that specific kind of confusable alternative into the fixture from the start, or budget for discovering this the hard way across several live iterations (cost /bin/zsh.62 across 24 sessions here). Full writeup: docs/design/rule-recall-ab/findings.md.
+
+---
+id: 9c420cc5-538b-42bc-9c45-4f8d140162d6
+createdAt: 2026-08-18T17:48:32.222Z
+importance: 4
+tags:
+  - failure-fix
+  - exec
+  - adr
+taskId: null
+---
+toml-patch@0.2.3's patch() function is broken for inserting a brand-new key into an existing TOML document, despite documenting comment-preserving patch semantics. Symptom: patching in a new nested key (e.g. adding mcp_servers.neuron to a document that already has mcp_servers.other) prepends an unindented bare assignment line before the entire original file content, rather than inserting into the target table -- confirmed via a live node -e probe before writing any production code against it. Verified root cause is scoped to NEW-key insertion; existing-key value updates were not tested further since the new-key case alone made it unusable for neuron's own need (adding a fresh [mcp_servers.neuron] table to a possibly-preexisting Codex CLI config.toml, per ticket 9, neuron-2.4.3). Resolution: reverted the npm dependency and hand-rolled a narrow line-based table-block finder/splicer instead (scan for a ^[mcp_servers.neuron]569Xlstyle header line, take its range through the next top-level [...] header or EOF), mirroring protocolBlock.ts's own findMarkerRange/upsertProtocolBlock marker-region-splice convention rather than adding a general TOML-parsing dependency at all. General rule: before depending on any library's claimed round-trip/patch-preservation behavior, write a 3-line live probe reproducing your exact write pattern (not just its README example) before wiring it into real code.
