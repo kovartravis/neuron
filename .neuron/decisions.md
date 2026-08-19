@@ -1645,3 +1645,15 @@ tags:
 taskId: 19f204e7-ed0c-4883-8a86-9416bb257c02
 ---
 Map — neuron.github.io Site (2.5.0)'s Ticket 4 (Homepage Visual & Brand Direction) resolved via /prototype: three structurally different homepage directions (Terminal Anchor — dark/monospace/terminal-window hero; Split SaaS — light two-column with a code-result card; Minimal Text-First — no code chrome, list-style pillars, prose pain-points) built as a switchable static Astro page and reacted to live with the maintainer. Winner: Minimal Text-First — warm off-white ground, near-black text, a single sparing deep-green accent, system sans throughout, no code block or terminal chrome anywhere in the hero. This settles the map's 'does the homepage need a live/interactive demo' fog item as no, confirming Ticket 1's survey finding (no dev-tool homepage surveyed embeds one) with a live maintainer reaction rather than resting on the survey alone. A follow-up round added a mobile breakpoint (stacked full-width CTAs, resized H1, wrapped install command, tightened pillar-list spacing) after the maintainer flagged the initial prototype's narrow-viewport behavior. The full three-variant prototype, including the mobile fix, is captured on throwaway branch prototype/ticket4-homepage-variants (commit e8b6bbd) as the primary source per the prototype skill — main only carries the resolved ticket and the folded decision; Ticket 7 (Build the Homepage) implements the real homepage from that branch as reference.
+
+---
+id: 58c40b10-0868-48fd-b588-fe0b7f91ecac
+createdAt: 2026-08-19T16:22:43.591Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+Closed out Map — SEO & GEO Groundwork: all 7 children (keyword/search-intent research, IA & citability conventions, structured data strategy, sitemap/robots/canonical setup, llms.txt decision, content-authoring guidelines, GEO citation measurement) resolved, no remaining fog, destination reached (SEO/GEO conventions established and fed forward into Map — neuron.github.io Site's Tickets 2, 3, and 7, all now resolved). Archived the map and all 7 children from tickets-present into tickets-past via the documented delete-then-upsert pattern (docs/agents/issue-tracker.md's Archiving section), same precedent as prior map archivals -- a one-off tsx script calling NeuronMemory.transact() directly, since the CLI has no bulk-move command and a same-id upsert alone won't move an existing row's category. All 8 ids verified content-identical (content/tags/importance/fields) post-move via neuron memory get before/after. tickets-present now holds only Map — neuron.github.io Site (2.5.0).
