@@ -1,0 +1,219 @@
+---
+// Homepage — ticket 7 (Build the Homepage), Map — neuron.github.io Site (2.5.0).
+// Folds ticket 4's winning prototype direction (Minimal Text-First, branch
+// prototype/ticket4-homepage-variants, commit e8b6bbd) into the real site,
+// with ticket 2's settled copy and Map — SEO & GEO Groundwork's ticket 3
+// JSON-LD convention (WebSite + SoftwareApplication + FAQPage, Person author).
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const canonicalUrl = 'https://kovartravis.github.io/neuron/';
+const githubUrl = 'https://github.com/kovartravis/neuron';
+
+const person = {
+	'@type': 'Person',
+	name: 'Travis Kovar',
+	url: 'https://github.com/kovartravis',
+};
+
+const faqs = [
+	{
+		q: 'Does neuron send my code or memory to the cloud?',
+		a: 'No. neuron runs 100% offline — it embeds text locally with ONNX models and stores everything in a local SQLite/markdown store. No API keys, no telemetry, nothing leaves your machine.',
+	},
+	{
+		q: 'Does neuron work with Cursor and Codex, or only Claude Code?',
+		a: 'neuron ships harness adapters for Claude Code, OpenAI Codex CLI, Cursor, and GitHub Copilot CLI. Claude Code and Codex CLI get memory injected automatically on every turn; Cursor and Copilot CLI get it once per session, since those harnesses only expose a session-start hook.',
+	},
+	{
+		q: 'How is neuron different from a CLAUDE.md or AGENTS.md file?',
+		a: "A CLAUDE.md or AGENTS.md file is static prose an agent rereads in full every prompt, whether it's relevant or not, and it only grows over time. neuron stores memory as structured, schema-enforced entries and surfaces only what's relevant to the current query, instead of dumping one file into every prompt.",
+	},
+	{
+		q: 'Is neuron free to use?',
+		a: 'Yes. neuron is MIT-licensed and installs via npm or a standalone curl/PowerShell binary, with no account or API key required.',
+	},
+];
+
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'WebSite',
+			name: 'neuron',
+			url: canonicalUrl,
+		},
+		{
+			'@type': 'SoftwareApplication',
+			name: 'neuron',
+			applicationCategory: 'DeveloperApplication',
+			operatingSystem: 'macOS, Linux, Windows',
+			url: canonicalUrl,
+			license: 'https://opensource.org/licenses/MIT',
+			offers: {
+				'@type': 'Offer',
+				price: '0',
+				priceCurrency: 'USD',
+			},
+			author: person,
+		},
+		{
+			'@type': 'FAQPage',
+			mainEntity: faqs.map(({ q, a }) => ({
+				'@type': 'Question',
+				name: q,
+				acceptedAnswer: {
+					'@type': 'Answer',
+					text: a,
+				},
+			})),
+		},
+	],
+};
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>neuron — the local-first memory engine for coding agents</title>
+		<meta
+			name="description"
+			content="neuron gives Claude Code, Cursor, and Codex persistent memory — 100% local, relevance-gated, and it stops your agent from repeating the same mistake twice."
+		/>
+		<link rel="canonical" href={canonicalUrl} />
+		<link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+		<style>
+			:root {
+				--mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+				--sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+				--bg: #f7f5f0;
+				--fg: #16150f;
+				--fg-muted: #4a4941;
+				--fg-faint: #7a7869;
+				--accent: #1a5f3f;
+				--rule: #ded9cb;
+				--code-bg: #ece9e1;
+			}
+			* { box-sizing: border-box; }
+			body {
+				margin: 0;
+				font-family: var(--sans);
+				background: var(--bg);
+				color: var(--fg);
+			}
+			code { font-family: var(--mono); }
+			a { color: inherit; }
+
+			.hero { max-width: 640px; margin: 0 auto; padding: 8rem 1.5rem 5rem; text-align: center; }
+			.hero h1 { font-size: 2.9rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 1.5rem; }
+			.hero .sub { font-size: 1.08rem; color: var(--fg-muted); line-height: 1.65; margin: 0 auto 2.25rem; max-width: 52ch; }
+			.inline-code {
+				display: block; font-family: var(--mono); font-size: 0.85rem;
+				background: var(--code-bg); color: var(--fg); padding: 0.85rem 1.1rem;
+				border-radius: 6px; margin: 0 auto 0.6rem; max-width: 460px; text-align: left;
+			}
+			.alt { font-size: 0.78rem; color: var(--fg-faint); margin-bottom: 2rem; }
+			.ctas { display: flex; gap: 1.5rem; justify-content: center; align-items: center; }
+			.btn { text-decoration: none; font-size: 0.95rem; }
+			.btn.primary { background: var(--accent); color: #fff; padding: 0.75rem 1.6rem; border-radius: 4px; }
+			.btn.ghost { color: var(--fg); border-bottom: 1px solid var(--fg); padding-bottom: 2px; }
+
+			.pillars { max-width: 620px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+			.pillar { display: flex; gap: 1.5rem; padding: 1.75rem 0; border-top: 1px solid var(--rule); }
+			.pillar:last-child { border-bottom: 1px solid var(--rule); }
+			.pillar .num { font-size: 1.6rem; color: #cfc9b8; font-weight: 300; min-width: 2.2ch; }
+			.pillar h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
+			.pillar p { margin: 0; font-size: 0.9rem; color: var(--fg-muted); line-height: 1.55; }
+
+			.prose { max-width: 560px; margin: 0 auto 5rem; padding: 0 1.5rem; font-size: 0.98rem; color: #33321f; line-height: 1.75; text-align: center; }
+			.prose em { color: var(--accent); font-style: normal; }
+			.aside { text-align: center; font-size: 0.8rem; color: var(--fg-faint); font-style: italic; margin-bottom: 5rem; padding: 0 1.5rem; }
+
+			.faq { max-width: 620px; margin: 0 auto 7rem; padding: 0 1.5rem; }
+			.faq h2 { font-size: 1.4rem; margin: 0 0 2rem; text-align: center; }
+			.faq-item { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
+			.faq-item:last-child { border-bottom: 1px solid var(--rule); }
+			.faq-item h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+			.faq-item p { margin: 0; font-size: 0.92rem; color: var(--fg-muted); line-height: 1.6; }
+
+			footer { text-align: center; font-size: 0.82rem; color: var(--fg-faint); padding: 0 1.5rem 4rem; }
+			footer a { text-decoration: underline; }
+
+			@media (max-width: 640px) {
+				.hero { padding: 4rem 1.25rem 3rem; }
+				.hero h1 { font-size: 2.1rem; }
+				.hero .sub { font-size: 1rem; }
+				.inline-code { max-width: 100%; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; }
+				.ctas { flex-direction: column; gap: 0.9rem; width: 100%; }
+				.btn.primary { width: 100%; text-align: center; }
+				.pillar { gap: 1rem; padding: 1.4rem 0; }
+				.pillar .num { font-size: 1.3rem; min-width: 1.8ch; }
+				.prose { font-size: 0.92rem; padding: 0 1.25rem; }
+				.aside { padding: 0 1.25rem; }
+			}
+		</style>
+	</head>
+	<body>
+		<div class="hero">
+			<h1>The local-first memory engine for coding agents</h1>
+			<p class="sub">
+				Not another cloud memory API. Not another bloated rules file dumped into every prompt.
+				neuron gives Claude Code, Cursor, and Codex persistent memory — 100% local, relevance-gated,
+				and it stops your agent from repeating the same mistake twice.
+			</p>
+			<code class="inline-code">curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
+			<div class="alt">or <code>npm install -g @kovartravis/neuron</code></div>
+			<div class="ctas">
+				<a class="btn primary" href={`${base}/docs/quickstart/`}>Get started</a>
+				<a class="btn ghost" href={githubUrl}>View on GitHub</a>
+			</div>
+		</div>
+
+		<div class="pillars">
+			<div class="pillar">
+				<div class="num">01</div>
+				<div>
+					<h3>Zero-Cloud Privacy</h3>
+					<p>Local ONNX embeddings + SQLite. No API keys, no telemetry, nothing leaves your machine.</p>
+				</div>
+			</div>
+			<div class="pillar">
+				<div class="num">02</div>
+				<div>
+					<h3>Zero-Amnesia Execution</h3>
+					<p>Pre-command lookup checks memory before every shell command runs, so agents stop debugging the same failure twice.</p>
+				</div>
+			</div>
+			<div class="pillar">
+				<div class="num">03</div>
+				<div>
+					<h3>Context Budget Diet</h3>
+					<p>Relevance-gated recall injects only what's relevant — nothing dumped into every prompt.</p>
+				</div>
+			</div>
+		</div>
+
+		<p class="aside">also works as a CI check — <code>neuron scan --check</code> catches architecture drift before it merges</p>
+
+		<p class="prose">
+			Every agent starts each session with amnesia — the same bug gets debugged twice, the same
+			convention gets re-explained, and static rules files pile up until nobody trusts them.
+			<em>neuron</em> is what a coding agent remembers between sessions, without sending a single
+			byte of your code to the cloud.
+		</p>
+
+		<div class="faq">
+			<h2>Questions</h2>
+			{faqs.map(({ q, a }) => (
+				<div class="faq-item">
+					<h3>{q}</h3>
+					<p>{a}</p>
+				</div>
+			))}
+		</div>
+
+		<footer>
+			<a href={`${base}/docs/`}>Docs</a> · <a href={githubUrl}>GitHub</a> · MIT © Travis Kovar
+		</footer>
+	</body>
+</html>

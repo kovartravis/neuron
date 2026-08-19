@@ -150,7 +150,6 @@ rotting the moment 2.5.0 ships.
   prototype (all 3 variants) captured on throwaway branch
   `prototype/ticket4-homepage-variants` (commit `e8b6bbd`) for Ticket 7 to
   fold from — not on main.
-
 ## Not yet specified
 
 - **Analytics/telemetry for the live site** — low priority, not worth
@@ -279,7 +278,7 @@ taskId: null
 blockedBy: 96a9be90-1b56-4a78-9162-e9584f706877,19f204e7-ed0c-4883-8a86-9416bb257c02,2cfb58c4-305e-414f-b40d-f2d4e46ad016,3e0edd28-4651-4fc8-897f-5f44dad8b294
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 7 — Build the Homepage
 
@@ -290,6 +289,55 @@ Implement the homepage in Astro against ticket 2's settled messaging and ticket 
 ## Context
 
 Blocked on both decision tickets plus the scaffold (ticket 5) existing to build into.
+
+## Answer
+
+Built at `site/src/pages/index.astro` — a plain Astro page (not a Starlight
+page), so it renders at the site root outside Starlight's docs layout.
+Folds ticket 4's winning prototype direction (Minimal Text-First, branch
+`prototype/ticket4-homepage-variants`, commit `e8b6bbd`) into real markup:
+warm off-white ground, single deep-green accent, no terminal/code chrome
+in the hero beyond the inline curl command, numbered-list pillars, prose
+pain-point paragraph, italic CI aside, and the mobile breakpoint refinement
+(stacked full-width CTAs, wrapping install command, tightened pillar
+numerals) — all copied verbatim from ticket 4's settled answer.
+
+Copy is ticket 2's settled hero/pillars/pain-point text verbatim, in its
+settled section order (Hero → Pillars → Pain-points). CTAs: primary "Get
+started" → `/docs/quickstart/`, secondary "View on GitHub" → the GitHub
+repo, both base-path-aware via `import.meta.env.BASE_URL`.
+
+**Also implements two decisions this ticket was explicitly built against**
+(Map — SEO & GEO Groundwork's Ticket 3 fed this ticket directly):
+- A visible Q&A block (4 questions), per that map's Ticket 2 IA convention
+  scoping FAQ blocks to high-intent pages including the homepage. Questions
+  target real search-intent clusters from that map's Ticket 1 research
+  (cloud/local, cross-harness support, CLAUDE.md/AGENTS.md comparison,
+  pricing). Answers are grounded in README.md facts (offline/ONNX/SQLite,
+  the harness support table's per-turn vs. session-start-only split, MIT
+  license) — no invented claims, no banned-superlative words (ticket 6's
+  style guide).
+- JSON-LD (`WebSite` + `SoftwareApplication` + `FAQPage`, stacked via
+  `@graph`) exactly per that map's Ticket 3 table: `Offer` with `price: "0"`,
+  a shared `Person` (Travis Kovar) as `author`, `FAQPage.mainEntity` mapped
+  1:1 from the visible Q&A block. No `BreadcrumbList` (ticket 3 explicitly
+  skips it).
+
+Verified: `npm run build` from `/site` completes clean (16 pages, including
+`index.html` at the root); `grep` confirmed the canonical URL, favicon
+path, JSON-LD block (7 `@type` entries: WebSite, SoftwareApplication,
+Offer, Person, FAQPage, 4×Question/Answer), and both CTA hrefs render with
+the correct `/neuron` base prefix. Screenshotted via Playwright at
+1280×1400 (desktop) and 375×900 (mobile) — mobile breakpoint confirmed
+working (stacked CTAs, wrapped install command, tightened pillar list).
+
+Root TS/vitest pipeline untouched — this is a `site/**` addition only.
+
+## Comments
+
+- 2026-08-16: Created — blocked on Ticket 2, Ticket 4, Ticket 5, and Map —
+  SEO & GEO Groundwork's Ticket 3.
+- 2026-08-19: Claimed and resolved. Homepage live at `site/src/pages/index.astro`.
 
 ---
 id: b7e4dab5-5b0f-44e9-bcb8-0c8475ed785c
