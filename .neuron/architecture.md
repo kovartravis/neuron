@@ -14,7 +14,7 @@ taskId: null
 # 🏛️ Repository Architectural Blueprint: @kovartravis/neuron
 
 ## 🚀 System Purpose & Tech Stack
-@kovartravis/neuron is a nodejs, typescript software system structured into 19 primary architectural modules.
+@kovartravis/neuron is a nodejs, typescript software system structured into 20 primary architectural modules.
 
 ## 🔬 Parser Fidelity
 Default: `ast/2`
@@ -45,6 +45,7 @@ Default: `ast/2`
 ├── nli-polarity-ab (benchmarks/nli-polarity-ab)
 ├── reranker-gate (benchmarks/reranker-gate)
 ├── salvage-expansion (benchmarks/salvage-expansion)
+├── src (site/src)
 ├── src (src)
 ├── commands (src/commands)
 ├── components (src/components)
@@ -67,6 +68,7 @@ Default: `ast/2`
 - **nli-polarity-ab** — `benchmarks/nli-polarity-ab` (3 files)
 - **reranker-gate** — `benchmarks/reranker-gate` (2 files)
 - **salvage-expansion** — `benchmarks/salvage-expansion` (2 files)
+- **src** — `site/src` (1 file)
 - **src** — `src` (13 files)
 - **commands** — `src/commands` (31 files)
 - **components** — `src/components` (21 files)
@@ -559,3 +561,20 @@ Primary . module containing core application capabilities.
 
 **Key Components & Export Contracts:**
 - **`vitest.config.ts`**: Root config for the main `--dir src` suite. `testTimeout`/`hookTimeout` are raised well past vitest's 5000ms default because a cold model cache (e.g. a fresh CI runner, or the first local run after `models/` is cleared) means whichever test first touches the embedder, reranker, or NLI classifier pays a real first-time ONNX download, not just inference cost — observed timing out at the 5000ms default even after `withModelCacheLock` (src/components/modelCacheLock.ts) fixed the actual corruption bug two concurrent downloads used to cause on the same race.
+
+---
+id: 7c62d14a-088b-a954-7ace-c8b50dfbe0e4
+createdAt: 2026-08-19T14:34:51.330Z
+importance: 5
+tags:
+  - architecture
+  - topology
+  - scan
+  - deep
+taskId: null
+---
+### 🧩 src (`site/src`)
+Primary src module containing core application capabilities.
+
+**Key Components & Export Contracts:**
+- **`site/src/content.config.ts`**: Methods: defineCollection(), docsSchema().

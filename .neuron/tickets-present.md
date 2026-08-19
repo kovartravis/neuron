@@ -62,15 +62,16 @@ rotting the moment 2.5.0 ships.
 - **This map carries execution**, per the wayfinder skill's own override
   clause — the destination is a live site, not a spec, so build/deploy
   tickets (5-9) are in scope alongside the decision tickets.
-- **Cross-map dependency, added 2026-08-15**: Ticket 2 (Homepage Messaging
-  & Positioning) is now blocked on Map — MCP Server & Setup/Onboarding
-  Skill Split's Tickets 4 and 6. A maintainer-submitted positioning-
-  strategy review (competitive landscape, developer pain points, a
-  candidate positioning statement) arrived as input to this map's Ticket 2
-  — but two of its "actionable ideas" (an MCP server, an onboarding-
-  migration flow) turned out to be real product engineering rather than
-  site content, and graduated into that standalone map instead. Ticket 2
-  waits so messaging doesn't promise either feature before it ships. Full
+- **Cross-map dependency, added 2026-08-15, resolved 2026-08-19**: Ticket 2
+  (Homepage Messaging & Positioning) was blocked on Map — MCP Server &
+  Setup/Onboarding Skill Split's Tickets 4 and 6. A maintainer-submitted
+  positioning-strategy review (competitive landscape, developer pain
+  points, a candidate positioning statement) arrived as input to this
+  map's Ticket 2 — but two of its "actionable ideas" (an MCP server, an
+  onboarding-migration flow) turned out to be real product engineering
+  rather than site content, and graduated into that standalone map
+  instead. Both tickets shipped 2026-08-17 (that map has since archived to
+  `tickets-past`), unblocking Ticket 2, which is now resolved. Full
   analysis linked from Ticket 2's own content:
   `docs/design/site/competitive-landscape-and-positioning.md`.
 
@@ -126,6 +127,17 @@ rotting the moment 2.5.0 ships.
   gap: nothing implements Map — SEO & GEO Groundwork's Ticket 3
   (`TechArticle`/`Person` JSON-LD) on the docs template — filed as this
   map's new Ticket 11.
+- [Homepage Messaging & Positioning](96a9be90-1b56-4a78-9162-e9584f706877) —
+  category framing settled as "local-first memory engine for coding
+  agents" (local-first foregrounded, not a buried pillar); hero contrasts
+  by pattern not product (no Mem0/Zep/CLAUDE.md named); pillars in order
+  Zero-Cloud Privacy → Zero-Amnesia Execution → Context Budget Diet;
+  pain-point section follows the pillars rather than opening with them;
+  primary CTA is the curl install one-liner tabbed with npx. Greenlit a
+  light homepage-only mention of `neuron scan --check` as a CI/CD
+  "architecture linter" (doesn't touch the deferred Architecture Scan
+  depth question below). Full decision record and drafted hero copy:
+  docs/design/site/homepage-messaging-positioning.md.
 
 ## Not yet specified
 
@@ -160,6 +172,12 @@ rotting the moment 2.5.0 ships.
   later demands version-pinned docs, that's a new effort.
 - **Generating reference docs from source** — considered, declined in
   favor of hand-written pages reviewed per release.
+- **Benchmark-proof marketing collateral** (a token-cost comparison +
+  failure-repeat demo, idea C from the competitive-landscape doc) — ruled
+  out during Ticket 2's grilling session. The doc's own figures were
+  illustrative placeholders, not measured against this repo; producing
+  real numbers is a separate future effort if ever pursued, not a
+  resumption of this map.
 
 ---
 id: f075521d-16fc-4873-a27c-0e96eb73727e
@@ -397,7 +415,7 @@ taskId: null
 blockedBy: ab6103ac-1b08-4ea6-aadd-816a8d5d4e46,fada539c-31ee-4a3a-9f4a-2b3fe86165b4,0c51a772-ff20-4d78-89dd-49a018b01b55,a3cc1972-e455-4c61-9ec4-bcc873c6353d
 kind: grilling
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 2 — Homepage Messaging & Positioning
 
@@ -409,16 +427,30 @@ What's neuron's actual value prop and headline message for a developer landing o
 
 Feeds ticket 4 (homepage visual prototype) and ticket 7 (homepage build) — a design pass without settled words to design around isn't useful. Use CONTEXT.md's glossary for accurate terminology (hybrid search, harness adapter, wayfinder, etc.) rather than inventing marketing language that drifts from what the tool actually does. Informed by ticket 1's survey.
 
-**Blocked (added 2026-08-15) on Map — MCP Server & Setup/Onboarding Skill
-Split's Ticket 4 (MCP server shipped) and Ticket 6 (setup/maintenance
-skill split complete).** A maintainer-submitted positioning-strategy
-review leans on MCP/cross-editor support as a differentiator — this
-ticket shouldn't lock in messaging that promises either before they
-actually ship. Full competitive-landscape and positioning analysis from
-that review (candidate positioning statement, three-pillar framing,
-developer pain points, competitive matrix — none of it independently
-verified yet, all of it raw input for this ticket's own grilling session):
-`docs/design/site/competitive-landscape-and-positioning.md`.
+Was blocked (added 2026-08-15) on Map — MCP Server & Setup/Onboarding Skill Split's Ticket 4 (MCP server shipped) and Ticket 6 (setup/maintenance skill split complete), since a maintainer-submitted positioning-strategy review leaned on MCP/cross-editor support as a differentiator and this ticket shouldn't lock in messaging that promises either before they actually shipped. Both resolved 2026-08-17 (that map has since archived to `tickets-past`), unblocking this ticket. Full competitive-landscape and positioning analysis from that review (candidate positioning statement, three-pillar framing, developer pain points, competitive matrix — none of it independently verified, all of it raw input for this ticket's own grilling session): `docs/design/site/competitive-landscape-and-positioning.md`.
+
+## Answer
+
+Grilled live with the maintainer. Full decision record, including drafted hero copy: `docs/design/site/homepage-messaging-positioning.md`.
+
+**Category framing**: "Local-first memory engine for coding agents" — tightened from the competitive doc's candidate statement to one category noun (memory engine), with local-first foregrounded as the throughline per the maintainer's explicit instruction, not a supporting pillar buried third.
+
+**Hero copy**: H1 "The local-first memory engine for coding agents"; subheadline contrasts by pattern, not product ("Not another cloud memory API. Not another bloated rules file dumped into every prompt...") — no direct Mem0/Zep/CLAUDE.md naming anywhere in hero or supporting copy.
+
+**Section order**: Hero → Pillars → Pain-point section → rest of homepage (Ticket 7's scope). Pillars lead; pain-point section (amnesia tax, rule blindness, bit rot, no product names) follows as reinforcement, not an opening pitch.
+
+**Pillars, in order**: (1) Zero-Cloud Privacy — leads on the maintainer's explicit local-first instruction; (2) Zero-Amnesia Execution; (3) Context Budget Diet. All three map to shipped, verifiable capabilities.
+
+**CTA**: primary = curl install one-liner (`curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh`), tabbed alongside an npx alternative; "View on GitHub" tertiary.
+
+**Architecture-linter CI framing (idea D)**: greenlit, homepage-light only (one line/small block) — does not un-defer the map's existing Architecture Scan "Not yet specified" fog item, which stays parked as-is.
+
+**Benchmark-proof collateral (idea C)**: ruled out of scope for this map (not deferred) — the competitive doc's figures were illustrative, not measured; a real measurement pass is a separate future effort if ever pursued.
+
+## Comments
+
+- 2026-08-15: Created while chartering Map — neuron.github.io Site (2.5.0). Blocked on Ticket 1 and on Map — MCP Server & Setup/Onboarding Skill Split's Tickets 4 and 6.
+- 2026-08-19: Claimed and resolved via live grilling session.
 
 ---
 id: ab6103ac-1b08-4ea6-aadd-816a8d5d4e46
