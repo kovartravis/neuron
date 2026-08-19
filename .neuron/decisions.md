@@ -1621,3 +1621,15 @@ tags:
 taskId: 5d4082cf-aee3-4319-818d-9e13669901f5
 ---
 Ran a breadth-first grill on Map — MCP Server & Setup/Onboarding Skill Split after all 9 child tickets closed, to check whether its 'Not yet specified' being empty actually meant the destination was reached. Surfaced one real gap: Ticket 7's A/B finding that agent-invoked neuron_recall with no hook backing it gets 0% compliance (called only 5/8 sessions, never compliant even when called) was never folded into the shipped docs, which described the MCP recall-verb swap as if it were compliance-neutral. Maintainer ruled it an accepted limitation per ADR 0014's own MCP-is-additive-not-a-hook-replacement non-goal (no new ticket), but asked for the docs to be made honest about it now rather than deferred — added a caveat citing docs/design/rule-recall-ab/findings.md to both README.md's MCP server section and docs/COMMANDS.md's neuron mcp section. With no further fog, archived the whole map (10 entries: the map plus tickets 1-9) from tickets-present to tickets-past via same-id delete-then-upsert, per docs/agents/issue-tracker.md's whole-map archiving convention.
+
+---
+id: 4026577f-3a58-4e71-8c3f-66bfd340abf1
+createdAt: 2026-08-19T14:58:50.552Z
+importance: 4
+tags:
+  - planning
+  - setup
+  - rc2
+taskId: null
+---
+Map — neuron.github.io Site (2.5.0)'s Ticket 2 (Homepage Messaging & Positioning) resolved via live grilling: category framing settled as 'local-first memory engine for coding agents', tightened from the competitive-landscape doc's two-noun candidate statement, with local-first foregrounded as the maintainer's explicit instruction rather than a supporting pillar. Hero contrasts by pattern not product (no Mem0/Zep/CLAUDE.md named) to avoid unverified competitor claims. Pillar order leads with Zero-Cloud Privacy (not the doc's original Zero-Amnesia-first order) to keep local-first the throughline past the hero; pain-point section deliberately placed after the pillars rather than Turso-style before them. Primary CTA is the shipped curl install one-liner, tabbed with npx, diverging from the doc's unexamined npx-first assumption. Of the competitive doc's two undecided 'actionable ideas', greenlit idea D (neuron scan --check as a CI/CD architecture-linter) homepage-light only — explicitly not un-deferring the map's existing Architecture Scan documentation-depth fog item — and ruled idea C (benchmark-proof collateral) out of scope rather than deferred, since its figures were illustrative placeholders never measured against this repo. Full record: docs/design/site/homepage-messaging-positioning.md.
