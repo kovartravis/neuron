@@ -119,3 +119,102 @@ Does `cross-encoder/nli-MiniLM2-L6-H768` (the model already shipped in `src/comp
 neuron-2.4.2's own Ticket 8 (now archived to `tickets-past`, id `b8900ad0-0579-4263-98f5-6f8acee75025`) validated this exact model against short memory-entry pairs and found a real, measured precision ceiling: 27-40% false-accept on compatible-but-related pairs depending on threshold, an SNLI/MultiNLI training-bias artifact, not a tuning miss — which is why that gate shipped soft-flag-only, never hard-block. This ticket's job is to find out whether that same ceiling holds, is worse, or is better on this map's different kind of text (longer ADR-style decision prose vs. short memory entries; a synthesized change description vs. a natural write). Do not assume Ticket 8's threshold transfers — measure it fresh, mirroring Ticket 8's methodology (`benchmarks/nli-polarity-ab/run-ab.ts` as the harness template, a fresh corpus of real/synthesized premise-hypothesis pairs drawn from this repo's own `decisions`/`architecture` entries and real scan-diff output, not the original SNLI/MultiNLI-derived corpus).
 
 Unblocked — first ticket on this map. Its verdict (usable bar vs. no usable bar at any threshold) gates every downstream ticket: the CLI-surface and persistence questions in the map's "Not yet specified" fog can't be answered until this ticket says whether the signal is trustworthy enough to expose at all.
+
+---
+id: 61deb508-7ed0-4c69-a1d9-f3dfb576c268
+createdAt: 2026-08-19T22:51:20.163Z
+importance: 4
+tags:
+  - site
+  - homepage
+  - design
+  - layout
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — Homepage Desktop Layout
+
+## Destination
+
+The live homepage (`site/src/pages/index.astro`,
+kovartravis.github.io/neuron) gains a real desktop-scale layout. Its
+mobile view stays exactly as it is — already prototyped, reacted to live,
+and shipped by Map — neuron.github.io Site (2.5.0)'s Ticket 4, no reason
+to touch it. The desktop breakpoint reflows into a two-column structure
+adapted from that same ticket's Split SaaS prototype direction, without
+reintroducing a code-result card or any terminal/code chrome in the hero —
+keeps the prior map's "no live demo in the hero" decision intact; only the
+column-layout question is being reopened, not the content-type question.
+Reached when the live desktop homepage no longer reads as a narrow
+centered text column with large empty margins — verified live in a
+browser at real desktop widths.
+
+## Notes
+
+- **Chartered 2026-08-19**, from the maintainer flagging (with a live
+  screenshot) that the shipped homepage looks good on mobile but not
+  desktop — its CSS caps every section at a 560-640px max-width, centered,
+  with only a `@media (max-width: 640px)` mobile breakpoint and zero
+  desktop-specific treatment.
+- **Settled at chartering**: reopens Map — neuron.github.io Site (2.5.0)'s
+  Ticket 4 (Homepage Visual & Brand Direction) specifically on the
+  column-layout question, pulling structure from that ticket's
+  already-prototyped-but-unshipped Split SaaS direction (light two-column
+  with a code-result card, on throwaway branch
+  `prototype/ticket4-homepage-variants`, commit `e8b6bbd`) — but explicitly
+  does NOT reopen messaging/copy (Ticket 2) or the "no code chrome in the
+  hero" decision (Ticket 4 itself, grounded in Ticket 1's survey finding
+  that no competitor homepage embeds a live demo).
+  See `docs/design/site/dev-tool-marketing-docs-survey.md`.
+- **This map carries execution**, per the wayfinder skill's own override
+  clause — matches the original homepage ticket's own precedent
+  (prototype and ship in the same lineage of tickets).
+- **Skills to consult**: `/prototype` for the desktop two-column
+  variant(s) — the second column's actual content isn't decided at
+  chartering, that's exactly this map's first ticket's question, not
+  something to pre-specify here.
+
+## Decisions so far
+
+## Not yet specified
+
+- **Breakpoint granularity beyond the existing mobile/desktop split** —
+  whether an intermediate tablet-width range needs its own treatment, or
+  a clean two-state mobile/desktop split is enough. Depends on how the
+  prototype ticket's variants actually look at intermediate widths.
+
+## Out of scope
+
+- **Homepage copy/messaging** — Ticket 2's (Map — neuron.github.io Site
+  2.5.0) settled positioning, hero copy, and pillar order stay as-is; this
+  map is a layout change, not a messaging one.
+- **A code-result card or any hero code/terminal chrome** — explicitly
+  ruled out at this map's own chartering, even while adopting Split SaaS's
+  two-column structure.
+- **The mobile view** — already approved and shipped; not being redesigned
+  or touched by this map.
+
+---
+id: 7aea8c90-0749-4431-85da-27ccdd2f6072
+createdAt: 2026-08-19T22:51:30.014Z
+importance: 4
+tags:
+  - site
+  - homepage
+  - design
+  - layout
+taskId: null
+kind: prototype
+map: 61deb508-7ed0-4c69-a1d9-f3dfb576c268
+status: unclaimed
+---
+# 1 — Prototype the Desktop Two-Column Layout
+
+## Question
+
+What does the homepage's desktop breakpoint actually look like, adapted from the Split SaaS direction's two-column structure (Map — neuron.github.io Site (2.5.0)'s Ticket 4, throwaway branch `prototype/ticket4-homepage-variants`, commit `e8b6bbd`) but without its code-result card or any hero code/terminal chrome? What fills the second column — the existing pillars list moved beside the hero instead of stacked below it, a different visual element, or something else — and at what viewport width does the layout switch from Minimal Text-First's existing single-column mobile view to the new two-column desktop one?
+
+## Context
+
+First and only ticket on this map so far — unblocked. Use `/prototype` the same way the original Ticket 4 did: build concrete, reactable variants (via a throwaway branch or switchable static page, matching that ticket's own method) rather than describing the layout in prose. Mobile must be verified completely unaffected — screenshot or otherwise confirm the existing narrow-viewport behavior is untouched, not just visually similar. React live with the maintainer before folding a winning direction into the real `site/src/pages/index.astro`.
