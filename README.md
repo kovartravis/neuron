@@ -504,6 +504,8 @@ npm run test:e2e  # deeper E2E benchmark & correctness suite
   — why it's built the way it is
 - **[Changelog](https://github.com/kovartravis/neuron/blob/main/CHANGELOG.md)**
   — including upgrade notes
+- **[Releasing](https://github.com/kovartravis/neuron/blob/main/docs/RELEASING.md)**
+  — the checklist for cutting a release
 
 ## 📄 License
 

@@ -218,7 +218,7 @@ tags:
 taskId: null
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 10 — Add a Docs-Review Step to the Release Checklist
 
@@ -229,6 +229,12 @@ Add a "docs reviewed against this release's CLI/config surface" checklist item t
 ## Context
 
 Independent of every other ticket — editing process documentation, not building anything. First needs to locate where the release checklist actually lives in this repo.
+
+## Answer
+
+No living release-checklist doc existed. `RELEASE_2.0.0.md` was a one-off snapshot never repeated past 2.0.0; `.github/workflows/publish.yml` automates build/test/architecture-drift/protocol-compliance/npm-publish/tagging/binaries but has no docs step; the only real discipline (CHANGELOG entry, package.json version bump, a `release: vX.Y.Z — ...` commit) lived purely as git-log convention with nothing written down.
+
+Created `docs/RELEASING.md` as that real home: a 5-step checklist (CHANGELOG entry → docs review → version bump → commit convention → push triggers publish.yml) with the new docs-review step as step 2, pointing at `site/src/content/docs/docs/` and explicitly noting it's a manual step, not a CI gate, per this map's own Notes. Linked from README.md's Documentation section alongside the Changelog link so it's discoverable.
 
 ---
 id: 61c267a2-de42-4fae-a581-7435c0f4e9f7
