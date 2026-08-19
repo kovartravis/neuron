@@ -150,6 +150,16 @@ rotting the moment 2.5.0 ships.
   prototype (all 3 variants) captured on throwaway branch
   `prototype/ticket4-homepage-variants` (commit `e8b6bbd`) for Ticket 7 to
   fold from — not on main.
+- [Build the Homepage](531c631b-cf9b-4a6b-be27-b3fa5529a202) — built at
+  `site/src/pages/index.astro`, folding Ticket 4's winning Minimal
+  Text-First prototype and Ticket 2's settled copy verbatim into a real
+  Astro page outside the Starlight layout. Also implements Map — SEO & GEO
+  Groundwork's Ticket 3 directly: a visible 4-question Q&A block (grounded
+  in README facts, per that map's Ticket 1 search-intent research and
+  Ticket 2 IA convention) plus `WebSite`+`SoftwareApplication`+`FAQPage`
+  JSON-LD with a shared `Person` author. Verified via `npm run build` and
+  Playwright screenshots at desktop and mobile widths.
+
 ## Not yet specified
 
 - **Analytics/telemetry for the live site** — low priority, not worth
