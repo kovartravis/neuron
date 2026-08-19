@@ -1712,3 +1712,15 @@ tags:
 taskId: null
 ---
 toml-patch@0.2.3's patch() function is broken for inserting a brand-new key into an existing TOML document, despite documenting comment-preserving patch semantics. Symptom: patching in a new nested key (e.g. adding mcp_servers.neuron to a document that already has mcp_servers.other) prepends an unindented bare assignment line before the entire original file content, rather than inserting into the target table -- confirmed via a live node -e probe before writing any production code against it. Verified root cause is scoped to NEW-key insertion; existing-key value updates were not tested further since the new-key case alone made it unusable for neuron's own need (adding a fresh [mcp_servers.neuron] table to a possibly-preexisting Codex CLI config.toml, per ticket 9, neuron-2.4.3). Resolution: reverted the npm dependency and hand-rolled a narrow line-based table-block finder/splicer instead (scan for a ^[mcp_servers.neuron]569Xlstyle header line, take its range through the next top-level [...] header or EOF), mirroring protocolBlock.ts's own findMarkerRange/upsertProtocolBlock marker-region-splice convention rather than adding a general TOML-parsing dependency at all. General rule: before depending on any library's claimed round-trip/patch-preservation behavior, write a 3-line live probe reproducing your exact write pattern (not just its README example) before wiring it into real code.
+
+---
+id: f1e62337-3521-4b00-bf05-037c3c71eea7
+createdAt: 2026-08-19T01:03:02.220Z
+importance: 4
+tags:
+  - wayfinder
+  - rc2
+  - 2.2.0
+taskId: null
+---
+Correction to an earlier entry in this store (same id): the "lost-update bug in neuron's own md-storage ticket tracker" diagnosis was wrong. What actually happened: ticket 1 (Survey Dev-Tool Marketing + Docs Sites for Patterns) was resolved and merged to main via a separate concurrent PR (#16, commit e6b48bd) while the wayfinder/docs-ia branch was still based on an older point in main's history. When docs-ia's own session then resolved ticket 3 (Docs IA, commit 18b8cfc) and wrote .neuron/tickets-present.md, it wrote from that branch's own stale local copy — which still had ticket 1 as unclaimed — not from a corrupted or racing neuron write path. This is ordinary git branch divergence on a shared markdown file, not a defect in `neuron memory update`. Confirmed via `git merge origin/main`, which surfaced a real, expected merge conflict on the same Decisions-so-far section (cleanly resolved as a superset — docs-ia's branch already contained everything main had plus tickets 3 and 5's additions). Standing rule, corrected: before resolving a wayfinder ticket on a long-lived branch, `git fetch && git merge origin/<default-branch>` first if the tracker file may have been touched by a concurrent PR — don't assume the local branch's copy of a tickets-present.md-backed map is current just because no error was raised. (tags: wayfinder, git, correction)
