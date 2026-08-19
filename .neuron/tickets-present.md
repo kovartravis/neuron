@@ -176,6 +176,15 @@ rotting the moment 2.5.0 ships.
   never repeated; `publish.yml` automates build/test/publish but not docs);
   created `docs/RELEASING.md` as its real home, a 5-step checklist with the
   docs-review step as step 2, linked from README's Documentation section.
+- [Implement TechArticle/Person JSON-LD on the Docs Page Template](eecdcad3-343f-458b-af19-33ee5ed0f293) —
+  a Starlight Head component override (`site/src/components/Head.astro`)
+  stacks `TechArticle` JSON-LD onto every docs page uniformly, author
+  `Person` reused from Ticket 7, `dateModified` from Starlight's built-in
+  git-backed `lastUpdated`; `datePublished` deliberately omitted (no
+  reliable source, not required). Surfaced that `FAQPage` can't attach to
+  Getting Started/CLI Reference/alternatives-comparison yet — none has real
+  Q&A content and the comparison page doesn't exist — filed as new Ticket
+  12 rather than resolved here.
 
 ## Not yet specified
 
@@ -634,7 +643,7 @@ tags:
 taskId: null
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 11 — Implement TechArticle/Person JSON-LD on the Docs Page Template
 
@@ -647,3 +656,38 @@ Where should this markup be injected (a shared Starlight component override vs. 
 ## Context
 
 Surfaced while resolving Ticket 8 (Write Docs Content Pages) — the 13 pages that ticket wrote are real `TechArticle` candidates with nothing rendering the markup Ticket 3 already decided. Independent of Ticket 9 (CLI & Config Reference) — those pages need the same template-level markup once they exist, so this ticket should land before or alongside Ticket 9's content, not after.
+
+## Answer
+
+Resolved via a Starlight Head component override (`site/src/components/Head.astro`, wired through `astro.config.mjs`'s `components.Head`) rather than per-page frontmatter head injection — one template file covers all 22 docs pages uniformly, matching Ticket 3's "no per-page judgment calls" rule, and needs no change to any existing page's frontmatter. Wraps the default Head and appends a `TechArticle` block per page: `headline`/`description` from Starlight's own frontmatter fields, `url` built from `Astro.url` plus the configured `site`, and the same shared `Person` (Travis Kovar) fragment Ticket 7's homepage already uses as `author`.
+
+`dateModified` needed one new capability: enabled Starlight's built-in `lastUpdated: true` config (git-log-backed, no per-page frontmatter required) rather than adding a bespoke field Ticket 5's scaffolding didn't set up. `datePublished` is intentionally omitted — no reliable publish-date source exists anywhere in the repo (git history only tells you the *last* touch to a file, not the first), inventing one would misrepresent it, and it isn't a required schema.org property for `TechArticle`.
+
+Building this surfaced that Ticket 3's `FAQPage` decision can't actually attach to the three non-homepage pages it named (Getting Started, CLI Reference, alternatives/comparison) yet — none of them has a visible Q&A block in its content, and the alternatives/comparison page doesn't exist at all, so adding the markup now would violate Ticket 3's own "no markup for synthetic or hidden questions" rule. Filed as a new ticket (Add FAQ Content Blocks + an Alternatives/Comparison Page to Close the FAQPage Gap) rather than resolved here — this ticket stays template-markup only.
+
+Verified via `npm run build` and inspecting the built `dist/docs/**/index.html` output directly: correct canonical `/neuron`-based URLs, real per-page headline/description/dateModified.
+
+---
+id: ffb57b65-2879-48e8-b2c9-d1586477e3f1
+createdAt: 2026-08-19T17:33:32.179Z
+importance: 4
+tags:
+  - geo
+  - seo
+  - planning
+taskId: null
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 12 — Add FAQ Content Blocks + an Alternatives/Comparison Page to Close the FAQPage Gap
+
+## Question
+
+Map — SEO & GEO Groundwork's Ticket 2 scoped visible Q&A blocks to four pages — homepage, Getting Started, CLI Reference, and a dedicated alternatives/comparison page — and its Ticket 3 decided each gets `FAQPage` JSON-LD once that content exists. Only the homepage actually has one (Ticket 7 built it). The alternatives/comparison page was never created by Ticket 3's docs IA or Ticket 8's content pass, and neither Getting Started nor CLI Reference has a Q&A block.
+
+Which page counts as "Getting Started" for this purpose — the docs landing page (labelled "Overview" in the sidebar) or Quickstart? What does an honest, non-promotional alternatives/comparison page say, consistent with Ticket 6's content-authoring guidelines (no unverifiable superlatives, every claim backed by a link)? Does adding a new page require an `astro.config.mjs` sidebar change?
+
+## Context
+
+Surfaced while resolving Ticket 11 (TechArticle/Person JSON-LD on the Docs Page Template): the template-level JSON-LD wiring is done and correct, but three of the four pages Ticket 3 scoped `FAQPage` markup to have no real, visible Q&A content to attach it to — a content-authoring gap, not a markup-wiring gap, so it stayed out of Ticket 11's scope. Independent of every other open ticket.
