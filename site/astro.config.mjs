@@ -14,10 +14,31 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/kovartravis/neuron' }],
 			sidebar: [
 				{
+					label: 'Getting Started',
+					items: [
+						{ label: 'Overview', slug: 'docs' },
+						{ label: 'Install', slug: 'docs/install' },
+						{ label: 'Quickstart', slug: 'docs/quickstart' },
+					],
+				},
+				{
 					label: 'Guides',
 					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
+						{ label: 'Configuration', slug: 'docs/configuration' },
+						{ label: 'Harness Adapters', slug: 'docs/harness-adapters' },
+						{ label: 'Claude Code', slug: 'docs/harness-claude-code' },
+						{ label: 'Codex CLI', slug: 'docs/harness-codex' },
+						{ label: 'GitHub Copilot CLI', slug: 'docs/harness-copilot' },
+						{ label: 'Cursor', slug: 'docs/harness-cursor' },
+					],
+				},
+				{
+					label: 'How It Works',
+					items: [
+						{ label: 'Hybrid Search & RRF', slug: 'docs/hybrid-search' },
+						{ label: 'Write-Side Enrichment', slug: 'docs/write-side-enrichment' },
+						{ label: 'Declared Field Schema', slug: 'docs/declared-field-schema' },
+						{ label: 'Storage Adapters', slug: 'docs/storage-adapters' },
 					],
 				},
 				{
