@@ -171,6 +171,11 @@ rotting the moment 2.5.0 ships.
   `astro.config.mjs` now fixes every content page's inline links, not just
   this ticket's new ones. Replaced the Reference sidebar's leftover
   Starlight-starter placeholder with the 10 real entries.
+- [Add a Docs-Review Step to the Release Checklist](f075521d-16fc-4873-a27c-0e96eb73727e) —
+  no living release-checklist doc existed (`RELEASE_2.0.0.md` was a one-off
+  never repeated; `publish.yml` automates build/test/publish but not docs);
+  created `docs/RELEASING.md` as its real home, a 5-step checklist with the
+  docs-review step as step 2, linked from README's Documentation section.
 
 ## Not yet specified
 
