@@ -99,6 +99,15 @@ rotting the moment 2.5.0 ships.
   pending a future map. Reference is one page per README's public command
   table, `memory`'s subcommands as H2 sections on one page. Full sitemap:
   docs/design/site/docs-information-architecture.md.
+- [Scaffold Astro + Starlight in This Repo](2cfb58c4-305e-414f-b40d-f2d4e46ad016) —
+  site source lives at `/site`, a standalone nested npm project (own
+  `package.json`, not a workspace); `astro.config.mjs` sets `site`/`base`
+  for the `kovartravis.github.io/neuron` project-page URL. `npm run build`
+  and `npm run dev` both verified clean from `/site`; root TS/vitest
+  pipeline untouched (scoped to `src/**/*` only) and re-verified after.
+  Placeholder Starlight starter content only — unblocks Ticket 7 (Build
+  the Homepage) and Map — SEO & GEO Groundwork's Ticket 4
+  (Sitemap/Robots.txt/Canonical Setup).
 
 ## Not yet specified
 
@@ -264,7 +273,7 @@ tags:
 taskId: null
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 5 — Scaffold Astro + Starlight in This Repo
 
@@ -275,6 +284,16 @@ Stand up a working Astro + Starlight site (placeholder content) inside this repo
 ## Context
 
 Purely mechanical — no design or content decision blocks this from starting immediately. AFK-drivable.
+
+## Answer
+
+Site source lives at `/site` — a standalone nested npm project (its own `package.json`/`node_modules`/`.gitignore`), not an npm workspace of the root package. Scaffolded via `npm create astro@latest -- site --template starlight`.
+
+`site/astro.config.mjs` sets `site: 'https://kovartravis.github.io'` and `base: '/neuron'` for the GitHub Pages project-page URL settled at chartering. Verified both `npm run build` (produces `site/dist/`, 4 pages, all under the `/neuron` base) and `npm run dev` (serves `/neuron/` at `http://localhost:4321`, HTTP 200) from inside `/site`.
+
+No collision with the root TS/npm pipeline: root `tsconfig.json`'s `include` is `src/**/*` only, and root `package.json`'s `test` script runs vitest with `--dir src` only — neither traverses `site/`. Root `npm run build` re-verified clean after the scaffold landed. `site/node_modules/` and `site/dist/` are excluded by `site/.gitignore` (Astro's own generated one), so the root `.gitignore`'s bare `node_modules/`/`dist/` patterns are redundant-but-harmless for this path, no edit needed there.
+
+Placeholder-only: still the default Starlight starter content (`title: 'neuron'`, one example guide/reference page, GitHub social link pointed at this repo). Real IA (ticket "Docs Information Architecture"), homepage build, and content land in later tickets against this scaffold.
 
 ---
 id: 19f204e7-ed0c-4883-8a86-9416bb257c02
@@ -374,7 +393,7 @@ tags:
 taskId: null
 kind: research
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 1 — Survey Dev-Tool Marketing + Docs Sites for Patterns
 
@@ -385,6 +404,26 @@ What do best-in-class developer-tool sites (marketing homepage + docs) actually 
 ## Context
 
 Chartered directly from the "something like a SaaS would have" framing in the original request. Collected once here so ticket 2 (messaging) and ticket 4 (homepage prototype) don't each re-derive inspiration from scratch.
+
+## Answer
+
+Surveyed 6 sites — Stripe, Linear, Vercel, Resend, Supabase, and Turso (a closer local-first/embedded-database analogue targeting the same AI-agent developer audience) — homepages plus docs landing pages for all but Turso. Full findings with per-pattern citations: docs/design/site/dev-tool-marketing-docs-survey.md.
+
+Nine concrete, reusable patterns found, most load-bearing for Ticket 2/4:
+
+1. H1 states category noun + audience, not a mood (Resend, Turso, Stripe).
+2. Subheadline carries the differentiator/"X alternative built on Y" framing the H1 has no room for (Supabase) — a working example of the SEO map's own winnable-query-intent finding.
+3. "For AI agents" is a foregrounded primary homepage/docs audience on Resend, Vercel, and Stripe's docs homepage, not a footnote — real precedent for making coding agents neuron's own named primary audience.
+4. Docs pages fetchable directly as markdown (docs.stripe.com's .md URL suffix), advertised to human readers too — supplementary note for the llms.txt ticket, not a reopening.
+5. One quickstart per language/framework (Resend, Supabase), not a single tabbed page — validates the SEO map's flat one-concept-per-page IA ruling with real precedent.
+6. Reference always its own top-level nav item, never blended with narrative guides (all 3 docs IAs fetched) — validates Site's own Ticket 8/9 split.
+7. **No homepage surveyed embeds a live/interactive demo** — direct answer to this map's own "live demo?" fog item, leaning no. Caveat: the fetch method may undercount JS-rendered code blocks on Stripe/Supabase specifically, so Ticket 4 should verify live before treating this as fully settled.
+8. A dedicated "why the status quo isn't enough" section right after the hero, before feature lists (Turso) — working precedent for the competitive-landscape doc's own amnesia-tax framing.
+9. Visible YAML frontmatter in the docs page itself (Vercel), not just hidden JSON-LD — supplementary note for the SEO map's structured-data ticket.
+
+Also flagged patterns to avoid: Stripe's 11-section enterprise-breadth homepage (wrong shape for a single-audience OSS tool) and duplicated near-identical headline copy stacked on itself (Vercel).
+
+Verification note: this is a research ticket — no code/tests to run. The one factual claim needing live re-verification before it's load-bearing is pattern 7's live-demo absence on the two client-rendered sites (see the doc's own Method section).
 
 ---
 id: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
