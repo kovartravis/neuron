@@ -185,6 +185,15 @@ rotting the moment 2.5.0 ships.
   Getting Started/CLI Reference/alternatives-comparison yet — none has real
   Q&A content and the comparison page doesn't exist — filed as new Ticket
   12 rather than resolved here.
+- [Add FAQ Content Blocks + an Alternatives/Comparison Page to Close the FAQPage Gap](ffb57b65-2879-48e8-b2c9-d1586477e3f1) —
+  "Getting Started" = the docs landing page, "CLI Reference" = the
+  `neuron memory` page; both got a real `## Questions` section, and a
+  new `docs/alternatives` page (neuron vs. Mem0/Zep/claude-mem/
+  agentmemory/Beads/Beans, sourced and linked, wired into the sidebar)
+  closes the gap. `FAQPage` JSON-LD now shares one frontmatter `faq`
+  source with each page's visible content, stacked by `Head.astro`
+  alongside `TechArticle`. Last open ticket on this map — Destination
+  reached.
 
 ## Not yet specified
 
@@ -678,7 +687,7 @@ tags:
 taskId: null
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 12 — Add FAQ Content Blocks + an Alternatives/Comparison Page to Close the FAQPage Gap
 
@@ -691,3 +700,13 @@ Which page counts as "Getting Started" for this purpose — the docs landing pag
 ## Context
 
 Surfaced while resolving Ticket 11 (TechArticle/Person JSON-LD on the Docs Page Template): the template-level JSON-LD wiring is done and correct, but three of the four pages Ticket 3 scoped `FAQPage` markup to have no real, visible Q&A content to attach it to — a content-authoring gap, not a markup-wiring gap, so it stayed out of Ticket 11's scope. Independent of every other open ticket.
+
+## Answer
+
+**"Getting Started"** = the docs landing page (`docs/index.md`, sidebar label "Overview") — it's the group's first stop and the natural entry-level-question landing spot; Quickstart is a linear how-to walkthrough, a worse fit for a Q&A block. **"CLI Reference"** = the `neuron memory` page specifically — Reference has no single overview page (it's 10 separate command pages per Ticket 9), and `neuron memory` is the core, most load-bearing command surface, matching the map's own search-intent research (Ticket 1) on high-intent "how do I use neuron memory" phrasing.
+
+Added a real, visible `## Questions` section to both pages — each answer sourced from facts already documented on that same page (or a direct cross-link), never invented — and extended the docs content schema (`site/src/content.config.ts`) with an optional `faq` frontmatter field so the visible block and its `FAQPage` JSON-LD share one source instead of two copies drifting apart. `Head.astro` now stacks `FAQPage` onto `TechArticle` whenever a page declares `faq`, mirroring the homepage's own `@graph` pattern from Ticket 7.
+
+Built the missing alternatives/comparison page (new file `docs/alternatives.md`, slug `/docs/alternatives/`) comparing neuron against Mem0, Zep, claude-mem, agentmemory, and Beads/Beans, each claim sourced and linked to the competitor's own public docs (pulled from Ticket 1's keyword research on this map's sibling map) per Ticket 6's content-authoring rules — no unverifiable superlatives, every comparative claim backed. Carries a `## Limitations` section (last, after Questions, per Ticket 6's placement rule) disclosing the comparisons are a dated snapshot of public marketing copy, not independently verified hands-on. **Yes**, adding it required an `astro.config.mjs` sidebar change — wired into the Getting Started group as "neuron vs. Alternatives," and both `docs/index.md` and `docs/cli-memory.md` now cross-link to it.
+
+Verified via `npm run build` and inspecting the built `dist/docs/{index,cli-memory,alternatives}/index.html` output directly: correct per-page `FAQPage`+`TechArticle` `@graph` JSON-LD, and heading structure holding to Ticket 2's IA rules (H1/H2-only, Questions before Limitations).
