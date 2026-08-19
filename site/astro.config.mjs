@@ -2,12 +2,50 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
+const SITE_BASE = '/neuron';
+
+// Hand-written markdown links (`[text](/docs/foo/)`) are passed through
+// verbatim by Astro's markdown pipeline — unlike Starlight's own generated
+// sidebar/nav links, they never get `base` prepended automatically. Left
+// alone, every root-relative link authored in a content-collection page
+// 404s on the deployed project-page URL (found while cross-linking
+// ticket 9's reference pages; verified against the built `dist/` output,
+// where the sidebar's own links correctly carried `/neuron` and every
+// inline markdown link did not — a repo-wide gap, not new to this ticket).
+// This rewrites any bare root-relative `href` (skips `//`, already-based,
+// and non-`/`-leading values) at build time so every existing and future
+// content page's plain markdown links resolve under the real base path.
+function rehypeBaseLinks() {
+	return (tree) => {
+		visit(tree);
+		function visit(node) {
+			if (
+				node.type === 'element' &&
+				node.tagName === 'a' &&
+				node.properties &&
+				typeof node.properties.href === 'string'
+			) {
+				const href = node.properties.href;
+				if (href.startsWith('/') && !href.startsWith('//') && !href.startsWith(SITE_BASE + '/') && href !== SITE_BASE) {
+					node.properties.href = SITE_BASE + href;
+				}
+			}
+			if (node.children) {
+				for (const child of node.children) visit(child);
+			}
+		}
+	};
+}
+
 // Project page on GitHub Pages: https://kovartravis.github.io/neuron
 // (ticket "Map — neuron.github.io Site (2.5.0)": no org named `neuron`
 // exists, and a custom domain was considered and declined at chartering.)
 export default defineConfig({
 	site: 'https://kovartravis.github.io',
-	base: '/neuron',
+	base: SITE_BASE,
+	markdown: {
+		rehypePlugins: [rehypeBaseLinks],
+	},
 	integrations: [
 		starlight({
 			title: 'neuron',
@@ -43,7 +81,18 @@ export default defineConfig({
 				},
 				{
 					label: 'Reference',
-					items: [{ autogenerate: { directory: 'reference' } }],
+					items: [
+						{ label: 'neuron init', slug: 'docs/cli-init' },
+						{ label: 'neuron memory', slug: 'docs/cli-memory' },
+						{ label: 'neuron exec', slug: 'docs/cli-exec' },
+						{ label: 'neuron scan', slug: 'docs/cli-scan' },
+						{ label: 'neuron sync', slug: 'docs/cli-sync' },
+						{ label: 'neuron status', slug: 'docs/cli-status' },
+						{ label: 'neuron ui', slug: 'docs/cli-ui' },
+						{ label: 'neuron mcp', slug: 'docs/cli-mcp' },
+						{ label: 'neuron feedback', slug: 'docs/cli-feedback' },
+						{ label: 'neuron.yaml', slug: 'docs/config-reference' },
+					],
 				},
 			],
 		}),

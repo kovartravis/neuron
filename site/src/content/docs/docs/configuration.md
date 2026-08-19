@@ -109,9 +109,9 @@ $ neuron memory add --category decisions --ticket NEU-42 --reviewed-by alice "Ch
 
 Declared fields extend `neuron memory --help` dynamically, so an agent
 reading `--help` learns a project's schema without it being restated
-anywhere else. Only `string` and `enum` field types are supported — see
-[the declared field schema](/docs/declared-field-schema/) for why, and for
-the full three-tier field model this sits inside.
+anywhere else. `string`, `enum`, and `commitRef` are the only supported
+field types — see [the declared field schema](/docs/declared-field-schema/)
+for why, and for the full three-tier field model this sits inside.
 
 ## Pull rules
 

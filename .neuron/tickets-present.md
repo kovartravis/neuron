@@ -230,7 +230,7 @@ taskId: null
 blockedBy: ee1b0d6f-783a-4dc5-95f9-dc39d6828910,2cfb58c4-305e-414f-b40d-f2d4e46ad016
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 9 — Write CLI & Config Reference Pages
 
@@ -241,6 +241,27 @@ Write hand-authored reference pages for every CLI command and every neuron.yaml 
 ## Context
 
 Kept separate from ticket 8 because reference pages need exhaustive accuracy against the actual CLI surface (neuron <cmd> --help, neuronYaml.ts), not prose — a different kind of writing task.
+
+## Answer
+
+Wrote all 10 Reference pages Ticket 3's IA scoped to this ticket, as `site/src/content/docs/docs/cli-{init,memory,exec,scan,sync,status,ui,mcp,feedback}.md` and `config-reference.md`. Sourced from the live CLI surface, not docs/COMMANDS.md alone — verified every flag against actual source (`npx tsx src/cli.ts <cmd> --help` for `memory`/`scan`/`status`, which support it; direct source reads of `init.ts`/`exec.ts`/`sync.ts`/`ui.ts`/`mcp.ts`/`feedback.ts` for the rest, which don't) and against `neuronYaml.ts`'s Zod schemas for `config-reference.md`.
+
+`cli-memory.md` structures the 8 subcommands as H2 sections per Ticket 3's spec, plus general flags, --where/--refs-satisfy, the supersession-gate flags, and declared-field flags. `config-reference.md` covers every top-level key including three not documented anywhere else on the site — `strict`, `llm.enrichment.*`, and `recall.epochCharBudget` — plus environment variables.
+
+**Real drift found and corrected while verifying, not just written around:**
+- `memory add`'s `--category` is optional (write-side-enrichment infers it) — `docs/COMMANDS.md`'s own table wrongly marks it required for `add`. Site page reflects the verified (optional) behavior.
+- `neuron ui`'s `--port`/`--no-open` flags exist in source but were undocumented anywhere, including `docs/COMMANDS.md`. Now documented.
+- Two existing site pages (`declared-field-schema.md`, `configuration.md`, both Ticket 8) claimed declared fields support only `string`/`enum`, missing `commitRef` (added by ADR 0013's 2026-08-15 amendment, ticket 5/neuron-2.4.2). Corrected both in place since my own new pages cross-link them and would otherwise contradict them.
+- **Site-wide bug found and fixed**: hand-written markdown links (`[text](/docs/foo/)`) were never getting the `/neuron` base path prepended in the built output — only Starlight's own generated sidebar links were. Verified by inspecting `dist/` directly: every inline cross-reference across all 13 of Ticket 8's existing pages, not just this ticket's new ones, would 404 on the deployed site. Added a small rehype plugin in `site/astro.config.mjs` (`rehypeBaseLinks`) that prepends `base` to any bare root-relative `href` at build time — fixes every existing and future content-page link in one place, verified against the rebuilt `dist/` output (spot-checked old and new pages) and against a live `astro preview` server.
+
+Updated `site/astro.config.mjs`'s Reference sidebar group from its leftover Starlight-starter `autogenerate: { directory: 'reference' }` placeholder (never replaced when Ticket 8 updated the other three groups) to the real 10 explicit entries, and deleted the placeholder `site/src/content/docs/reference/example.md` plus its now-empty directory.
+
+Verified: `npm run build` clean (25 pages, up from 16), zero banned-superlative hits (grepped), zero H3+ headings across all 10 new pages, every internal cross-reference anchor checked against its target page's real heading slugs and confirmed present in the built HTML. Root TS/vitest pipeline untouched — `site/**` only.
+
+## Comments
+
+- 2026-08-16: Created — blocked on Ticket 3 (Docs IA) and Ticket 5 (Astro scaffold).
+- 2026-08-19: Claimed and resolved. All 10 Reference pages live under `site/src/content/docs/docs/`.
 
 ---
 id: ab00735c-765e-4575-aa0d-4bacaaa0cd1c

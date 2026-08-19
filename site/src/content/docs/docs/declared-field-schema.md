@@ -29,13 +29,18 @@ so the same `neuron memory add` a month later can select different values
 for an unset field. An opt-in `strict` config flag disables both tag and
 category inference, trading that convenience for full value determinism.
 
-## Only string and enum fields
+## String, enum, and commitRef — no general escape hatch
 
-Declared fields support exactly two types: `string` and `enum`. There's no
-number or date type — `importance`'s hardcoded 1–5 integer range is a
-semantic-reserved field, not something declared this way. Enum values
-reuse neuron's typo suggester, so a near-miss value gets a correction
-suggestion rather than a bare rejection.
+Declared fields support three types: `string`, `enum`, and `commitRef`.
+There's still no number or date type — `importance`'s hardcoded 1–5 integer
+range is a semantic-reserved field, not something declared this way — and
+no pluggable custom-code verifier. `commitRef` is the one narrow addition
+to the original string/enum-only floor: its value must resolve to a real
+commit in the project's own git history (full or abbreviated SHA), checked
+at write time via a `git` shell-out at the same enforcement choke point
+every other field goes through. Enum values reuse neuron's typo suggester,
+so a near-miss value gets a correction suggestion rather than a bare
+rejection.
 
 ## Required-but-missing is one policy, everywhere
 
@@ -54,4 +59,4 @@ policy only bites new create/update writes. Non-compliant existing entries
 surface through `neuron status --check` instead, so a schema change is
 visible without turning into a landmine across an entire category file.
 
-Source: [ADR 0013 — Configurable Frontmatter Schema](https://github.com/kovartravis/neuron/blob/main/docs/adr/0013-configurable-frontmatter-schema.md).
+Source: [ADR 0013 — Configurable Frontmatter Schema](https://github.com/kovartravis/neuron/blob/main/docs/adr/0013-configurable-frontmatter-schema.md), including its [`commitRef` amendment](https://github.com/kovartravis/neuron/blob/main/docs/adr/0013-configurable-frontmatter-schema.md#2026-08-15--commitref-one-narrow-addition-to-the-type-floor).
