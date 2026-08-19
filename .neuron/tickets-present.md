@@ -532,6 +532,14 @@ and content tickets have what they need from this map to proceed.
   (Travis Kovar), not `Organization` — solo-maintained OSS project;
   `BreadcrumbList` explicitly skipped given the flat URL IA. Grilled live
   with the maintainer. Feeds Site (2.5.0)'s Ticket 7 (Build the Homepage).
+- [4 — Sitemap, Robots.txt & Canonical URL Setup](a8719d5c-34a9-4ebe-b1c2-f48408c963df) —
+  sitemap.xml and canonical `<link>` tags needed no new work — both ship
+  bundled with Starlight and were already correct off `astro.config.mjs`'s
+  `site`/`base` values, verified live via `npm run build`. Only
+  `site/public/robots.txt` needed adding, implementing this map's
+  chartering-time crawler policy verbatim (`Allow: /` for every crawler,
+  AI and traditional alike) plus a `Sitemap:` directive. Last open ticket
+  on this map — all seven are now resolved.
 - [5 — llms.txt / llms-full.txt Decision & Draft](787c805a-69dd-409f-8060-91efa97fa044) —
   publish both: `llms.txt` hand-maintained, `llms-full.txt` build-generated
   from Starlight's content collection at Site (2.5.0) Ticket 5's build step
@@ -833,7 +841,7 @@ taskId: null
 blockedBy: 4b5c1114-812d-4533-a992-7bebb4ca3ec1,2cfb58c4-305e-414f-b40d-f2d4e46ad016
 kind: task
 map: 64cc32f8-4b9b-48dd-b18c-ca0788b96cba
-status: unclaimed
+status: resolved
 ---
 # 4 — Sitemap, Robots.txt & Canonical URL Setup
 
@@ -853,6 +861,33 @@ mechanical implementation of that call, not a re-litigation of it. Needs
 the Astro+Starlight scaffold in place to generate against (Site (2.5.0)'s
 Ticket 5) and this map's Ticket 2's URL/IA conventions so the sitemap
 reflects the real structure, not a placeholder.
+
+## Answer
+
+Sitemap generation and canonical URL tags need **no new work** — both come
+bundled with Starlight (which wraps `@astrojs/sitemap`) and are already
+driven correctly by `astro.config.mjs`'s existing `site`/`base` values
+(`https://kovartravis.github.io` / `/neuron`, set by Site (2.5.0)'s Ticket
+5). Verified via `npm run build`: every page in `dist/` carries a correct
+`<link rel="canonical">` pointing at its own full URL under the `/neuron`
+base, and `dist/sitemap-index.xml` + `dist/sitemap-0.xml` list every built
+page with correct URLs. Confirmed the `[@astrojs/sitemap]` build step and
+its output before treating this as settled, not assumed from the
+dependency being present.
+
+Only `robots.txt` needed adding — Starlight doesn't generate one. Added
+`site/public/robots.txt` (copied verbatim to `dist/robots.txt` on build,
+confirmed) implementing this map's chartering-time crawler policy verbatim:
+`User-agent: *` / `Allow: /` (every crawler, AI training and retrieval
+bots alike, none blocked) plus a `Sitemap:` directive pointing at
+`https://kovartravis.github.io/neuron/sitemap-index.xml` so crawlers that
+honor it find the full page list without a separate submission step.
+
+No canonical-tag convention needed writing down beyond what's already
+enforced by the framework default: every page's canonical is its own
+site+base-qualified URL, which by construction respects Ticket 2's
+permanent-slug rule (point 6) since nothing here redirects or rewrites a
+published slug.
 
 ---
 id: 787c805a-69dd-409f-8060-91efa97fa044

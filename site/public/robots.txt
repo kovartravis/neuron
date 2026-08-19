@@ -1,0 +1,11 @@
+# neuron docs site — crawler policy
+#
+# Every crawler is allowed, including AI training crawlers (GPTBot,
+# anthropic-ai, CCBot, etc.) and real-time retrieval/search crawlers
+# (OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, PerplexityBot).
+# Maximizing AI visibility is prioritized over guarding against training use
+# (Map — SEO & GEO Groundwork, settled at chartering).
+User-agent: *
+Allow: /
+
+Sitemap: https://kovartravis.github.io/neuron/sitemap-index.xml
