@@ -159,6 +159,18 @@ rotting the moment 2.5.0 ships.
   Ticket 2 IA convention) plus `WebSite`+`SoftwareApplication`+`FAQPage`
   JSON-LD with a shared `Person` author. Verified via `npm run build` and
   Playwright screenshots at desktop and mobile widths.
+- [Write CLI & Config Reference Pages](61c267a2-de42-4fae-a581-7435c0f4e9f7) —
+  all 10 Reference pages Ticket 3's IA scoped, sourced from the live CLI
+  surface and `neuronYaml.ts`'s schemas rather than copied from
+  `docs/COMMANDS.md`, which had real drift (`memory add --category` is
+  actually optional; `neuron ui --port`/`--no-open` were undocumented
+  anywhere). Along the way, fixed two pre-existing pages' stale claim that
+  declared fields support only `string`/`enum` (missing `commitRef`), and a
+  site-wide bug where hand-written markdown links never got the `/neuron`
+  base path prepended in the built output — a rehype plugin in
+  `astro.config.mjs` now fixes every content page's inline links, not just
+  this ticket's new ones. Replaced the Reference sidebar's leftover
+  Starlight-starter placeholder with the 10 real entries.
 
 ## Not yet specified
 
