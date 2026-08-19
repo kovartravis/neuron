@@ -108,6 +108,13 @@ rotting the moment 2.5.0 ships.
   Placeholder Starlight starter content only — unblocks Ticket 7 (Build
   the Homepage) and Map — SEO & GEO Groundwork's Ticket 4
   (Sitemap/Robots.txt/Canonical Setup).
+- [GitHub Pages Deploy Pipeline](b7e4dab5-5b0f-44e9-bcb8-0c8475ed785c) —
+  `.github/workflows/deploy-site.yml` builds `/site` via `withastro/action`
+  and deploys via `actions/deploy-pages` on push to `main` (paths-scoped to
+  `site/**`); Pages enabled with `build_type: workflow` via `gh api`, no
+  manual UI step. Live end-to-end verified after merge:
+  `https://kovartravis.github.io/neuron/` resolves (HTTP 200) with the
+  correct `/neuron` base path baked into canonical URL/sitemap/assets.
 
 ## Not yet specified
 
@@ -250,7 +257,7 @@ taskId: null
 blockedBy: 2cfb58c4-305e-414f-b40d-f2d4e46ad016
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: claimed
+status: resolved
 ---
 # 6 — GitHub Pages Deploy Pipeline
 
@@ -261,6 +268,16 @@ Wire a GitHub Actions workflow that builds the Astro site and deploys it to GitH
 ## Context
 
 Needs a real build to deploy against, hence blocked on ticket 5's scaffold. Try gh api / gh CLI for the Pages settings step before assuming it needs manual GitHub UI action.
+
+## Answer
+
+`.github/workflows/deploy-site.yml` builds `/site` via the official `withastro/action@v3` and deploys via `actions/deploy-pages@v4`, triggered on push to `main` scoped to `site/**` (plus `.github/workflows/deploy-site.yml` itself) so unrelated CLI-tool changes don't fire it, with `workflow_dispatch` for manual runs.
+
+Pages enabled via `gh api repos/kovartravis/neuron/pages -X POST -f build_type=workflow` (no manual UI step needed) — Actions-based deployment source, confirmed via the same API returning `html_url: https://kovartravis.github.io/neuron/`.
+
+End-to-end verified after merge (PR #18, commit 2742ea3): the `Deploy Site to GitHub Pages` workflow ran (build 23s, deploy 11s, both green — run 32204295159), and `https://kovartravis.github.io/neuron/` resolves live (HTTP 200), serving the Starlight placeholder with the correct `/neuron` base path baked into its canonical URL, sitemap link, and asset paths.
+
+Note: `workflow_dispatch` can't be used to test a brand-new workflow file before it exists on the default branch (GitHub only dispatches workflows already present on `main`), so this ticket's live-URL verification necessarily happened after merge rather than before — same shape as any first-run deploy workflow, not specific to this repo.
 
 ---
 id: 2cfb58c4-305e-414f-b40d-f2d4e46ad016
