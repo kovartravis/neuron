@@ -250,7 +250,7 @@ taskId: null
 blockedBy: 2cfb58c4-305e-414f-b40d-f2d4e46ad016
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: claimed
 ---
 # 6 — GitHub Pages Deploy Pipeline
 
