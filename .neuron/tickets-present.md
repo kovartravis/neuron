@@ -40,10 +40,13 @@ rotting the moment 2.5.0 ships.
     portfolio piece — the homepage needs a real value prop and a working
     quickstart, not just a showcase.
   - **Docs depth**: user-facing usage (install, CLI reference,
-    configuration, harness adapters, wayfinder) plus a curated "How It
-    Works" layer (hybrid search/RRF, write-side enrichment, declared field
-    schema, storage adapters). No raw ADR link-dump — `CONTEXT.md`'s
-    glossary is the primary source, not `docs/adr/` directly.
+    configuration, harness adapters) plus a curated "How It Works" layer
+    (hybrid search/RRF, write-side enrichment, declared field schema,
+    storage adapters). No raw ADR link-dump — `CONTEXT.md`'s glossary is
+    the primary source, not `docs/adr/` directly. **Revised by Ticket 3**:
+    wayfinder dropped entirely (internal dogfooding, not a public feature);
+    Architecture Scan considered and deliberately left out pending a future
+    map to deepen that feature first.
   - **Versioning**: docs track latest only. No versioned doc snapshots.
   - **Reference pages**: CLI/config reference is hand-written and reviewed
     per release, not generated from source — a generated approach would
@@ -82,12 +85,28 @@ rotting the moment 2.5.0 ships.
 
 ## Decisions so far
 
+- [Survey Dev-Tool Marketing + Docs Sites for Patterns](ab6103ac-1b08-4ea6-aadd-816a8d5d4e46) —
+  9 reusable patterns from Stripe/Linear/Vercel/Resend/Supabase/Turso, most
+  load-bearing: H1 = category noun + audience; subheadline carries the
+  differentiator; "for AI agents" is a foregrounded primary audience on
+  several surveyed docs homepages, not a footnote; no homepage surveyed
+  embeds a live demo. Full findings:
+  docs/design/site/dev-tool-marketing-docs-survey.md.
+- [Docs Information Architecture](ee1b0d6f-783a-4dc5-95f9-dc39d6828910) —
+  23-page sitemap across 4 sidebar groups (Getting Started, Guides, How It
+  Works, Reference) plus a dedicated `/docs` landing page. Wayfinder dropped
+  from scope (dogfooding-only); Architecture Scan deliberately left out
+  pending a future map. Reference is one page per README's public command
+  table, `memory`'s subcommands as H2 sections on one page. Full sitemap:
+  docs/design/site/docs-information-architecture.md.
+
 ## Not yet specified
 
 - **Whether the homepage needs a live/interactive demo** (e.g. an
-  asciinema-style terminal recording) — likely surfaces once ticket 4's
-  prototype session has something concrete to react to; not sharp enough
-  to ticket yet.
+  asciinema-style terminal recording) — Ticket 1's survey found no
+  surveyed homepage uses one (leaning no), but flagged a fetch-method
+  caveat on two client-rendered sites; still waits on ticket 4's prototype
+  session to verify live and settle it, not sharp enough to ticket yet.
 - **Analytics/telemetry for the live site** — low priority, not worth
   pinning down before the site exists to put it on.
 - **Distribution channels** (README badge linking to the site, any tool
@@ -95,6 +114,13 @@ rotting the moment 2.5.0 ships.
   Groundwork (id `64cc32f8-4b9b-48dd-b18c-ca0788b96cba`), which owns the technical/on-site half of
   this fog item instead. Still fog here until that map's foundation ships
   and there's a site worth badging/submitting.
+- **A future map to deepen Architecture Scan as a product feature** —
+  flagged by the maintainer while resolving Ticket 3: `neuron scan`/drift
+  detection/the blueprint pipeline is a major feature and an open SEO
+  positioning angle ("architecture linter for AI agents," per the SEO & GEO
+  Groundwork map's Ticket 1), but isn't documented at a depth worth a How
+  It Works page yet. Not sharp enough to ticket on this map — belongs to a
+  separate chartering session, not a resumption of this one.
 
 ## Out of scope
 
@@ -286,7 +312,7 @@ taskId: null
 blockedBy: 4b5c1114-812d-4533-a992-7bebb4ca3ec1
 kind: grilling
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 3 — Docs Information Architecture
 
@@ -297,6 +323,10 @@ What pages/sections does the docs half of the site actually have, in what order,
 ## Context
 
 Feeds ticket 8 (docs content) and ticket 9 (CLI/config reference) — both need a settled structure before writing lands anywhere durable. Can run in parallel with tickets 1/2 — it doesn't depend on messaging or the competitive survey.
+
+## Answer
+
+Grilled live with the maintainer. 23-page sitemap across 4 sidebar groups (Getting Started, Guides, How It Works, Reference) plus a dedicated `/docs` landing page, in that order. Two scope changes from chartering: Wayfinder dropped entirely (internal dogfooding, not a public feature); Architecture Scan deliberately left out of How It Works pending a future map to deepen that feature first. Reference is one page per README's own public command table (init, memory, exec, scan, sync, status, ui, mcp, feedback) — excludes internal `hook` and deprecated `learn` — with `memory`'s subcommands as H2 sections on one page, not split further. Harness Adapters gets one page per harness (Claude Code, Codex, Copilot, Cursor) plus a concept-overview page. Full sitemap and rationale: docs/design/site/docs-information-architecture.md.
 
 ---
 id: 96a9be90-1b56-4a78-9162-e9584f706877
