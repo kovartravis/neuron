@@ -50,6 +50,13 @@ export default defineConfig({
 		starlight({
 			title: 'neuron',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/kovartravis/neuron' }],
+			// Powers Head.astro's `dateModified` (Map — SEO & GEO Groundwork's
+			// Ticket 3 JSON-LD strategy) via Starlight's built-in git-log lookup —
+			// no per-page frontmatter needed.
+			lastUpdated: true,
+			components: {
+				Head: './src/components/Head.astro',
+			},
 			sidebar: [
 				{
 					label: 'Getting Started',
