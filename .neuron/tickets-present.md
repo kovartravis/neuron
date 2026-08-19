@@ -138,14 +138,21 @@ rotting the moment 2.5.0 ships.
   "architecture linter" (doesn't touch the deferred Architecture Scan
   depth question below). Full decision record and drafted hero copy:
   docs/design/site/homepage-messaging-positioning.md.
+- [Homepage Visual & Brand Direction](19f204e7-ed0c-4883-8a86-9416bb257c02) —
+  prototyped 3 directions (Terminal Anchor, Split SaaS, Minimal Text-First),
+  reacted to live. Winner: **Minimal Text-First** — warm off-white ground,
+  near-black text, a single sparing deep-green accent, system sans
+  throughout, no code block/terminal chrome in the hero at all. Settles
+  the "live/interactive demo" fog item below as **no**, confirming Ticket
+  1's survey finding live rather than just from the survey. Pillars render
+  as a plain numbered list (no cards); pain-points as flowing prose after
+  them. Includes a mobile breakpoint (added after initial review). Full
+  prototype (all 3 variants) captured on throwaway branch
+  `prototype/ticket4-homepage-variants` (commit `e8b6bbd`) for Ticket 7 to
+  fold from — not on main.
 
 ## Not yet specified
 
-- **Whether the homepage needs a live/interactive demo** (e.g. an
-  asciinema-style terminal recording) — Ticket 1's survey found no
-  surveyed homepage uses one (leaning no), but flagged a fetch-method
-  caveat on two client-rendered sites; still waits on ticket 4's prototype
-  session to verify live and settle it, not sharp enough to ticket yet.
 - **Analytics/telemetry for the live site** — low priority, not worth
   pinning down before the site exists to put it on.
 - **Distribution channels** (README badge linking to the site, any tool
@@ -363,7 +370,7 @@ taskId: null
 blockedBy: ab6103ac-1b08-4ea6-aadd-816a8d5d4e46,96a9be90-1b56-4a78-9162-e9584f706877
 kind: prototype
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 4 — Homepage Visual & Brand Direction
 
@@ -374,6 +381,25 @@ What should the homepage actually look and feel like — layout, color, typograp
 ## Context
 
 This is where "does the homepage need a live terminal demo" (currently fog on the map's Not yet specified) gets resolved — don't pre-decide it here, let the prototype session surface it.
+
+## Answer
+
+Prototyped three structurally different directions (Terminal Anchor, Split SaaS, Minimal Text-First) as a static Astro page, `?variant=A|B|C`, reacted to live with the maintainer. **Winner: Minimal Text-First** (variant C), with a follow-up mobile-breakpoint refinement.
+
+**Visual identity:**
+- Warm off-white ground (`#f7f5f0`), near-black text (`#16150f`), a single sparing deep-green accent (`#1a5f3f`) used only on the primary CTA and inline emphasis — not a UI-wide accent.
+- System sans-serif stack throughout (no custom webfont) — Linear-style stark minimalism, tight letter-spacing on the H1 (`-0.02em`), generous line-height on body copy (`1.65`).
+- No visual chrome in the hero at all: no terminal window, no card, no code block beyond a single inline `<code>` line for the curl install command. This settles the map's "live/interactive demo" fog item as **no** — confirms ticket 1's survey finding (no dev-tool homepage surveyed embeds one) live, for real, not just from the survey.
+
+**Layout:**
+- Hero: centered, narrow column (max 640px), H1 → subhead → one inline install command → secondary npm alternative as a text link → two CTAs (primary "Get started" filled button, secondary "View on GitHub" as an underlined text link, not a second button).
+- Pillars: a plain vertical numbered list (01/02/03, large light-weight numerals), not cards — no borders, just hairline dividers between items. Chosen over A/B's card/grid treatments as the better fit for the minimal, text-first direction.
+- Pain-points: a single flowing prose paragraph after the pillars (not a table, not cards), framing the amnesia tax / rule blindness / memory bit rot as failure modes the pillars above already resolved — matches Ticket 2's settled pillars-then-pain-points order.
+- CI mention: one italic aside line, `neuron scan --check` as a CI/CD architecture-drift catch — homepage-light per Ticket 2's scoping, no dedicated section.
+
+**Mobile (added after initial review):** hero padding tightens, H1 drops to `2.1rem`, the install command wraps instead of overflowing, both CTAs stack full-width, and pillar-list items tighten their gap/numeral size at `max-width: 640px`.
+
+**Primary source:** the full prototype (all three variants + the switcher) is captured on branch `prototype/ticket4-homepage-variants` (commit `e8b6bbd`), not on main — Ticket 7 (Build the Homepage) folds the winning direction into the real Astro homepage from that reference, then the branch is done being a live reference.
 
 ---
 id: ee1b0d6f-783a-4dc5-95f9-dc39d6828910

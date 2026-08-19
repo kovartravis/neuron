@@ -1633,3 +1633,15 @@ tags:
 taskId: null
 ---
 Map — neuron.github.io Site (2.5.0)'s Ticket 2 (Homepage Messaging & Positioning) resolved via live grilling: category framing settled as 'local-first memory engine for coding agents', tightened from the competitive-landscape doc's two-noun candidate statement, with local-first foregrounded as the maintainer's explicit instruction rather than a supporting pillar. Hero contrasts by pattern not product (no Mem0/Zep/CLAUDE.md named) to avoid unverified competitor claims. Pillar order leads with Zero-Cloud Privacy (not the doc's original Zero-Amnesia-first order) to keep local-first the throughline past the hero; pain-point section deliberately placed after the pillars rather than Turso-style before them. Primary CTA is the shipped curl install one-liner, tabbed with npx, diverging from the doc's unexamined npx-first assumption. Of the competitive doc's two undecided 'actionable ideas', greenlit idea D (neuron scan --check as a CI/CD architecture-linter) homepage-light only — explicitly not un-deferring the map's existing Architecture Scan documentation-depth fog item — and ruled idea C (benchmark-proof collateral) out of scope rather than deferred, since its figures were illustrative placeholders never measured against this repo. Full record: docs/design/site/homepage-messaging-positioning.md.
+
+---
+id: fa47b617-a73f-460d-9290-4cbc99d9976a
+createdAt: 2026-08-19T16:02:53.911Z
+importance: 4
+tags:
+  - planning
+  - wayfinder
+  - setup
+taskId: 19f204e7-ed0c-4883-8a86-9416bb257c02
+---
+Map — neuron.github.io Site (2.5.0)'s Ticket 4 (Homepage Visual & Brand Direction) resolved via /prototype: three structurally different homepage directions (Terminal Anchor — dark/monospace/terminal-window hero; Split SaaS — light two-column with a code-result card; Minimal Text-First — no code chrome, list-style pillars, prose pain-points) built as a switchable static Astro page and reacted to live with the maintainer. Winner: Minimal Text-First — warm off-white ground, near-black text, a single sparing deep-green accent, system sans throughout, no code block or terminal chrome anywhere in the hero. This settles the map's 'does the homepage need a live/interactive demo' fog item as no, confirming Ticket 1's survey finding (no dev-tool homepage surveyed embeds one) with a live maintainer reaction rather than resting on the survey alone. A follow-up round added a mobile breakpoint (stacked full-width CTAs, resized H1, wrapped install command, tightened pillar-list spacing) after the maintainer flagged the initial prototype's narrow-viewport behavior. The full three-variant prototype, including the mobile fix, is captured on throwaway branch prototype/ticket4-homepage-variants (commit e8b6bbd) as the primary source per the prototype skill — main only carries the resolved ticket and the folded decision; Ticket 7 (Build the Homepage) implements the real homepage from that branch as reference.
