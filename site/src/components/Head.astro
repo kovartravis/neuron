@@ -1,20 +1,18 @@
 ---
-// Overrides Starlight's default Head to stack a `TechArticle` JSON-LD block
-// onto every docs page, per Map — SEO & GEO Groundwork's Ticket 3
-// (Structured Data & Schema.org Strategy): one template-level rule, no
-// per-page judgment calls about which pages count as technical.
+// Overrides Starlight's default Head to stack `TechArticle` JSON-LD onto
+// every docs page, per Map — SEO & GEO Groundwork's Ticket 3 (Structured
+// Data & Schema.org Strategy): one template-level rule, no per-page
+// judgment calls about which pages count as technical.
 //
-// `FAQPage` is deliberately not added here — Ticket 3 scopes it to four
-// pages with a *visible* Q&A block already in their content (homepage,
-// Getting Started, CLI Reference, alternatives/comparison), and only the
-// homepage (site/src/pages/index.astro) currently has one. Adding the
-// markup to the other three without matching visible content would violate
-// Ticket 3's own "no markup for synthetic or hidden questions" rule — see
-// Map — neuron.github.io Site (2.5.0)'s new ticket for closing that gap.
+// `FAQPage` stacks additionally when a page's frontmatter declares `faq` —
+// Ticket 3 scopes it to pages with a *visible* Q&A block already in their
+// content, so `faq` is the single source for both the rendered "## Questions"
+// section and this markup, never markup alone (Ticket 3's "no synthetic or
+// hidden questions" rule).
 import Default from '@astrojs/starlight/components/Head.astro';
 
 const { entry, lastUpdated } = Astro.locals.starlightRoute;
-const { title, description } = entry.data;
+const { title, description, faq } = entry.data;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
 
@@ -24,8 +22,7 @@ const person = {
 	url: 'https://github.com/kovartravis',
 };
 
-const jsonLd = {
-	'@context': 'https://schema.org',
+const techArticle = {
 	'@type': 'TechArticle',
 	headline: title,
 	description,
@@ -33,6 +30,24 @@ const jsonLd = {
 	author: person,
 	...(lastUpdated ? { dateModified: lastUpdated.toISOString() } : {}),
 };
+
+const jsonLd =
+	faq && faq.length > 0
+		? {
+				'@context': 'https://schema.org',
+				'@graph': [
+					techArticle,
+					{
+						'@type': 'FAQPage',
+						mainEntity: faq.map(({ q, a }) => ({
+							'@type': 'Question',
+							name: q,
+							acceptedAnswer: { '@type': 'Answer', text: a },
+						})),
+					},
+				],
+			}
+		: { '@context': 'https://schema.org', ...techArticle };
 ---
 
 <Default />

@@ -1,6 +1,15 @@
 ---
 title: "neuron memory — Every Subcommand"
 description: "add, query, list, get, update, delete, consolidate, and prune — every flag, the write-time supersession gate, and declared-field flags."
+faq:
+  - q: "Is --category required on neuron memory add?"
+    a: "No — add is the one subcommand where it's optional. Write-side enrichment infers it from the categories already in the store, or the write fails naming the cause. --category stays required on every other subcommand that mutates or fetches a specific entry (update, delete, consolidate, prune)."
+  - q: "How do I search across every category at once?"
+    a: "neuron memory query \"<text>\" with no --categories flag spans every category by default, ranked by hybrid keyword + semantic search. Pass --categories a,b to narrow it to specific ones."
+  - q: "What happens if I try to add an entry that looks like a duplicate of one already in the store?"
+    a: "add hard-blocks the write and names the candidate id — a write-time supersession gate, not a silent dedupe. Exactly one of four mutually exclusive flags resolves it: --supersedes <id> marks the old entry superseded, --not-a-reversal explicitly confirms this isn't a reversal, --if-novel skips the write cleanly for non-interactive/cron writers, or --companion-of <id> exempts the write from the gate against one specific entry only."
+  - q: "Can I filter list results by a field that isn't a built-in CLI flag?"
+    a: "Yes — --where field=value and --refs-satisfy field:sub=value are schema-agnostic filters that work against any category's declared fields, not a fixed vocabulary baked into the CLI. --where is repeatable and ANDs together; --refs-satisfy checks that every comma-separated id in one field names another entry whose own field matches."
 ---
 
 `neuron memory <subcommand>` is where every read and write against the
@@ -173,3 +182,34 @@ A required field with no configured `default:` hard-errors on `add`,
 naming the field and category, when omitted. `update` treats a declared
 field the same as `--tags`/`--importance`: an omitted one is left
 untouched, never re-demanded or cleared.
+
+## Questions
+
+**Is `--category` required on `neuron memory add`?**
+No — `add` is the one subcommand where it's optional. Write-side
+enrichment infers it from the categories already in the store, or the
+write fails naming the cause. `--category` stays required on every other
+subcommand that mutates or fetches a specific entry (`update`, `delete`,
+`consolidate`, `prune`).
+
+**How do I search across every category at once?**
+`neuron memory query "<text>"` with no `--categories` flag spans every
+category by default, ranked by [hybrid keyword + semantic
+search](/docs/hybrid-search/). Pass `--categories a,b` to narrow it to
+specific ones.
+
+**What happens if I try to add an entry that looks like a duplicate of one already in the store?**
+`add` hard-blocks the write and names the candidate id — a write-time
+supersession gate, not a silent dedupe. Exactly one of four mutually
+exclusive flags resolves it: `--supersedes <id>` marks the old entry
+superseded, `--not-a-reversal` explicitly confirms this isn't a reversal,
+`--if-novel` skips the write cleanly for non-interactive/cron writers, or
+`--companion-of <id>` exempts the write from the gate against one specific
+entry only.
+
+**Can I filter `list` results by a field that isn't a built-in CLI flag?**
+Yes — `--where field=value` and `--refs-satisfy field:sub=value` are
+schema-agnostic filters that work against any category's declared fields,
+not a fixed vocabulary baked into the CLI. `--where` is repeatable and ANDs
+together; `--refs-satisfy` checks that every comma-separated id in one
+field names another entry whose own field matches.

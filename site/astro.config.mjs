@@ -64,6 +64,7 @@ export default defineConfig({
 						{ label: 'Overview', slug: 'docs' },
 						{ label: 'Install', slug: 'docs/install' },
 						{ label: 'Quickstart', slug: 'docs/quickstart' },
+						{ label: 'neuron vs. Alternatives', slug: 'docs/alternatives' },
 					],
 				},
 				{
