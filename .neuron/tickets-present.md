@@ -115,6 +115,17 @@ rotting the moment 2.5.0 ships.
   manual UI step. Live end-to-end verified after merge:
   `https://kovartravis.github.io/neuron/` resolves (HTTP 200) with the
   correct `/neuron` base path baked into canonical URL/sitemap/assets.
+- [Write Docs Content Pages](ab00735c-765e-4575-aa0d-4bacaaa0cd1c) — all 13
+  pages Ticket 3's IA scoped here (docs landing, Getting Started, Guides,
+  How It Works — Reference stays Ticket 9's own scope) written in one
+  session as `site/src/content/docs/docs/*.md`, sourced from README.md,
+  CONTEXT.md, and ADRs 0001/0010/0011/0013/0014/0016. Applied every
+  settled convention (flat `/docs/<slug>` URLs, H1/H2-only headings,
+  self-contained quotability, Ticket 6's Limitations/evidence-linking/
+  banned-word rules) and wired the sidebar's real nav groups. Surfaced a
+  gap: nothing implements Map — SEO & GEO Groundwork's Ticket 3
+  (`TechArticle`/`Person` JSON-LD) on the docs template — filed as this
+  map's new Ticket 11.
 
 ## Not yet specified
 
@@ -209,7 +220,7 @@ taskId: null
 blockedBy: ee1b0d6f-783a-4dc5-95f9-dc39d6828910,2cfb58c4-305e-414f-b40d-f2d4e46ad016
 kind: task
 map: 943650ce-f12c-47f6-9c61-63f79305d055
-status: unclaimed
+status: resolved
 ---
 # 8 — Write Docs Content Pages
 
@@ -220,6 +231,16 @@ Write the docs content (Starlight markdown pages) for every section ticket 3's I
 ## Context
 
 May need to graduate into further per-section tickets once ticket 3 resolves and the real page count is known — expected, not a planning failure.
+
+## Answer
+
+Wrote all 13 pages ticket 3's IA scoped to this ticket (the docs landing page, the 2 Getting Started pages, the 6 Guides pages, and the 4 How It Works pages — Reference stays ticket 9's separate scope), directly as `site/src/content/docs/docs/*.md`. Did not need to graduate into per-section tickets — 13 pages sourced cleanly from README.md, CONTEXT.md, and the relevant ADRs (0001, 0010, 0011, 0013, 0014, 0016) in one session.
+
+Applied every settled convention: ticket 2's flat single-segment `/docs/<slug>` URLs, strict H1(frontmatter title, declarative)/H2-only headings (verified: zero H3+ across all 13 pages), and self-contained-quotability. Ticket 6's content-authoring style guide applied throughout — Limitations sections added only where README.md discloses a real, specific caveat for that exact page's topic (harness-adapters.md, harness-copilot.md, harness-cursor.md, quickstart.md, configuration.md; explicitly *not* added to write-side-enrichment.md or storage-adapters.md, whose plausible caveats live in CONTEXT.md/ADRs but aren't README-disclosed, per the rule's letter). Every measured/quantitative claim links its source file on GitHub. Zero banned-superlative hits (grepped).
+
+Also updated `site/astro.config.mjs`'s sidebar to real Getting Started/Guides/How It Works groups (was a single placeholder "Example Guide"), and deleted the placeholder `guides/example.md` it replaced. `npm run build` verified clean: all 13 pages route correctly under `/docs/*`, and root-relative markdown links (`/docs/install/` etc.) are auto-rewritten to include the `/neuron` base by Starlight, confirmed by inspecting the built HTML.
+
+**Gap surfaced, not fixed here**: the SEO & GEO Groundwork map's Ticket 3 (Structured Data & Schema.org Strategy) decided every docs page should carry `TechArticle` + `Person` JSON-LD, but no ticket on either map owns implementing that markup in a shared Starlight layout/template — Site (2.5.0)'s own Ticket 7 (Build the Homepage) only covers the homepage's JSON-LD. Filed as a new ticket on this map rather than folded into this one, since it's template-level engineering, not content authoring.
 
 ---
 id: 531c631b-cf9b-4a6b-be27-b3fa5529a202
@@ -1051,3 +1072,28 @@ tracking tool:
 
 Full query list, table template, and log:
 docs/design/seo/geo-citation-log.md.
+
+---
+id: eecdcad3-343f-458b-af19-33ee5ed0f293
+createdAt: 2026-08-19T13:38:54.297Z
+importance: 4
+tags:
+  - geo
+  - seo
+  - planning
+taskId: null
+kind: task
+map: 943650ce-f12c-47f6-9c61-63f79305d055
+status: unclaimed
+---
+# 11 — Implement TechArticle/Person JSON-LD on the Docs Page Template
+
+## Question
+
+Map — SEO & GEO Groundwork's Ticket 3 (Structured Data & Schema.org Strategy) decided every docs page carries `TechArticle` JSON-LD uniformly, with `FAQPage` stacked on the four pages Ticket 2 scoped Q&A blocks to, and a shared `Person` (Travis Kovar) fragment reused as `author`. No ticket on either map currently owns wiring that markup into Starlight's docs page rendering — Ticket 7 (Build the Homepage) only implements the homepage's own `WebSite`+`SoftwareApplication`+`FAQPage` stack.
+
+Where should this markup be injected (a shared Starlight component override vs. per-page frontmatter-driven head injection), and does it need Starlight frontmatter fields (datePublished/dateModified) that Ticket 5's scaffolding didn't set up?
+
+## Context
+
+Surfaced while resolving Ticket 8 (Write Docs Content Pages) — the 13 pages that ticket wrote are real `TechArticle` candidates with nothing rendering the markup Ticket 3 already decided. Independent of Ticket 9 (CLI & Config Reference) — those pages need the same template-level markup once they exist, so this ticket should land before or alongside Ticket 9's content, not after.
