@@ -1657,3 +1657,15 @@ tags:
 taskId: null
 ---
 Closed out Map — SEO & GEO Groundwork: all 7 children (keyword/search-intent research, IA & citability conventions, structured data strategy, sitemap/robots/canonical setup, llms.txt decision, content-authoring guidelines, GEO citation measurement) resolved, no remaining fog, destination reached (SEO/GEO conventions established and fed forward into Map — neuron.github.io Site's Tickets 2, 3, and 7, all now resolved). Archived the map and all 7 children from tickets-present into tickets-past via the documented delete-then-upsert pattern (docs/agents/issue-tracker.md's Archiving section), same precedent as prior map archivals -- a one-off tsx script calling NeuronMemory.transact() directly, since the CLI has no bulk-move command and a same-id upsert alone won't move an existing row's category. All 8 ids verified content-identical (content/tags/importance/fields) post-move via neuron memory get before/after. tickets-present now holds only Map — neuron.github.io Site (2.5.0).
+
+---
+id: 85df36f4-cf86-443e-9beb-2e39a61076b4
+createdAt: 2026-08-19T17:51:25.236Z
+importance: 4
+tags:
+  - planning
+  - wayfinder
+  - 2.2.0
+taskId: null
+---
+Archived Map — neuron.github.io Site (2.5.0): all 12 children resolved (marketing/docs-site survey, homepage messaging, docs IA, homepage visual direction, Astro+Starlight scaffold, GitHub Pages deploy, homepage build, docs content, CLI/config reference, docs-review release step, TechArticle/Person JSON-LD, and the FAQ-content/alternatives-page follow-up), no remaining fog, Destination reached — the site is live at kovartravis.github.io/neuron and a docs-review step now exists in docs/RELEASING.md. Moved the map and all 12 children (13 entries) from tickets-present into tickets-past via the documented delete-then-upsert pattern (docs/agents/issue-tracker.md's Archiving section, same precedent as the SEO & GEO Groundwork and MCP Server Split map archivals) — a one-off tsx script driving NeuronMemory.transact() directly against src/index.ts, since a same-id upsert alone won't move an existing row's category and the CLI has no bulk-move command. All 13 ids verified content-identical (content/tags/importance/createdAt/fields) post-move via neuron memory get before committing. tickets-present now holds zero maps — the next wayfinder session on this repo starts from an empty board until a new map is chartered.
