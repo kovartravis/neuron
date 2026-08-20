@@ -1,126 +1,6 @@
 # Category: tickets-present
 
 ---
-id: 62a35315-8f42-48d9-844f-fb0376e494d0
-createdAt: 2026-08-19T19:13:39.908Z
-importance: 4
-tags:
-  - architecture
-  - scan
-  - nli
-  - memory
-taskId: null
-kind: map
-status: unclaimed
----
-# Map — Architecture Scan: Decision-Contradiction Detection
-
-## Destination
-
-`neuron scan` gains a decision-contradiction check: when a scan detects a
-structural change (a new or changed dependency edge, a new or removed
-module), it semantically cross-checks the change against the project's own
-recorded `decisions`/`architecture` memory entries — using the same local
-embedder + NLI cross-encoder infrastructure already calibrated for
-write-time conflict detection (`src/components/nliClassifier.ts`) — and
-surfaces, advisory-only and never CI-blocking, any change that plausibly
-contradicts something already decided. Reached when this ships as a real
-`neuron scan` capability with its own validated precision posture, not one
-assumed from the memory-write gate's numbers.
-
-## Notes
-
-- **Chartered 2026-08-19**, graduated from the fog item flagged when Map —
-  neuron.github.io Site (2.5.0) archived ("a future map to deepen
-  Architecture Scan as a product feature... belongs to a separate
-  chartering session").
-- **Settled at chartering, breadth-first grilling before any tickets**:
-  - **"Deepen" means the product feature, not documentation.** Docs (a
-    "How It Works" page, the SEO/GEO "architecture linter" positioning
-    angle) are deliberately deferred — see Out of scope.
-  - **The AI-native angle, not commodity static analysis.** Pure
-    graph-based rules (forbidden-dependency declarations, circular-dep
-    detection, fan-in/out budgets) were considered and explicitly ruled
-    out — they're checkable by `dependency-cruiser`/`madge` today, need no
-    model, and don't differentiate neuron from tools that already do this.
-    The chosen direction is the one thing only neuron can do: it already
-    has both a codebase scanner *and* a semantic memory store with a
-    calibrated contradiction-detection model — nothing else in the
-    competitive landscape combines those two.
-  - **This map carries execution**, per the wayfinder skill's own override
-    clause — the destination is a shipped capability, not a spec.
-- **Reuse, but re-validate, don't assume.** `src/components/nliClassifier.ts`
-  (`cross-encoder/nli-MiniLM2-L6-H768`) is the shipped write-time conflict
-  gate for `neuron memory add`, from neuron-2.4.2's own tickets 4/8/9/11/13
-  (archived to `tickets-past`) — but its calibration is against short
-  memory-entry pairs, not ADR-style decision/architecture prose or
-  scan-diff change descriptions. That prior work found a real, measured
-  precision ceiling (27-40% false-accept on compatible-but-related pairs
-  depending on threshold, an SNLI/MultiNLI training-bias artifact) which
-  is *why* that gate is soft-flag, never hard-block — this map's own
-  posture must not be more confident than that precedent without its own
-  fresh A/B evidence. See
-  `docs/design/write-time-quality/nli-polarity-detection-ab-findings.md`
-  and neuron-2.4.2's tickets 8/11/13 for the methodology to mirror.
-- **Skills to consult**: `/grilling` for the CLI-surface and
-  persistence-vs-ephemeral decisions still in fog below, once the
-  validation ticket's findings are in.
-
-## Decisions so far
-
-## Not yet specified
-
-- **Exact CLI surface** — a new `neuron scan` flag, or folded into
-  `--diff`'s existing human-readable output. Depends on the validation
-  ticket's precision findings: a noisy signal reads very differently as a
-  dedicated `--check-decisions` flag (implies a considered feature) than
-  as a line in `--diff`'s existing output (implies "fyi, unverified").
-- **Persistence** — whether a flagged contradiction gets written back to
-  memory as its own entry (so later scans/agents see it without re-running
-  the check) or stays purely ephemeral CLI/JSON output. Depends on the
-  same validation findings and on whether a noisy signal is worth
-  persisting at all.
-
-## Out of scope
-
-- **Graph-based rule declarations** (forbidden-dependency rules,
-  circular-dependency detection, fan-in/out coupling budgets) — ruled out
-  at chartering: commodity static analysis, no model involvement needed,
-  doesn't differentiate neuron from `dependency-cruiser`/`madge`. A future
-  map could revisit this as its own effort if ever wanted.
-- **Broader Tree-Sitter grammar coverage** (C#, Swift, Ruby, PHP still
-  fall back to a line-oriented scanner) — a different kind of "deepen,"
-  not this map's chartered destination.
-- **The "How It Works" docs page and SEO/GEO "architecture linter"
-  positioning** — deliberately deferred until this feature is real;
-  belongs to a future docs-site effort, not this one.
-
----
-id: e09497d1-8326-4a3b-9f3f-75dcfdef32de
-createdAt: 2026-08-19T19:13:54.846Z
-importance: 4
-tags:
-  - architecture
-  - scan
-  - nli
-taskId: null
-kind: task
-map: 62a35315-8f42-48d9-844f-fb0376e494d0
-status: unclaimed
----
-# 1 — Validate NLI Polarity Detection on Architecture-Decision Text (A/B)
-
-## Question
-
-Does `cross-encoder/nli-MiniLM2-L6-H768` (the model already shipped in `src/components/nliClassifier.ts` for write-time memory conflict detection) reliably separate "contradicts" from "compatible-but-related" on the kind of text this map's decision-contradiction check will actually run against — `decisions`/`architecture` category entries as the premise, and a natural-language description of a scan-detected structural change (e.g. "module `scanner` now imports module `commands`") as the hypothesis? What confidence bar, if any, gives an acceptable false-accept rate for an advisory (never CI-blocking) signal?
-
-## Context
-
-neuron-2.4.2's own Ticket 8 (now archived to `tickets-past`, id `b8900ad0-0579-4263-98f5-6f8acee75025`) validated this exact model against short memory-entry pairs and found a real, measured precision ceiling: 27-40% false-accept on compatible-but-related pairs depending on threshold, an SNLI/MultiNLI training-bias artifact, not a tuning miss — which is why that gate shipped soft-flag-only, never hard-block. This ticket's job is to find out whether that same ceiling holds, is worse, or is better on this map's different kind of text (longer ADR-style decision prose vs. short memory entries; a synthesized change description vs. a natural write). Do not assume Ticket 8's threshold transfers — measure it fresh, mirroring Ticket 8's methodology (`benchmarks/nli-polarity-ab/run-ab.ts` as the harness template, a fresh corpus of real/synthesized premise-hypothesis pairs drawn from this repo's own `decisions`/`architecture` entries and real scan-diff output, not the original SNLI/MultiNLI-derived corpus).
-
-Unblocked — first ticket on this map. Its verdict (usable bar vs. no usable bar at any threshold) gates every downstream ticket: the CLI-surface and persistence questions in the map's "Not yet specified" fog can't be answered until this ticket says whether the signal is trustworthy enough to expose at all.
-
----
 id: 61deb508-7ed0-4c69-a1d9-f3dfb576c268
 createdAt: 2026-08-19T22:51:20.163Z
 importance: 4
@@ -218,3 +98,149 @@ What does the homepage's desktop breakpoint actually look like, adapted from the
 ## Context
 
 First and only ticket on this map so far — unblocked. Use `/prototype` the same way the original Ticket 4 did: build concrete, reactable variants (via a throwaway branch or switchable static page, matching that ticket's own method) rather than describing the layout in prose. Mobile must be verified completely unaffected — screenshot or otherwise confirm the existing narrow-viewport behavior is untouched, not just visually similar. React live with the maintainer before folding a winning direction into the real `site/src/pages/index.astro`.
+
+---
+id: d37394c5-9fe0-4a3e-a105-8e31d2d7d359
+createdAt: 2026-08-20T03:04:05.441Z
+importance: 4
+tags:
+  - architecture
+  - scan
+  - git
+  - memory
+  - recall
+taskId: null
+kind: map
+status: unclaimed
+---
+# Map — Cross-Referenced Recall: Scan, Git & Decisions
+
+## Destination
+
+A new recall capability that answers questions spanning neuron's three
+separate signal sources at once — architecture scan output (per-module
+blueprint cards), git history (the indexed commit log), and memory
+(`decisions`/`architecture` entries) — instead of each staying its own
+isolated query surface. The canonical case: "why does this module look
+like this" pulls the module's current structure, the commits that shaped
+it, and the decisions recorded about it, into one synthesized answer. Built
+on neuron's existing hybrid-search/relevance-gated recall infrastructure —
+explicitly **not** a knowledge graph, consistent with neuron's stated
+architecture and the site's own positioning (the alternatives page
+contrasts neuron against Zep's temporal knowledge graph and Beads's
+Dolt-backed graph as things neuron deliberately doesn't do). Reached when
+a real query can traverse all three sources and return a coherent,
+synthesized answer — not three separate result lists a human has to
+reconcile by hand.
+
+## Notes
+
+- **Chartered 2026-08-19**, superseding Map — Architecture Scan:
+  Decision-Contradiction Detection (id `62a35315-8f42-48d9-844f-fb0376e494d0`,
+  archived to `tickets-past`) — that map's destination (flag scan changes
+  that contradict recorded decisions) is one concrete expression of this
+  broader capability, not a separate effort. Its one ticket (validating
+  the NLI polarity model on architecture-decision text) carries forward
+  unchanged as this map's Ticket 2.
+- **Settled at chartering, grilled live with the maintainer** across
+  several rounds (the full back-and-forth — an initial proposal to remove
+  architecture scanning entirely and chase broad Mem0 feature parity,
+  reversed; a knowledge-graph framing floated, then walked back — is not
+  repeated here; this Notes section reflects only where it landed):
+  - **"Unify" means one new capability, not a shared data model or a
+    positioning story.** Scan, git, and memory become joint inputs to one
+    new mechanism, not three things merely described together.
+  - **No knowledge graph.** Built on the existing embedder + reranker +
+    cross-category hybrid search, the same infrastructure memory recall
+    already uses — not a new graph storage paradigm.
+  - **Real groundwork already exists, verified by reading the code**:
+    architecture blueprint output is already split into an index card plus
+    per-module detail cards (ticket 28, each with a stable id, queryable
+    via the normal memory pipeline — see `src/scanner/ingest.ts`'s
+    `moduleCardId`/`parseModuleListFromIndex`). Git commits are already
+    indexed and joined into query results via a separate `git_log_index`
+    table (`src/index.ts`), not a memory category — the two live in
+    structurally different places today, which is exactly the seam this
+    map's first ticket needs to design across.
+  - **Mem0 feature-for-feature parity is explicitly unrelated** — a
+    separate, broader strategic question (raised, then set aside) with no
+    real overlap with this map's destination. Not tracked as fog here; a
+    future chartering session on its own if it comes up again.
+  - **This map carries execution**, per the wayfinder skill's own override
+    clause, matching every other map chartered today.
+- **Skills to consult**: `/grilling` and `/domain-modeling` for the
+  cross-reference query mechanism itself (Ticket 1) — genuinely
+  underspecified, expect more design/research tickets before any build
+  ticket.
+
+## Decisions so far
+
+## Not yet specified
+
+- **CLI/API/MCP surface** for the resulting capability (a new `neuron`
+  subcommand, an extension of `neuron scan --diff`, a new MCP tool) —
+  depends on Ticket 1's design.
+- **Whether `git_log_index` needs to become a real memory category** (vs.
+  staying its own table, cross-queried separately) to participate cleanly
+  in a unified query — depends on Ticket 1's design.
+
+## Out of scope
+
+- **A knowledge graph / graph database** — considered and explicitly
+  ruled out at this map's own chartering, even though it was floated
+  mid-conversation. Reversing neuron's "not a knowledge graph" positioning
+  would be its own, separately-scoped decision if ever revisited.
+- **Broad Mem0 feature-for-feature parity** — raised as a possible
+  direction in the same conversation that led to this map, explicitly set
+  aside as unrelated. A future map of its own if pursued, not folded in
+  here.
+
+---
+id: 549f9e93-5233-415f-9ecd-4728c8b90b61
+createdAt: 2026-08-20T03:04:16.443Z
+importance: 4
+tags:
+  - architecture
+  - scan
+  - git
+  - memory
+  - recall
+taskId: null
+kind: grilling
+map: d37394c5-9fe0-4a3e-a105-8e31d2d7d359
+status: unclaimed
+---
+# 1 — Design the Cross-Reference Query Mechanism
+
+## Question
+
+How does one query actually traverse architecture scan output (per-module blueprint cards, already in the `architecture` category), git history (the separate `git_log_index` table), and memory (`decisions`/`architecture` entries), and synthesize a single coherent answer instead of three separate result lists? Concretely: what does the query take as input (a module name/path? free text? both?); does synthesis mean ranking-and-concatenating the top hits from each source, or does it need real generation (an LLM combining them into prose, and if so, local model or existing enrichment infrastructure)? Does `git_log_index` need to become a real memory category to participate cleanly, or can it stay its own table and be cross-queried alongside the others?
+
+## Context
+
+First ticket on this map, unblocked — the foundational design question everything else depends on. Runs in parallel with Ticket 2 (NLI validation), not blocked by it: this ticket can proceed on the mechanism design regardless of what Ticket 2 finds about contradiction-detection precision specifically, though its answer should account for Ticket 2's eventual verdict on whether an explicit "contradicts" judgment is even the right synthesis primitive versus plain relevance ranking. Use `/grilling` and `/domain-modeling` — this is genuinely underspecified, not a fact to look up.
+
+---
+id: aa711ba1-ac54-48e3-aafd-6d8f46ea1d9b
+createdAt: 2026-08-20T03:04:29.918Z
+importance: 4
+tags:
+  - architecture
+  - scan
+  - nli
+taskId: null
+kind: task
+map: d37394c5-9fe0-4a3e-a105-8e31d2d7d359
+status: unclaimed
+---
+# 2 — Validate NLI Polarity Detection on Architecture-Decision Text (A/B)
+
+## Question
+
+Does `cross-encoder/nli-MiniLM2-L6-H768` (the model already shipped in `src/components/nliClassifier.ts` for write-time memory conflict detection) reliably separate "contradicts" from "compatible-but-related" on the kind of text this map's cross-reference capability will actually run against — `decisions`/`architecture` category entries as the premise, and a natural-language description of a scan-detected structural change (e.g. "module `scanner` now imports module `commands`") as the hypothesis? What confidence bar, if any, gives an acceptable false-accept rate for an advisory (never CI-blocking) signal?
+
+## Context
+
+Carried forward unchanged from the now-archived Map — Architecture Scan: Decision-Contradiction Detection (superseded, see this map's Notes). neuron-2.4.2's own Ticket 8 (archived, id `b8900ad0-0579-4263-98f5-6f8acee75025`) validated this exact model against short memory-entry pairs and found a real, measured precision ceiling: 27-40% false-accept on compatible-but-related pairs depending on threshold, an SNLI/MultiNLI training-bias artifact, not a tuning miss — which is why that gate shipped soft-flag-only, never hard-block. This ticket's job is to find out whether that same ceiling holds, is worse, or is better on this map's different kind of text. Do not assume Ticket 8's threshold transfers — measure it fresh, mirroring Ticket 8's methodology (`benchmarks/nli-polarity-ab/run-ab.ts` as the harness template, a fresh corpus of real/synthesized premise-hypothesis pairs drawn from this repo's own `decisions`/`architecture` entries and real scan-diff output).
+
+Unblocked, runs in parallel with Ticket 1 — an empirical measurement question independent of the mechanism-design question, though Ticket 1's eventual design should account for whatever posture this ticket's verdict supports (a usable contradiction-flagging bar, or none at any threshold).
