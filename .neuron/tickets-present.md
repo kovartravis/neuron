@@ -11,7 +11,7 @@ tags:
   - layout
 taskId: null
 kind: map
-status: unclaimed
+status: resolved
 ---
 # Map — Homepage Desktop Layout
 
@@ -29,6 +29,9 @@ column-layout question is being reopened, not the content-type question.
 Reached when the live desktop homepage no longer reads as a narrow
 centered text column with large empty margins — verified live in a
 browser at real desktop widths.
+
+**Reached 2026-08-20.** Ticket 1's winning direction (Pillars Beside Hero,
+960px breakpoint) is folded into the real `site/src/pages/index.astro`.
 
 ## Notes
 
@@ -57,12 +60,9 @@ browser at real desktop widths.
 
 ## Decisions so far
 
-## Not yet specified
+- Ticket 1 (id `7aea8c90-0749-4431-85da-27ccdd2f6072`) — Prototype the Desktop Two-Column Layout — three variants prototyped (throwaway branch `prototype/homepage-desktop-layout`, commit `a286f48`); maintainer picked **Pillars Beside Hero**: hero becomes a two-column grid at 960px, existing pillars move into a bordered card panel beside it, no new visual element and no code/terminal chrome. Folded into the real `site/src/pages/index.astro`; mobile verified byte-identical below 960px by normalized CSS diff.
 
-- **Breakpoint granularity beyond the existing mobile/desktop split** —
-  whether an intermediate tablet-width range needs its own treatment, or
-  a clean two-state mobile/desktop split is enough. Depends on how the
-  prototype ticket's variants actually look at intermediate widths.
+## Not yet specified
 
 ## Out of scope
 
@@ -87,7 +87,7 @@ tags:
 taskId: null
 kind: prototype
 map: 61deb508-7ed0-4c69-a1d9-f3dfb576c268
-status: unclaimed
+status: resolved
 ---
 # 1 — Prototype the Desktop Two-Column Layout
 
@@ -98,6 +98,22 @@ What does the homepage's desktop breakpoint actually look like, adapted from the
 ## Context
 
 First and only ticket on this map so far — unblocked. Use `/prototype` the same way the original Ticket 4 did: build concrete, reactable variants (via a throwaway branch or switchable static page, matching that ticket's own method) rather than describing the layout in prose. Mobile must be verified completely unaffected — screenshot or otherwise confirm the existing narrow-viewport behavior is untouched, not just visually similar. React live with the maintainer before folding a winning direction into the real `site/src/pages/index.astro`.
+
+## Answer
+
+Built three structurally different desktop (≥960px) treatments as a throwaway static Astro page (`prototype-homepage-desktop-layout.astro`, real shipped copy, switchable via `?variant=A|B|C`, matching Ticket 4's own method) and reacted live with the maintainer:
+
+- **A — Pillars Beside Hero**: hero becomes a two-column grid (1.15fr/1fr); the existing pillars list moves into a bordered, shadowed card panel to the hero's right, replacing the code-result card the original Split SaaS direction used. **Winner.**
+- **B — Persistent Sidebar**: pillars become a sticky left sidebar running the whole page (hero/aside/prose), not just the hero row.
+- **C — Hero Callout + Horizontal Pillars Row**: hero's second column gets a pull-quote callout (reusing existing sub-copy verbatim) instead of the pillars, which drop to a horizontal 3-up row below the hero.
+
+**Verdict**: Variant A. The existing pillars list fills the second column — moved beside the hero, not a new visual element — and the switch happens at **960px** (the 641–959px "tablet" range stays identical to the existing mobile/single-column look, matching production's current lack of any tablet-specific treatment). Verified structurally, not just visually, that mobile is untouched: a normalized diff of the CSS below 960px against the pre-change file was byte-identical except for prototype-only switcher plumbing.
+
+Folded directly into `site/src/pages/index.astro`: wrapped the hero and pillars in a new `.hero-wrap` container (no other markup changed) and added one `@media (min-width: 960px)` block implementing Variant A's grid + panel styling — fully additive, no existing declaration touched (confirmed via `git diff`). `astro build` succeeds; dev server confirmed the real page renders the two-column desktop layout with real content.
+
+Losing variants (B, C) and the full three-way comparison harness are captured on throwaway branch `prototype/homepage-desktop-layout` (commit `a286f48`) as the primary source, not left in main.
+
+**Resolves this map's Destination** — no other tickets remain on this map, and the "Not yet specified" breakpoint-granularity question is now answered (960px, two-state split, no separate tablet treatment).
 
 ---
 id: d37394c5-9fe0-4a3e-a105-8e31d2d7d359

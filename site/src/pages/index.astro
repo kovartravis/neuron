@@ -151,44 +151,69 @@ const jsonLd = {
 				.prose { font-size: 0.92rem; padding: 0 1.25rem; }
 				.aside { padding: 0 1.25rem; }
 			}
+
+			/* Desktop two-column reflow — Map — Homepage Desktop Layout's Ticket 1
+			   (Prototype the Desktop Two-Column Layout), "Pillars Beside Hero"
+			   variant. Everything below 960px (including the 641-959px range)
+			   is untouched — same single-column layout as before. */
+			@media (min-width: 960px) {
+				.hero-wrap {
+					max-width: 1180px; margin: 0 auto; padding: 0 2rem;
+					display: grid; grid-template-columns: 1.15fr 1fr; column-gap: 3.5rem; align-items: center;
+				}
+				.hero { max-width: none; margin: 0; padding: 7rem 0; text-align: left; }
+				.hero .sub { margin: 0 0 2.25rem; max-width: 46ch; }
+				.ctas { justify-content: flex-start; }
+				.inline-code { margin: 0 0 0.6rem; }
+				.pillars {
+					max-width: none; margin: 0; padding: 2rem 2rem;
+					background: #fff; border: 1px solid var(--rule); border-radius: 12px;
+					box-shadow: 0 30px 70px -35px rgba(22,21,15,0.25);
+				}
+				.pillar { padding: 1.25rem 0; }
+				.pillar:first-child { border-top: none; padding-top: 0; }
+				.pillar:last-child { border-bottom: none; padding-bottom: 0; }
+			}
 		</style>
 	</head>
 	<body>
-		<div class="hero">
-			<h1>The local-first memory engine for coding agents</h1>
-			<p class="sub">
-				Not another cloud memory API. Not another bloated rules file dumped into every prompt.
-				neuron gives Claude Code, Cursor, and Codex persistent memory — 100% local, relevance-gated,
-				and it stops your agent from repeating the same mistake twice.
-			</p>
-			<code class="inline-code">curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
-			<div class="alt">or <code>npm install -g @kovartravis/neuron</code></div>
-			<div class="ctas">
-				<a class="btn primary" href={`${base}/docs/quickstart/`}>Get started</a>
-				<a class="btn ghost" href={githubUrl}>View on GitHub</a>
+		<div class="hero-wrap">
+			<div class="hero">
+				<h1>The local-first memory engine for coding agents</h1>
+				<p class="sub">
+					Not another cloud memory API. Not another bloated rules file dumped into every prompt.
+					neuron gives Claude Code, Cursor, and Codex persistent memory — 100% local, relevance-gated,
+					and it stops your agent from repeating the same mistake twice.
+				</p>
+				<code class="inline-code">curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
+				<div class="alt">or <code>npm install -g @kovartravis/neuron</code></div>
+				<div class="ctas">
+					<a class="btn primary" href={`${base}/docs/quickstart/`}>Get started</a>
+					<a class="btn ghost" href={githubUrl}>View on GitHub</a>
+				</div>
 			</div>
-		</div>
 
-		<div class="pillars">
-			<div class="pillar">
-				<div class="num">01</div>
-				<div>
-					<h3>Zero-Cloud Privacy</h3>
-					<p>Local ONNX embeddings + SQLite. No API keys, no telemetry, nothing leaves your machine.</p>
+			<div class="pillars">
+				<div class="pillar">
+					<div class="num">01</div>
+					<div>
+						<h3>Zero-Cloud Privacy</h3>
+						<p>Local ONNX embeddings + SQLite. No API keys, no telemetry, nothing leaves your machine.</p>
+					</div>
 				</div>
-			</div>
-			<div class="pillar">
-				<div class="num">02</div>
-				<div>
-					<h3>Zero-Amnesia Execution</h3>
-					<p>Pre-command lookup checks memory before every shell command runs, so agents stop debugging the same failure twice.</p>
+				<div class="pillar">
+					<div class="num">02</div>
+					<div>
+						<h3>Zero-Amnesia Execution</h3>
+						<p>Pre-command lookup checks memory before every shell command runs, so agents stop debugging the same failure twice.</p>
+					</div>
 				</div>
-			</div>
-			<div class="pillar">
-				<div class="num">03</div>
-				<div>
-					<h3>Context Budget Diet</h3>
-					<p>Relevance-gated recall injects only what's relevant — nothing dumped into every prompt.</p>
+				<div class="pillar">
+					<div class="num">03</div>
+					<div>
+						<h3>Context Budget Diet</h3>
+						<p>Relevance-gated recall injects only what's relevant — nothing dumped into every prompt.</p>
+					</div>
 				</div>
 			</div>
 		</div>
