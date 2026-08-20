@@ -1669,3 +1669,15 @@ tags:
 taskId: null
 ---
 Archived Map — neuron.github.io Site (2.5.0): all 12 children resolved (marketing/docs-site survey, homepage messaging, docs IA, homepage visual direction, Astro+Starlight scaffold, GitHub Pages deploy, homepage build, docs content, CLI/config reference, docs-review release step, TechArticle/Person JSON-LD, and the FAQ-content/alternatives-page follow-up), no remaining fog, Destination reached — the site is live at kovartravis.github.io/neuron and a docs-review step now exists in docs/RELEASING.md. Moved the map and all 12 children (13 entries) from tickets-present into tickets-past via the documented delete-then-upsert pattern (docs/agents/issue-tracker.md's Archiving section, same precedent as the SEO & GEO Groundwork and MCP Server Split map archivals) — a one-off tsx script driving NeuronMemory.transact() directly against src/index.ts, since a same-id upsert alone won't move an existing row's category and the CLI has no bulk-move command. All 13 ids verified content-identical (content/tags/importance/createdAt/fields) post-move via neuron memory get before committing. tickets-present now holds zero maps — the next wayfinder session on this repo starts from an empty board until a new map is chartered.
+
+---
+id: 2afbc200-e8f9-40ae-824c-eb8d81a971d8
+createdAt: 2026-08-20T04:15:26.709Z
+importance: 4
+tags:
+  - architecture
+  - benchmark
+  - scan
+taskId: afbf870e-8546-4fdd-8f21-4cbd89e9f9c7
+---
+Ran a 3-way A/B on capturing 'what a file does' for architecture-scan purpose text, using only local models: deterministic call-graph/control-flow extraction (no model call) beat both retrieval (nearest match from this repo's own decisions/architecture/learning store, leave-one-out) and generative (Xenova/Qwen1.5-0.5B-Chat, few-shot) on mean, median, and per-file win count (7/10 vs 3/10 vs 0/10) across 10 real files scored by cosine similarity against each file's own withheld human-authored header. The generative mode's 0/10 extends the prior six-for-six pattern of the shipped 0.5B model losing every A/B it has been measured on (tagging, category, importance, pruning, dedupe, salvage-expansion) to a 7th task — the first that was open-ended generation rather than classification/judgement, closing the one gap in that prior evidence. Decision: deepen neuron's own architecture scan (src/scanner/summarizer.ts, currently JSDoc-extraction-only with zero model calls despite the SmolLM2Summarizer name) via richer deterministic AST facts — real call-graph and control-flow extraction — rather than adding a generative-model job, the next time that scan is built out. Assets: benchmarks/file-behavior-ab/{corpus.ts,run-ab.ts,raw-scores.json}, uncommitted as of this entry.

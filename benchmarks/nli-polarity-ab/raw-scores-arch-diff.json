@@ -1,0 +1,817 @@
+{
+  "timestamp": "2026-08-20T03:14:21.258Z",
+  "model": "cross-encoder/nli-MiniLM2-L6-H768",
+  "corpus": "corpus-arch-diff",
+  "results": [
+    {
+      "id": "adf-01",
+      "label": "contradiction",
+      "premise": "The project chose @yao-pkg/pkg over Node SEA, nexe, and Bun build --compile as the standalone binary packaging tool.",
+      "hypothesis": "`@yao-pkg/pkg` removed as a dependency",
+      "logits": [
+        2.742945432662964,
+        -2.3707637786865234,
+        -0.28963977098464966
+      ],
+      "probs": [
+        0.9485824407565402,
+        0.005704523697542208,
+        0.045713035545917595
+      ],
+      "argmax": "contradiction",
+      "margin": 3.0325852036476135
+    },
+    {
+      "id": "adf-02",
+      "label": "contradiction",
+      "premise": "`src/scanner/grammars.ts` bundles eight tree-sitter grammars, weighing ~8.5 MB against a 621 KB package.",
+      "hypothesis": "Module removed at `src/scanner/grammars.ts`",
+      "logits": [
+        4.6297287940979,
+        -2.8693103790283203,
+        -1.4796127080917358
+      ],
+      "probs": [
+        0.99723205322885,
+        0.0005520836641153804,
+        0.00221586310703474
+      ],
+      "argmax": "contradiction",
+      "margin": 6.109341502189636
+    },
+    {
+      "id": "adf-03",
+      "label": "contradiction",
+      "premise": "SUPERSESSION_SIMILARITY_THRESHOLD (0.97) governs when near-duplicate entries are automatically merged, defined in `src/index.ts`.",
+      "hypothesis": "`SUPERSESSION_SIMILARITY_THRESHOLD` removed from `src/index.ts`'s exports",
+      "logits": [
+        3.6870107650756836,
+        -2.9424149990081787,
+        -0.549544095993042
+      ],
+      "probs": [
+        0.984466850692413,
+        0.0013004033196256347,
+        0.014232745987961166
+      ],
+      "argmax": "contradiction",
+      "margin": 4.236554861068726
+    },
+    {
+      "id": "adf-04",
+      "label": "contradiction",
+      "premise": "RERANKER_ACCEPT_THRESHOLD sets the reranker leg's raw-logit accept bar at -8, defined in `src/index.ts`.",
+      "hypothesis": "`RERANKER_ACCEPT_THRESHOLD` removed from `src/index.ts`'s exports",
+      "logits": [
+        4.185518741607666,
+        -3.2947452068328857,
+        -0.6235558986663818
+      ],
+      "probs": [
+        0.9913558612772367,
+        0.0005592322682297817,
+        0.008084906454533422
+      ],
+      "argmax": "contradiction",
+      "margin": 4.809074640274048
+    },
+    {
+      "id": "adf-05",
+      "label": "contradiction",
+      "premise": "`src/components/enricher.ts` selects category by centroid cosine over neuron.yaml-declared tags plus store tags with >=3 entries.",
+      "hypothesis": "Module removed at `src/components/enricher.ts`",
+      "logits": [
+        4.237026691436768,
+        -2.960636854171753,
+        -1.0243793725967407
+      ],
+      "probs": [
+        0.9940986950037184,
+        0.0007439160748499762,
+        0.005157388921431643
+      ],
+      "argmax": "contradiction",
+      "margin": 5.261406064033508
+    },
+    {
+      "id": "adf-06",
+      "label": "contradiction",
+      "premise": "`src/scanner/analyzer.ts` exports isIgnoredEntryName, ModuleSummary, ScanResult, and scanProjectTopology — traversal rules shared by the topology scan and the drift fingerprint guard.",
+      "hypothesis": "`scanProjectTopology` removed from `src/scanner/analyzer.ts`'s exports",
+      "logits": [
+        3.828929901123047,
+        -2.28092622756958,
+        -1.3948407173156738
+      ],
+      "probs": [
+        0.9924495934993129,
+        0.0022041018357087166,
+        0.005346304664978335
+      ],
+      "argmax": "contradiction",
+      "margin": 5.223770618438721
+    },
+    {
+      "id": "adf-07",
+      "label": "contradiction",
+      "premise": "`src/scanner/ingest.ts` exports blueprintCardId and moduleCardId, the SHA-256-derived deterministic ids for the index card and each per-module detail card.",
+      "hypothesis": "`moduleCardId` removed from `src/scanner/ingest.ts`'s exports",
+      "logits": [
+        4.35560941696167,
+        -2.598729133605957,
+        -1.532768964767456
+      ],
+      "probs": [
+        0.9962878787941806,
+        0.000950941911484595,
+        0.0027611792943348997
+      ],
+      "argmax": "contradiction",
+      "margin": 5.888378381729126
+    },
+    {
+      "id": "adf-08",
+      "label": "contradiction",
+      "premise": "onnxruntime-node's native binding cannot load inside a pkg snapshot, so every ONNX-backed feature runs on the onnxruntime-web WASM backend inside the curl-installed binary.",
+      "hypothesis": "`onnxruntime-web` removed as a dependency",
+      "logits": [
+        1.9384818077087402,
+        -2.01552152633667,
+        0.09259448945522308
+      ],
+      "probs": [
+        0.8495722432543786,
+        0.01629290351018446,
+        0.13413485323543686
+      ],
+      "argmax": "contradiction",
+      "margin": 1.8458873182535172
+    },
+    {
+      "id": "adf-09",
+      "label": "contradiction",
+      "premise": "cross-encoder/nli-MiniLM2-L6-H768 is loaded via `@huggingface/transformers` as the polarity signal in `benchmarks/nli-polarity-ab/run-ab.ts`.",
+      "hypothesis": "`@huggingface/transformers` removed as a dependency",
+      "logits": [
+        3.8982605934143066,
+        -3.033672571182251,
+        -0.6465460062026978
+      ],
+      "probs": [
+        0.9885346402102893,
+        0.0009649205820798344,
+        0.010500439207630923
+      ],
+      "argmax": "contradiction",
+      "margin": 4.544806599617004
+    },
+    {
+      "id": "adf-10",
+      "label": "contradiction",
+      "premise": "`benchmarks/near-dup-ab` measures near-duplicate detection via SUPERSESSION_SIMILARITY_THRESHOLD counterfactual sweeps in ab4-counterfactual.ts.",
+      "hypothesis": "Module removed at `benchmarks/near-dup-ab`",
+      "logits": [
+        3.2444581985473633,
+        -2.366149663925171,
+        -0.7561323642730713
+      ],
+      "probs": [
+        0.9785083650276366,
+        0.003580210054578084,
+        0.017911424917785395
+      ],
+      "argmax": "contradiction",
+      "margin": 4.000590562820435
+    },
+    {
+      "id": "adf-11",
+      "label": "contradiction",
+      "premise": "`benchmarks/reranker-gate` validates the reranker's raw-logit accept threshold against a labeled corpus.",
+      "hypothesis": "Module removed at `benchmarks/reranker-gate`",
+      "logits": [
+        3.7837839126586914,
+        -2.8596339225769043,
+        -0.7240766882896423
+      ],
+      "probs": [
+        0.9878254629690126,
+        0.0012867095071832893,
+        0.010887827523804045
+      ],
+      "argmax": "contradiction",
+      "margin": 4.507860600948334
+    },
+    {
+      "id": "adf-12",
+      "label": "contradiction",
+      "premise": "`src/storage` holds the SQLite-backed persistence layer for memory entries, migrations, and the git_log_index table.",
+      "hypothesis": "Module removed at `src/storage`",
+      "logits": [
+        4.312615394592285,
+        -3.1083290576934814,
+        -0.9413714408874512
+      ],
+      "probs": [
+        0.9942085140941638,
+        0.0005951168567041891,
+        0.005196369049131959
+      ],
+      "argmax": "contradiction",
+      "margin": 5.253986835479736
+    },
+    {
+      "id": "adf-13",
+      "label": "contradiction",
+      "premise": "`src/harnesses` contains the write-side enrichment and relatedness-gate harnesses that run before a memory entry is committed.",
+      "hypothesis": "Module removed at `src/harnesses`",
+      "logits": [
+        4.487520694732666,
+        -3.1059038639068604,
+        -1.0960818529129028
+      ],
+      "probs": [
+        0.9957553418371046,
+        0.0005016147059779421,
+        0.0037430434569176337
+      ],
+      "argmax": "contradiction",
+      "margin": 5.583602547645569
+    },
+    {
+      "id": "adf-14",
+      "label": "contradiction",
+      "premise": "`src/config`'s enforceFieldSchema validates every declared field against neuron.yaml's schema before a write is accepted.",
+      "hypothesis": "`enforceFieldSchema` removed from `src/config`'s exports",
+      "logits": [
+        4.441932201385498,
+        -3.215613603591919,
+        -0.9359432458877563
+      ],
+      "probs": [
+        0.9949356903698383,
+        0.00047007279997839715,
+        0.004594236830183268
+      ],
+      "argmax": "contradiction",
+      "margin": 5.377875447273254
+    },
+    {
+      "id": "adf-15",
+      "label": "contradiction",
+      "premise": "`test/e2e` holds this repo's end-to-end test suites, twelve files under test/e2e alone.",
+      "hypothesis": "Module removed at `test/e2e`",
+      "logits": [
+        4.021979331970215,
+        -2.7542967796325684,
+        -1.0666311979293823
+      ],
+      "probs": [
+        0.9927459099684808,
+        0.001132240755267561,
+        0.0061218492762518464
+      ],
+      "argmax": "contradiction",
+      "margin": 5.088610529899597
+    },
+    {
+      "id": "adp-01",
+      "label": "compatible-paraphrase",
+      "premise": "Ticket 28 split architecture output into one index card (blueprintCardId) and one per-module detail card each (moduleCardId), written into `src/scanner/ingest.ts`.",
+      "hypothesis": "`moduleCardId` added to `src/scanner/ingest.ts`'s exports",
+      "logits": [
+        -0.05013762786984444,
+        -0.6744490265846252,
+        0.5782909989356995
+      ],
+      "probs": [
+        0.2932299703923798,
+        0.15706280926029695,
+        0.5497072203473232
+      ],
+      "argmax": "neutral",
+      "margin": -0.6284286268055439
+    },
+    {
+      "id": "adp-02",
+      "label": "compatible-paraphrase",
+      "premise": "The standalone binary build gains a build-binaries job driven by @yao-pkg/pkg for the six-target cross-compile matrix.",
+      "hypothesis": "`@yao-pkg/pkg` added as a dependency",
+      "logits": [
+        0.8098858594894409,
+        -2.1768617630004883,
+        1.390794038772583
+      ],
+      "probs": [
+        0.3523468542943802,
+        0.01777634159684103,
+        0.6298768041087787
+      ],
+      "argmax": "neutral",
+      "margin": -0.5809081792831421
+    },
+    {
+      "id": "adp-03",
+      "label": "compatible-paraphrase",
+      "premise": "cross-encoder/nli-MiniLM2-L6-H768, loaded through @huggingface/transformers, was adopted as the polarity signal for write-time contradiction detection.",
+      "hypothesis": "`@huggingface/transformers` added as a dependency",
+      "logits": [
+        0.6968371868133545,
+        -0.9041632413864136,
+        0.09540978074073792
+      ],
+      "probs": [
+        0.571518886471252,
+        0.1152722937886119,
+        0.313208819740136
+      ],
+      "argmax": "contradiction",
+      "margin": 0.6014274060726166
+    },
+    {
+      "id": "adp-04",
+      "label": "compatible-paraphrase",
+      "premise": "`benchmarks/nli-polarity-ab` is a new benchmark subsystem added to validate the NLI polarity model.",
+      "hypothesis": "New module discovered at `benchmarks/nli-polarity-ab`",
+      "logits": [
+        -3.0586788654327393,
+        2.255479574203491,
+        0.38987866044044495
+      ],
+      "probs": [
+        0.004243609888484105,
+        0.8622736980862334,
+        0.13348269202528243
+      ],
+      "argmax": "entailment",
+      "margin": -5.3141584396362305
+    },
+    {
+      "id": "adp-05",
+      "label": "compatible-paraphrase",
+      "premise": "`benchmarks/salvage-expansion` is a new benchmark subsystem added to this repo.",
+      "hypothesis": "New module discovered at `benchmarks/salvage-expansion`",
+      "logits": [
+        -2.5562846660614014,
+        1.3041846752166748,
+        0.921717643737793
+      ],
+      "probs": [
+        0.012363602209008335,
+        0.5871182171943065,
+        0.40051818059668526
+      ],
+      "argmax": "entailment",
+      "margin": -3.860469341278076
+    },
+    {
+      "id": "adp-06",
+      "label": "compatible-paraphrase",
+      "premise": "`benchmarks/reranker-gate` is a new benchmark subsystem added to validate the reranker's raw-logit accept threshold.",
+      "hypothesis": "New module discovered at `benchmarks/reranker-gate`",
+      "logits": [
+        -2.881906032562256,
+        1.8921624422073364,
+        0.6083471775054932
+      ],
+      "probs": [
+        0.006570551709200972,
+        0.7779531296856966,
+        0.21547631860510236
+      ],
+      "argmax": "entailment",
+      "margin": -4.774068474769592
+    },
+    {
+      "id": "adp-07",
+      "label": "compatible-paraphrase",
+      "premise": "isIgnoredEntryName was added to `src/scanner/analyzer.ts`'s exported surface to share traversal rules between the topology scan and the drift fingerprint guard.",
+      "hypothesis": "`isIgnoredEntryName` added to `src/scanner/analyzer.ts`'s exports",
+      "logits": [
+        -1.9520930051803589,
+        2.5941877365112305,
+        -1.0676803588867188
+      ],
+      "probs": [
+        0.01023513573282246,
+        0.964979851986696,
+        0.024785012280481578
+      ],
+      "argmax": "entailment",
+      "margin": -4.546280741691589
+    },
+    {
+      "id": "adp-08",
+      "label": "compatible-paraphrase",
+      "premise": "scanProjectTopology became the exported entry point for the topology scan in `src/scanner/analyzer.ts`.",
+      "hypothesis": "`scanProjectTopology` added to `src/scanner/analyzer.ts`'s exports",
+      "logits": [
+        -2.3195831775665283,
+        3.1470022201538086,
+        -1.2821707725524902
+      ],
+      "probs": [
+        0.00415847708291004,
+        0.9841066931071583,
+        0.01173482980993159
+      ],
+      "argmax": "entailment",
+      "margin": -5.466585397720337
+    },
+    {
+      "id": "adp-09",
+      "label": "compatible-paraphrase",
+      "premise": "The onnxruntime-web WASM backend was adopted so ONNX-backed features keep working inside the curl-installed binary.",
+      "hypothesis": "`onnxruntime-web` added as a dependency",
+      "logits": [
+        -0.1071375161409378,
+        -0.5399837493896484,
+        0.49287280440330505
+      ],
+      "probs": [
+        0.28811819308688613,
+        0.18689081239012906,
+        0.5249909945229848
+      ],
+      "argmax": "neutral",
+      "margin": -0.6000103205442429
+    },
+    {
+      "id": "adp-10",
+      "label": "compatible-paraphrase",
+      "premise": "env-paths was adopted to resolve the per-OS model cache directory.",
+      "hypothesis": "`env-paths` added as a dependency",
+      "logits": [
+        1.2522825002670288,
+        -1.273777961730957,
+        -0.04291420802474022
+      ],
+      "probs": [
+        0.738652023970432,
+        0.059072557345737624,
+        0.20227541868383037
+      ],
+      "argmax": "contradiction",
+      "margin": 1.295196708291769
+    },
+    {
+      "id": "adp-11",
+      "label": "compatible-paraphrase",
+      "premise": "web-tree-sitter and its eight bundled grammars were added to power AST-fidelity parsing in the scanner.",
+      "hypothesis": "`web-tree-sitter` added as a dependency",
+      "logits": [
+        -0.27375146746635437,
+        -1.2637357711791992,
+        1.4597411155700684
+      ],
+      "probs": [
+        0.14220763332502698,
+        0.052841871243665406,
+        0.8049504954313076
+      ],
+      "argmax": "neutral",
+      "margin": -1.7334925830364227
+    },
+    {
+      "id": "adp-12",
+      "label": "compatible-paraphrase",
+      "premise": "blueprintCardId was added to `src/scanner/ingest.ts` as the deterministic id function for the architecture index card.",
+      "hypothesis": "`blueprintCardId` added to `src/scanner/ingest.ts`'s exports",
+      "logits": [
+        -0.2988590598106384,
+        -1.9646433591842651,
+        2.2696187496185303
+      ],
+      "probs": [
+        0.07024941872911586,
+        0.01328011408152089,
+        0.9164704671893632
+      ],
+      "argmax": "neutral",
+      "margin": -2.5684778094291687
+    },
+    {
+      "id": "adp-13",
+      "label": "compatible-paraphrase",
+      "premise": "A new `site/src` subsystem was added to host the astro-based marketing site.",
+      "hypothesis": "New module discovered at `site/src`",
+      "logits": [
+        -2.6746926307678223,
+        2.021084785461426,
+        0.2551778256893158
+      ],
+      "probs": [
+        0.007739393284182063,
+        0.8473388839106908,
+        0.14492172280512713
+      ],
+      "argmax": "entailment",
+      "margin": -4.695777416229248
+    },
+    {
+      "id": "adp-14",
+      "label": "compatible-paraphrase",
+      "premise": "`benchmarks/longmemeval` is a new benchmark subsystem for long-memory evaluation.",
+      "hypothesis": "New module discovered at `benchmarks/longmemeval`",
+      "logits": [
+        -2.757143974304199,
+        1.5337188243865967,
+        0.8707149028778076
+      ],
+      "probs": [
+        0.008955629722845958,
+        0.6540247223755665,
+        0.3370196479015875
+      ],
+      "argmax": "entailment",
+      "margin": -4.290862798690796
+    },
+    {
+      "id": "adp-15",
+      "label": "compatible-paraphrase",
+      "premise": "`benchmarks/near-dup-ab` is a new benchmark subsystem measuring near-duplicate detection.",
+      "hypothesis": "New module discovered at `benchmarks/near-dup-ab`",
+      "logits": [
+        -2.9884743690490723,
+        1.9767255783081055,
+        0.6205447912216187
+      ],
+      "probs": [
+        0.0055167233362710824,
+        0.7907517164903737,
+        0.20373156017335523
+      ],
+      "argmax": "entailment",
+      "margin": -4.965199947357178
+    },
+    {
+      "id": "adr-01",
+      "label": "compatible-related",
+      "premise": "`src/scanner/grammars.ts` bundles eight tree-sitter grammars, weighing ~8.5 MB against a 621 KB package.",
+      "hypothesis": "`typescript` added as a dependency",
+      "logits": [
+        1.0061166286468506,
+        -1.7271547317504883,
+        0.7019789814949036
+      ],
+      "probs": [
+        0.5547032874024888,
+        0.0360591985870289,
+        0.4092375140104823
+      ],
+      "argmax": "contradiction",
+      "margin": 0.304137647151947
+    },
+    {
+      "id": "adr-02",
+      "label": "compatible-related",
+      "premise": "SUPERSESSION_SIMILARITY_THRESHOLD (0.97) governs when near-duplicate entries are automatically merged, defined in `src/index.ts`.",
+      "hypothesis": "`RERANKER_ACCEPT_THRESHOLD` removed from `src/index.ts`'s exports",
+      "logits": [
+        3.609701633453369,
+        -2.5410337448120117,
+        -0.9141062498092651
+      ],
+      "probs": [
+        0.9871867583208691,
+        0.0021045967086206064,
+        0.010708644970510136
+      ],
+      "argmax": "contradiction",
+      "margin": 4.523807883262634
+    },
+    {
+      "id": "adr-03",
+      "label": "compatible-related",
+      "premise": "`src/components/enricher.ts` selects category by centroid cosine over neuron.yaml-declared tags plus store tags with >=3 entries.",
+      "hypothesis": "New module discovered at `src/components`",
+      "logits": [
+        -1.4212862253189087,
+        -0.8844856023788452,
+        2.2148594856262207
+      ],
+      "probs": [
+        0.02459671966623026,
+        0.04207331577183088,
+        0.933329964561939
+      ],
+      "argmax": "neutral",
+      "margin": -3.6361457109451294
+    },
+    {
+      "id": "adr-04",
+      "label": "compatible-related",
+      "premise": "`src/scanner/analyzer.ts` exports isIgnoredEntryName, ModuleSummary, ScanResult, and scanProjectTopology.",
+      "hypothesis": "Module removed at `src/scanner/grammars.ts`",
+      "logits": [
+        3.607473134994507,
+        -2.0769543647766113,
+        -1.4115478992462158
+      ],
+      "probs": [
+        0.9900897228563756,
+        0.003364798460377229,
+        0.006545478683247112
+      ],
+      "argmax": "contradiction",
+      "margin": 5.019021034240723
+    },
+    {
+      "id": "adr-05",
+      "label": "compatible-related",
+      "premise": "`src/scanner/ingest.ts` exports blueprintCardId and moduleCardId.",
+      "hypothesis": "`isIgnoredEntryName` added to `src/scanner/analyzer.ts`'s exports",
+      "logits": [
+        2.9084503650665283,
+        -2.224477529525757,
+        -0.5974725484848022
+      ],
+      "probs": [
+        0.9653270748559307,
+        0.005694718048074757,
+        0.028978207095994725
+      ],
+      "argmax": "contradiction",
+      "margin": 3.5059229135513306
+    },
+    {
+      "id": "adr-06",
+      "label": "compatible-related",
+      "premise": "onnxruntime-node's native binding cannot load inside a pkg snapshot, so ONNX-backed features run on WASM only in the curl-installed binary.",
+      "hypothesis": "`@yao-pkg/pkg` added as a dependency",
+      "logits": [
+        0.22338365018367767,
+        -1.9743236303329468,
+        1.7520506381988525
+      ],
+      "probs": [
+        0.17473101775198,
+        0.019405188320787834,
+        0.8058637939272322
+      ],
+      "argmax": "neutral",
+      "margin": -1.5286669880151749
+    },
+    {
+      "id": "adr-07",
+      "label": "compatible-related",
+      "premise": "cross-encoder/nli-MiniLM2-L6-H768 is loaded via @huggingface/transformers as the polarity signal in `benchmarks/nli-polarity-ab/run-ab.ts`.",
+      "hypothesis": "New module discovered at `benchmarks/near-dup-ab`",
+      "logits": [
+        -0.8328942656517029,
+        -0.054530270397663116,
+        0.679040789604187
+      ],
+      "probs": [
+        0.12964443014197835,
+        0.28235341913007395,
+        0.5880021507279477
+      ],
+      "argmax": "neutral",
+      "margin": -1.51193505525589
+    },
+    {
+      "id": "adr-08",
+      "label": "compatible-related",
+      "premise": "`benchmarks/near-dup-ab` measures near-duplicate detection via SUPERSESSION_SIMILARITY_THRESHOLD counterfactual sweeps.",
+      "hypothesis": "`vitest` added as a dependency",
+      "logits": [
+        1.0190589427947998,
+        -1.3198134899139404,
+        0.23729993402957916
+      ],
+      "probs": [
+        0.6434854486059066,
+        0.062055365666447766,
+        0.29445918572764557
+      ],
+      "argmax": "contradiction",
+      "margin": 0.7817590087652206
+    },
+    {
+      "id": "adr-09",
+      "label": "compatible-related",
+      "premise": "`benchmarks/reranker-gate` validates the reranker's raw-logit accept threshold against a labeled corpus.",
+      "hypothesis": "New module discovered at `benchmarks/nli-polarity-ab`",
+      "logits": [
+        1.3540387153625488,
+        -2.6068646907806396,
+        1.3321425914764404
+      ],
+      "probs": [
+        0.5006539149783374,
+        0.009535404566414534,
+        0.48981068045524806
+      ],
+      "argmax": "contradiction",
+      "margin": 0.0218961238861084
+    },
+    {
+      "id": "adr-10",
+      "label": "compatible-related",
+      "premise": "`src/storage` holds the SQLite-backed persistence layer for memory entries, migrations, and the git_log_index table.",
+      "hypothesis": "`@types/better-sqlite3` added as a dependency",
+      "logits": [
+        0.9773982763290405,
+        -2.0569052696228027,
+        1.089053750038147
+      ],
+      "probs": [
+        0.4616302777558571,
+        0.022208181569466898,
+        0.516161540674676
+      ],
+      "argmax": "neutral",
+      "margin": -0.11165547370910645
+    },
+    {
+      "id": "adr-11",
+      "label": "compatible-related",
+      "premise": "`src/harnesses` contains the write-side enrichment and relatedness-gate harnesses that run before a memory entry is committed.",
+      "hypothesis": "Module removed at `src/e2e`",
+      "logits": [
+        4.232761383056641,
+        -2.926708221435547,
+        -1.0624797344207764
+      ],
+      "probs": [
+        0.9942404923523853,
+        0.0007729889827505747,
+        0.004986518664864069
+      ],
+      "argmax": "contradiction",
+      "margin": 5.295241117477417
+    },
+    {
+      "id": "adr-12",
+      "label": "compatible-related",
+      "premise": "`src/config`'s enforceFieldSchema validates every declared field against neuron.yaml's schema before a write is accepted.",
+      "hypothesis": "`zod` added as a dependency",
+      "logits": [
+        1.0777138471603394,
+        -2.4280874729156494,
+        1.4099481105804443
+      ],
+      "probs": [
+        0.4125238787737693,
+        0.012385083091471521,
+        0.5750910381347591
+      ],
+      "argmax": "neutral",
+      "margin": -0.332234263420105
+    },
+    {
+      "id": "adr-13",
+      "label": "compatible-related",
+      "premise": "`test/e2e` holds this repo's end-to-end test suites, twelve files under test/e2e alone.",
+      "hypothesis": "New module discovered at `src/e2e`",
+      "logits": [
+        1.8083252906799316,
+        -2.4366958141326904,
+        0.6866896152496338
+      ],
+      "probs": [
+        0.746223006723918,
+        0.010697428519938434,
+        0.24307956475614365
+      ],
+      "argmax": "contradiction",
+      "margin": 1.1216356754302979
+    },
+    {
+      "id": "adr-14",
+      "label": "compatible-related",
+      "premise": "@yao-pkg/pkg cross-compiles the standalone binary from a single Linux CI runner across all six macOS/Linux/Windows x64/arm64 targets.",
+      "hypothesis": "`esbuild` added as a dependency",
+      "logits": [
+        0.7853454947471619,
+        -1.391358494758606,
+        0.5426468849182129
+      ],
+      "probs": [
+        0.526891861829109,
+        0.05975729899182741,
+        0.41335083917906357
+      ],
+      "argmax": "contradiction",
+      "margin": 0.24269860982894897
+    },
+    {
+      "id": "adr-15",
+      "label": "compatible-related",
+      "premise": "`src/models` holds the model-loading and inference wrappers for the embedder, reranker, and NLI classifier.",
+      "hypothesis": "New module discovered at `src/models`",
+      "logits": [
+        0.17516644299030304,
+        -2.3471343517303467,
+        2.213982582092285
+      ],
+      "probs": [
+        0.11413199905221447,
+        0.009161911814330605,
+        0.8767060891334548
+      ],
+      "argmax": "neutral",
+      "margin": -2.038816139101982
+    }
+  ]
+}
