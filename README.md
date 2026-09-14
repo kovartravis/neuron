@@ -3,11 +3,42 @@
 **Give your AI coding agent a memory that's actually yours — plain markdown in your repo, enforced by a schema it can't write around.**
 
 [![npm version](https://img.shields.io/npm/v/@kovartravis/neuron.svg)](https://www.npmjs.com/package/@kovartravis/neuron)
+[![npm downloads](https://img.shields.io/npm/dm/@kovartravis/neuron.svg)](https://www.npmjs.com/package/@kovartravis/neuron)
+[![CI](https://github.com/kovartravis/neuron/actions/workflows/ci.yml/badge.svg)](https://github.com/kovartravis/neuron/actions/workflows/ci.yml)
+[![Node.js >= 22.13](https://img.shields.io/badge/node-%3E%3D22.13-339933.svg)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**Website & docs:** [kovartravis.github.io/neuron](https://kovartravis.github.io/neuron/) ·
+**Works with:** Claude Code, OpenAI Codex CLI, Cursor, GitHub Copilot CLI, any MCP client ·
 **Platforms:** macOS, Linux, Windows
 
 ---
+
+## 30 seconds, start to finish
+
+```bash
+npm install -g @kovartravis/neuron   # or: curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh
+cd your-project
+neuron init                          # detects your agent harness, wires recall hooks, downloads local models
+```
+
+From then on, the agent writes what it learns and the harness injects it back
+when it's relevant — no prompt instruction the model can skip. This is a
+verbatim capture from a Claude Code session in this repo, the turn *after* a
+fix was recorded:
+
+```text
+$ npm test
+PreToolUse:Bash hook additional context:
+- [learning] Fix for a false-positive Bash-command match in the ticket-07
+  hint-follow instrument: recordToolUse's QUERY_COMMAND_PATTERN was a bare
+  substring test, so any Bash command that merely quoted the phrase got
+  logged as a real query invocation. Fixed by anchoring the pattern to a
+  shell separator (…)
+```
+
+The store behind it is a markdown file in the repo. Open
+[`.neuron/learning.md`](.neuron/learning.md) — that's the real one.
 
 ## Your agent's memory shouldn't be a black box
 
@@ -57,6 +88,21 @@ them — no matter what the agent's prompt says.
   that did it.
 - 🔒 **100% offline & private.** Local ONNX embeddings, no API keys, no
   cloud calls, ever. Your code and your memory never leave your machine.
+
+### How it compares
+
+| | `CLAUDE.md` / `AGENTS.md` | Hosted memory API (Mem0, Zep, …) | **neuron** |
+|---|---|---|---|
+| Where memory lives | One growing prose file | Behind a vendor API | Markdown in your repo |
+| What enters each prompt | The whole file, every time | Whatever the API returns | Only what clears a relevance gate |
+| Structure | None | Vendor schema | Your schema, enforced at write time |
+| Reviewing changes | `git diff` | Vendor dashboard | `git diff`, same as code |
+| Offline / no account | Yes | No | Yes |
+| Recall is guaranteed | Only if the model reads it | Only if the agent calls it | The harness hook runs it |
+
+You can keep your `CLAUDE.md`; neuron handles the part it can't. Named,
+sourced comparisons — Mem0, Zep, claude-mem, agentmemory, Beads — are on the
+[alternatives page](https://kovartravis.github.io/neuron/docs/alternatives/).
 
 ## 🚀 Quick start
 
@@ -498,6 +544,9 @@ npm run test:e2e  # deeper E2E benchmark & correctness suite
 
 ## 📚 Documentation
 
+- **[Website](https://kovartravis.github.io/neuron/)** — install, quickstart,
+  per-harness setup guides (Claude Code, Codex CLI, Copilot CLI, Cursor), and
+  how-it-works pages on hybrid search, the relevance gate, and the schema
 - **[Command reference](https://github.com/kovartravis/neuron/blob/main/docs/COMMANDS.md)**
   — every command, flag, exit code, and the full `neuron.yaml` schema
 - **[Architecture decision records](https://github.com/kovartravis/neuron/tree/main/docs/adr)**
@@ -506,6 +555,14 @@ npm run test:e2e  # deeper E2E benchmark & correctness suite
   — including upgrade notes
 - **[Releasing](https://github.com/kovartravis/neuron/blob/main/docs/RELEASING.md)**
   — the checklist for cutting a release
+
+## 🤝 Contributing
+
+Bug reports with a reproduction, a harness you use that neuron doesn't fit
+yet, a doc page that was wrong when you needed it, or code — all welcome.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the setup, the repository map, and
+the handful of rules that keep the store markdown-first.
+`neuron feedback --type bug "what happened"` opens a pre-filled issue.
 
 ## 📄 License
 
