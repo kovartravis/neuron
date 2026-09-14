@@ -109,6 +109,31 @@ describe('DualStorageRouter (R2 Unit & Boundary Tests)', () => {
     expect(mdMemories[0].id).toBe('dual-1');
   });
 
+  it('labels md-mode mutation results with the real project name, not a hardcoded "neuron"', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'), testDir, 'acme-api');
+
+    const [added] = await router.transact([
+      { op: 'upsert', category: 'learning', id: 'label-1', content: 'Labelled', tags: [] },
+    ]);
+    expect(added.project).toBe('acme-api');
+
+    const [updated] = await router.transact([
+      { op: 'update', category: 'learning', id: 'label-1', content: 'Relabelled' },
+    ]);
+    expect(updated.project).toBe('acme-api');
+
+    const [deleted] = await router.transact([{ op: 'delete', category: 'learning', id: 'label-1' }]);
+    expect(deleted.project).toBe('acme-api');
+  });
+
+  it('defaults the project label to the project root basename when no name is given', async () => {
+    const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'), testDir);
+    const [added] = await router.transact([
+      { op: 'upsert', category: 'learning', id: 'label-2', content: 'Default label', tags: [] },
+    ]);
+    expect(added.project).toBe(path.basename(testDir));
+  });
+
   it('R2-T1-04: routes update mutation in md storage mode (the mode split aliases to, ticket 06)', async () => {
     const router = new DualStorageRouter(memoryDb, mdAdapter, makeConfig('md'));
 

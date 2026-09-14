@@ -8,6 +8,7 @@ import {
   type ParserFidelity,
   type ScannedSymbol,
 } from './treesitter.js';
+import { findProjectRoot } from '../shared/projectRoot.js';
 
 export type { ScannedSymbol, ParserFidelity };
 
@@ -80,7 +81,9 @@ export async function scanProjectTopology(
   options: { depth?: number; onProgress?: (progress: ScanProgress) => void } = {}
 ): Promise<ScanResult> {
   const maxDepth = options.depth ?? 3;
-  const projectName = path.basename(projectRoot);
+  // Same label `NeuronMemory.open()` reports: manifest name when there is one,
+  // directory basename otherwise — so `scan --json` and `status` agree.
+  const projectName = findProjectRoot(projectRoot).name;
   const summarizer = new SmolLM2Summarizer();
   const scanner = new TreeSitterScanner();
   const onProgress = options.onProgress;

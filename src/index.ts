@@ -177,7 +177,7 @@ export class NeuronMemory {
       listStoredCategories: () => this.listStoredCategories(),
     } as any;
 
-    this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config, options.projectRoot);
+    this.router = new DualStorageRouter(vectorDbDelegate, mdAdapter, config, options.projectRoot, options.projectName);
   }
 
   static open(dir: string = process.cwd()): NeuronMemory {

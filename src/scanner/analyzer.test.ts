@@ -63,7 +63,8 @@ describe('Scanner Engine: scanProjectTopology', () => {
   it('scans project manifest, deep dependency graph, and directory topology', async () => {
     const result = await scanProjectTopology(tempProjectDir, { depth: 2 });
 
-    expect(result.project).toBe('temp-scanner-test');
+    // The label follows the manifest name, not the temp directory's basename.
+    expect(result.project).toBe('sample-project');
     expect(result.projectRoot).toBe(tempProjectDir);
     expect(result.manifest.dependencies).toContain('express');
     expect(result.manifest.techStack).toContain('typescript');
