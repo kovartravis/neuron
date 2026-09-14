@@ -6,16 +6,33 @@ import { buildGitHubIssueUrl, handleFeedbackCommand } from './feedback.js';
 describe('CLI Command: feedback', () => {
   const cliPath = path.join(process.cwd(), 'dist/cli.js');
 
-  it('builds GitHub issue URLs with title, body, and labels', () => {
+  it('routes a bug report to the bug issue form and pre-fills its first field', () => {
     const url = buildGitHubIssueUrl({
       title: 'Bug Report',
       body: 'Something broke when running sync',
       type: 'bug'
     });
     expect(url).toContain('https://github.com/kovartravis/neuron/issues/new');
+    expect(url).toContain('template=bug_report.yml');
     expect(url).toContain('title=Bug+Report');
-    expect(url).toContain('body=Something+broke+when+running+sync');
+    expect(url).toContain('what-happened=Something+broke+when+running+sync');
+    expect(url).not.toContain('body=');
     expect(url).toContain('labels=bug');
+  });
+
+  it('routes a feature request to the feature issue form', () => {
+    const url = buildGitHubIssueUrl({ body: 'Shared stores across repos', type: 'feature' });
+    expect(url).toContain('template=feature_request.yml');
+    expect(url).toContain('what-happened=Shared+stores+across+repos');
+    expect(url).toContain('labels=enhancement');
+  });
+
+  it('keeps general feedback on a free-form issue with a pre-filled body', () => {
+    const url = buildGitHubIssueUrl({ title: 'Thoughts', body: 'Loving it', type: 'general' });
+    expect(url).not.toContain('template=');
+    expect(url).toContain('title=Thoughts');
+    expect(url).toContain('body=Loving+it');
+    expect(url).toContain('labels=feedback');
   });
 
   it('builds GitHub issue URL with default fallback when empty', () => {

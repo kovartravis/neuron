@@ -10,7 +10,7 @@ printed to `stderr` as a clickable URL and to `stdout` as JSON.
 
 | Flag | Effect |
 |---|---|
-| `--type <bug\|feature\|general>` | Issue template / label to pre-select |
+| `--type <bug\|feature\|general>` | Which issue form to open. `bug` and `feature` open the repository's structured issue forms with `message` pre-filled into the first field and the `bug` / `enhancement` label applied; `general` (the default) opens a free-form issue with `message` as the body |
 | `--title <text>` | Issue title. Defaults to the first 60 characters of `message` if omitted, or `"User Feedback"` if no message was given either |
 
 ## Examples

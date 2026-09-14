@@ -458,7 +458,7 @@ Generates pre-filled GitHub issue links.
 
 | Flag | Description |
 |---|---|
-| `--type <bug\|feature\|general>` | Issue template |
+| `--type <bug\|feature\|general>` | Issue form to open. `bug` → `.github/ISSUE_TEMPLATE/bug_report.yml` (label `bug`), `feature` → `feature_request.yml` (label `enhancement`), both with `message` pre-filled into the form's first field; `general` (default) → free-form issue with `message` as the body (label `feedback`) |
 | `--title <text>` | Issue title |
 
 ---

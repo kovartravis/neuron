@@ -1,0 +1,78 @@
+name: Bug report
+description: Something in neuron didn't behave the way the docs say it should.
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. `neuron feedback --type bug "<what happened>"`
+        opens this form pre-filled; either way, the fields below are what make a report actionable.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you ran, what you expected, and what you got instead. Paste the exact output where possible.
+      placeholder: |
+        Ran `neuron memory add --category decisions "..."` and expected ..., but got ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: The smallest sequence of commands (ideally in a fresh directory) that shows the problem.
+      render: shell
+      placeholder: |
+        mkdir repro && cd repro && git init
+        neuron init
+        neuron memory add --category learning "..."
+  - type: input
+    id: version
+    attributes:
+      label: neuron version
+      description: Output of `neuron --version`.
+      placeholder: "2.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - npm (`npm install -g @kovartravis/neuron`)
+        - curl / PowerShell standalone binary
+        - npx / project-local
+        - Built from source
+    validations:
+      required: true
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Coding-agent harness involved (if any)
+      multiple: true
+      options:
+        - Claude Code
+        - OpenAI Codex CLI
+        - Cursor
+        - GitHub Copilot CLI
+        - MCP client (Windsurf, Zed, Claude Desktop, Roo Code, other)
+        - None — CLI only
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Node.js version
+      placeholder: "macOS 15.2 (arm64), Node 22.14.0"
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: "`neuron status` output"
+      description: Paste it if the problem involves the store, models, or hooks. It contains no memory content, only paths and counts.
+      render: json
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant `neuron.yaml`
+      description: Only the categories / storage / pullRules sections involved.
+      render: yaml
