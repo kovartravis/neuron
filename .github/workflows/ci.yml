@@ -1,0 +1,87 @@
+name: CI
+
+# The same build + test + compliance gates publish.yml runs before a release,
+# but on every pull request and non-main push — so a contributor sees a
+# failure on their PR instead of the maintainer seeing it on main. Kept in
+# lockstep with publish.yml's build-and-test job; publish.yml stays the
+# release gate and is not replaced by this.
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build, test, and compliance checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and test
+        run: npm test
+
+      - name: Architecture drift check
+        run: |
+          set +e
+          node dist/cli.js scan --check --no-progress
+          code=$?
+          set -e
+          if [ "$code" -eq 1 ]; then
+            echo "::error::.neuron/architecture.md is stale -- src/ changed exports/structure since the last scan. Run 'neuron scan' locally and commit the refreshed card."
+            exit 1
+          elif [ "$code" -eq 2 ]; then
+            echo "::error::.neuron/architecture.md's baseline isn't comparable (likely a neuron version upgrade changed parser fidelity, not a code change). Run 'neuron scan' locally to re-baseline and commit the result."
+            exit 1
+          elif [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+
+      - name: Config/protocol compliance check
+        run: |
+          set +e
+          OUTPUT=$(node dist/cli.js status --check)
+          code=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::'neuron status --check' found a compliance violation (see JSON above). Run 'node dist/cli.js status --check' locally; field/category issues take 'status --repair', protocol-block drift takes 'neuron init --overwrite-hooks'."
+            exit 1
+          fi
+
+  site:
+    name: Docs site builds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install and build
+        working-directory: site
+        run: |
+          npm ci
+          npm run build

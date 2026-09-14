@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a change to neuron's behavior, CLI surface, or harness support.
+labels: [enhancement, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `neuron feedback --type feature "<idea>"` opens this form pre-filled. The most useful requests
+        describe the situation you're in and what you're trying to achieve, not just the feature you'd like.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What are you trying to do?
+      description: The workflow or situation where neuron currently falls short.
+      placeholder: |
+        I work across several repos that share conventions, and I'd like a learning recorded in one to ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like neuron to do?
+      description: A concrete sketch — a command, a flag, a `neuron.yaml` field, a hook behavior. Rough is fine.
+      placeholder: |
+        neuron memory add --category learning --shared "..."
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried or considered instead?
+      description: Workarounds, other tools, or why the current behavior doesn't fit.
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Harness this matters for (if any)
+      multiple: true
+      options:
+        - Claude Code
+        - OpenAI Codex CLI
+        - Cursor
+        - GitHub Copilot CLI
+        - MCP client (Windsurf, Zed, Claude Desktop, Roo Code, other)
+        - None — CLI only
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to open a pull request for this.

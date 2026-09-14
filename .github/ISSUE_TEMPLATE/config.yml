@@ -1,0 +1,10 @@
+# Blank issues stay enabled so `neuron feedback` (general type) can open a
+# pre-filled free-form issue; bug and feature reports get the structured forms.
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://kovartravis.github.io/neuron/docs/
+    about: Install, quickstart, per-harness setup, and the full CLI / neuron.yaml reference.
+  - name: neuron vs. alternatives
+    url: https://kovartravis.github.io/neuron/docs/alternatives/
+    about: How neuron compares to CLAUDE.md files, Mem0, Zep, claude-mem, agentmemory, and Beads.
