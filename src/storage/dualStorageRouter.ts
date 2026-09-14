@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { NeuronMemory } from '../index.js';
 import { MdStorage } from './mdStorage.js';
 import { NeuronConfig } from '../config/neuronYaml.js';
@@ -27,13 +28,21 @@ export class DualStorageRouter {
   private mdAdapter: MdStorage;
   private config: NeuronConfig;
   private projectRoot: string;
+  private projectName: string;
   private staleVectorWarningsChecked = new Set<string>();
 
-  constructor(vectorDb: NeuronMemory, mdAdapter: MdStorage, config: NeuronConfig, projectRoot: string = process.cwd()) {
+  constructor(
+    vectorDb: NeuronMemory,
+    mdAdapter: MdStorage,
+    config: NeuronConfig,
+    projectRoot: string = process.cwd(),
+    projectName: string = path.basename(projectRoot)
+  ) {
     this.vectorDb = vectorDb;
     this.mdAdapter = mdAdapter;
     this.config = config;
     this.projectRoot = projectRoot;
+    this.projectName = projectName;
   }
 
   public setConfig(config: NeuronConfig): void {
@@ -95,7 +104,7 @@ export class DualStorageRouter {
         } catch (err) {
           this.warnVectorDrift(mdEntry.id, err);
         }
-        return [{ id: mdEntry.id, status, project: 'neuron' }];
+        return [{ id: mdEntry.id, status, project: this.projectName }];
       }
 
       if (m.op === 'update') {
@@ -131,7 +140,7 @@ export class DualStorageRouter {
         return [{
           id: m.id,
           status: mdUpdated || vecStatus === 'updated' ? 'updated' : 'not_found',
-          project: 'neuron',
+          project: this.projectName,
         }];
       }
 
@@ -152,7 +161,7 @@ export class DualStorageRouter {
       return [{
         id: m.id,
         status: mdDeleted || vecDeleted ? 'deleted' : 'not_found',
-        project: 'neuron',
+        project: this.projectName,
       }];
     } catch (err) {
       // Error isolation for disk failures on the markdown write itself. This
@@ -165,7 +174,7 @@ export class DualStorageRouter {
       process.stderr.write(
         `[neuron warning] markdown write failed for category ${category}: ${reason} — nothing was recorded.\n`
       );
-      return [{ id: (m as any).id || 'error', status: 'error', project: 'neuron' }];
+      return [{ id: (m as any).id || 'error', status: 'error', project: this.projectName }];
     }
   }
 
