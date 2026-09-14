@@ -54,6 +54,14 @@ export default defineConfig({
 			// Ticket 3 JSON-LD strategy) via Starlight's built-in git-log lookup —
 			// no per-page frontmatter needed.
 			lastUpdated: true,
+			// Default social-preview image for every docs page (the homepage sets
+			// its own tags directly). Regenerate with `node scripts/og-image.mjs`.
+			head: [
+				{ tag: 'meta', attrs: { property: 'og:image', content: 'https://kovartravis.github.io/neuron/og.png' } },
+				{ tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+				{ tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+				{ tag: 'meta', attrs: { name: 'twitter:image', content: 'https://kovartravis.github.io/neuron/og.png' } },
+			],
 			components: {
 				Head: './src/components/Head.astro',
 			},

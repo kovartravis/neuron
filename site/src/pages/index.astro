@@ -1,18 +1,127 @@
 ---
-// Homepage — ticket 7 (Build the Homepage), Map — neuron.github.io Site (2.5.0).
-// Folds ticket 4's winning prototype direction (Minimal Text-First, branch
-// prototype/ticket4-homepage-variants, commit e8b6bbd) into the real site,
-// with ticket 2's settled copy and Map — SEO & GEO Groundwork's ticket 3
-// JSON-LD convention (WebSite + SoftwareApplication + FAQPage, Person author).
+// Homepage. Originally ticket 7 (Build the Homepage), Map — neuron.github.io
+// Site (2.5.0): ticket 4's Minimal Text-First direction, ticket 2's copy, and
+// Map — SEO & GEO Groundwork's ticket 3 JSON-LD convention (WebSite +
+// SoftwareApplication + FAQPage, Person author). Map — Homepage Desktop
+// Layout's ticket 1 added the >=960px two-column hero.
+//
+// 2.5.0 reworked it around a problem-first pitch: every claim on the page is
+// traceable to a benchmark or a doc page already in this repo (README
+// "Measured, not just claimed", benchmarks/token-ab/, docs/design/), a real
+// hook-injection capture (docs/design/pre-command-hook-live-capture/) is
+// shown instead of described, and social-preview metadata (Open Graph /
+// Twitter card, site/public/og.png via site/scripts/og-image.mjs) is set so
+// a shared link renders a card rather than a bare URL.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const canonicalUrl = 'https://kovartravis.github.io/neuron/';
+const ogImage = `${canonicalUrl}og.png`;
 const githubUrl = 'https://github.com/kovartravis/neuron';
+const npmUrl = 'https://www.npmjs.com/package/@kovartravis/neuron';
+
+const title = 'neuron — persistent, local-first memory for coding agents';
+const description =
+	'Stop re-explaining your codebase to your AI agent. neuron gives Claude Code, Codex CLI, Cursor and Copilot CLI persistent memory as plain markdown in your repo — relevance-gated, schema-enforced, 100% offline.';
 
 const person = {
 	'@type': 'Person',
 	name: 'Travis Kovar',
 	url: 'https://github.com/kovartravis',
 };
+
+const proof = [
+	{
+		stat: '57.7%',
+		label: 'fewer tokens per task',
+		detail: 'Same agent, same SWE-bench Lite tasks, memory hook on vs. off. Pooled across 16 sessions.',
+		href: `${githubUrl}#-measured-not-just-claimed`,
+	},
+	{
+		stat: '16 / 16',
+		label: 'sessions correct in both arms',
+		detail: 'The savings are not bought with worse answers — a deterministic grader passed every session.',
+		href: `${githubUrl}/blob/main/benchmarks/token-ab/README.md`,
+	},
+	{
+		stat: '99.8% → 19.4%',
+		label: 'false-accept rate on recall',
+		detail: 'A lexical filter plus a local cross-encoder reranker gate every injection, measured on an out-of-corpus test.',
+		href: `${githubUrl}/blob/main/docs/adr/0012-relevance-gate-and-score-decontamination.md`,
+	},
+	{
+		stat: '0',
+		label: 'bytes leave your machine',
+		detail: 'Local ONNX embeddings and SQLite. No API key, no account, no telemetry.',
+		href: `${base}/docs/hybrid-search/`,
+	},
+];
+
+const steps = [
+	{
+		cmd: 'neuron init',
+		title: 'Wire it in once',
+		body: 'Detects Claude Code, Codex CLI, Cursor or Copilot CLI, pre-downloads the local models, and registers the recall hooks. One command, no config to hand-write.',
+	},
+	{
+		cmd: 'neuron memory add --category learning "…"',
+		title: 'Your agent writes what it learns',
+		body: 'Fixes, conventions and decisions land in .neuron/*.md as schema-checked entries. A pre-stop hook nudges the agent to record before it ends the turn.',
+	},
+	{
+		cmd: '# next session — nothing to remember',
+		title: 'Relevant memory is injected by the harness',
+		body: 'On every prompt and before every shell command, the hook queries the store and injects only what clears the relevance gate. No prompt instruction the model can skip.',
+	},
+];
+
+const pillars = [
+	{
+		title: 'Markdown is the source of truth',
+		body: 'Memory lives in .neuron/*.md, next to your code. Open it, grep it, hand-edit it, review it in a normal pull request. SQLite underneath is a disposable search index rebuilt from the files.',
+		href: `${base}/docs/storage-adapters/`,
+	},
+	{
+		title: 'A schema the agent cannot write around',
+		body: 'Declare required and enum fields per category in neuron.yaml. A write missing a ticket or a reviewer is refused with an error naming exactly what is missing — regardless of the prompt.',
+		href: `${base}/docs/declared-field-schema/`,
+	},
+	{
+		title: 'Recall that is enforced, not requested',
+		body: 'On Claude Code and Codex CLI the harness itself runs the lookup on SessionStart, UserPromptSubmit, PreToolUse and PreCompact. The model never gets a chance to forget.',
+		href: `${base}/docs/harness-adapters/`,
+	},
+	{
+		title: 'Your architecture as a living document',
+		body: 'neuron scan parses your codebase with real Tree-Sitter ASTs and writes a blueprint card that is byte-identical until the code changes. Gate CI on it with scan --check.',
+		href: `${base}/docs/cli-scan/`,
+	},
+	{
+		title: 'Git history becomes memory too',
+		body: 'Commits are indexed and matched against every prompt with the same relevance gate, so "how did we fix X" surfaces the commit that actually did.',
+		href: `${githubUrl}#your-git-history-is-a-searchable-resident-source-too`,
+	},
+	{
+		title: 'An MCP server for everything else',
+		body: 'neuron mcp exposes remember / recall / query-exec over stdio for Windsurf, Zed, Claude Desktop, Roo Code — the same store methods the CLI calls, not a second code path.',
+		href: `${base}/docs/cli-mcp/`,
+	},
+];
+
+const harnesses = [
+	{ name: 'Claude Code', recall: 'Every turn, automatically', exec: 'Every shell command', stop: 'Yes', cls: 'full' },
+	{ name: 'OpenAI Codex CLI', recall: 'Every turn, automatically', exec: 'Every shell command', stop: 'Yes', cls: 'full' },
+	{ name: 'GitHub Copilot CLI', recall: 'Once per session', exec: 'Via neuron exec', stop: 'Yes', cls: 'partial' },
+	{ name: 'Cursor', recall: 'Once per session + MCP', exec: 'Via neuron exec', stop: 'Yes', cls: 'partial' },
+	{ name: 'Windsurf, Zed, Claude Desktop, Roo Code', recall: 'MCP tools', exec: 'MCP tools', stop: '—', cls: 'mcp' },
+];
+
+const compare = [
+	{ q: 'Where the memory lives', md: 'One growing prose file', cloud: 'Behind a hosted API', neuron: 'Markdown in your repo' },
+	{ q: 'What goes into each prompt', md: 'The whole file, every time', cloud: 'Whatever the API returns', neuron: 'Only what clears a relevance gate' },
+	{ q: 'Structure', md: 'None', cloud: 'Vendor schema', neuron: 'Your schema, enforced at write time' },
+	{ q: 'Review changes', md: 'git diff', cloud: 'Vendor dashboard', neuron: 'git diff, same as code' },
+	{ q: 'Works offline', md: 'Yes', cloud: 'No', neuron: 'Yes — no API key, ever' },
+	{ q: 'Recall is guaranteed', md: 'Only if the model reads it', cloud: 'Only if the agent calls it', neuron: 'Harness hook runs it' },
+];
 
 const faqs = [
 	{
@@ -21,11 +130,19 @@ const faqs = [
 	},
 	{
 		q: 'Does neuron work with Cursor and Codex, or only Claude Code?',
-		a: 'neuron ships harness adapters for Claude Code, OpenAI Codex CLI, Cursor, and GitHub Copilot CLI. Claude Code and Codex CLI get memory injected automatically on every turn; Cursor and Copilot CLI get it once per session, since those harnesses only expose a session-start hook.',
+		a: 'neuron ships harness adapters for Claude Code, OpenAI Codex CLI, Cursor, and GitHub Copilot CLI. Claude Code and Codex CLI get memory injected automatically on every turn; Cursor and Copilot CLI get it once per session, since those harnesses only expose a session-start hook. Any MCP-aware editor can use the neuron mcp server.',
 	},
 	{
 		q: 'How is neuron different from a CLAUDE.md or AGENTS.md file?',
-		a: "A CLAUDE.md or AGENTS.md file is static prose an agent rereads in full every prompt, whether it's relevant or not, and it only grows over time. neuron stores memory as structured, schema-enforced entries and surfaces only what's relevant to the current query, instead of dumping one file into every prompt.",
+		a: "A CLAUDE.md or AGENTS.md file is static prose an agent rereads in full every prompt, whether it's relevant or not, and it only grows over time. neuron stores memory as structured, schema-enforced entries and surfaces only what's relevant to the current query, instead of dumping one file into every prompt. You can keep both.",
+	},
+	{
+		q: 'Will it slow my agent down?',
+		a: 'The recall hook runs a local hybrid search (SQLite FTS plus ONNX embeddings) and typically returns in well under a second on a warm cache. The first neuron init pre-downloads the models so there is no cold start mid-session.',
+	},
+	{
+		q: 'Can I use it in CI?',
+		a: 'Yes. neuron scan --check exits non-zero when the codebase drifts from the stored architecture card, and neuron status --check validates the store against your declared schema — both are ordinary CI steps.',
 	},
 	{
 		q: 'Is neuron free to use?',
@@ -47,6 +164,7 @@ const jsonLd = {
 			applicationCategory: 'DeveloperApplication',
 			operatingSystem: 'macOS, Linux, Windows',
 			url: canonicalUrl,
+			image: ogImage,
 			license: 'https://opensource.org/licenses/MIT',
 			offers: {
 				'@type': 'Offer',
@@ -74,13 +192,27 @@ const jsonLd = {
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>neuron — the local-first memory engine for coding agents</title>
-		<meta
-			name="description"
-			content="neuron gives Claude Code, Cursor, and Codex persistent memory — 100% local, relevance-gated, and it stops your agent from repeating the same mistake twice."
-		/>
+		<title>{title}</title>
+		<meta name="description" content={description} />
 		<link rel="canonical" href={canonicalUrl} />
 		<link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+		<link rel="sitemap" href={`${base}/sitemap-index.xml`} />
+		<meta name="theme-color" content="#1a5f3f" />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="neuron" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="neuron — stop re-explaining your codebase to your AI agent" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
 		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 		<style>
 			:root {
@@ -91,154 +223,421 @@ const jsonLd = {
 				--fg-muted: #4a4941;
 				--fg-faint: #7a7869;
 				--accent: #1a5f3f;
+				--accent-soft: #e3efe8;
 				--rule: #ded9cb;
 				--code-bg: #ece9e1;
+				--panel: #fff;
+				--term-bg: #16150f;
+				--term-fg: #e9e6dc;
+				--term-dim: #8f8c7f;
+				--term-green: #7fd1a3;
+				--term-yellow: #e6c46b;
 			}
 			* { box-sizing: border-box; }
+			html { scroll-behavior: smooth; }
 			body {
 				margin: 0;
 				font-family: var(--sans);
 				background: var(--bg);
 				color: var(--fg);
+				-webkit-font-smoothing: antialiased;
 			}
 			code { font-family: var(--mono); }
 			a { color: inherit; }
+			h2 { font-size: 1.6rem; letter-spacing: -0.01em; margin: 0 0 0.5rem; }
+			.lede { color: var(--fg-muted); line-height: 1.65; margin: 0 0 2.25rem; max-width: 60ch; }
+			.wrap { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+			section { padding: 4.5rem 0; }
+			section + section { border-top: 1px solid var(--rule); }
 
-			.hero { max-width: 640px; margin: 0 auto; padding: 8rem 1.5rem 5rem; text-align: center; }
-			.hero h1 { font-size: 2.9rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 1.5rem; }
-			.hero .sub { font-size: 1.08rem; color: var(--fg-muted); line-height: 1.65; margin: 0 auto 2.25rem; max-width: 52ch; }
-			.inline-code {
-				display: block; font-family: var(--mono); font-size: 0.85rem;
-				background: var(--code-bg); color: var(--fg); padding: 0.85rem 1.1rem;
-				border-radius: 6px; margin: 0 auto 0.6rem; max-width: 460px; text-align: left;
-			}
-			.alt { font-size: 0.78rem; color: var(--fg-faint); margin-bottom: 2rem; }
+			/* nav */
+			nav { border-bottom: 1px solid var(--rule); background: rgba(247,245,240,0.9); backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 5; }
+			nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+			.brand { font-family: var(--mono); font-weight: 700; text-decoration: none; color: var(--accent); font-size: 1.05rem; }
+			.links { display: flex; gap: 1.4rem; font-size: 0.9rem; }
+			.links a { text-decoration: none; color: var(--fg-muted); }
+			.links a:hover { color: var(--fg); }
+
+			/* hero */
+			.hero-wrap { max-width: 1100px; margin: 0 auto; padding: 5rem 1.5rem 3.5rem; }
+			.hero { max-width: 640px; margin: 0 auto; text-align: center; }
+			.eyebrow { display: inline-block; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 0.3rem 0.7rem; border-radius: 999px; margin-bottom: 1.25rem; }
+			.hero h1 { font-size: 2.9rem; line-height: 1.12; letter-spacing: -0.025em; margin: 0 0 1.25rem; }
+			.hero .sub { font-size: 1.1rem; color: var(--fg-muted); line-height: 1.65; margin: 0 auto 2rem; max-width: 54ch; }
+			.install { display: flex; align-items: stretch; max-width: 520px; margin: 0 auto 0.6rem; background: var(--code-bg); border-radius: 6px; overflow: hidden; }
+			.install code { flex: 1; font-size: 0.85rem; padding: 0.85rem 1rem; text-align: left; overflow-x: auto; white-space: nowrap; }
+			.install button { border: 0; border-left: 1px solid var(--rule); background: transparent; font: inherit; font-size: 0.78rem; padding: 0 0.9rem; cursor: pointer; color: var(--fg-muted); }
+			.install button:hover { color: var(--fg); background: #e2dfd5; }
+			.alt { font-size: 0.8rem; color: var(--fg-faint); margin: 0 auto 2rem; max-width: 520px; }
+			.alt code { display: block; font-size: 0.74rem; overflow-wrap: anywhere; margin-top: 0.2rem; color: var(--fg-muted); }
 			.ctas { display: flex; gap: 1.5rem; justify-content: center; align-items: center; }
 			.btn { text-decoration: none; font-size: 0.95rem; }
 			.btn.primary { background: var(--accent); color: #fff; padding: 0.75rem 1.6rem; border-radius: 4px; }
+			.btn.primary:hover { background: #154d33; }
 			.btn.ghost { color: var(--fg); border-bottom: 1px solid var(--fg); padding-bottom: 2px; }
+			.meta { margin-top: 2rem; font-size: 0.8rem; color: var(--fg-faint); }
 
-			.pillars { max-width: 620px; margin: 0 auto 4rem; padding: 0 1.5rem; }
-			.pillar { display: flex; gap: 1.5rem; padding: 1.75rem 0; border-top: 1px solid var(--rule); }
-			.pillar:last-child { border-bottom: 1px solid var(--rule); }
-			.pillar .num { font-size: 1.6rem; color: #cfc9b8; font-weight: 300; min-width: 2.2ch; }
-			.pillar h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
-			.pillar p { margin: 0; font-size: 0.9rem; color: var(--fg-muted); line-height: 1.55; }
+			/* terminal */
+			.term { background: var(--term-bg); color: var(--term-fg); border-radius: 12px; box-shadow: 0 30px 70px -35px rgba(22,21,15,0.5); overflow: hidden; font-family: var(--mono); font-size: 0.8rem; line-height: 1.6; text-align: left; margin: 3rem auto 0; max-width: 720px; }
+			.term-bar { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem; background: #24231b; font-size: 0.72rem; color: var(--term-dim); font-family: var(--sans); }
+			.term-bar i { width: 10px; height: 10px; border-radius: 50%; background: #3d3c33; display: inline-block; }
+			.term-bar span { margin-left: 0.5rem; }
+			.term pre { margin: 0; padding: 1.1rem 1.2rem; white-space: pre-wrap; word-break: break-word; }
+			.term .p { color: var(--term-green); }
+			.term .c { color: var(--term-dim); }
+			.term .k { color: var(--term-yellow); }
+			.term .hook { border-left: 2px solid var(--term-green); padding-left: 0.8rem; margin: 0.4rem 0; display: block; }
 
-			.prose { max-width: 560px; margin: 0 auto 5rem; padding: 0 1.5rem; font-size: 0.98rem; color: #33321f; line-height: 1.75; text-align: center; }
-			.prose em { color: var(--accent); font-style: normal; }
-			.aside { text-align: center; font-size: 0.8rem; color: var(--fg-faint); font-style: italic; margin-bottom: 5rem; padding: 0 1.5rem; }
+			/* proof */
+			.proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+			.proof { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 1.4rem 1.4rem 1.25rem; text-decoration: none; display: block; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+			.proof:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -28px rgba(22,21,15,0.4); }
+			.proof .stat { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.03em; color: var(--accent); line-height: 1.1; }
+			.proof .label { font-size: 0.9rem; font-weight: 600; margin: 0.35rem 0 0.5rem; }
+			.proof .detail { font-size: 0.82rem; color: var(--fg-muted); line-height: 1.5; margin: 0; }
+			.fine { font-size: 0.8rem; color: var(--fg-faint); margin-top: 1.25rem; }
 
-			.faq { max-width: 620px; margin: 0 auto 7rem; padding: 0 1.5rem; }
-			.faq h2 { font-size: 1.4rem; margin: 0 0 2rem; text-align: center; }
-			.faq-item { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
+			/* steps */
+			.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; counter-reset: step; }
+			.step { position: relative; padding-top: 0.5rem; }
+			.step::before { counter-increment: step; content: counter(step, decimal-leading-zero); font-size: 1.6rem; color: #cfc9b8; font-weight: 300; display: block; margin-bottom: 0.5rem; }
+			.step code { display: block; background: var(--code-bg); padding: 0.55rem 0.8rem; border-radius: 6px; font-size: 0.78rem; margin-bottom: 0.9rem; overflow-x: auto; white-space: nowrap; }
+			.step h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+			.step p { margin: 0; font-size: 0.9rem; color: var(--fg-muted); line-height: 1.55; }
+
+			/* pillars */
+			.pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+			.pillar { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 1.4rem; text-decoration: none; display: flex; flex-direction: column; }
+			.pillar:hover { border-color: var(--accent); }
+			.pillar h3 { margin: 0 0 0.5rem; font-size: 1.02rem; }
+			.pillar p { margin: 0 0 0.8rem; font-size: 0.88rem; color: var(--fg-muted); line-height: 1.55; flex: 1; }
+			.pillar span { font-size: 0.8rem; color: var(--accent); }
+
+			/* repo example */
+			.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+			.two-col .prose p { color: var(--fg-muted); line-height: 1.7; margin: 0 0 1rem; font-size: 0.98rem; }
+			.file { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; font-family: var(--mono); font-size: 0.78rem; line-height: 1.6; }
+			.file-name { padding: 0.5rem 1rem; border-bottom: 1px solid var(--rule); color: var(--fg-faint); font-size: 0.72rem; }
+			.file pre { margin: 0; padding: 1rem 1.1rem; white-space: pre-wrap; word-break: break-word; }
+			.file .fm { color: var(--fg-faint); }
+			.file .err { color: #a33a2a; }
+
+			/* tables */
+			table { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+			th, td { text-align: left; padding: 0.8rem 1rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+			th { font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-faint); font-weight: 600; background: #faf9f5; }
+			tr:last-child td { border-bottom: 0; }
+			td.hl { color: var(--accent); font-weight: 600; }
+			.pill { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; margin-left: 0.4rem; vertical-align: middle; }
+			.pill.full { background: var(--accent-soft); color: var(--accent); }
+			.pill.partial { background: #f3ecd6; color: #7a5b12; }
+			.pill.mcp { background: #e8e6f5; color: #4a4488; }
+			.table-scroll { overflow-x: auto; }
+
+			/* faq */
+			.faq-list { max-width: 720px; }
+			.faq-item { padding: 1.4rem 0; border-top: 1px solid var(--rule); }
 			.faq-item:last-child { border-bottom: 1px solid var(--rule); }
 			.faq-item h3 { margin: 0 0 0.5rem; font-size: 1rem; }
 			.faq-item p { margin: 0; font-size: 0.92rem; color: var(--fg-muted); line-height: 1.6; }
 
-			footer { text-align: center; font-size: 0.82rem; color: var(--fg-faint); padding: 0 1.5rem 4rem; }
+			/* final cta */
+			.final { text-align: center; }
+			.final h2 { font-size: 2rem; }
+			.final .install { margin-top: 1.75rem; }
+
+			footer { text-align: center; font-size: 0.82rem; color: var(--fg-faint); padding: 2.5rem 1.5rem 3.5rem; border-top: 1px solid var(--rule); }
 			footer a { text-decoration: underline; }
 
+			@media (max-width: 900px) {
+				.proof-grid { grid-template-columns: repeat(2, 1fr); }
+				.steps, .pillars { grid-template-columns: 1fr; }
+				.two-col { grid-template-columns: 1fr; gap: 2rem; }
+			}
 			@media (max-width: 640px) {
-				.hero { padding: 4rem 1.25rem 3rem; }
+				section { padding: 3.25rem 0; }
+				.hero-wrap { padding: 3rem 1.25rem 2.5rem; }
 				.hero h1 { font-size: 2.1rem; }
 				.hero .sub { font-size: 1rem; }
-				.inline-code { max-width: 100%; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; }
+				.install { max-width: 100%; }
+				.install code { font-size: 0.76rem; }
 				.ctas { flex-direction: column; gap: 0.9rem; width: 100%; }
 				.btn.primary { width: 100%; text-align: center; }
-				.pillar { gap: 1rem; padding: 1.4rem 0; }
-				.pillar .num { font-size: 1.3rem; min-width: 1.8ch; }
-				.prose { font-size: 0.92rem; padding: 0 1.25rem; }
-				.aside { padding: 0 1.25rem; }
+				.proof-grid { grid-template-columns: 1fr; }
+				.links a:not(.gh) { display: none; }
+				.term { font-size: 0.72rem; }
 			}
 
-			/* Desktop two-column reflow — Map — Homepage Desktop Layout's Ticket 1
-			   (Prototype the Desktop Two-Column Layout), "Pillars Beside Hero"
-			   variant. Everything below 960px (including the 641-959px range)
-			   is untouched — same single-column layout as before. */
+			/* Desktop two-column hero (Map — Homepage Desktop Layout, ticket 1):
+			   copy on the left, the live-capture terminal on the right. */
 			@media (min-width: 960px) {
 				.hero-wrap {
-					max-width: 1180px; margin: 0 auto; padding: 0 2rem;
-					display: grid; grid-template-columns: 1.15fr 1fr; column-gap: 3.5rem; align-items: center;
+					padding: 6rem 1.5rem 4.5rem;
+					display: grid; grid-template-columns: 1.05fr 1fr; column-gap: 3.5rem; align-items: center;
 				}
-				.hero { max-width: none; margin: 0; padding: 7rem 0; text-align: left; }
-				.hero .sub { margin: 0 0 2.25rem; max-width: 46ch; }
+				.hero { max-width: none; margin: 0; text-align: left; }
+				.hero .sub { margin: 0 0 2rem; max-width: 48ch; }
+				.install { margin: 0 0 0.6rem; }
+				.alt { margin: 0 0 2rem; }
 				.ctas { justify-content: flex-start; }
-				.inline-code { margin: 0 0 0.6rem; }
-				.pillars {
-					max-width: none; margin: 0; padding: 2rem 2rem;
-					background: #fff; border: 1px solid var(--rule); border-radius: 12px;
-					box-shadow: 0 30px 70px -35px rgba(22,21,15,0.25);
-				}
-				.pillar { padding: 1.25rem 0; }
-				.pillar:first-child { border-top: none; padding-top: 0; }
-				.pillar:last-child { border-bottom: none; padding-bottom: 0; }
+				.term { margin: 0; max-width: none; }
 			}
 		</style>
 	</head>
 	<body>
+		<nav>
+			<div class="wrap">
+				<a class="brand" href={`${base}/`}>neuron</a>
+				<div class="links">
+					<a href={`${base}/docs/`}>Docs</a>
+					<a href={`${base}/docs/quickstart/`}>Quickstart</a>
+					<a href={`${base}/docs/alternatives/`}>Compare</a>
+					<a href={npmUrl}>npm</a>
+					<a class="gh" href={githubUrl}>GitHub</a>
+				</div>
+			</div>
+		</nav>
+
 		<div class="hero-wrap">
 			<div class="hero">
-				<h1>The local-first memory engine for coding agents</h1>
+				<span class="eyebrow">Open source · MIT · 100% offline</span>
+				<h1>Stop re-explaining your codebase to your AI agent.</h1>
 				<p class="sub">
-					Not another cloud memory API. Not another bloated rules file dumped into every prompt.
-					neuron gives Claude Code, Cursor, and Codex persistent memory — 100% local, relevance-gated,
-					and it stops your agent from repeating the same mistake twice.
+					neuron gives Claude Code, Codex CLI, Cursor and Copilot CLI a memory that survives the session:
+					fixes, conventions and decisions stored as plain markdown in your repo, injected only when
+					they're relevant — and enforced by the harness, not by a prompt the model can ignore.
 				</p>
-				<code class="inline-code">curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
-				<div class="alt">or <code>npm install -g @kovartravis/neuron</code></div>
+				<div class="install">
+					<code id="install-cmd">npm install -g @kovartravis/neuron</code>
+					<button type="button" data-copy="install-cmd" aria-label="Copy install command">Copy</button>
+				</div>
+				<div class="alt">
+					no Node.js? <code>curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
+				</div>
 				<div class="ctas">
-					<a class="btn primary" href={`${base}/docs/quickstart/`}>Get started</a>
-					<a class="btn ghost" href={githubUrl}>View on GitHub</a>
+					<a class="btn primary" href={`${base}/docs/quickstart/`}>Get started in 5 minutes</a>
+					<a class="btn ghost" href={githubUrl}>Star on GitHub</a>
 				</div>
+				<p class="meta">macOS · Linux · Windows &nbsp;·&nbsp; standalone binary or npm &nbsp;·&nbsp; no account, no API key</p>
 			</div>
 
-			<div class="pillars">
-				<div class="pillar">
-					<div class="num">01</div>
-					<div>
-						<h3>Zero-Cloud Privacy</h3>
-						<p>Local ONNX embeddings + SQLite. No API keys, no telemetry, nothing leaves your machine.</p>
-					</div>
-				</div>
-				<div class="pillar">
-					<div class="num">02</div>
-					<div>
-						<h3>Zero-Amnesia Execution</h3>
-						<p>Pre-command lookup checks memory before every shell command runs, so agents stop debugging the same failure twice.</p>
-					</div>
-				</div>
-				<div class="pillar">
-					<div class="num">03</div>
-					<div>
-						<h3>Context Budget Diet</h3>
-						<p>Relevance-gated recall injects only what's relevant — nothing dumped into every prompt.</p>
-					</div>
-				</div>
+			<div class="term" aria-label="A real memory recall injected by a Claude Code hook">
+				<div class="term-bar"><i></i><i></i><i></i><span>claude — next session, same repo</span></div>
+				<pre><span class="c"># yesterday: the agent hit a flaky test, fixed it, and recorded why</span>
+<span class="p">$</span> neuron memory add --category learning <span class="k">"Fix for false-positive Bash-command match: the pattern was a bare substring test, so any command that merely quoted the phrase got logged as a real invocation. Anchor it to a shell separator."</span>
+&#123;"id":"e9d606cd…","status":"created"&#125;
+
+<span class="c"># today: a fresh session runs a shell command. Before it executes, Claude Code's
+# PreToolUse hook calls neuron and injects what's relevant — automatically.</span>
+<span class="p">$</span> npm test
+<span class="hook"><span class="c">PreToolUse:Bash hook additional context:</span>
+- [learning] Fix for false-positive Bash-command match: the pattern was a bare substring test, so any command that merely quoted the phrase got logged as a real invocation. Anchor it to a shell separator.</span>
+<span class="c"># no CLAUDE.md paragraph to maintain. no "remember to check memory" instruction. no repeat debugging.</span></pre>
 			</div>
 		</div>
 
-		<p class="aside">also works as a CI check — <code>neuron scan --check</code> catches architecture drift before it merges</p>
-
-		<p class="prose">
-			Every agent starts each session with amnesia — the same bug gets debugged twice, the same
-			convention gets re-explained, and static rules files pile up until nobody trusts them.
-			<em>neuron</em> is what a coding agent remembers between sessions, without sending a single
-			byte of your code to the cloud.
-		</p>
-
-		<div class="faq">
-			<h2>Questions</h2>
-			{faqs.map(({ q, a }) => (
-				<div class="faq-item">
-					<h3>{q}</h3>
-					<p>{a}</p>
+		<section id="proof">
+			<div class="wrap">
+				<h2>Measured, not just claimed</h2>
+				<p class="lede">
+					Every number below comes from a re-runnable harness checked into the repo. Click any card for the methodology and raw results.
+				</p>
+				<div class="proof-grid">
+					{proof.map(({ stat, label, detail, href }) => (
+						<a class="proof" href={href}>
+							<div class="stat">{stat}</div>
+							<div class="label">{label}</div>
+							<p class="detail">{detail}</p>
+						</a>
+					))}
 				</div>
-			))}
-		</div>
+				<p class="fine">
+					Token figures: SWE-bench Lite instances <code>matplotlib-24265</code> and <code>django-11019</code>, real checkouts pinned before the fix landed, k=4 sessions per arm, deterministic grading.{' '}
+					<code>npm run bench:swebench-ab:dry-run</code> validates the fixtures for free.
+				</p>
+			</div>
+		</section>
+
+		<section id="how">
+			<div class="wrap">
+				<h2>How it works</h2>
+				<p class="lede">Three moving parts. None of them depend on the model remembering to do anything.</p>
+				<div class="steps">
+					{steps.map(({ cmd, title, body }) => (
+						<div class="step">
+							<code>{cmd}</code>
+							<h3>{title}</h3>
+							<p>{body}</p>
+						</div>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<section id="why">
+			<div class="wrap">
+				<h2>Why teams pick neuron</h2>
+				<p class="lede">Built for the one job of remembering a codebase — and for the people who have to review what the agent remembers.</p>
+				<div class="pillars">
+					{pillars.map(({ title, body, href }) => (
+						<a class="pillar" href={href}>
+							<h3>{title}</h3>
+							<p>{body}</p>
+							<span>Read more →</span>
+						</a>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<section id="repo">
+			<div class="wrap two-col">
+				<div class="prose">
+					<h2>What it looks like in your repo</h2>
+					<p>
+						No database you need a viewer for. Each category is one markdown file with a small YAML
+						frontmatter block per entry — readable, greppable, diffable, and safe to hand-edit.
+					</p>
+					<p>
+						Declare a field as required in <code>neuron.yaml</code> and the CLI refuses any write
+						that omits it, from a human or an agent. <code>neuron status --check</code> catches
+						anything that drifts afterwards.
+					</p>
+					<p>
+						This isn't a toy example: neuron's own repository runs on{' '}
+						<a href={`${githubUrl}/blob/main/.neuron/learning.md`}>its own <code>.neuron/</code> store</a>,
+						including the project's issue tracker.
+					</p>
+				</div>
+				<div>
+					<div class="file">
+						<div class="file-name">.neuron/decisions.md</div>
+						<pre><span class="fm">---
+id: e9d606cd-0d61-4073-9da8-1675c6d7adfd
+createdAt: 2026-08-05T15:02:38.494Z
+importance: 4
+tags: [adr, database]
+reviewedBy: alice
+ticket: NEU-42
+---</span>
+Chose Postgres over SQLite for concurrent writes.
+Two writers per service in prod; SQLite's single-writer
+lock showed up as p99 latency spikes in the load test.</pre>
+					</div>
+					<div class="file" style="margin-top: 1rem;">
+						<div class="file-name">terminal</div>
+						<pre><span class="fm">$</span> neuron memory add --category decisions "Chose Postgres"
+<span class="err">Error: --ticket is required for category "decisions"
+(neuron.yaml categories.decisions.fields.ticket).
+Pass --ticket &lt;value&gt;, or add a "default:" in neuron.yaml.</span></pre>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="harnesses">
+			<div class="wrap">
+				<h2>Works with the agent you already use</h2>
+				<p class="lede">
+					<code>neuron init</code> detects what's installed and wires the deepest hook each harness exposes.
+					Where a harness has no per-turn hook, neuron says so instead of pretending.
+				</p>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr><th>Harness</th><th>Memory recall</th><th>Pre-command lookup</th><th>Write nudge</th></tr>
+						</thead>
+						<tbody>
+							{harnesses.map(({ name, recall, exec, stop, cls }) => (
+								<tr>
+									<td><strong>{name}</strong><span class={`pill ${cls}`}>{cls === 'full' ? 'deterministic' : cls === 'partial' ? 'session-start' : 'MCP'}</span></td>
+									<td>{recall}</td>
+									<td>{exec}</td>
+									<td>{stop}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<p class="fine">Per-harness details, hook points and known limits: <a href={`${base}/docs/harness-adapters/`}>harness adapters</a>.</p>
+			</div>
+		</section>
+
+		<section id="compare">
+			<div class="wrap">
+				<h2>Versus a rules file. Versus a cloud memory API.</h2>
+				<p class="lede">You can keep your CLAUDE.md. neuron solves the part it can't: selective, structured, enforced recall.</p>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr><th></th><th>CLAUDE.md / AGENTS.md</th><th>Hosted memory API</th><th>neuron</th></tr>
+						</thead>
+						<tbody>
+							{compare.map(({ q, md, cloud, neuron }) => (
+								<tr>
+									<td><strong>{q}</strong></td>
+									<td>{md}</td>
+									<td>{cloud}</td>
+									<td class="hl">{neuron}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<p class="fine">Named comparisons — Mem0, Zep, claude-mem, agentmemory, Beads — on the <a href={`${base}/docs/alternatives/`}>alternatives page</a>.</p>
+			</div>
+		</section>
+
+		<section id="faq">
+			<div class="wrap">
+				<h2>Questions</h2>
+				<div class="faq-list">
+					{faqs.map(({ q, a }) => (
+						<div class="faq-item">
+							<h3>{q}</h3>
+							<p>{a}</p>
+						</div>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<section id="start" class="final">
+			<div class="wrap">
+				<h2>Give your agent a memory in the next five minutes</h2>
+				<p class="lede" style="margin-left:auto;margin-right:auto;">Install, run <code>neuron init</code> in a repo, and the next session already knows what the last one learned.</p>
+				<div class="install">
+					<code id="install-cmd-2">npm install -g @kovartravis/neuron &amp;&amp; neuron init</code>
+					<button type="button" data-copy="install-cmd-2" aria-label="Copy install command">Copy</button>
+				</div>
+				<div class="ctas" style="margin-top:1.75rem;">
+					<a class="btn primary" href={`${base}/docs/quickstart/`}>Read the quickstart</a>
+					<a class="btn ghost" href={`${githubUrl}/issues/new/choose`}>Report a bug or ask a question</a>
+				</div>
+			</div>
+		</section>
 
 		<footer>
-			<a href={`${base}/docs/`}>Docs</a> · <a href={githubUrl}>GitHub</a> · MIT © Travis Kovar
+			<a href={`${base}/docs/`}>Docs</a> · <a href={githubUrl}>GitHub</a> · <a href={npmUrl}>npm</a> ·
+			<a href={`${githubUrl}/blob/main/CHANGELOG.md`}>Changelog</a> ·
+			<a href={`${githubUrl}/blob/main/CONTRIBUTING.md`}>Contributing</a> · MIT © Travis Kovar
 		</footer>
+
+		<script>
+			document.querySelectorAll<HTMLButtonElement>('button[data-copy]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const target = document.getElementById(btn.dataset.copy!);
+					if (!target) return;
+					try {
+						await navigator.clipboard.writeText(target.textContent ?? '');
+						const prev = btn.textContent;
+						btn.textContent = 'Copied';
+						setTimeout(() => (btn.textContent = prev), 1500);
+					} catch {
+						btn.textContent = 'Select & copy';
+					}
+				});
+			});
+		</script>
 	</body>
 </html>
