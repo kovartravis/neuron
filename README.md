@@ -1,6 +1,9 @@
 # neuron 🧠
 
-**Give your AI coding agent a memory that's actually yours — plain markdown in your repo, enforced by a schema it can't write around.**
+**Shared memory for your team's coding agents.** Every fix, convention and
+decision recorded once — as markdown in the repo, reviewed in pull requests,
+and injected automatically into Claude Code, Codex, Cursor and Copilot when
+it's relevant.
 
 [![npm version](https://img.shields.io/npm/v/@kovartravis/neuron.svg)](https://www.npmjs.com/package/@kovartravis/neuron)
 [![npm downloads](https://img.shields.io/npm/dm/@kovartravis/neuron.svg)](https://www.npmjs.com/package/@kovartravis/neuron)
@@ -14,18 +17,34 @@
 
 ---
 
-## 30 seconds, start to finish
+## Your coding agent makes the same mistake twice. Your teammate's agent makes it a third time.
+
+Every session starts from zero. The flaky test gets re-debugged, the
+convention gets re-explained, the "we tried that, it didn't work" decision
+gets re-litigated — and whatever your agent did learn stays on your machine,
+invisible to the rest of the team and to review.
+
+neuron fixes both halves. The agent records what it learns into
+`.neuron/*.md` files in the repo, under a schema you declare. The harness —
+not a prompt the model can skip — injects the relevant entries back into
+every teammate's session, on every tool, when they matter.
+
+## Three commands
 
 ```bash
-npm install -g @kovartravis/neuron   # or: curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh
-cd your-project
-neuron init                          # detects your agent harness, wires recall hooks, downloads local models
+curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh   # or: npm install -g @kovartravis/neuron
+cd your-project && neuron init      # detects your harness, wires the recall hooks, downloads the local models
+
+neuron memory add --category learning "Fix for ECONNRESET in the integration suite: the mock server binds before the port is released; sleep 200ms after teardown."
+neuron memory query "flaky integration test"
 ```
 
-From then on, the agent writes what it learns and the harness injects it back
-when it's relevant — no prompt instruction the model can skip. This is a
-verbatim capture from a Claude Code session in this repo, the turn *after* a
-fix was recorded:
+That's the whole surface most days: `init` once, `add` when something is
+worth remembering, and `query` — which the hook runs for you. Everything else
+is reference material.
+
+This is what the next session sees, verbatim, from a Claude Code hook in
+this repository — the turn *after* a fix was recorded:
 
 ```text
 $ npm test
@@ -40,81 +59,100 @@ PreToolUse:Bash hook additional context:
 The store behind it is a markdown file in the repo. Open
 [`.neuron/learning.md`](.neuron/learning.md) — that's the real one.
 
-## Your agent's memory shouldn't be a black box
+## Why not just…
 
-Most persistent-memory tools stash what your agent learns in a database or a
-compiled index — somewhere you'd need a special viewer just to look at. The
-thing shaping your agent's behavior every session lives somewhere you can't
-open, diff, or put in a pull request.
+- **…a `CLAUDE.md` / `AGENTS.md`?** It's one file, read in full on every
+  prompt whether it's relevant or not, and nobody prunes it. neuron injects
+  only the entries that clear a relevance gate and enforces structure on
+  what goes in. Keep your `CLAUDE.md` for standing instructions; neuron
+  handles what the agent *learns*.
+- **…Claude Code's or Cursor's built-in memory?** That memory lives in your
+  home directory, per user, per machine
+  (`~/.claude/projects/<repo>/memory/` for Claude Code — [docs](https://code.claude.com/docs/en/memory)).
+  Your teammate's agent never sees it, and it never appears in a pull
+  request. neuron's memory is the team's: in the repo, in the diff, on every
+  harness.
+- **…Mem0 or Zep?** Those are hosted APIs for general-purpose agents. neuron
+  is offline, in git, and built only for coding agents.
+- **…nothing?** Measured on real SWE-bench Lite tasks with the same agent,
+  memory hook on vs. off: **57.7% fewer tokens**, and every session in both
+  arms answered correctly. [Details below.](#-measured-not-just-claimed)
 
-**Neuron puts it in your repo instead.** Conventions, past fixes, decisions,
-project notes — all plain `.neuron/*.md` files, right next to your code.
-Open them in any editor. Read them top to bottom. Fix a line by hand.
-Review changes to them exactly like you review changes to code, in a normal
-git diff.
+## What makes it the team's memory, not one person's
 
-And it's not just "tell the agent to write markdown" — anyone can write
-that prompt, and nothing stops an agent from ignoring it. **Neuron's CLI
-enforces your schema at write time.** Declare that every `decisions` entry
-needs a `ticket` and a `reviewedBy`, and the write is refused without
-them — no matter what the agent's prompt says.
+- 📄 **It's in the repo.** `.neuron/*.md` — human-readable, git-diffable,
+  hand-editable. SQLite sits underneath as a disposable semantic-search
+  index, rebuilt from the markdown automatically, in a per-machine cache.
+  Nothing to commit, nothing to `.gitignore`.
+- 🔍 **It's reviewed.** A memory change lands in the same pull request as
+  the code change that motivated it. Reviewers see three new lines in
+  `.neuron/learning.md` next to the fix — and can reject them.
+- 🔒 **It's governed.** Declare that every `decisions` entry needs a
+  `ticket` and a `reviewedBy` from an enum, and the write is refused without
+  them — from a human or an agent, no matter what the prompt says.
+- 🔌 **It's injected, not requested.** On Claude Code and Codex CLI,
+  `neuron init` wires hooks so the harness itself runs the lookup on every
+  prompt and before every shell command. No agent judgment call required.
+  Cursor and Copilot CLI get it at session start; anything MCP-aware gets
+  `neuron mcp`.
+- 🎯 **It's relevance-gated.** Every candidate clears a lexical filter, then
+  a local ONNX cross-encoder reranker, before it's injected. On the hardest
+  out-of-corpus test we could build, that cut the false-accept rate from
+  99.80% to 19.4%.
+- 🔒 **It's offline.** Local ONNX embeddings, no API keys, no cloud calls,
+  ever.
 
-## Why teams reach for Neuron
+Also in the box, for when you want them: `neuron scan` writes a
+Tree-Sitter-derived architecture card you can gate CI on (`scan --check`),
+and your git history is indexed and searched with the same relevance gate
+as your notes. Both are covered further down.
 
-- 📄 **Markdown is the source of truth.** `.neuron/*.md` files —
-  human-readable, git-diffable, hand-editable. SQLite sits underneath as a
-  disposable semantic-search index, rebuilt from the markdown automatically.
-  Delete it any time; nothing is lost. It lives in a per-machine cache by
-  default — nothing to commit, nothing to `.gitignore`.
-- 🔒 **A malformed entry simply can't land.** Declare required and
-  enum-typed fields per category in `neuron.yaml`, and every write — from
-  the CLI or from `neuron scan` — is validated before it lands, with an
-  error naming exactly what's missing.
-- 🔌 **Recall that's guaranteed, not requested.** On Claude Code and OpenAI
-  Codex CLI, `neuron init` wires a hook that injects relevant memory before
-  the model ever sees the prompt. The harness enforces it — no agent
-  judgment call required.
-- 🎯 **A two-stage relevance gate.** Every candidate clears a lexical
-  filter, then a local ONNX cross-encoder reranker — no remote API call —
-  before it's ever injected. On the hardest out-of-corpus test we could
-  build, that cut the false-accept rate from 99.80% to 19.4%.
-- 🏛️ **Your architecture, as a living markdown artifact.** `neuron scan`
-  parses your codebase with real Tree-Sitter ASTs and writes a blueprint
-  card that stays byte-identical until the code actually changes — gate CI
-  on it like any other diff.
-- 🕵️ **Your git history becomes searchable memory too.** Commits get
-  indexed and matched against every prompt with the same relevance
-  mechanism as your notes, so "how did we fix X" surfaces the actual commit
-  that did it.
-- 🔒 **100% offline & private.** Local ONNX embeddings, no API keys, no
-  cloud calls, ever. Your code and your memory never leave your machine.
+### Set it up for a team
+
+```yaml
+# neuron.yaml
+categories:
+  learning:
+    description: Fixes and conventions the agent should remember
+  decisions:
+    description: Design choices — who signed off, and against which ticket
+    fields:
+      ticket:     { type: string, required: true }
+      reviewedBy: { type: enum, values: [alice, bob, ci-bot], required: true }
+```
+
+```bash
+$ neuron memory add --category decisions "Chose Postgres over SQLite"
+Error: --ticket is required for category "decisions" (neuron.yaml categories.decisions.fields.ticket). Pass --ticket <value>, or add a "default:" in neuron.yaml.
+```
+
+Commit `neuron.yaml` and `.neuron/` and every clone — and every teammate's
+agent — is on the same schema and the same memory from the first session.
 
 ### How it compares
 
-| | `CLAUDE.md` / `AGENTS.md` | Hosted memory API (Mem0, Zep, …) | **neuron** |
-|---|---|---|---|
-| Where memory lives | One growing prose file | Behind a vendor API | Markdown in your repo |
-| What enters each prompt | The whole file, every time | Whatever the API returns | Only what clears a relevance gate |
-| Structure | None | Vendor schema | Your schema, enforced at write time |
-| Reviewing changes | `git diff` | Vendor dashboard | `git diff`, same as code |
-| Offline / no account | Yes | No | Yes |
-| Recall is guaranteed | Only if the model reads it | Only if the agent calls it | The harness hook runs it |
+| | `CLAUDE.md` / `AGENTS.md` | Harness built-in memory | Hosted memory API (Mem0, Zep, …) | **neuron** |
+|---|---|---|---|---|
+| Where memory lives | One growing prose file | Your home directory | Behind a vendor API | Markdown in your repo |
+| Shared with the team | Yes, if committed | No | Via the vendor | Yes — it's in git |
+| Works across harnesses | Per file name | No | Via SDK | Claude Code, Codex, Cursor, Copilot, MCP |
+| What enters each prompt | The whole file, every time | First N lines of an index | Whatever the API returns | Only what clears a relevance gate |
+| Structure | None | None | Vendor schema | Your schema, enforced at write time |
+| Reviewing changes | `git diff` | Not reviewable | Vendor dashboard | `git diff`, same as code |
+| Offline / no account | Yes | Yes | No | Yes |
+| Recall is guaranteed | Only if the model reads it | Only if the model reads it | Only if the agent calls it | The harness hook runs it |
 
-You can keep your `CLAUDE.md`; neuron handles the part it can't. Named,
-sourced comparisons — Mem0, Zep, claude-mem, agentmemory, Beads — are on the
+Named, sourced comparisons — Mem0, Zep, claude-mem, agentmemory, Beads — are on the
 [alternatives page](https://kovartravis.github.io/neuron/docs/alternatives/).
 
-## 🚀 Quick start
-
-Two fully-supported ways to install — neither is more "official" than the
-other, pick whichever fits your workflow.
+## 📦 Install
 
 ```bash
-# npm (requires Node.js)
-npm install -g @kovartravis/neuron
-
-# curl (macOS/Linux) — standalone binary, no Node.js required
+# Standalone binary (macOS/Linux) — no Node.js required
 curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh
+
+# npm (requires Node.js >= 22.13)
+npm install -g @kovartravis/neuron
 ```
 
 ```powershell
@@ -122,25 +160,17 @@ curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh 
 powershell -c "irm https://raw.githubusercontent.com/kovartravis/neuron/main/install.ps1 | iex"
 ```
 
-Installed via curl/PowerShell? Run `neuron upgrade` to self-update the
-binary. Installed via npm? `npm update -g @kovartravis/neuron`.
+Both paths are fully supported. Installed via curl/PowerShell? `neuron
+upgrade` self-updates the binary. Installed via npm? `npm update -g
+@kovartravis/neuron`.
 
-```bash
-# Initialize in your project (detects CLAUDE.md/AGENTS.md, pre-downloads local models)
-neuron init
-
-# Save a note the agent should remember
-neuron memory add --category learning "Always use the Repository Pattern for database access in src/services"
-
-# Search stored memory
-neuron memory query "How do we handle database access?"
-```
-
-Or just tell your agent:
+Then, in your project, `neuron init` — or just tell your agent:
 
 > "Set up neuron memory for this project."
 
-It runs the setup interview and configures the project for you.
+It runs the setup interview, configures the project, and migrates anything
+already in your `CLAUDE.md` / `AGENTS.md` into structured entries if you
+want it to.
 
 ## Recall your agent can't skip
 

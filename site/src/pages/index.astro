@@ -18,9 +18,9 @@ const ogImage = `${canonicalUrl}og.png`;
 const githubUrl = 'https://github.com/kovartravis/neuron';
 const npmUrl = 'https://www.npmjs.com/package/@kovartravis/neuron';
 
-const title = 'neuron — persistent, local-first memory for coding agents';
+const title = "neuron — shared memory for your team's coding agents";
 const description =
-	'Stop re-explaining your codebase to your AI agent. neuron gives Claude Code, Codex CLI, Cursor and Copilot CLI persistent memory as plain markdown in your repo — relevance-gated, schema-enforced, 100% offline.';
+	"Shared memory for your team's coding agents: every fix, convention and decision recorded once, as markdown in the repo, reviewed in pull requests, and injected automatically into Claude Code, Codex, Cursor and Copilot when it's relevant. 100% offline.";
 
 const person = {
 	'@type': 'Person',
@@ -63,21 +63,26 @@ const steps = [
 	},
 	{
 		cmd: 'neuron memory add --category learning "…"',
-		title: 'Your agent writes what it learns',
-		body: 'Fixes, conventions and decisions land in .neuron/*.md as schema-checked entries. A pre-stop hook nudges the agent to record before it ends the turn.',
+		title: 'Your agent writes what it learns — into the repo',
+		body: 'Fixes, conventions and decisions land in .neuron/*.md as schema-checked entries, committed with the code. A pre-stop hook nudges the agent to record before it ends the turn.',
 	},
 	{
 		cmd: '# next session — nothing to remember',
-		title: 'Relevant memory is injected by the harness',
-		body: 'On every prompt and before every shell command, the hook queries the store and injects only what clears the relevance gate. No prompt instruction the model can skip.',
+		title: "Every teammate's agent gets it, automatically",
+		body: 'After a pull, on every prompt and before every shell command, the hook queries the store and injects only what clears the relevance gate. No prompt instruction the model can skip.',
 	},
 ];
 
 const pillars = [
 	{
-		title: 'Markdown is the source of truth',
-		body: 'Memory lives in .neuron/*.md, next to your code. Open it, grep it, hand-edit it, review it in a normal pull request. SQLite underneath is a disposable search index rebuilt from the files.',
+		title: 'One memory for the whole team',
+		body: "The store is .neuron/*.md in the repo. Every clone, every teammate, every CI agent reads the same fixes and conventions — not a per-user cache in someone's home directory.",
 		href: `${base}/docs/storage-adapters/`,
+	},
+	{
+		title: 'Reviewed in the pull request',
+		body: 'A memory change lands in the same PR as the code change that motivated it. Reviewers see the new lines in .neuron/learning.md next to the fix, and can reject them like any other diff.',
+		href: `${githubUrl}/blob/main/.neuron/learning.md`,
 	},
 	{
 		title: 'A schema the agent cannot write around',
@@ -85,24 +90,19 @@ const pillars = [
 		href: `${base}/docs/declared-field-schema/`,
 	},
 	{
-		title: 'Recall that is enforced, not requested',
+		title: 'Recall enforced by the harness',
 		body: 'On Claude Code and Codex CLI the harness itself runs the lookup on SessionStart, UserPromptSubmit, PreToolUse and PreCompact. The model never gets a chance to forget.',
 		href: `${base}/docs/harness-adapters/`,
 	},
 	{
-		title: 'Your architecture as a living document',
-		body: 'neuron scan parses your codebase with real Tree-Sitter ASTs and writes a blueprint card that is byte-identical until the code changes. Gate CI on it with scan --check.',
-		href: `${base}/docs/cli-scan/`,
-	},
-	{
-		title: 'Git history becomes memory too',
-		body: 'Commits are indexed and matched against every prompt with the same relevance gate, so "how did we fix X" surfaces the commit that actually did.',
-		href: `${githubUrl}#your-git-history-is-a-searchable-resident-source-too`,
-	},
-	{
-		title: 'An MCP server for everything else',
-		body: 'neuron mcp exposes remember / recall / query-exec over stdio for Windsurf, Zed, Claude Desktop, Roo Code — the same store methods the CLI calls, not a second code path.',
+		title: 'Every harness, one store',
+		body: 'Claude Code, Codex CLI, Cursor and Copilot CLI adapters, plus an MCP server for Windsurf, Zed, Claude Desktop and Roo Code — all reading and writing the same markdown.',
 		href: `${base}/docs/cli-mcp/`,
+	},
+	{
+		title: 'Offline, and only what is relevant',
+		body: 'Local ONNX embeddings and a cross-encoder reranker gate every injection; nothing leaves your machine. Also in the box: neuron scan, an architecture card you can gate CI on.',
+		href: `${base}/docs/hybrid-search/`,
 	},
 ];
 
@@ -115,12 +115,35 @@ const harnesses = [
 ];
 
 const compare = [
-	{ q: 'Where the memory lives', md: 'One growing prose file', cloud: 'Behind a hosted API', neuron: 'Markdown in your repo' },
-	{ q: 'What goes into each prompt', md: 'The whole file, every time', cloud: 'Whatever the API returns', neuron: 'Only what clears a relevance gate' },
-	{ q: 'Structure', md: 'None', cloud: 'Vendor schema', neuron: 'Your schema, enforced at write time' },
-	{ q: 'Review changes', md: 'git diff', cloud: 'Vendor dashboard', neuron: 'git diff, same as code' },
-	{ q: 'Works offline', md: 'Yes', cloud: 'No', neuron: 'Yes — no API key, ever' },
-	{ q: 'Recall is guaranteed', md: 'Only if the model reads it', cloud: 'Only if the agent calls it', neuron: 'Harness hook runs it' },
+	{ q: 'Where the memory lives', md: 'One growing prose file', builtin: 'Your home directory', cloud: 'Behind a hosted API', neuron: 'Markdown in your repo' },
+	{ q: 'Shared with the team', md: 'Yes, if committed', builtin: 'No', cloud: 'Via the vendor', neuron: 'Yes — it is in git' },
+	{ q: 'Works across harnesses', md: 'Per file name', builtin: 'No', cloud: 'Via SDK', neuron: 'Claude Code, Codex, Cursor, Copilot, MCP' },
+	{ q: 'What goes into each prompt', md: 'The whole file, every time', builtin: 'First N lines of an index', cloud: 'Whatever the API returns', neuron: 'Only what clears a relevance gate' },
+	{ q: 'Structure', md: 'None', builtin: 'None', cloud: 'Vendor schema', neuron: 'Your schema, enforced at write time' },
+	{ q: 'Review changes', md: 'git diff', builtin: 'Not reviewable', cloud: 'Vendor dashboard', neuron: 'git diff, same as code' },
+	{ q: 'Works offline', md: 'Yes', builtin: 'Yes', cloud: 'No', neuron: 'Yes — no API key, ever' },
+	{ q: 'Recall is guaranteed', md: 'Only if the model reads it', builtin: 'Only if the model reads it', cloud: 'Only if the agent calls it', neuron: 'Harness hook runs it' },
+];
+
+const whyNot = [
+	{
+		q: 'a CLAUDE.md or AGENTS.md?',
+		a: "It's one file, read in full on every prompt whether it's relevant or not, and nobody prunes it. neuron injects only the entries that clear a relevance gate and enforces structure on what goes in. Keep your CLAUDE.md for standing instructions; neuron handles what the agent learns.",
+	},
+	{
+		q: "Claude Code's or Cursor's built-in memory?",
+		a: "That memory lives in your home directory — per user, per machine. Your teammate's agent never sees it, and it never appears in a pull request. neuron's memory is the team's: in the repo, in the diff, on every harness.",
+		href: 'https://code.claude.com/docs/en/memory',
+	},
+	{
+		q: 'Mem0 or Zep?',
+		a: 'Those are hosted APIs for general-purpose agents. neuron is offline, in git, and built only for coding agents.',
+	},
+	{
+		q: 'nothing?',
+		a: 'Measured on real SWE-bench Lite tasks with the same agent, memory hook on vs. off: 57.7% fewer tokens, and every session in both arms answered correctly.',
+		href: '#proof',
+	},
 ];
 
 const faqs = [
@@ -131,6 +154,10 @@ const faqs = [
 	{
 		q: 'Does neuron work with Cursor and Codex, or only Claude Code?',
 		a: 'neuron ships harness adapters for Claude Code, OpenAI Codex CLI, Cursor, and GitHub Copilot CLI. Claude Code and Codex CLI get memory injected automatically on every turn; Cursor and Copilot CLI get it once per session, since those harnesses only expose a session-start hook. Any MCP-aware editor can use the neuron mcp server.',
+	},
+	{
+		q: "Does neuron replace Claude Code's built-in auto memory?",
+		a: "They can coexist, but they solve different problems. Claude Code's auto memory is stored per user under ~/.claude/projects/<repo>/memory/ and loaded for you alone; neuron's store is committed to the repo, so every teammate's agent — on Claude Code, Codex, Cursor or Copilot — reads the same entries, and changes to it go through code review.",
 	},
 	{
 		q: 'How is neuron different from a CLAUDE.md or AGENTS.md file?',
@@ -207,7 +234,7 @@ const jsonLd = {
 		<meta property="og:image" content={ogImage} />
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
-		<meta property="og:image:alt" content="neuron — stop re-explaining your codebase to your AI agent" />
+		<meta property="og:image:alt" content="neuron — shared memory for your team's coding agents" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
@@ -262,10 +289,10 @@ const jsonLd = {
 			.hero-wrap { max-width: 1100px; margin: 0 auto; padding: 5rem 1.5rem 3.5rem; }
 			.hero { max-width: 640px; margin: 0 auto; text-align: center; }
 			.eyebrow { display: inline-block; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 0.3rem 0.7rem; border-radius: 999px; margin-bottom: 1.25rem; }
-			.hero h1 { font-size: 2.9rem; line-height: 1.12; letter-spacing: -0.025em; margin: 0 0 1.25rem; }
+			.hero h1 { font-size: 2.6rem; line-height: 1.14; letter-spacing: -0.025em; margin: 0 0 1.25rem; }
 			.hero .sub { font-size: 1.1rem; color: var(--fg-muted); line-height: 1.65; margin: 0 auto 2rem; max-width: 54ch; }
 			.install { display: flex; align-items: stretch; max-width: 520px; margin: 0 auto 0.6rem; background: var(--code-bg); border-radius: 6px; overflow: hidden; }
-			.install code { flex: 1; font-size: 0.85rem; padding: 0.85rem 1rem; text-align: left; overflow-x: auto; white-space: nowrap; }
+			.install code { flex: 1; font-size: 0.8rem; padding: 0.85rem 1rem; text-align: left; overflow-x: auto; white-space: nowrap; }
 			.install button { border: 0; border-left: 1px solid var(--rule); background: transparent; font: inherit; font-size: 0.78rem; padding: 0 0.9rem; cursor: pointer; color: var(--fg-muted); }
 			.install button:hover { color: var(--fg); background: #e2dfd5; }
 			.alt { font-size: 0.8rem; color: var(--fg-faint); margin: 0 auto 2rem; max-width: 520px; }
@@ -321,6 +348,11 @@ const jsonLd = {
 			.file pre { margin: 0; padding: 1rem 1.1rem; white-space: pre-wrap; word-break: break-word; }
 			.file .fm { color: var(--fg-faint); }
 			.file .err { color: #a33a2a; }
+			.file .ctx { color: var(--fg-muted); }
+			.file .add { color: #1a5f3f; background: #e3efe8; padding: 0.05rem 0.3rem; margin: 0 -0.3rem; border-radius: 3px; }
+			.whynot { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 2.5rem; margin-bottom: 2.5rem; }
+			.whynot-item h3 { margin: 0 0 0.35rem; font-size: 1rem; }
+			.whynot-item p { margin: 0; font-size: 0.9rem; color: var(--fg-muted); line-height: 1.6; }
 
 			/* tables */
 			table { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
@@ -351,6 +383,7 @@ const jsonLd = {
 
 			@media (max-width: 900px) {
 				.proof-grid { grid-template-columns: repeat(2, 1fr); }
+				.whynot { grid-template-columns: 1fr; }
 				.steps, .pillars { grid-template-columns: 1fr; }
 				.two-col { grid-template-columns: 1fr; gap: 2rem; }
 			}
@@ -401,38 +434,38 @@ const jsonLd = {
 		<div class="hero-wrap">
 			<div class="hero">
 				<span class="eyebrow">Open source · MIT · 100% offline</span>
-				<h1>Stop re-explaining your codebase to your AI agent.</h1>
+				<h1>Your agent makes the same mistake twice. Your teammate's makes it a third time.</h1>
 				<p class="sub">
-					neuron gives Claude Code, Codex CLI, Cursor and Copilot CLI a memory that survives the session:
-					fixes, conventions and decisions stored as plain markdown in your repo, injected only when
-					they're relevant — and enforced by the harness, not by a prompt the model can ignore.
+					neuron is shared memory for your team's coding agents: every fix, convention and decision
+					recorded once, as markdown in the repo, reviewed in pull requests, and injected automatically
+					into Claude Code, Codex, Cursor and Copilot when it's relevant.
 				</p>
 				<div class="install">
-					<code id="install-cmd">npm install -g @kovartravis/neuron</code>
+					<code id="install-cmd">curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
 					<button type="button" data-copy="install-cmd" aria-label="Copy install command">Copy</button>
 				</div>
 				<div class="alt">
-					no Node.js? <code>curl -fsSL https://raw.githubusercontent.com/kovartravis/neuron/main/install.sh | sh</code>
+					or with Node.js: <code>npm install -g @kovartravis/neuron</code>
 				</div>
 				<div class="ctas">
 					<a class="btn primary" href={`${base}/docs/quickstart/`}>Get started in 5 minutes</a>
 					<a class="btn ghost" href={githubUrl}>Star on GitHub</a>
 				</div>
-				<p class="meta">macOS · Linux · Windows &nbsp;·&nbsp; standalone binary or npm &nbsp;·&nbsp; no account, no API key</p>
+				<p class="meta">macOS · Linux · Windows &nbsp;·&nbsp; standalone binary or npm &nbsp;·&nbsp; no account, no API key, 100% offline</p>
 			</div>
 
 			<div class="term" aria-label="A real memory recall injected by a Claude Code hook">
-				<div class="term-bar"><i></i><i></i><i></i><span>claude — next session, same repo</span></div>
-				<pre><span class="c"># yesterday: the agent hit a flaky test, fixed it, and recorded why</span>
+				<div class="term-bar"><i></i><i></i><i></i><span>claude — a teammate's session, next day, same repo</span></div>
+				<pre><span class="c"># yesterday, on Alice's machine: her agent hit a flaky test, fixed it, and recorded why</span>
 <span class="p">$</span> neuron memory add --category learning <span class="k">"Fix for false-positive Bash-command match: the pattern was a bare substring test, so any command that merely quoted the phrase got logged as a real invocation. Anchor it to a shell separator."</span>
 &#123;"id":"e9d606cd…","status":"created"&#125;
 
-<span class="c"># today: a fresh session runs a shell command. Before it executes, Claude Code's
-# PreToolUse hook calls neuron and injects what's relevant — automatically.</span>
+<span class="c"># today, on Bob's machine, after a git pull: his agent runs a shell command. Before it
+# executes, Claude Code's PreToolUse hook calls neuron and injects what's relevant.</span>
 <span class="p">$</span> npm test
 <span class="hook"><span class="c">PreToolUse:Bash hook additional context:</span>
 - [learning] Fix for false-positive Bash-command match: the pattern was a bare substring test, so any command that merely quoted the phrase got logged as a real invocation. Anchor it to a shell separator.</span>
-<span class="c"># no CLAUDE.md paragraph to maintain. no "remember to check memory" instruction. no repeat debugging.</span></pre>
+<span class="c"># nothing to paste into CLAUDE.md. no "remember to check memory" instruction. no third debugging session.</span></pre>
 			</div>
 		</div>
 
@@ -476,8 +509,8 @@ const jsonLd = {
 
 		<section id="why">
 			<div class="wrap">
-				<h2>Why teams pick neuron</h2>
-				<p class="lede">Built for the one job of remembering a codebase — and for the people who have to review what the agent remembers.</p>
+				<h2>Built for a team, not a session</h2>
+				<p class="lede">Harness-native memory is yours alone, on your machine, invisible to review. neuron's is the team's.</p>
 				<div class="pillars">
 					{pillars.map(({ title, body, href }) => (
 						<a class="pillar" href={href}>
@@ -493,39 +526,44 @@ const jsonLd = {
 		<section id="repo">
 			<div class="wrap two-col">
 				<div class="prose">
-					<h2>What it looks like in your repo</h2>
+					<h2>The pull request is the product</h2>
 					<p>
-						No database you need a viewer for. Each category is one markdown file with a small YAML
-						frontmatter block per entry — readable, greppable, diffable, and safe to hand-edit.
+						A fix and the memory of the fix ship together. Reviewers see three new lines in
+						<code>.neuron/learning.md</code> next to the code change — readable, greppable, and
+						rejectable like any other diff. No database you need a viewer for.
 					</p>
 					<p>
 						Declare a field as required in <code>neuron.yaml</code> and the CLI refuses any write
 						that omits it, from a human or an agent. <code>neuron status --check</code> catches
-						anything that drifts afterwards.
+						anything that drifts afterwards; run it in CI next to your tests.
 					</p>
 					<p>
 						This isn't a toy example: neuron's own repository runs on{' '}
 						<a href={`${githubUrl}/blob/main/.neuron/learning.md`}>its own <code>.neuron/</code> store</a>,
-						including the project's issue tracker.
+						and its memory changes are reviewed in pull requests like everything else.
 					</p>
 				</div>
 				<div>
-					<div class="file">
-						<div class="file-name">.neuron/decisions.md</div>
-						<pre><span class="fm">---
-id: e9d606cd-0d61-4073-9da8-1675c6d7adfd
-createdAt: 2026-08-05T15:02:38.494Z
-importance: 4
-tags: [adr, database]
-reviewedBy: alice
-ticket: NEU-42
----</span>
-Chose Postgres over SQLite for concurrent writes.
-Two writers per service in prod; SQLite's single-writer
-lock showed up as p99 latency spikes in the load test.</pre>
+					<div class="file diff">
+						<div class="file-name">example pull request · fix: stabilise test teardown · 2 files changed</div>
+						<pre><span class="fm">src/test/server.ts</span>
+<span class="ctx">   afterEach(async () =&gt; {'{'}</span>
+<span class="ctx">     await server.close();</span>
+<span class="add">+    await waitForPortRelease(server.port);</span>
+<span class="ctx">   {'}'});</span>
+
+<span class="fm">.neuron/learning.md</span>
+<span class="add">+---</span>
+<span class="add">+id: 4c1e7a2b-…  importance: 4</span>
+<span class="add">+tags: [failure-fix, testing]</span>
+<span class="add">+---</span>
+<span class="add">+Fix for ECONNRESET in the integration suite: the</span>
+<span class="add">+mock server's port is reused before the OS frees</span>
+<span class="add">+it. Wait for release in afterEach; a fixed sleep</span>
+<span class="add">+hid the race on CI runners.</span></pre>
 					</div>
 					<div class="file" style="margin-top: 1rem;">
-						<div class="file-name">terminal</div>
+						<div class="file-name">terminal — a write that doesn't meet the schema</div>
 						<pre><span class="fm">$</span> neuron memory add --category decisions "Chose Postgres"
 <span class="err">Error: --ticket is required for category "decisions"
 (neuron.yaml categories.decisions.fields.ticket).
@@ -565,18 +603,27 @@ Pass --ticket &lt;value&gt;, or add a "default:" in neuron.yaml.</span></pre>
 
 		<section id="compare">
 			<div class="wrap">
-				<h2>Versus a rules file. Versus a cloud memory API.</h2>
-				<p class="lede">You can keep your CLAUDE.md. neuron solves the part it can't: selective, structured, enforced recall.</p>
+				<h2>Why not just…</h2>
+				<p class="lede">You can keep your CLAUDE.md, and your harness's own memory. neuron is the part neither of them can be: shared, reviewed, and enforced.</p>
+				<div class="whynot">
+					{whyNot.map(({ q, a, href }) => (
+						<div class="whynot-item">
+							<h3>…{q}</h3>
+							<p>{a}{href ? <>{' '}<a href={href}>{href.startsWith('#') ? 'See the numbers.' : 'Source.'}</a></> : null}</p>
+						</div>
+					))}
+				</div>
 				<div class="table-scroll">
 					<table>
 						<thead>
-							<tr><th></th><th>CLAUDE.md / AGENTS.md</th><th>Hosted memory API</th><th>neuron</th></tr>
+							<tr><th></th><th>CLAUDE.md / AGENTS.md</th><th>Harness built-in memory</th><th>Hosted memory API</th><th>neuron</th></tr>
 						</thead>
 						<tbody>
-							{compare.map(({ q, md, cloud, neuron }) => (
+							{compare.map(({ q, md, builtin, cloud, neuron }) => (
 								<tr>
 									<td><strong>{q}</strong></td>
 									<td>{md}</td>
+									<td>{builtin}</td>
 									<td>{cloud}</td>
 									<td class="hl">{neuron}</td>
 								</tr>
@@ -584,7 +631,7 @@ Pass --ticket &lt;value&gt;, or add a "default:" in neuron.yaml.</span></pre>
 						</tbody>
 					</table>
 				</div>
-				<p class="fine">Named comparisons — Mem0, Zep, claude-mem, agentmemory, Beads — on the <a href={`${base}/docs/alternatives/`}>alternatives page</a>.</p>
+				<p class="fine">Named comparisons — Mem0, Zep, claude-mem, agentmemory, Beads, and harness-native memory — on the <a href={`${base}/docs/alternatives/`}>alternatives page</a>.</p>
 			</div>
 		</section>
 
@@ -604,8 +651,8 @@ Pass --ticket &lt;value&gt;, or add a "default:" in neuron.yaml.</span></pre>
 
 		<section id="start" class="final">
 			<div class="wrap">
-				<h2>Give your agent a memory in the next five minutes</h2>
-				<p class="lede" style="margin-left:auto;margin-right:auto;">Install, run <code>neuron init</code> in a repo, and the next session already knows what the last one learned.</p>
+				<h2>Give your team's agents one memory in the next five minutes</h2>
+				<p class="lede" style="margin-left:auto;margin-right:auto;">Install, run <code>neuron init</code> in a repo, commit <code>.neuron/</code> — and the next session, on anyone's machine, already knows what the last one learned.</p>
 				<div class="install">
 					<code id="install-cmd-2">npm install -g @kovartravis/neuron &amp;&amp; neuron init</code>
 					<button type="button" data-copy="install-cmd-2" aria-label="Copy install command">Copy</button>

@@ -32,19 +32,19 @@ const svg = `
 
   <text font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', Helvetica, Arial, sans-serif"
         font-size="64" font-weight="700" fill="#16150f" letter-spacing="-1.5">
-    <tspan x="88" y="250">Stop re-explaining your</tspan>
-    <tspan x="88" y="326">codebase to your AI agent.</tspan>
+    <tspan x="88" y="250">Shared memory for your</tspan>
+    <tspan x="88" y="326">team's coding agents.</tspan>
   </text>
 
   <text font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', Helvetica, Arial, sans-serif"
         font-size="30" fill="#4a4941">
-    <tspan x="88" y="400">Persistent, relevance-gated memory for Claude Code, Codex,</tspan>
-    <tspan x="88" y="442">Cursor and Copilot CLI. Plain markdown in your repo. 100% offline.</tspan>
+    <tspan x="88" y="400">Every fix and decision recorded once, as markdown in the repo,</tspan>
+    <tspan x="88" y="442">reviewed in PRs, injected into Claude Code, Codex, Cursor, Copilot.</tspan>
   </text>
 
   <rect x="88" y="500" width="640" height="64" rx="8" fill="#16150f"/>
   <text x="112" y="541" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace"
-        font-size="24" fill="#f7f5f0">$ npm install -g @kovartravis/neuron</text>
+        font-size="24" fill="#f7f5f0">$ neuron init   # 100% offline, MIT</text>
 
   <text x="${W - 88}" y="541" text-anchor="end"
         font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', Helvetica, Arial, sans-serif"

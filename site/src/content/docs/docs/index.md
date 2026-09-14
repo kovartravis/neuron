@@ -14,13 +14,19 @@ faq:
 
 ## What neuron is
 
-Neuron is a memory store for AI coding agents that keeps its record in plain
-`.neuron/*.md` files inside your repo, instead of a database only a special
-viewer can open. A schema declared in `neuron.yaml` is enforced on every
-write — a malformed entry (missing a required field, an invalid enum value)
-is refused by the CLI, not silently accepted. SQLite sits underneath as a
-disposable semantic-search index, rebuilt from the markdown automatically;
-delete it any time and nothing is lost.
+Neuron is shared memory for a team's coding agents. What one agent learns —
+a fix, a convention, a decision — is recorded once into plain
+`.neuron/*.md` files inside the repo, reviewed in pull requests like any
+other change, and injected automatically into every teammate's session on
+Claude Code, Codex CLI, Cursor or GitHub Copilot CLI when it's relevant.
+
+That's the difference from a harness's own memory (per user, in your home
+directory, invisible to review) and from a `CLAUDE.md` (one file, read in
+full every prompt, never pruned). A schema declared in `neuron.yaml` is
+enforced on every write — a malformed entry (missing a required field, an
+invalid enum value) is refused by the CLI, not silently accepted. SQLite
+sits underneath as a disposable semantic-search index, rebuilt from the
+markdown automatically; delete it any time and nothing is lost.
 
 ## Getting started
 
