@@ -1681,3 +1681,15 @@ tags:
 taskId: afbf870e-8546-4fdd-8f21-4cbd89e9f9c7
 ---
 Ran a 3-way A/B on capturing 'what a file does' for architecture-scan purpose text, using only local models: deterministic call-graph/control-flow extraction (no model call) beat both retrieval (nearest match from this repo's own decisions/architecture/learning store, leave-one-out) and generative (Xenova/Qwen1.5-0.5B-Chat, few-shot) on mean, median, and per-file win count (7/10 vs 3/10 vs 0/10) across 10 real files scored by cosine similarity against each file's own withheld human-authored header. The generative mode's 0/10 extends the prior six-for-six pattern of the shipped 0.5B model losing every A/B it has been measured on (tagging, category, importance, pruning, dedupe, salvage-expansion) to a 7th task — the first that was open-ended generation rather than classification/judgement, closing the one gap in that prior evidence. Decision: deepen neuron's own architecture scan (src/scanner/summarizer.ts, currently JSDoc-extraction-only with zero model calls despite the SmolLM2Summarizer name) via richer deterministic AST facts — real call-graph and control-flow extraction — rather than adding a generative-model job, the next time that scan is built out. Assets: benchmarks/file-behavior-ab/{corpus.ts,run-ab.ts,raw-scores.json}, uncommitted as of this entry.
+
+---
+id: 8ead7835-bc39-4da8-a721-428bf64cf78c
+createdAt: 2026-09-14T04:32:23.456Z
+importance: 4
+tags:
+  - release
+  - npm
+  - git
+taskId: release-2.5.0
+---
+2.5.0 release branch (release/v2.5.0) is scoped to adoption, not features: the codebase had shipped a docs site with no inbound links (README never linked it, package.json homepage pointed at the GitHub readme, no OG/Twitter metadata so shared links rendered bare) and no contributor path (no CI on pull requests, no issue templates, no CONTRIBUTING.md). Decisions: (1) the homepage leads problem-first ('Stop re-explaining your codebase to your AI agent') and shows a verbatim hook-injection capture rather than describing recall; every quoted number links to the benchmark that produced it, per the existing 'measured, not claimed' rule. (2) Social-preview image is a committed PNG rendered by site/scripts/og-image.mjs (sharp, SVG in), not generated at build time, so it doesn't depend on CI-runner fonts. (3) ci.yml duplicates publish.yml's build-and-test gates for PRs rather than refactoring publish.yml into a reusable workflow — keeps the release gate untouched; revisit if the two drift. (4) neuron feedback targets the new YAML issue forms by prefilling the form's first field id (what-happened) because GitHub drops body= once template= is set; general feedback keeps the blank issue so body= still works. (5) The 'Clean up stray files at the repo root' tracker entry (3f174be0, tickets-future) is executed here — RELEASE_2.0.0.md/TEST_*.md deleted, tmp/ evidence moved to docs/design/pre-command-hook-live-capture/, tmp/ gitignored — but could not be marked resolved from this machine because tickets-future is vector-only storage and its entries exist solely in the maintainer's local SQLite.

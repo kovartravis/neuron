@@ -2,6 +2,50 @@
 
 All notable changes to `@kovartravis/neuron` will be documented in this file.
 
+## [2.5.0] - 2026-09-14
+
+**neuron has a website.** [kovartravis.github.io/neuron](https://kovartravis.github.io/neuron/)
+carries the install/quickstart path, a guide per harness, how-it-works
+pages (hybrid search, write-side enrichment, the declared field schema,
+storage adapters), a full CLI and `neuron.yaml` reference mirrored from
+`docs/COMMANDS.md`, and a sourced [alternatives page](https://kovartravis.github.io/neuron/docs/alternatives/)
+(Mem0, Zep, claude-mem, agentmemory, Beads). Built with Astro + Starlight in
+`site/`, deployed by `.github/workflows/deploy-site.yml` on every push to
+`main`. The homepage leads with the problem (an agent that forgets between
+sessions), shows a verbatim hook-injection capture instead of describing
+one, and puts every number it quotes — 57.7% fewer tokens, 16/16 correct,
+99.8% → 19.4% false-accept — one click from the benchmark that produced it.
+Open Graph / Twitter card metadata and a generated `og.png`
+(`site/scripts/og-image.mjs`) mean a shared link renders as a card.
+
+**The project name in CLI output is now actually your project's name.** The
+default markdown-mode write path (`DualStorageRouter`) labelled every
+`memory add`/`update`/`delete` result `"project":"neuron"` regardless of
+which project it ran in. It now carries the resolved name, and
+`findProjectRoot()` prefers the `package.json` `name` (scope stripped) over
+the directory basename, so `status`, `memory add` and `scan --json` agree
+and the label no longer depends on the folder the repo was cloned into.
+
+**A contributor on-ramp.** `.github/workflows/ci.yml` runs the same build,
+test, `scan --check` and `status --check` gates as the publish workflow on
+every pull request (nothing did before), plus a docs-site build.
+Structured bug-report and feature-request issue forms;
+`neuron feedback --type bug|feature` opens the matching form with the
+message pre-filled (a bare `body=` is dropped once a template is selected —
+general feedback keeps the free-form issue). `CONTRIBUTING.md` documents
+setup, the repository map, and the invariants a change must keep. The
+first `neuron init` now ends with a three-line "Next steps" hint.
+
+**Housekeeping.** `README.md` opens with a 30-second tour and a comparison
+table and finally links the website. `package.json` gains a real
+description, `author`, `license` (it had none), the site as `homepage`, and
+discovery keywords. Stale root files (`RELEASE_2.0.0.md`, `TEST_READY.md`,
+`TEST_INFRA.md`) and two leaked test fixtures in `src/` are gone; the
+ticket-24 hook-injection evidence moved from `tmp/` to
+`docs/design/pre-command-hook-live-capture/`, and `tmp/` is now
+gitignored. The leftover Starlight boilerplate page that conflicted with
+the real homepage route at build time is removed.
+
 ## [2.4.5] - 2026-08-18
 
 **`neuron mcp` runs a standard MCP server** over stdio, built on the official

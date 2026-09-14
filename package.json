@@ -1,6 +1,6 @@
 {
   "name": "@kovartravis/neuron",
-  "version": "2.4.5",
+  "version": "2.5.0",
   "description": "Persistent, local-first memory for AI coding agents (Claude Code, Codex CLI, Cursor, Copilot CLI): plain markdown in your repo, schema-enforced, relevance-gated recall via harness hooks or MCP. 100% offline.",
   "keywords": [
     "agent-memory",
