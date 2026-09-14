@@ -1,9 +1,11 @@
 ---
-title: "neuron vs. Mem0, Zep, claude-mem, agentmemory, and Beads"
-description: "How neuron's local-only, markdown-as-source-of-truth model compares to the closest cloud memory layers, coding-agent memory tools, and issue-tracker-plus-memory tools."
+title: "neuron vs. Claude Code auto memory, Mem0, Zep, claude-mem, agentmemory, and Beads"
+description: "How neuron's shared, in-repo, markdown-as-source-of-truth model compares to harness-native memory, the closest cloud memory layers, coding-agent memory tools, and issue-tracker-plus-memory tools."
 faq:
   - q: "Is neuron a replacement for Mem0 or Zep?"
     a: "Only if you're specifically memory-augmenting a coding agent and want that memory to live in your repo as plain markdown. Mem0 and Zep are cloud-hosted, general-purpose agent memory layers built for a broader range of applications than coding agents alone; neuron is scoped narrowly to the coding-agent workflow and runs 100% offline."
+  - q: "Does neuron replace Claude Code's built-in auto memory?"
+    a: "They can coexist, but they solve different problems. Claude Code's auto memory is stored per user under ~/.claude/projects/<repo>/memory/ and loaded only for you; neuron's store is committed to the repo, so every teammate's agent — on Claude Code, Codex, Cursor or Copilot — reads the same entries, and changes to it go through code review."
   - q: "Can I use neuron alongside an existing CLAUDE.md or AGENTS.md file?"
     a: "Yes — they solve different problems. CLAUDE.md/AGENTS.md is static prose reread in full every prompt; neuron is schema-enforced structured entries surfaced only when relevant. Nothing about neuron requires deleting an existing CLAUDE.md/AGENTS.md file, though its content often migrates naturally into neuron's declared-field categories over time."
   - q: "Does neuron do anything graph-based, like Zep or Beads?"
@@ -19,6 +21,26 @@ for hybrid search. That's narrower than a general-purpose agent-memory
 platform and different in kind from a graph-backed issue tracker — the
 comparisons below focus on the tools closest to that specific scope, not
 every memory-adjacent product.
+
+## Harness-native memory (Claude Code auto memory, Cursor memories)
+
+The closest thing to neuron most users already have. Claude Code's
+[auto memory](https://code.claude.com/docs/en/memory) lets Claude record
+learnings on its own into a per-project directory under your home folder
+(`~/.claude/projects/<repo>/memory/`), with a `MEMORY.md` index whose first
+200 lines (or 25 KB) are loaded at the start of every session and topic
+files read on demand. Cursor's memories work on a similar per-user basis.
+
+The architectural difference is scope, not quality: that memory belongs to
+one user on one machine and one harness, and nothing about it passes
+through a pull request. Neuron's store is committed to the repo, so it is
+shared by every clone and every teammate's agent regardless of which
+harness they use, changes to it are reviewed as diffs, and a schema
+declared in `neuron.yaml` constrains what can be written. Recall is also
+different in kind — a hook-driven, relevance-gated lookup per prompt rather
+than a fixed prefix loaded once — though for a single developer on a single
+tool the native feature may be all you need. The two can run side by side;
+nothing in neuron disables or depends on the harness's own memory.
 
 ## Mem0
 
@@ -85,6 +107,13 @@ cloud-hosted, general-purpose agent memory layers built for a broader
 range of applications than coding agents alone; neuron is scoped narrowly
 to the coding-agent workflow and runs 100% offline.
 
+**Does neuron replace Claude Code's built-in auto memory?**
+They can coexist, but they solve different problems. Claude Code's auto
+memory is stored per user under `~/.claude/projects/<repo>/memory/` and
+loaded only for you; neuron's store is committed to the repo, so every
+teammate's agent — on Claude Code, Codex, Cursor or Copilot — reads the same
+entries, and changes to it go through code review.
+
 **Can I use neuron alongside an existing CLAUDE.md or AGENTS.md file?**
 Yes — they solve different problems. CLAUDE.md/AGENTS.md is static prose
 reread in full every prompt; neuron is schema-enforced structured entries
@@ -102,7 +131,7 @@ doesn't.
 ## Limitations
 
 The descriptions above are drawn from each project's own public
-README/marketing copy as of August 2026, not independent hands-on testing
+README, docs, or marketing copy as of September 2026, not independent hands-on testing
 of their live behavior — treat them as directional, not as neuron's
 verified benchmark against a competitor, and check the linked source
 directly before relying on a specific claim. Tools in this space change
