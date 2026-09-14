@@ -1724,3 +1724,27 @@ tags:
 taskId: null
 ---
 Correction to an earlier entry in this store (same id): the "lost-update bug in neuron's own md-storage ticket tracker" diagnosis was wrong. What actually happened: ticket 1 (Survey Dev-Tool Marketing + Docs Sites for Patterns) was resolved and merged to main via a separate concurrent PR (#16, commit e6b48bd) while the wayfinder/docs-ia branch was still based on an older point in main's history. When docs-ia's own session then resolved ticket 3 (Docs IA, commit 18b8cfc) and wrote .neuron/tickets-present.md, it wrote from that branch's own stale local copy — which still had ticket 1 as unclaimed — not from a corrupted or racing neuron write path. This is ordinary git branch divergence on a shared markdown file, not a defect in `neuron memory update`. Confirmed via `git merge origin/main`, which surfaced a real, expected merge conflict on the same Decisions-so-far section (cleanly resolved as a superset — docs-ia's branch already contained everything main had plus tickets 3 and 5's additions). Standing rule, corrected: before resolving a wayfinder ticket on a long-lived branch, `git fetch && git merge origin/<default-branch>` first if the tracker file may have been touched by a concurrent PR — don't assume the local branch's copy of a tickets-present.md-backed map is current just because no error was raised. (tags: wayfinder, git, correction)
+
+---
+id: 783b844e-5a5c-4e9e-a779-33477a7e8bcd
+createdAt: 2026-09-14T04:32:08.651Z
+importance: 4
+tags:
+  - exec
+  - scanner
+  - failure-fix
+taskId: null
+---
+Fix for Astro CompilerError 'Expected } but found :' in site/src/pages/index.astro: literal JSON text like {"id":"…","status":"created"} inside a <pre> block is parsed by Astro as a JSX-style expression, so any brace-delimited example output in template markup fails the build. Root cause: Astro treats bare { } in HTML content as expressions, even inside <pre>/<code>. Resolution: write the braces as HTML entities (&#123; … &#125;) or wrap the text in an expression string ({'{"id":…}'}). Related gotcha in the same file: a newline between text and an inline element (<a>, <code>) is collapsed, dropping the space — use {' '} before the element.
+
+---
+id: e902ce98-f5f1-464d-b4ae-493d764c32ee
+createdAt: 2026-09-14T04:32:09.605Z
+importance: 4
+tags:
+  - failure-fix
+  - drift
+  - exec
+taskId: null
+---
+Fix for CLI output reporting the wrong project name: every md-mode memory add/update/delete result said "project":"neuron" in any project, and status/scan --json disagreed with each other ('workspace' vs 'neuron') in a checkout not named neuron, failing src/commands/scan.test.ts. Root cause: DualStorageRouter hardcoded project: 'neuron' in four places, and findProjectRoot()/scanProjectTopology() derived the name from the directory basename. Resolution (2.5.0): DualStorageRouter takes projectName as a 5th constructor arg (NeuronMemory passes options.projectName), and findProjectRoot() prefers package.json name with the @scope/ prefix stripped, falling back to basename; analyzer.ts calls findProjectRoot(projectRoot).name so all three surfaces agree. The label is display-only (never persisted), so changing it is safe.
