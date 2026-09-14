@@ -47,6 +47,7 @@ import {
 import type { NeuronConfig } from '../config/neuronYaml.js';
 
 export const GITHUB_STAR_URL = 'https://github.com/kovartravis/neuron';
+export const DOCS_URL = 'https://kovartravis.github.io/neuron/docs/quickstart/';
 
 /**
  * The three points `recallStep()`/this file's own fidelity reporting have
@@ -705,6 +706,21 @@ export async function handleInitCommand(args: string[]): Promise<void> {
       `${failedGrammars.map(o => o.language).join(', ')}. ` +
       `Those languages will be scanned with the regex parser at reduced accuracy. ` +
       `Re-run 'neuron init' once the registry is reachable.`
+    );
+  }
+
+  // A first-time user has just watched a wall of harness/hook detail scroll
+  // by; tell them the one thing to do next, once, on the first init only.
+  if (configResult.created) {
+    console.error(
+      [
+        '',
+        'Next steps:',
+        '  neuron memory add --category learning "<a convention or fix worth remembering>"',
+        '  neuron memory query "<a question about this codebase>"',
+        `  Docs: ${DOCS_URL}`,
+        '',
+      ].join('\n')
     );
   }
 
